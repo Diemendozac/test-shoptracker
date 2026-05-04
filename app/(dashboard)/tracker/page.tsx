@@ -1,13 +1,12 @@
 'use client'
 
-import { useState } from 'react'
 import { PageLayout } from '@/components/layout/page-layout'
 import { TrackerTable } from '@/components/tracker/tracker-table'
-import { mockTrackerCandidates } from '@/lib/mock-data'
 import type { PerformanceLabel } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { Filter, SortAsc, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useDashboard } from '../hooks/useDashboard'
 
 const statusFilters: { label: string; value: PerformanceLabel | 'all' }[] = [
   { label: 'All', value: 'all' },
@@ -18,23 +17,18 @@ const statusFilters: { label: string; value: PerformanceLabel | 'all' }[] = [
 ]
 
 export default function TrackerPage() {
-  const [filter, setFilter] = useState<PerformanceLabel | 'all'>('all')
-  const [searchQuery, setSearchQuery] = useState('')
-
-  const filteredCandidates = mockTrackerCandidates.filter((c) => {
-    const matchesFilter = filter === 'all' || c.performanceLabel === filter
-    const matchesSearch =
-      searchQuery === '' ||
-      c.productTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.storeName.toLowerCase().includes(searchQuery.toLowerCase())
-    return matchesFilter && matchesSearch
-  })
+  const {
+    trackerFilter,
+    searchQuery,
+    filteredCandidates,
+    isTrackerLoading,
+    setFilter,
+    setSearch,
+  } = useDashboard()
 
   return (
     <PageLayout title="Tracker" description="All active candidates in tracking window">
-      {/* Filters Bar */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        {/* Status Filters */}
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-muted-foreground" />
           <div className="flex rounded-lg border border-border bg-secondary/30 p-1">
@@ -44,7 +38,7 @@ export default function TrackerPage() {
                 onClick={() => setFilter(status.value)}
                 className={cn(
                   'rounded-md px-3 py-1.5 text-xs font-medium transition-all',
-                  filter === status.value
+                  trackerFilter === status.value
                     ? 'bg-primary text-primary-foreground shadow-sm'
                     : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
                 )}
@@ -55,7 +49,6 @@ export default function TrackerPage() {
           </div>
         </div>
 
-        {/* Search & Sort */}
         <div className="flex items-center gap-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -63,7 +56,7 @@ export default function TrackerPage() {
               type="text"
               placeholder="Search products..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
               className="h-9 w-64 rounded-lg border border-border bg-input pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
@@ -74,15 +67,21 @@ export default function TrackerPage() {
         </div>
       </div>
 
-      {/* Results Count */}
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4">
         <p className="text-sm text-muted-foreground">
           Showing <span className="font-medium text-foreground">{filteredCandidates.length}</span> candidates
         </p>
       </div>
 
-      {/* Table */}
-      <TrackerTable candidates={filteredCandidates} />
+      {isTrackerLoading ? (
+        <div className="space-y-2">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-14 animate-pulse rounded-lg bg-secondary" />
+          ))}
+        </div>
+      ) : (
+        <TrackerTable candidates={filteredCandidates} />
+      )}
     </PageLayout>
   )
 }

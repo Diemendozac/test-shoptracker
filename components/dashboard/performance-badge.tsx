@@ -1,21 +1,35 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import type { PerformanceLabel } from '@/lib/types'
 import { TrendingUp, TrendingDown, Minus, Eye } from 'lucide-react'
 
+/**
+ * Labels soportados por la UI (sistema cerrado)
+ */
+export type PerformanceLabel =
+  | 'Rising'
+  | 'Watching'
+  | 'Declining'
+  | 'Stable'
+
 interface PerformanceBadgeProps {
-  label: PerformanceLabel
+  label: string // 👈 ahora acepta cualquier string (viene de API)
   size?: 'sm' | 'md' | 'lg'
   showIcon?: boolean
 }
 
-const labelConfig: Record<PerformanceLabel, {
-  color: string
-  bgColor: string
-  borderColor: string
-  icon: typeof TrendingUp
-}> = {
+/**
+ * Configuración visual por label
+ */
+const labelConfig: Record<
+  PerformanceLabel,
+  {
+    color: string
+    bgColor: string
+    borderColor: string
+    icon: typeof TrendingUp
+  }
+> = {
   Rising: {
     color: 'text-rising',
     bgColor: 'bg-rising/10',
@@ -42,26 +56,61 @@ const labelConfig: Record<PerformanceLabel, {
   },
 }
 
-export function PerformanceBadge({ label, size = 'md', showIcon = true }: PerformanceBadgeProps) {
-  const config = labelConfig[label]
+/**
+ * Mapper: API → UI
+ */
+function mapPerformanceLabel(apiLabel: string): PerformanceLabel {
+  if (!apiLabel) return 'Stable'
+
+  const map: Record<string, PerformanceLabel> = {
+    rocket: 'Rising',
+    rising: 'Rising',
+    watching: 'Watching',
+    declining: 'Declining',
+    stable: 'Stable',
+  }
+
+  return map[apiLabel.toLowerCase()] ?? 'Stable'
+}
+
+export function PerformanceBadge({
+  label,
+  size = 'md',
+  showIcon = true,
+}: PerformanceBadgeProps) {
+  const normalizedLabel = mapPerformanceLabel(label)
+  const config = labelConfig[normalizedLabel]
+
+  // Extra safety (nunca debería fallar, pero protege en runtime)
+  if (!config) {
+    console.error('Invalid PerformanceLabel:', label)
+    return null
+  }
+
   const Icon = config.icon
 
   return (
-    <span className={cn(
-      'inline-flex items-center gap-1.5 rounded-full border font-medium',
-      config.color,
-      config.bgColor,
-      config.borderColor,
-      size === 'sm' && 'px-2 py-0.5 text-xs',
-      size === 'md' && 'px-2.5 py-1 text-xs',
-      size === 'lg' && 'px-3 py-1.5 text-sm',
-    )}>
-      {showIcon && <Icon className={cn(
-        size === 'sm' && 'h-3 w-3',
-        size === 'md' && 'h-3.5 w-3.5',
-        size === 'lg' && 'h-4 w-4',
-      )} />}
-      {label}
+    <span
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-full border font-medium',
+        config.color,
+        config.bgColor,
+        config.borderColor,
+        size === 'sm' && 'px-2 py-0.5 text-xs',
+        size === 'md' && 'px-2.5 py-1 text-xs',
+        size === 'lg' && 'px-3 py-1.5 text-sm'
+      )}
+    >
+      {showIcon && (
+        <Icon
+          className={cn(
+            size === 'sm' && 'h-3 w-3',
+            size === 'md' && 'h-3.5 w-3.5',
+            size === 'lg' && 'h-4 w-4'
+          )}
+        />
+      )}
+      {normalizedLabel}
     </span>
   )
 }

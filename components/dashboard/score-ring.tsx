@@ -18,10 +18,13 @@ const getScoreColor = (score: number): string => {
 }
 
 export function ScoreRing({ score, label, size = 'md', showLabel = true }: ScoreRingProps) {
-  const percentage = Math.round(score * 100)
+  const clampedScore = Math.max(0, Math.min(score, 100))
+  const normalizedScore = clampedScore / 100
+
+  const percentage = Math.round(clampedScore)
   const circumference = 2 * Math.PI * 40
-  const strokeDashoffset = circumference - (score * circumference)
-  const colorClass = getScoreColor(score)
+  const strokeDashoffset = circumference - (normalizedScore * circumference)
+  const colorClass = getScoreColor(normalizedScore)
 
   const sizeConfig = {
     sm: { width: 48, fontSize: 'text-xs', labelSize: 'text-[8px]' },
@@ -32,9 +35,15 @@ export function ScoreRing({ score, label, size = 'md', showLabel = true }: Score
   const config = sizeConfig[size]
 
   return (
-    <div className="relative inline-flex items-center justify-center" style={{ width: config.width, height: config.width }}>
-      <svg className="absolute -rotate-90 transform" viewBox="0 0 100 100" style={{ width: config.width, height: config.width }}>
-        {/* Background circle */}
+    <div
+      className="relative inline-flex items-center justify-center"
+      style={{ width: config.width, height: config.width }}
+    >
+      <svg
+        className="absolute -rotate-90 transform"
+        viewBox="0 0 100 100"
+        style={{ width: config.width, height: config.width }}
+      >
         <circle
           cx="50"
           cy="50"
@@ -44,7 +53,6 @@ export function ScoreRing({ score, label, size = 'md', showLabel = true }: Score
           strokeWidth="8"
           className="text-border"
         />
-        {/* Progress circle */}
         <circle
           cx="50"
           cy="50"
@@ -57,10 +65,12 @@ export function ScoreRing({ score, label, size = 'md', showLabel = true }: Score
           className={cn('transition-all duration-700 ease-out', colorClass)}
         />
       </svg>
+
       <div className="flex flex-col items-center justify-center">
         <span className={cn('font-bold tabular-nums', config.fontSize, colorClass.split(' ')[0])}>
           {percentage}
         </span>
+
         {showLabel && label && (
           <span className={cn('font-medium text-muted-foreground', config.labelSize)}>
             {label}
