@@ -1,5 +1,6 @@
 'use client'
 
+import { Suspense } from 'react'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { PageLayout } from '@/components/layout/page-layout'
@@ -22,6 +23,18 @@ import {
 import { Button } from '@/components/ui/button'
 
 export default function CandidateDetailPage() {
+  return (
+    <Suspense fallback={
+      <PageLayout title="Product Details" description="Deep dive into candidate performance">
+        <div className="flex items-center justify-center py-24 text-muted-foreground text-sm">Loading…</div>
+      </PageLayout>
+    }>
+      <CandidateDetailContent />
+    </Suspense>
+  )
+}
+
+function CandidateDetailContent() {
   const searchParams = useSearchParams()
   const { candidateId } = useParams<{ candidateId: string }>()
   const router = useRouter()
