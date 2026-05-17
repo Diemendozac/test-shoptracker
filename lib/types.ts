@@ -27,6 +27,7 @@ export interface DashboardItem {
 
 export interface TrackerCandidate {
   candidateId: string
+  storeId: string
   productTitle: string
   storeName: string
   daysElapsed: number

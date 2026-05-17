@@ -293,7 +293,7 @@ export function TrackerTable({ candidates }: TrackerTableProps) {
                 {/* Action */}
                 <div className="col-span-1 flex justify-center">
                   <Link
-                    href={`/tracker/${candidate.candidateId}`}
+                    href={`/tracker/${candidate.candidateId}?storeId=${candidate.storeId}`}
                     className="flex items-center gap-1 rounded-lg bg-secondary px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
                   >
                     View
