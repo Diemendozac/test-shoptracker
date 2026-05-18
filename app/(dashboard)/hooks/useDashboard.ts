@@ -48,6 +48,7 @@ export function useDashboard() {
     searchQuery,
     // data
     overviewItems: overview.data ?? [],
+    allCandidates: candidates,
     filteredCandidates,
     stats,
     // loading
