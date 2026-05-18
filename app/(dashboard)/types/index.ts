@@ -28,6 +28,26 @@ export interface TrackerCandidate {
   daysInBestseller: number
 }
 
+export interface WinnerProduct {
+  candidateId: string
+  productTitle: string
+  productImage: string | null
+  productUrl: string | null
+  productPrice: number | null
+  performanceScore: number
+  performanceLabel: string
+  growthPct: number | null
+  currentRank: number | null
+  daysElapsed: number
+  daysInBestseller: number
+  signalConfidence: number
+}
+
+export interface WeeklyWinnerResponse {
+  winner: WinnerProduct | null
+  runnersUp: WinnerProduct[]
+}
+
 export interface CandidateHistory {
   trackingDay: number
   snapshotDate: string

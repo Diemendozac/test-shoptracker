@@ -2,6 +2,8 @@
 
 import { PageLayout } from '@/components/layout/page-layout'
 import { TrackerTable } from '@/components/tracker/tracker-table'
+import { WinnerCard } from '@/components/tracker/winner-card'
+import { useGetWeeklyWinnerQuery } from '../services/dashboardApi'
 import type { PerformanceLabel } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { Filter, SortAsc, Search } from 'lucide-react'
@@ -24,10 +26,23 @@ export default function TrackerPage() {
     isTrackerLoading,
     setFilter,
     setSearch,
+    selectedStoreId,
+    overviewItems,
   } = useDashboard()
+
+  const winnerStoreId = selectedStoreId ?? overviewItems[0]?.storeId ?? null
+
+  const { data: winnerData } = useGetWeeklyWinnerQuery(
+    { storeId: winnerStoreId! },
+    { skip: !winnerStoreId }
+  )
 
   return (
     <PageLayout title="Tracker" description="All active candidates in tracking window">
+      {winnerData?.winner && (
+        <WinnerCard winner={winnerData.winner} runnersUp={winnerData.runnersUp} />
+      )}
+
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-muted-foreground" />

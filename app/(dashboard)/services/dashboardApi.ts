@@ -1,7 +1,7 @@
 
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import type { RootState } from '@/store'
-import type { StoreOverviewItem, TrackerCandidate, CandidateDetail } from '../types'
+import type { StoreOverviewItem, TrackerCandidate, CandidateDetail, WeeklyWinnerResponse } from '../types'
 
 export const dashboardApi = createApi({
   reducerPath: 'dashboardApi',
@@ -13,7 +13,7 @@ export const dashboardApi = createApi({
       return headers
     },
   }),
-  tagTypes: ['Overview', 'Tracker', 'Candidate'],
+  tagTypes: ['Overview', 'Tracker', 'Candidate', 'Winner'],
   endpoints: (builder) => ({
 
     // GET /api/dashboard
@@ -31,6 +31,12 @@ export const dashboardApi = createApi({
       providesTags: ['Tracker'],
     }),
 
+    // GET /api/dashboard/winner?storeId=
+    getWeeklyWinner: builder.query<WeeklyWinnerResponse, { storeId: string }>({
+      query: ({ storeId }) => ({ url: '/winner', params: { storeId } }),
+      providesTags: ['Winner'],
+    }),
+
     // GET /api/dashboard/stores/:storeId/candidates/:candidateId
     getCandidateDetail: builder.query<CandidateDetail, { storeId: string; candidateId: string }>({
       query: ({ storeId, candidateId }) =>
@@ -45,4 +51,5 @@ export const {
   useGetStoreOverviewQuery,
   useGetTrackerCandidatesQuery,
   useGetCandidateDetailQuery,
+  useGetWeeklyWinnerQuery,
 } = dashboardApi
