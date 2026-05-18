@@ -1,8 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import { PageLayout } from '@/components/layout/page-layout'
 import { TrackerTable } from '@/components/tracker/tracker-table'
 import { WinnerCard } from '@/components/tracker/winner-card'
+import { RaceTrack } from '@/components/tracker/race-track'
 import { useGetWeeklyWinnerQuery } from '../services/dashboardApi'
 import type { PerformanceLabel } from '@/lib/types'
 import { cn } from '@/lib/utils'
@@ -19,9 +21,12 @@ const statusFilters: { label: string; value: PerformanceLabel | 'all' }[] = [
 ]
 
 export default function TrackerPage() {
+  const [showTable, setShowTable] = useState(false)
+
   const {
     trackerFilter,
     searchQuery,
+    allCandidates,
     filteredCandidates,
     isTrackerLoading,
     setFilter,
@@ -39,63 +44,77 @@ export default function TrackerPage() {
 
   return (
     <PageLayout title="Tracker" description="All active candidates in tracking window">
+      {/* Winner banner */}
       {winnerData?.winner && (
         <WinnerCard winner={winnerData.winner} runnersUp={winnerData.runnersUp} />
       )}
 
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-muted-foreground" />
-          <div className="flex rounded-lg border border-border bg-secondary/30 p-1">
-            {statusFilters.map((status) => (
-              <button
-                key={status.value}
-                onClick={() => setFilter(status.value)}
-                className={cn(
-                  'rounded-md px-3 py-1.5 text-xs font-medium transition-all',
-                  trackerFilter === status.value
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-                )}
-              >
-                {status.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search products..."
-              value={searchQuery}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-9 w-64 rounded-lg border border-border bg-input pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            />
-          </div>
-          <Button variant="outline" size="sm" className="gap-2">
-            <SortAsc className="h-4 w-4" />
-            Sort
-          </Button>
-        </div>
-      </div>
-
-      <div className="mb-4">
-        <p className="text-sm text-muted-foreground">
-          Showing <span className="font-medium text-foreground">{filteredCandidates.length}</span> candidates
-        </p>
-      </div>
-
+      {/* Race track — top 10 */}
       {isTrackerLoading ? (
-        <div className="space-y-2">
+        <div className="mb-6 space-y-2">
           {[...Array(5)].map((_, i) => (
             <div key={i} className="h-14 animate-pulse rounded-lg bg-secondary" />
           ))}
         </div>
       ) : (
-        <TrackerTable candidates={filteredCandidates} />
+        <RaceTrack
+          candidates={allCandidates}
+          showTable={showTable}
+          onToggleTable={() => setShowTable((v) => !v)}
+        />
+      )}
+
+      {/* Full table — visible only when showTable = true */}
+      {showTable && (
+        <>
+          {/* Filters */}
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <div className="flex rounded-lg border border-border bg-secondary/30 p-1">
+                {statusFilters.map((status) => (
+                  <button
+                    key={status.value}
+                    onClick={() => setFilter(status.value)}
+                    className={cn(
+                      'rounded-md px-3 py-1.5 text-xs font-medium transition-all',
+                      trackerFilter === status.value
+                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                    )}
+                  >
+                    {status.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="h-9 w-64 rounded-lg border border-border bg-input pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+              <Button variant="outline" size="sm" className="gap-2">
+                <SortAsc className="h-4 w-4" />
+                Sort
+              </Button>
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <p className="text-sm text-muted-foreground">
+              Showing <span className="font-medium text-foreground">{filteredCandidates.length}</span> candidates
+            </p>
+          </div>
+
+          <TrackerTable candidates={filteredCandidates} />
+        </>
       )}
     </PageLayout>
   )
