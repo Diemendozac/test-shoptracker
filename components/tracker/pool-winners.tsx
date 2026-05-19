@@ -3,6 +3,7 @@
 import { Lock, Globe, TrendingUp, Crown } from 'lucide-react'
 import { ScoreRing } from '@/components/dashboard/score-ring'
 import { PerformanceBadge } from '@/components/dashboard/performance-badge'
+import { PhaseBadge } from '@/components/tracker/phase-badge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { PoolWinnersResponse, PoolWinnerProduct } from '@/app/(dashboard)/types'
@@ -197,7 +198,8 @@ function PoolWinnerRow({
         confidence={winner.signalConfidence}
       />
 
-      {/* label badge */}
+      {/* phase + label badges */}
+      <PhaseBadge phase={winner.cyclePhase} />
       <PerformanceBadge label={winner.performanceLabel} size="sm" />
     </div>
   )

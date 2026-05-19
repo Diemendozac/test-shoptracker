@@ -27,6 +27,7 @@ export interface TrackerCandidate {
   growthPct: number | null
   daysInBestseller: number
   signalConfidence: number
+  cyclePhase: string | null
 }
 
 export interface WinnerProduct {
@@ -42,6 +43,7 @@ export interface WinnerProduct {
   daysElapsed: number
   daysInBestseller: number
   signalConfidence: number
+  cyclePhase: string | null
 }
 
 export interface WeeklyWinnerResponse {

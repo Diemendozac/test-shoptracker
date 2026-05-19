@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { PerformanceBadge } from '@/components/dashboard/performance-badge'
 import { ScoreRing } from '@/components/dashboard/score-ring'
+import { PhaseBadge } from '@/components/tracker/phase-badge'
 import type { TrackerCandidate } from '@/lib/types'
 import {
   ExternalLink,
@@ -246,9 +247,12 @@ export function TrackerTable({ candidates }: TrackerTableProps) {
                   </div>
                   <div className="min-w-0">
                     <p className="truncate font-medium text-foreground">{candidate.productTitle}</p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Clock className="h-3 w-3" />
-                      <span>{candidate.daysInBestseller} days in bestseller</span>
+                    <div className="mt-0.5 flex items-center gap-2">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        <span>{candidate.daysInBestseller}d bestseller</span>
+                      </div>
+                      <PhaseBadge phase={candidate.cyclePhase} />
                     </div>
                   </div>
                 </div>
