@@ -42,7 +42,7 @@ function storeInitial(name: string): string {
 
 function shortTitle(title: string): string {
   const words = title.trim().split(/\s+/)
-  return words.slice(0, 2).join(' ')
+  return words.slice(0, 4).join(' ')
 }
 
 export function RaceTrack({ candidates, showTable, onToggleTable }: RaceTrackProps) {
@@ -88,7 +88,7 @@ export function RaceTrack({ candidates, showTable, onToggleTable }: RaceTrackPro
               style={{ height: 52 }}
             >
               {/* Left strip ── days in bestseller + store avatar + short title */}
-              <div className="z-10 flex w-32 shrink-0 items-center gap-2 px-2">
+              <div className="z-10 flex w-56 shrink-0 items-center gap-2 px-2">
                 <span className="w-5 text-right text-xs font-bold tabular-nums text-muted-foreground">
                   {String(c.daysInBestseller ?? 0).padStart(2, '0')}
                 </span>
@@ -102,7 +102,7 @@ export function RaceTrack({ candidates, showTable, onToggleTable }: RaceTrackPro
                   {storeInitial(c.storeName)}
                 </div>
                 <span
-                  className="max-w-[64px] truncate text-xs text-muted-foreground"
+                  className="max-w-[140px] truncate text-xs text-muted-foreground"
                   title={c.productTitle}
                 >
                   {shortTitle(c.productTitle)}
