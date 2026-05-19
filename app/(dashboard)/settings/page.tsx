@@ -1,9 +1,16 @@
+'use client'
+
 import { PageLayout } from '@/components/layout/page-layout'
-import { mockUser } from '@/lib/mock-data'
 import { Button } from '@/components/ui/button'
+import { useAppSelector } from '@/store/hooks'
 import { User, Mail, Bell, Shield, CreditCard, LogOut } from 'lucide-react'
 
 export default function SettingsPage() {
+  const { user } = useAppSelector((s) => s.auth)
+  const email = user?.email ?? '—'
+  const userId = (user as any)?.id ?? ''
+  const avatarLetter = email.charAt(0).toUpperCase()
+
   return (
     <PageLayout title="Settings" description="Manage your account and preferences">
       <div className="mx-auto max-w-3xl space-y-6">
@@ -18,11 +25,11 @@ export default function SettingsPage() {
           <div className="p-4 space-y-4">
             <div className="flex items-center gap-4">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/20 text-2xl font-bold text-primary">
-                {mockUser.email.charAt(0).toUpperCase()}
+                {avatarLetter}
               </div>
               <div>
-                <p className="font-medium text-foreground">{mockUser.email}</p>
-                <p className="text-sm text-muted-foreground">User ID: {mockUser.userId.slice(0, 8)}...</p>
+                <p className="font-medium text-foreground">{email}</p>
+                <p className="text-sm text-muted-foreground">User ID: {userId ? userId.slice(0, 8) + '...' : '—'}</p>
               </div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -30,7 +37,7 @@ export default function SettingsPage() {
                 <label className="text-sm font-medium text-foreground">Email</label>
                 <div className="flex h-10 items-center rounded-lg border border-border bg-input px-3 text-sm text-muted-foreground">
                   <Mail className="mr-2 h-4 w-4" />
-                  {mockUser.email}
+                  {email}
                 </div>
               </div>
               <div className="space-y-2">
