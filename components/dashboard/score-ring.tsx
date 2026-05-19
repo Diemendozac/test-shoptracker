@@ -8,6 +8,7 @@ interface ScoreRingProps {
   label?: PerformanceLabel
   size?: 'sm' | 'md' | 'lg'
   showLabel?: boolean
+  confidence?: number  // 0–1: signal confidence from signalConfidence field
 }
 
 const getScoreColor = (score: number): string => {
@@ -17,7 +18,30 @@ const getScoreColor = (score: number): string => {
   return 'text-declining stroke-declining'
 }
 
-export function ScoreRing({ score, label, size = 'md', showLabel = true }: ScoreRingProps) {
+// confidence >= 0.7 → green dot (señal confirmada), < 0.7 → yellow (señal temprana), undefined → no dot
+function confidenceDot(confidence: number | undefined, dotSize: number) {
+  if (confidence === undefined) return null
+  const isConfirmed = confidence >= 0.7
+  return (
+    <div
+      className="absolute bottom-0 right-0"
+      style={{ width: dotSize, height: dotSize }}
+    >
+      <div
+        className={cn(
+          'h-full w-full rounded-full border-2 border-background',
+          isConfirmed ? 'bg-emerald-500' : 'bg-amber-400'
+        )}
+        title={isConfirmed
+          ? `Señal confirmada (${Math.round(confidence * 100)}%)`
+          : `Señal temprana (${Math.round(confidence * 100)}%)`
+        }
+      />
+    </div>
+  )
+}
+
+export function ScoreRing({ score, label, size = 'md', showLabel = true, confidence }: ScoreRingProps) {
   const clampedScore = Math.max(0, Math.min(score, 100))
   const normalizedScore = clampedScore / 100
 
@@ -27,9 +51,9 @@ export function ScoreRing({ score, label, size = 'md', showLabel = true }: Score
   const colorClass = getScoreColor(normalizedScore)
 
   const sizeConfig = {
-    sm: { width: 48, fontSize: 'text-xs', labelSize: 'text-[8px]' },
-    md: { width: 72, fontSize: 'text-lg', labelSize: 'text-[10px]' },
-    lg: { width: 96, fontSize: 'text-2xl', labelSize: 'text-xs' },
+    sm: { width: 48, fontSize: 'text-xs', labelSize: 'text-[8px]', dotSize: 10 },
+    md: { width: 72, fontSize: 'text-lg', labelSize: 'text-[10px]', dotSize: 13 },
+    lg: { width: 96, fontSize: 'text-2xl', labelSize: 'text-xs', dotSize: 16 },
   }
 
   const config = sizeConfig[size]
@@ -39,6 +63,7 @@ export function ScoreRing({ score, label, size = 'md', showLabel = true }: Score
       className="relative inline-flex items-center justify-center"
       style={{ width: config.width, height: config.width }}
     >
+      {confidenceDot(confidence, config.dotSize)}
       <svg
         className="absolute -rotate-90 transform"
         viewBox="0 0 100 100"

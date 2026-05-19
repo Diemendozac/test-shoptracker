@@ -262,7 +262,12 @@ export function TrackerTable({ candidates }: TrackerTableProps) {
 
                 {/* Score */}
                 <div className="col-span-1 flex justify-center">
-                  <ScoreRing score={candidate.performanceScore} size="sm" showLabel={false} />
+                  <ScoreRing
+                    score={candidate.performanceScore ?? 0}
+                    size="sm"
+                    showLabel={false}
+                    confidence={candidate.signalConfidence}
+                  />
                 </div>
 
                 {/* Status */}
