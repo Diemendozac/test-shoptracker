@@ -26,6 +26,7 @@ export interface TrackerCandidate {
   performanceLabel: PerformanceLabel
   growthPct: number | null
   daysInBestseller: number
+  signalConfidence: number
 }
 
 export interface WinnerProduct {

@@ -44,6 +44,19 @@ function validateUrl(v: string, label: string): string {
   return ''
 }
 
+function extractApiError(err: unknown): string {
+  if (err && typeof err === 'object') {
+    const e = err as Record<string, unknown>
+    // RTK Query error shape: { status, data: { message } }
+    if (e.data && typeof e.data === 'object') {
+      const msg = (e.data as Record<string, unknown>).message
+      if (typeof msg === 'string') return msg
+    }
+    if (typeof e.error === 'string') return e.error
+  }
+  return 'Something went wrong. Please try again.'
+}
+
 // ─── component ───────────────────────────────────────────────────────────────
 
 export function AddStoreModal() {
@@ -99,14 +112,13 @@ export function AddStoreModal() {
       try {
         const parsed = new URL(baseUrl.value.trim())
         await addStore({
-          storeName:      storeName.value.trim(),
-          baseUrl:        parsed.origin,
+          storeName:     storeName.value.trim(),
+          baseUrl:       parsed.origin,
           bestsellerUrl: parsed.origin + DEFAULT_BESTSELLER_PATH,
           recentUrl:     parsed.origin + DEFAULT_RECENT_PATH,
         })
       } catch (err) {
-        const isApiError = err && typeof err === 'object' && 'status' in err
-        setSubmitError(isApiError ? 'Server error. Please try again.' : 'Something went wrong.')
+        setSubmitError(extractApiError(err))
       }
 
     } else {
@@ -121,14 +133,13 @@ export function AddStoreModal() {
       try {
         const bsUrl = new URL(bestsellerUrl.value.trim())
         await addStore({
-          storeName:      storeName.value.trim(),
-          baseUrl:        bsUrl.origin,
+          storeName:     storeName.value.trim(),
+          baseUrl:       bsUrl.origin,
           bestsellerUrl: bestsellerUrl.value.trim(),
           recentUrl:     recentUrl.value.trim(),
         })
       } catch (err) {
-        const isApiError = err && typeof err === 'object' && 'status' in err
-        setSubmitError(isApiError ? 'Server error. Please try again.' : 'Something went wrong.')
+        setSubmitError(extractApiError(err))
       }
     }
   }
