@@ -126,19 +126,20 @@ export function RaceTrack({ candidates, showTable, onToggleTable }: RaceTrackPro
                   </div>
                 )}
 
-                {/* Horse + score badge — absolutely positioned by score */}
+                {/* Product thumbnail + score badge — absolutely positioned by score */}
                 <div
                   className="absolute top-1/2 -translate-y-1/2 flex items-center gap-1"
                   style={{ left: `${leftPct}%` }}
                 >
-                  {/* horse emoji, flipped so it faces right */}
-                  <span
-                    className="select-none text-xl leading-none"
-                    style={{ display: 'inline-block', transform: 'scaleX(-1)' }}
-                    aria-hidden
-                  >
-                    🐎
-                  </span>
+                  {c.productImage ? (
+                    <img
+                      src={c.productImage}
+                      alt={c.productTitle}
+                      className="h-9 w-9 shrink-0 rounded-md object-cover shadow-md ring-1 ring-border"
+                    />
+                  ) : (
+                    <div className="h-9 w-9 shrink-0 rounded-md bg-secondary ring-1 ring-border" />
+                  )}
                   <span
                     className={cn(
                       'whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-bold tabular-nums',
