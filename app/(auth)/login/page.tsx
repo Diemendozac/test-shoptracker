@@ -44,8 +44,8 @@ function LoginForm() {
   const { login, isLoginLoading, loginError } = useAuth()
 
   const [form, setForm] = useState({
-    email: 'testuser2@example.com',
-    password: 'password123'
+    email: '',
+    password: '',
   })
 
   const [showPassword, setShowPassword] = useState(false)

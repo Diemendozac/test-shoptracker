@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { Crown, ChevronDown, ChevronUp, TrendingUp, Medal } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PerformanceBadge } from '@/components/dashboard/performance-badge'
+import { PhaseBadge } from '@/components/tracker/phase-badge'
 import type { WinnerProduct } from '@/app/(dashboard)/types'
 
 interface WinnerCardProps {
@@ -122,6 +123,7 @@ export function WinnerCard({ winner, runnersUp }: WinnerCardProps) {
 
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <PerformanceBadge label={winner.performanceLabel} size="md" />
+              <PhaseBadge phase={winner.cyclePhase} size="md" />
               <span
                 className={cn(
                   'inline-flex items-center gap-1 text-sm font-semibold',

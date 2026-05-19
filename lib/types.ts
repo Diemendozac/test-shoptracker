@@ -31,10 +31,12 @@ export interface TrackerCandidate {
   productTitle: string
   storeName: string
   daysElapsed: number
-  performanceScore: number
+  performanceScore: number | null
   performanceLabel: PerformanceLabel
-  growthPct: number
+  growthPct: number | null
   daysInBestseller: number
+  signalConfidence: number
+  cyclePhase: string | null
 }
 
 export interface CandidateDetail {

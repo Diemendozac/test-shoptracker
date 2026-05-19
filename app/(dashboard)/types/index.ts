@@ -27,6 +27,7 @@ export interface TrackerCandidate {
   growthPct: number | null
   daysInBestseller: number
   signalConfidence: number
+  cyclePhase: string | null
 }
 
 export interface WinnerProduct {
@@ -42,11 +43,23 @@ export interface WinnerProduct {
   daysElapsed: number
   daysInBestseller: number
   signalConfidence: number
+  cyclePhase: string | null
 }
 
 export interface WeeklyWinnerResponse {
   winner: WinnerProduct | null
   runnersUp: WinnerProduct[]
+}
+
+export interface PoolWinnerProduct extends WinnerProduct {
+  storeId: string
+  storeName: string
+}
+
+export interface PoolWinnersResponse {
+  locked: boolean
+  plan: string
+  winners: PoolWinnerProduct[]
 }
 
 export interface CandidateHistory {
