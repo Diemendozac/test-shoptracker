@@ -76,14 +76,14 @@ export function StoreCard({ store, isSyncing, isDeleting, onSync, onDelete }: St
           <div className="flex items-center justify-between rounded-lg bg-secondary/50 px-3 py-2 text-sm">
             <span className="text-muted-foreground">Bestseller path</span>
             <span className="truncate pl-2 font-mono text-xs text-foreground">
-              {store.bestsellerPath.slice(0, 25)}...
+              {store.bestsellerPath ? store.bestsellerPath.slice(0, 25) + '...' : '—'}
             </span>
           </div>
           <div className="flex items-center justify-between rounded-lg bg-secondary/50 px-3 py-2 text-sm">
             <span className="text-muted-foreground">Last scraped</span>
             <span className="flex items-center gap-1.5 text-foreground">
               <Clock className="h-3 w-3 text-muted-foreground" />
-              {formatLastScraped(store.lastScrapedAt)}
+              {store.lastScrapedAt ? formatLastScraped(store.lastScrapedAt) : 'Never'}
             </span>
           </div>
         </div>
