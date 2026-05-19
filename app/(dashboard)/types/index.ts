@@ -49,6 +49,17 @@ export interface WeeklyWinnerResponse {
   runnersUp: WinnerProduct[]
 }
 
+export interface PoolWinnerProduct extends WinnerProduct {
+  storeId: string
+  storeName: string
+}
+
+export interface PoolWinnersResponse {
+  locked: boolean
+  plan: string
+  winners: PoolWinnerProduct[]
+}
+
 export interface CandidateHistory {
   trackingDay: number
   snapshotDate: string

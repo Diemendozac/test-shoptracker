@@ -5,7 +5,8 @@ import { PageLayout } from '@/components/layout/page-layout'
 import { TrackerTable } from '@/components/tracker/tracker-table'
 import { WinnerCard } from '@/components/tracker/winner-card'
 import { RaceTrack } from '@/components/tracker/race-track'
-import { useGetWeeklyWinnerQuery } from '../services/dashboardApi'
+import { PoolWinnersSection } from '@/components/tracker/pool-winners'
+import { useGetWeeklyWinnerQuery, useGetPoolWinnersQuery } from '../services/dashboardApi'
 import type { PerformanceLabel } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { Filter, SortAsc, Search } from 'lucide-react'
@@ -42,9 +43,14 @@ export default function TrackerPage() {
     { skip: !winnerStoreId }
   )
 
+  const { data: poolData, isLoading: isPoolLoading } = useGetPoolWinnersQuery()
+
   return (
     <PageLayout title="Tracker" description="All active candidates in tracking window">
-      {/* Winner banner */}
+      {/* Pool winners — global intelligence feed */}
+      <PoolWinnersSection data={poolData} isLoading={isPoolLoading} />
+
+      {/* Winner banner — per-store */}
       {winnerData?.winner && (
         <WinnerCard winner={winnerData.winner} runnersUp={winnerData.runnersUp} />
       )}
