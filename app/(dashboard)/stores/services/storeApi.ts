@@ -24,7 +24,7 @@ export const storesApi = createApi({
 
     // POST /api/stores
     createStore: builder.mutation<StoreResponse, CreateStoreRequest>({
-      query: (body) => ({ url: '/sync', method: 'POST', body }),
+      query: (body) => ({ url: '', method: 'POST', body }),
       invalidatesTags: ['Store'],
     }),
 
