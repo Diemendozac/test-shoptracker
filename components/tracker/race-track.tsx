@@ -133,7 +133,7 @@ export function RaceTrack({ candidates, showTable, onToggleTable }: RaceTrackPro
                 >
                   {c.productImage ? (
                     <img
-                      src={`${process.env.NEXT_PUBLIC_API_URL}/images/proxy?url=${encodeURIComponent(c.productImage)}`}
+                      src={`/api/image-proxy?url=${encodeURIComponent(c.productImage)}`}
                       alt={c.productTitle}
                       className="h-9 w-9 shrink-0 rounded-md object-cover shadow-md ring-1 ring-border"
                       onError={(e) => {
