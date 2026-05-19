@@ -2,8 +2,10 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { AuthResponse } from '../services/authApi'
 
+type AuthUser = AuthResponse['user']
+
 interface AuthState {
-  user: AuthResponse['user'] | null
+  user: AuthUser | null
   token: string | null
   isAuthenticated: boolean
 }
