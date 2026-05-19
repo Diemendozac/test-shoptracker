@@ -136,10 +136,23 @@ export function RaceTrack({ candidates, showTable, onToggleTable }: RaceTrackPro
                       src={c.productImage}
                       alt={c.productTitle}
                       className="h-9 w-9 shrink-0 rounded-md object-cover shadow-md ring-1 ring-border"
+                      onError={(e) => {
+                        const t = e.currentTarget
+                        t.style.display = 'none'
+                        const fb = t.nextElementSibling as HTMLElement | null
+                        if (fb) fb.style.display = 'flex'
+                      }}
                     />
-                  ) : (
-                    <div className="h-9 w-9 shrink-0 rounded-md bg-secondary ring-1 ring-border" />
-                  )}
+                  ) : null}
+                  <div
+                    className={cn(
+                      'h-9 w-9 shrink-0 items-center justify-center rounded-md text-xs font-bold text-white shadow-md ring-1 ring-border',
+                      avatarColor(c.productTitle),
+                      c.productImage ? 'hidden' : 'flex',
+                    )}
+                  >
+                    {c.productTitle.trim().charAt(0).toUpperCase()}
+                  </div>
                   <span
                     className={cn(
                       'whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-bold tabular-nums',
