@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { useAppSelector } from '@/store/hooks'
 import {
   LayoutDashboard,
   Target,
@@ -20,6 +21,9 @@ const navigation = [
 
 export function AppSidebar() {
   const pathname = usePathname()
+  const { user } = useAppSelector((s) => s.auth)
+  const displayName = user?.email?.split('@')[0] ?? '—'
+  const avatarLetter = displayName[0]?.toUpperCase() ?? '?'
 
   return (
     <aside className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-sidebar">
@@ -68,11 +72,11 @@ export function AppSidebar() {
       <div className="border-t border-border p-4">
         <div className="flex items-center gap-3 rounded-lg bg-secondary/50 px-3 py-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-sm font-medium text-primary">
-            T
+            {avatarLetter}
           </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-medium text-foreground">testuser1</span>
-            <span className="text-xs text-muted-foreground">Free Plan</span>
+          <div className="flex min-w-0 flex-col">
+            <span className="truncate text-sm font-medium text-foreground">{displayName}</span>
+            <span className="text-xs text-muted-foreground">{user?.email ?? ''}</span>
           </div>
         </div>
       </div>
