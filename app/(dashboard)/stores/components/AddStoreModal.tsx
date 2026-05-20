@@ -9,7 +9,6 @@ import { cn } from '@/lib/utils'
 // ─── constants ───────────────────────────────────────────────────────────────
 
 const DEFAULT_BESTSELLER_PATH = '/collections/all?sort_by=best-selling'
-const DEFAULT_RECENT_PATH     = '/collections/all?sort_by=created-descending'
 
 type Mode = 'generic' | 'custom'
 
@@ -66,7 +65,6 @@ export function AddStoreModal() {
   const [storeName, setStoreName]         = useState<FieldState>(makeField())
   const [baseUrl, setBaseUrl]             = useState<FieldState>(makeField())
   const [bestsellerUrl, setBestsellerUrl] = useState<FieldState>(makeField())
-  const [recentUrl, setRecentUrl]         = useState<FieldState>(makeField())
   const [submitError, setSubmitError]     = useState<string | null>(null)
 
   // reset everything when modal closes
@@ -76,7 +74,6 @@ export function AddStoreModal() {
       setStoreName(makeField())
       setBaseUrl(makeField())
       setBestsellerUrl(makeField())
-      setRecentUrl(makeField())
       setSubmitError(null)
     }
   }, [isAddModalOpen])
@@ -87,7 +84,6 @@ export function AddStoreModal() {
     setMode(next)
     setBaseUrl(makeField())
     setBestsellerUrl(makeField())
-    setRecentUrl(makeField())
     setSubmitError(null)
   }
 
@@ -96,7 +92,6 @@ export function AddStoreModal() {
   // ── derived preview (generic mode) ───────────────────────────────────────
   const previewBase       = baseUrl.value.trim().replace(/\/$/, '')
   const previewBestseller = previewBase ? previewBase + DEFAULT_BESTSELLER_PATH : DEFAULT_BESTSELLER_PATH
-  const previewRecent     = previewBase ? previewBase + DEFAULT_RECENT_PATH     : DEFAULT_RECENT_PATH
 
   // ── submit ────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
@@ -115,7 +110,6 @@ export function AddStoreModal() {
           storeName:     storeName.value.trim(),
           baseUrl:       parsed.origin,
           bestsellerUrl: parsed.origin + DEFAULT_BESTSELLER_PATH,
-          recentUrl:     parsed.origin + DEFAULT_RECENT_PATH,
         })
       } catch (err) {
         setSubmitError(extractApiError(err))
@@ -124,11 +118,9 @@ export function AddStoreModal() {
     } else {
       const snErr = validateStoreName(storeName.value)
       const buErr = validateUrl(bestsellerUrl.value, 'Bestseller URL')
-      const ruErr = validateUrl(recentUrl.value, 'Recent URL')
       setStoreName((f)       => ({ ...f, touched: true, error: snErr }))
       setBestsellerUrl((f)   => ({ ...f, touched: true, error: buErr }))
-      setRecentUrl((f)       => ({ ...f, touched: true, error: ruErr }))
-      if (snErr || buErr || ruErr) return
+      if (snErr || buErr) return
 
       try {
         const bsUrl = new URL(bestsellerUrl.value.trim())
@@ -136,7 +128,6 @@ export function AddStoreModal() {
           storeName:     storeName.value.trim(),
           baseUrl:       bsUrl.origin,
           bestsellerUrl: bestsellerUrl.value.trim(),
-          recentUrl:     recentUrl.value.trim(),
         })
       } catch (err) {
         setSubmitError(extractApiError(err))
@@ -234,7 +225,6 @@ export function AddStoreModal() {
                   Auto-generated paths
                 </p>
                 <PreviewRow label="Bestseller" value={previewBestseller} />
-                <PreviewRow label="Recent"     value={previewRecent} />
               </div>
             </>
           )}
@@ -252,17 +242,6 @@ export function AddStoreModal() {
                 placeholder="https://store.com/collections/all?sort_by=best-selling"
                 onChange={(v) => setBestsellerUrl((f) => ({ ...f, value: v, error: '' }))}
                 onBlur={() => setBestsellerUrl((f) => ({ ...f, touched: true, error: validateUrl(f.value, 'Bestseller URL') }))}
-              />
-              <Field
-                label="Recent Products URL"
-                hint="Sorted by newest first"
-                icon={<Link className="h-3.5 w-3.5" />}
-                value={recentUrl.value}
-                error={recentUrl.touched ? recentUrl.error : ''}
-                disabled={isCreating}
-                placeholder="https://store.com/collections/all?sort_by=created-descending"
-                onChange={(v) => setRecentUrl((f) => ({ ...f, value: v, error: '' }))}
-                onBlur={() => setRecentUrl((f) => ({ ...f, touched: true, error: validateUrl(f.value, 'Recent URL') }))}
               />
             </>
           )}
