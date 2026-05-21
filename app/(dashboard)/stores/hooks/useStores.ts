@@ -49,15 +49,8 @@ export function useStores() {
         toast({
           title: `${n} producto${n !== 1 ? 's' : ''} nuevo${n !== 1 ? 's' : ''} detectado${n !== 1 ? 's' : ''}`,
           description: 'Revísalos en Testeos → Mis tiendas',
-          action: (
-            <button
-              onClick={() => router.push('/tracker')}
-              className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
-            >
-              Ver ahora
-            </button>
-          ) as any,
         })
+        router.push('/tracker')
       } else {
         toast({
           title: 'Sync completo',
