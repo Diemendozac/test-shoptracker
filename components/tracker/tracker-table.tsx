@@ -6,11 +6,11 @@ import { cn } from '@/lib/utils'
 import { PerformanceBadge } from '@/components/dashboard/performance-badge'
 import { ScoreRing } from '@/components/dashboard/score-ring'
 import { PhaseBadge } from '@/components/tracker/phase-badge'
+import { Sparkline } from '@/components/tracker/sparkline'
 import type { TrackerCandidate } from '@/lib/types'
 import {
   ExternalLink,
   Clock,
-  Award,
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
@@ -197,8 +197,11 @@ export function TrackerTable({ candidates }: TrackerTableProps) {
             <SortIcon column="performanceScore" sort={sort} />
           </button>
 
-          {/* Status — not sortable (visual only) */}
-          <div className="col-span-2 text-center">Status</div>
+          {/* Trend — sparkline */}
+          <div className="col-span-2 text-center">Trend</div>
+
+          {/* Status — not sortable */}
+          <div className="col-span-1 text-center">Status</div>
 
           {/* Growth — sortable */}
           <button
@@ -207,15 +210,6 @@ export function TrackerTable({ candidates }: TrackerTableProps) {
           >
             Growth
             <SortIcon column="growthPct" sort={sort} />
-          </button>
-
-          {/* Days elapsed — sortable */}
-          <button
-            onClick={() => handleSort('daysElapsed')}
-            className="group/th col-span-1 flex items-center justify-center gap-1.5 hover:text-foreground transition-colors"
-          >
-            Days
-            <SortIcon column="daysElapsed" sort={sort} />
           </button>
 
           <div className="col-span-1 text-center">Action</div>
@@ -301,8 +295,13 @@ export function TrackerTable({ candidates }: TrackerTableProps) {
                   />
                 </div>
 
-                {/* Status */}
+                {/* Trend sparkline */}
                 <div className="col-span-2 flex justify-center">
+                  <Sparkline data={candidate.scoreHistory ?? []} width={80} height={32} />
+                </div>
+
+                {/* Status */}
+                <div className="col-span-1 flex justify-center">
                   <PerformanceBadge label={candidate.performanceLabel} size="sm" />
                 </div>
 
@@ -311,19 +310,13 @@ export function TrackerTable({ candidates }: TrackerTableProps) {
                   <span
                     className={cn(
                       'text-sm font-semibold tabular-nums',
-                      candidate.growthPct >= 0 ? 'text-rising' : 'text-declining'
+                      candidate.growthPct != null && candidate.growthPct >= 0 ? 'text-rising' : 'text-declining'
                     )}
                   >
-                    {candidate.growthPct >= 0 ? '+' : ''}{Math.round(candidate.growthPct)}%
+                    {candidate.growthPct != null
+                      ? `${candidate.growthPct >= 0 ? '+' : ''}${Math.round(candidate.growthPct)}%`
+                      : '—'}
                   </span>
-                </div>
-
-                {/* Days Elapsed */}
-                <div className="col-span-1 text-center">
-                  <div className="flex items-center justify-center gap-1">
-                    <Award className="h-3 w-3 text-muted-foreground" />
-                    <span className="text-sm font-medium text-muted-foreground">{candidate.daysElapsed}</span>
-                  </div>
                 </div>
 
                 {/* Action */}

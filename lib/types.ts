@@ -39,6 +39,7 @@ export interface TrackerCandidate {
   daysInBestseller: number
   signalConfidence: number
   cyclePhase: string | null
+  scoreHistory?: number[]
 }
 
 export interface CandidateDetail {
