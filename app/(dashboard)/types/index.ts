@@ -72,6 +72,7 @@ export interface WeeklyWinnerResponse {
 export interface PoolWinnerProduct extends WinnerProduct {
   storeId: string
   storeName: string
+  scoreHistory?: number[]
 }
 
 export interface PoolWinnersResponse {

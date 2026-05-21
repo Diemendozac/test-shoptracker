@@ -4,6 +4,7 @@ import { Lock, Globe, TrendingUp, Crown } from 'lucide-react'
 import { ScoreRing } from '@/components/dashboard/score-ring'
 import { PerformanceBadge } from '@/components/dashboard/performance-badge'
 import { PhaseBadge } from '@/components/tracker/phase-badge'
+import { Sparkline } from '@/components/tracker/sparkline'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { PoolWinnersResponse, PoolWinnerProduct } from '@/app/(dashboard)/types'
@@ -175,6 +176,17 @@ function PoolWinnerRow({
             <span className="text-[10px] text-muted-foreground">#{winner.currentRank}</span>
           )}
         </div>
+      </div>
+
+      {/* sparkline */}
+      <div className="shrink-0">
+        {(() => {
+          const history = winner.scoreHistory ?? []
+          const has = history.length >= 2 && history[history.length - 1] > history[0]
+          return has
+            ? <Sparkline data={history.slice(-7)} width={64} height={28} />
+            : <div className="w-16 text-center text-[10px] text-muted-foreground/30">—</div>
+        })()}
       </div>
 
       {/* growth */}
