@@ -6,8 +6,8 @@ import { PageLayout } from '@/components/layout/page-layout'
 import { Button } from '@/components/ui/button'
 import { useAppDispatch } from '@/store/hooks'
 import { logout } from '@/app/(auth)/store/authSlice'
-import { useGetMeQuery, useChangePasswordMutation } from '@/app/(dashboard)/services/userApi'
-import { User, Mail, Bell, Shield, CreditCard, LogOut, Eye, EyeOff, Check, X } from 'lucide-react'
+import { useGetMeQuery, useChangePasswordMutation, useUpdatePreferencesMutation } from '@/app/(dashboard)/services/userApi'
+import { User, Mail, Bell, Shield, CreditCard, LogOut, Eye, EyeOff, Check, X, Zap } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 // ─── Plan badge ───────────────────────────────────────────────────────────────
@@ -171,6 +171,7 @@ export default function SettingsPage() {
   const dispatch = useAppDispatch()
   const { data: me, isLoading } = useGetMeQuery()
 
+  const [updatePreferences] = useUpdatePreferencesMutation()
   const [notifications, setNotifications] = useState({
     dailyDigest:  false,
     risingAlerts: true,
@@ -274,6 +275,31 @@ export default function SettingsPage() {
                 />
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* ── Automatización ── */}
+        <div className="rounded-xl border border-border bg-card">
+          <div className="border-b border-border p-4">
+            <h2 className="flex items-center gap-2 font-semibold text-foreground">
+              <Zap className="h-4 w-4" />
+              Automatización
+            </h2>
+          </div>
+          <div className="divide-y divide-border">
+            <div className="flex items-center justify-between px-6 py-4">
+              <div>
+                <p className="text-sm font-medium text-foreground">Detectar candidatos automáticamente</p>
+                <p className="text-xs text-muted-foreground">
+                  Cuando está activo, cada sync detecta productos nuevos y los muestra en Tracker para que los testees.
+                  Si está inactivo, los candidatos no se agregan hasta que lo hagas manualmente.
+                </p>
+              </div>
+              <Toggle
+                checked={Boolean(me?.autoDetectCandidates)}
+                onChange={(v) => updatePreferences({ autoDetectCandidates: v })}
+              />
+            </div>
           </div>
         </div>
 

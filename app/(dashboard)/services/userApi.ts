@@ -7,6 +7,7 @@ export interface UserProfile {
   plan: string
   maxStores: number
   createdAt: string
+  autoDetectCandidates: boolean
 }
 
 export interface NotificationPending {
@@ -56,6 +57,11 @@ export const userApi = createApi({
       query: (body) => ({ url: '/me/password', method: 'PUT', body }),
     }),
 
+    updatePreferences: builder.mutation<void, { autoDetectCandidates?: boolean }>({
+      query: (body) => ({ url: '/me/preferences', method: 'PATCH', body }),
+      invalidatesTags: ['Me'],
+    }),
+
     getNotifications: builder.query<NotificationsResponse, void>({
       query: () => '/notifications',
       providesTags: ['Me'],
@@ -64,4 +70,4 @@ export const userApi = createApi({
   }),
 })
 
-export const { useGetMeQuery, useChangePasswordMutation, useGetNotificationsQuery } = userApi
+export const { useGetMeQuery, useChangePasswordMutation, useGetNotificationsQuery, useUpdatePreferencesMutation } = userApi
