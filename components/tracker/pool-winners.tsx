@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Lock, Globe, TrendingUp, Crown, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Lock, TrendingUp, Crown, ChevronLeft, ChevronRight } from 'lucide-react'
 import { ScoreRing } from '@/components/dashboard/score-ring'
 import { PerformanceBadge } from '@/components/dashboard/performance-badge'
 import { Sparkline } from '@/components/tracker/sparkline'
@@ -19,7 +19,7 @@ interface PoolWinnersSectionProps {
 export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange }: PoolWinnersSectionProps) {
   const [nicheFilter, setNicheFilter] = useState('all')
   const [currencyFilter, setCurrencyFilter] = useState('all')
-  const [paFilter, setPaFilter] = useState('all')
+  const [paOnly, setPaOnly] = useState(false)
 
   const winners = data?.winners ?? []
 
@@ -35,18 +35,19 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange }: 
     let r = winners
     if (nicheFilter !== 'all') r = r.filter((w) => w.niche === nicheFilter)
     if (currencyFilter !== 'all') r = r.filter((w) => w.currency === currencyFilter)
-    if (paFilter !== 'all') r = r.filter((w) => (paFilter === 'yes') === !!w.pagoAnticipado)
+    if (paOnly) r = r.filter((w) => w.pagoAnticipado === true)
     return r
-  }, [winners, nicheFilter, currencyFilter, paFilter])
+  }, [winners, nicheFilter, currencyFilter, paOnly])
 
-  const selectCls = 'h-8 appearance-none rounded-lg border border-border bg-secondary/40 px-3 text-xs text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer'
+  const hasActiveFilters = nicheFilter !== 'all' || currencyFilter !== 'all' || paOnly
 
   if (isLoading) {
     return (
-      <div className="mb-6 rounded-2xl border border-border bg-card p-6">
-        <div className="mb-4 flex items-center gap-2">
-          <div className="h-5 w-5 animate-pulse rounded bg-secondary" />
-          <div className="h-4 w-32 animate-pulse rounded bg-secondary" />
+      <div className="mb-6 rounded-2xl border border-border bg-card p-5">
+        <div className="mb-4 flex flex-wrap gap-2">
+          {[80, 120, 96, 64].map((w, i) => (
+            <div key={i} className="h-8 animate-pulse rounded-full bg-secondary" style={{ width: w }} />
+          ))}
         </div>
         <div className="space-y-3">
           {[...Array(3)].map((_, i) => (
@@ -66,8 +67,7 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange }: 
   if (data.winners.length === 0) {
     return (
       <div className="mb-6 rounded-2xl border border-border bg-card p-6">
-        <SectionHeader />
-        <p className="mt-4 text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           El pool aún no tiene candidatos suficientes. Vuelve mañana después del sync automático.
         </p>
       </div>
@@ -76,13 +76,85 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange }: 
 
   return (
     <div className="mb-6 overflow-hidden rounded-2xl border border-border bg-card">
-      <div className="px-6 pt-5 pb-0">
-      <SectionHeader count={data?.total ?? filtered.length} />
 
-      </div>{/* /header wrapper */}
+      {/* ── Filter bar ── */}
+      <div className="flex flex-wrap items-center gap-2 px-5 py-4 border-b border-border">
+
+        {/* Pago anticipado toggle chip */}
+        <button
+          onClick={() => setPaOnly((v) => !v)}
+          className={cn(
+            'flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
+            paOnly
+              ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700'
+              : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
+          )}
+        >
+          <span className={cn(
+            'h-2 w-2 rounded-full transition-colors',
+            paOnly ? 'bg-emerald-500' : 'bg-muted-foreground/30',
+          )} />
+          Pago anticipado
+        </button>
+
+        {/* Currency chips */}
+        {currencies.length > 0 && (
+          <div className="flex items-center gap-1.5">
+            {['all', ...currencies].map((c) => (
+              <button
+                key={c}
+                onClick={() => setCurrencyFilter(c)}
+                className={cn(
+                  'rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
+                  currencyFilter === c
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
+                )}
+              >
+                {c === 'all' ? 'Todas' : c}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Niche chips */}
+        {niches.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            {['all', ...niches].map((n) => (
+              <button
+                key={n}
+                onClick={() => setNicheFilter(n)}
+                className={cn(
+                  'rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
+                  nicheFilter === n
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
+                )}
+              >
+                {n === 'all' ? 'Todos los nichos' : n}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Count + clear */}
+        <div className="ml-auto flex items-center gap-3">
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {filtered.length} producto{filtered.length !== 1 ? 's' : ''}
+          </span>
+          {hasActiveFilters && (
+            <button
+              onClick={() => { setNicheFilter('all'); setCurrencyFilter('all'); setPaOnly(false) }}
+              className="text-[10px] text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
+            >
+              Limpiar
+            </button>
+          )}
+        </div>
+      </div>
 
       {/* Column headers */}
-      <div className="mt-3 grid grid-cols-[28px_40px_1fr_80px_64px_64px_48px_64px] items-center gap-3 border-b border-border px-6 pb-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+      <div className="grid grid-cols-[28px_40px_1fr_80px_64px_64px_48px_64px] items-center gap-3 border-b border-border px-6 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
         <div>#</div>
         <div />
         <div>Producto</div>
@@ -91,34 +163,6 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange }: 
         <div className="text-center">Crecimiento</div>
         <div className="text-center">Score</div>
         <div className="text-center">Estado</div>
-      </div>
-
-      {/* Filter bar */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-border/50 bg-secondary/20 px-6 py-2">
-        {niches.length > 0 && (
-          <select value={nicheFilter} onChange={(e) => setNicheFilter(e.target.value)} className={selectCls}>
-            <option value="all">Todos los nichos</option>
-            {niches.map((n) => <option key={n} value={n}>{n}</option>)}
-          </select>
-        )}
-        {currencies.length > 0 && (
-          <select value={currencyFilter} onChange={(e) => setCurrencyFilter(e.target.value)} className={selectCls}>
-            <option value="all">Todas las monedas</option>
-            {currencies.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
-        )}
-        <select value={paFilter} onChange={(e) => setPaFilter(e.target.value)} className={selectCls}>
-          <option value="all">Pago anticipado: Todos</option>
-          <option value="yes">Solo pago anticipado</option>
-        </select>
-        {(nicheFilter !== 'all' || currencyFilter !== 'all' || paFilter !== 'all') && (
-          <button
-            onClick={() => { setNicheFilter('all'); setCurrencyFilter('all'); setPaFilter('all') }}
-            className="ml-auto text-[10px] text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
-          >
-            Limpiar filtros
-          </button>
-        )}
       </div>
       <div className="divide-y divide-border/50 px-2">
         {filtered.length === 0 ? (
@@ -181,22 +225,6 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange }: 
 
 // ─── sub-components ───────────────────────────────────────────────────────────
 
-function SectionHeader({ count }: { count?: number }) {
-  return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-2">
-        <Globe className="h-4 w-4 text-primary" />
-        <h2 className="text-sm font-semibold text-foreground">Pool de Testeos</h2>
-        {count !== undefined && (
-          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-            {count} productos
-          </span>
-        )}
-      </div>
-      <span className="text-[10px] text-muted-foreground">Señales más fuertes del pool</span>
-    </div>
-  )
-}
 
 function LockedState() {
   return (
