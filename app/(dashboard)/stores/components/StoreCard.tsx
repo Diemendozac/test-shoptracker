@@ -73,6 +73,32 @@ export function StoreCard({ store, isSyncing, isDeleting, onSync, onDelete }: St
 
         {/* Store info */}
         <div className="mb-4 space-y-2">
+          {/* Currency + pago anticipado badges */}
+          {(store.currency || store.pagoAnticipado != null) && (
+            <div className="flex flex-wrap gap-1.5">
+              {store.currency && (
+                <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                  {store.currency}
+                </span>
+              )}
+              {store.pagoAnticipado != null && (
+                <span className={cn(
+                  'rounded-md px-2 py-0.5 text-[10px] font-medium',
+                  store.pagoAnticipado
+                    ? 'bg-rising/10 text-rising'
+                    : 'bg-secondary text-muted-foreground'
+                )}>
+                  {store.pagoAnticipado ? 'Pago anticipado' : 'Contra entrega'}
+                </span>
+              )}
+              {store.niche && (
+                <span className="rounded-md bg-secondary px-2 py-0.5 text-[10px] text-muted-foreground">
+                  {store.niche}
+                </span>
+              )}
+            </div>
+          )}
+
           <div className="flex items-center justify-between rounded-lg bg-secondary/50 px-3 py-2 text-sm">
             <span className="text-muted-foreground">Bestseller path</span>
             <span className="truncate pl-2 font-mono text-xs text-foreground">
@@ -138,29 +164,23 @@ export function StoreCard({ store, isSyncing, isDeleting, onSync, onDelete }: St
 
 function StoreLogo({ storeName, baseUrl }: { storeName: string; baseUrl: string }) {
   const [imgFailed, setImgFailed] = useState(false)
-  let host = ''
-  try { host = new URL(baseUrl).hostname } catch { /* ignore */ }
-  const faviconUrl = host ? `https://www.google.com/s2/favicons?sz=64&domain=${host}` : ''
+  // Use favicon.ico directly — returns 404 when missing so onError fires correctly.
+  // Google's favicon API always returns 200 (with a generic globe) so we can't detect failures.
+  const faviconUrl = baseUrl ? `${baseUrl.replace(/\/$/, '')}/favicon.ico` : ''
 
-  if (!imgFailed && faviconUrl) {
-    return (
-      <div className="relative h-12 w-12 shrink-0">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary text-lg font-bold text-muted-foreground">
-          {storeName.charAt(0)}
-        </div>
+  return (
+    <div className="relative h-12 w-12 shrink-0">
+      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary text-lg font-bold text-muted-foreground">
+        {storeName.charAt(0).toUpperCase()}
+      </div>
+      {!imgFailed && faviconUrl && (
         <img
           src={faviconUrl}
           alt=""
-          className="absolute inset-0 h-12 w-12 rounded-xl object-contain p-1"
+          className="absolute inset-0 h-12 w-12 rounded-xl object-contain p-1.5 bg-secondary"
           onError={() => setImgFailed(true)}
         />
-      </div>
-    )
-  }
-
-  return (
-    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-secondary text-lg font-bold text-muted-foreground">
-      {storeName.charAt(0)}
+      )}
     </div>
   )
 }
