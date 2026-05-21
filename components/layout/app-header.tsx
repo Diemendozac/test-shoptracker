@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Bell, Search, FlaskConical, TrendingUp, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useGetNotificationsQuery } from '@/app/(dashboard)/services/userApi'
+import { TopbarTicker } from '@/components/layout/topbar-ticker'
 import { cn } from '@/lib/utils'
 
 interface AppHeaderProps {
@@ -185,7 +186,7 @@ export function AppHeader({ title, description }: AppHeaderProps) {
   }, [])
 
   return (
-    <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-background/80 px-6 backdrop-blur-sm">
+    <header className="sticky top-0 z-40 grid h-16 grid-cols-3 items-center border-b border-border bg-background/80 px-6 backdrop-blur-sm">
       <div className="flex flex-col">
         <h1 className="text-lg font-semibold text-foreground">{title}</h1>
         {description && (
@@ -193,7 +194,9 @@ export function AppHeader({ title, description }: AppHeaderProps) {
         )}
       </div>
 
-      <div className="flex items-center gap-2">
+      <TopbarTicker />
+
+      <div className="flex items-center justify-end gap-2">
         <Button variant="ghost" size="icon" className="relative">
           <Search className="h-4 w-4" />
           <span className="sr-only">Search</span>

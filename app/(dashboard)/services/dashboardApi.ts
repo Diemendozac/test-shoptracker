@@ -1,7 +1,7 @@
 
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import type { RootState } from '@/store'
-import type { StoreOverviewItem, TrackerCandidate, WindowCandidate, CandidateDetail, WeeklyWinnerResponse, PoolWinnersResponse } from '../types'
+import type { StoreOverviewItem, TrackerCandidate, WindowCandidate, CandidateDetail, WeeklyWinnerResponse, PoolWinnersResponse, DashboardInsight } from '../types'
 
 export const dashboardApi = createApi({
   reducerPath: 'dashboardApi',
@@ -59,6 +59,12 @@ export const dashboardApi = createApi({
       providesTags: (_r, _e, { candidateId }) => [{ type: 'Candidate', id: candidateId }],
     }),
 
+    // GET /api/dashboard/insights
+    getInsights: builder.query<DashboardInsight[], void>({
+      query: () => '/insights',
+      providesTags: ['Tracker'],
+    }),
+
   }),
 })
 
@@ -69,4 +75,5 @@ export const {
   useGetCandidateDetailQuery,
   useGetWeeklyWinnerQuery,
   useGetPoolWinnersQuery,
+  useGetInsightsQuery,
 } = dashboardApi

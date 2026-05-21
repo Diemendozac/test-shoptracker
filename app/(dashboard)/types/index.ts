@@ -102,6 +102,15 @@ export interface CandidateHistory {
   performanceLabel: PerformanceLabel
 }
 
+export interface DashboardInsight {
+  type: 'rising' | 'streak' | 'score' | 'alert' | 'total' | 'task_stores' | 'task_scale' | 'task_pending'
+  isTask: boolean
+  emoji: string
+  message: string
+  cta: string
+  ctaPath: string
+}
+
 export interface CandidateDetail {
   candidate: {
     candidateId: string

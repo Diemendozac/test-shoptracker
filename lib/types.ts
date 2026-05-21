@@ -30,6 +30,7 @@ export interface TrackerCandidate {
   storeId: string
   productTitle: string
   productImage: string | null
+  productPrice?: number | null
   storeName: string
   niche: string | null
   currency: string | null

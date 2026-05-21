@@ -18,6 +18,7 @@ import {
   X,
   SlidersHorizontal,
 } from 'lucide-react'
+import { HoverImagePreview } from '@/components/ui/image-preview'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -236,57 +237,44 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
       {/* ── Table ── */}
       <div className="overflow-hidden rounded-xl border border-border bg-card">
         {/* Header */}
-        <div className="grid grid-cols-12 gap-4 border-b border-border bg-secondary/30 px-6 py-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          {/* Rank */}
-          <div className="col-span-1">Rank</div>
-
-          {/* Product — sortable */}
+        <div className="grid grid-cols-[40px_72px_260px_1fr_56px_80px_80px_68px_80px] items-center gap-4 border-b border-border bg-secondary/30 px-6 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          <div>#</div>
+          <div />
           <button
             onClick={() => handleSort('productTitle')}
-            className="group/th col-span-3 flex items-center gap-1.5 text-left hover:text-foreground transition-colors"
+            className="group/th flex items-center gap-1.5 text-left hover:text-foreground transition-colors"
           >
-            Product
+            Producto
             <SortIcon column="productTitle" sort={sort} />
           </button>
-
-          {/* Store — sortable */}
           <button
             onClick={() => handleSort('storeName')}
-            className="group/th col-span-2 flex items-center gap-1.5 text-left hover:text-foreground transition-colors"
+            className="group/th flex items-center gap-1.5 text-left hover:text-foreground transition-colors"
           >
-            Store
+            Tienda
             <SortIcon column="storeName" sort={sort} />
           </button>
-
-          {/* Score — sortable */}
           <button
             onClick={() => handleSort('performanceScore')}
-            className="group/th col-span-1 flex items-center justify-center gap-1.5 hover:text-foreground transition-colors"
+            className="group/th flex items-center justify-center gap-1.5 hover:text-foreground transition-colors"
           >
             Score
             <SortIcon column="performanceScore" sort={sort} />
           </button>
-
-          {/* Trend — sparkline, period-aware */}
-          <div className="col-span-2 text-center">Trend ({displayDays}d)</div>
-
-          {/* Status — not sortable */}
-          <div className="col-span-1 text-center">Status</div>
-
-          {/* Growth — sortable */}
+          <div className="text-center">Trend ({displayDays}d)</div>
+          <div className="text-center">Estado</div>
           <button
             onClick={() => handleSort('growthPct')}
-            className="group/th col-span-1 flex items-center justify-center gap-1.5 hover:text-foreground transition-colors"
+            className="group/th flex items-center justify-center gap-1.5 hover:text-foreground transition-colors"
           >
             Growth
             <SortIcon column="growthPct" sort={sort} />
           </button>
-
-          <div className="col-span-1 text-center">Action</div>
+          <div className="text-center">Acción</div>
         </div>
 
         {/* Body */}
-        <div className="divide-y divide-border">
+        <div className="divide-y divide-border/50">
           {processed.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 py-16 text-muted-foreground">
               <Search className="h-8 w-8 opacity-30" />
@@ -302,61 +290,55 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
             processed.map((candidate, idx) => (
               <div
                 key={candidate.candidateId}
-                className={cn(
-                  'group grid grid-cols-12 items-center gap-4 px-6 py-4 transition-colors hover:bg-secondary/20',
-                  idx % 2 === 0 && 'bg-secondary/5'
-                )}
+                className="grid grid-cols-[40px_72px_260px_1fr_56px_80px_80px_68px_80px] items-center gap-4 px-6 py-3 transition-colors hover:bg-secondary/30"
               >
                 {/* Rank */}
-                <div className="col-span-1 flex items-center gap-1.5">
-                  {idx < 3 && (
+                <div className="flex items-center justify-center">
+                  {idx < 3 ? (
                     <span className={cn(
                       'text-sm leading-none',
-                      idx === 0 ? 'text-yellow-400' : idx === 1 ? 'text-slate-400' : 'text-yellow-600'
+                      idx === 0 ? 'text-amber-500' : idx === 1 ? 'text-slate-400' : 'text-amber-700'
                     )}>★</span>
+                  ) : (
+                    <span className="text-xs font-bold text-muted-foreground">#{idx + 1}</span>
                   )}
-                  <span className="text-sm font-semibold tabular-nums text-muted-foreground">
-                    {idx + 1}
-                  </span>
                 </div>
 
-                {/* Product */}
-                <div className="col-span-3 flex items-center gap-3">
-                  {/* Image: layered so letter fallback shows if img fails */}
-                  <div className="relative h-10 w-10 shrink-0">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary text-sm font-bold text-muted-foreground">
-                      {candidate.productTitle.charAt(0)}
+                {/* Image */}
+                <HoverImagePreview
+                  src={candidate.productImage}
+                  fallback={candidate.productTitle.charAt(0)}
+                  proxy
+                />
+
+                {/* Product info */}
+                <div className="min-w-0">
+                  <p className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">
+                    {candidate.productTitle}
+                  </p>
+                  {candidate.productPrice != null && (
+                    <p className="mt-1 text-xs font-medium text-primary">
+                      ${candidate.productPrice.toLocaleString('es-CO')}
+                    </p>
+                  )}
+                  <div className="mt-0.5 flex items-center gap-2">
+                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                      <Clock className="h-3 w-3" />
+                      <span>{candidate.daysInBestseller}d bestseller</span>
                     </div>
-                    {candidate.productImage && (
-                      <img
-                        src={`/api/image-proxy?url=${encodeURIComponent(candidate.productImage)}`}
-                        alt=""
-                        className="absolute inset-0 h-10 w-10 rounded-lg object-cover"
-                        onError={(e) => { e.currentTarget.style.display = 'none' }}
-                      />
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="truncate font-medium text-foreground">{candidate.productTitle}</p>
-                    <div className="mt-0.5 flex items-center gap-2">
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        <span>{candidate.daysInBestseller}d bestseller</span>
-                      </div>
-                      <PhaseBadge phase={candidate.cyclePhase} />
-                    </div>
+                    <PhaseBadge phase={candidate.cyclePhase} />
                   </div>
                 </div>
 
                 {/* Store */}
-                <div className="col-span-2">
-                  <span className="rounded-md bg-secondary px-2 py-1 text-xs font-medium text-muted-foreground">
+                <div className="min-w-0">
+                  <span className="block truncate rounded-md bg-secondary px-2 py-1 text-[11px] font-medium text-muted-foreground">
                     {candidate.storeName}
                   </span>
                 </div>
 
                 {/* Score */}
-                <div className="col-span-1 flex justify-center">
+                <div className="flex justify-center">
                   <ScoreRing
                     score={candidate.performanceScore ?? 0}
                     size="sm"
@@ -365,8 +347,8 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                   />
                 </div>
 
-                {/* Trend sparkline — growth history */}
-                <div className="col-span-2 flex justify-center">
+                {/* Trend sparkline */}
+                <div className="flex justify-center">
                   {(() => {
                     const history = (candidate.growthHistory ?? candidate.scoreHistory ?? []).slice(-displayDays)
                     return history.length >= 2
@@ -376,18 +358,16 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                 </div>
 
                 {/* Status */}
-                <div className="col-span-1 flex justify-center">
+                <div className="flex justify-center">
                   <PerformanceBadge label={candidate.performanceLabel} size="sm" />
                 </div>
 
                 {/* Growth */}
-                <div className="col-span-1 text-center">
-                  <span
-                    className={cn(
-                      'text-sm font-semibold tabular-nums',
-                      candidate.growthPct != null && candidate.growthPct >= 0 ? 'text-rising' : 'text-declining'
-                    )}
-                  >
+                <div className="text-center">
+                  <span className={cn(
+                    'text-sm font-bold tabular-nums',
+                    candidate.growthPct != null && candidate.growthPct >= 0 ? 'text-emerald-600' : 'text-rose-500'
+                  )}>
                     {candidate.growthPct != null
                       ? `${candidate.growthPct >= 0 ? '+' : ''}${Math.round(candidate.growthPct)}%`
                       : '—'}
@@ -395,12 +375,12 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                 </div>
 
                 {/* Action */}
-                <div className="col-span-1 flex justify-center">
+                <div className="flex justify-center">
                   <Link
                     href={`/tracker/${candidate.candidateId}?storeId=${candidate.storeId}`}
                     className="flex items-center gap-1 rounded-lg bg-secondary px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
                   >
-                    View
+                    Ver
                     <ExternalLink className="h-3 w-3" />
                   </Link>
                 </div>

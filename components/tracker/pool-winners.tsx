@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Lock, TrendingUp, Crown, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Lock, TrendingUp, Crown, ChevronLeft, ChevronRight, Globe } from 'lucide-react'
 import { ScoreRing } from '@/components/dashboard/score-ring'
 import { PerformanceBadge } from '@/components/dashboard/performance-badge'
 import { Sparkline } from '@/components/tracker/sparkline'
 import { Button } from '@/components/ui/button'
+import { HoverImagePreview } from '@/components/ui/image-preview'
 import { cn } from '@/lib/utils'
 import type { PoolWinnersResponse, PoolWinnerProduct } from '@/app/(dashboard)/types'
 import type { PoolPreset } from '@/app/(dashboard)/pool/page'
@@ -167,7 +168,7 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, pr
       </div>
 
       {/* Column headers */}
-      <div className="grid grid-cols-[28px_40px_1fr_80px_64px_64px_48px_64px] items-center gap-3 border-b border-border px-6 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+      <div className="grid grid-cols-[28px_72px_260px_1fr_80px_72px_56px_72px] items-center gap-4 border-b border-border px-6 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
         <div>#</div>
         <div />
         <div>Producto</div>
@@ -290,91 +291,76 @@ function LockedState() {
   )
 }
 
-function PoolWinnerRow({
-  winner,
-  position,
-}: {
-  winner: PoolWinnerProduct
-  position: number
-}) {
+function PoolWinnerRow({ winner, position }: { winner: PoolWinnerProduct; position: number }) {
   const isFirst = position === 1
   return (
-    <div
-      className={cn(
-        'grid grid-cols-[28px_40px_1fr_80px_64px_64px_48px_64px] items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/20',
-        isFirst ? 'bg-amber-500/5' : ''
-      )}
-    >
-      {/* position */}
+    <div className={cn(
+      'grid grid-cols-[28px_72px_260px_1fr_80px_72px_56px_72px] items-center gap-4 px-6 py-3 transition-colors hover:bg-secondary/30',
+      isFirst && 'bg-amber-500/5',
+    )}>
+      {/* Position */}
       <div className="flex items-center justify-center">
-        {isFirst ? (
-          <Crown className="h-4 w-4 text-amber-500" />
-        ) : (
-          <span className="text-xs font-bold text-muted-foreground">#{position}</span>
-        )}
+        {isFirst
+          ? <Crown className="h-4 w-4 text-amber-500" />
+          : <span className="text-xs font-bold text-muted-foreground">#{position}</span>}
       </div>
 
-      {/* image */}
-      {winner.productImage ? (
-        <img
-          src={winner.productImage}
-          alt=""
-          className="h-10 w-10 rounded-lg object-cover"
-        />
-      ) : (
-        <div className="h-10 w-10 rounded-lg bg-secondary" />
-      )}
+      {/* Image with hover preview */}
+      <HoverImagePreview
+        src={winner.productImage}
+        fallback={winner.productTitle.charAt(0)}
+      />
 
-      {/* product title */}
+      {/* Product info */}
       <div className="min-w-0">
-        <p className="truncate text-sm font-medium text-foreground">{winner.productTitle}</p>
+        <p className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">
+          {winner.productTitle}
+        </p>
+        {winner.productPrice != null && (
+          <p className="mt-1 text-xs font-medium text-primary">
+            ${winner.productPrice.toLocaleString('es-CO')}
+          </p>
+        )}
         {winner.currentRank && (
-          <span className="text-[10px] text-muted-foreground">Rank #{winner.currentRank}</span>
+          <p className="mt-0.5 text-[10px] text-muted-foreground">Rank #{winner.currentRank}</p>
         )}
       </div>
 
-      {/* store */}
+      {/* Store */}
       <div className="min-w-0">
-        <span className="block truncate rounded-md bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
+        <span className="block truncate rounded-md bg-secondary px-2 py-1 text-[11px] font-medium text-muted-foreground">
           {winner.storeName}
         </span>
       </div>
 
-      {/* sparkline — growth */}
+      {/* Sparkline */}
       <div className="flex justify-center">
         {(() => {
-          const history = (winner.growthHistory ?? []).slice(-7)
-          return history.length >= 2
-            ? <Sparkline data={history} width={64} height={28} />
+          const h = (winner.growthHistory ?? []).slice(-7)
+          return h.length >= 2
+            ? <Sparkline data={h} width={80} height={32} />
             : <span className="text-[10px] text-muted-foreground/30">—</span>
         })()}
       </div>
 
-      {/* growth % */}
+      {/* Growth % */}
       <div className="text-center">
-        <span
-          className={cn(
-            'text-xs font-semibold tabular-nums',
-            winner.growthPct != null && winner.growthPct > 0 ? 'text-emerald-500' : 'text-rose-500'
-          )}
-        >
+        <span className={cn(
+          'text-sm font-bold tabular-nums',
+          winner.growthPct != null && winner.growthPct > 0 ? 'text-emerald-600' : 'text-rose-500',
+        )}>
           {winner.growthPct != null
             ? `${winner.growthPct > 0 ? '+' : ''}${winner.growthPct.toFixed(1)}%`
             : '—'}
         </span>
       </div>
 
-      {/* score ring */}
+      {/* Score ring */}
       <div className="flex justify-center">
-        <ScoreRing
-          score={winner.performanceScore}
-          size="sm"
-          showLabel={false}
-          confidence={winner.signalConfidence}
-        />
+        <ScoreRing score={winner.performanceScore} size="sm" showLabel={false} confidence={winner.signalConfidence} />
       </div>
 
-      {/* status badge */}
+      {/* Status */}
       <div className="flex justify-center">
         <PerformanceBadge label={winner.performanceLabel} size="sm" />
       </div>
