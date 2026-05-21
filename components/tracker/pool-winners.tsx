@@ -21,7 +21,7 @@ interface PoolWinnersSectionProps {
 export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, preset = 'all' }: PoolWinnersSectionProps) {
   const [nicheFilter, setNicheFilter] = useState('all')
   const [currencyFilter, setCurrencyFilter] = useState('all')
-  const [paOnly, setPaOnly] = useState(false)
+  const [dateFilter, setDateFilter] = useState<7 | 30 | 0>(0)
 
   const winners = data?.winners ?? []
 
@@ -41,14 +41,14 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, pr
     if (preset === 'pago_anticipado') r = r.filter((w) => w.pagoAnticipado === true)
     if (preset === 'top_score')       r = [...r].sort((a, b) => b.performanceScore - a.performanceScore).slice(0, 20)
     if (preset === 'new')             r = r.filter((w) => w.daysElapsed <= 7)
-    // Chip filters on top
-    if (nicheFilter !== 'all') r = r.filter((w) => w.niche === nicheFilter)
-    if (currencyFilter !== 'all') r = r.filter((w) => w.currency === currencyFilter)
-    if (paOnly) r = r.filter((w) => w.pagoAnticipado === true)
+    // Chip filters
+    if (dateFilter > 0)            r = r.filter((w) => w.daysElapsed <= dateFilter)
+    if (nicheFilter !== 'all')     r = r.filter((w) => w.niche === nicheFilter)
+    if (currencyFilter !== 'all')  r = r.filter((w) => w.currency === currencyFilter)
     return r
-  }, [winners, preset, nicheFilter, currencyFilter, paOnly])
+  }, [winners, preset, dateFilter, nicheFilter, currencyFilter])
 
-  const hasActiveFilters = nicheFilter !== 'all' || currencyFilter !== 'all' || paOnly
+  const hasActiveFilters = nicheFilter !== 'all' || currencyFilter !== 'all' || dateFilter > 0
 
   if (isLoading) {
     return (
@@ -87,60 +87,64 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, pr
     <div className="mb-6 overflow-hidden rounded-2xl border border-border bg-card">
 
       {/* ── Filter bar ── */}
-      <div className="flex flex-wrap items-center gap-2 px-5 py-4 border-b border-border">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3 border-b border-border">
 
-        {/* Pago anticipado toggle chip */}
-        <button
-          onClick={() => setPaOnly((v) => !v)}
-          className={cn(
-            'flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
-            paOnly
-              ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700'
-              : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
-          )}
-        >
-          <span className={cn(
-            'h-2 w-2 rounded-full transition-colors',
-            paOnly ? 'bg-emerald-500' : 'bg-muted-foreground/30',
-          )} />
-          Pago anticipado
-        </button>
+        {/* Fechas */}
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Fechas</span>
+          {([0, 7, 30] as const).map((d) => (
+            <button
+              key={d}
+              onClick={() => setDateFilter(d)}
+              className={cn(
+                'rounded-full border px-3 py-1 text-xs font-medium transition-all',
+                dateFilter === d
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
+              )}
+            >
+              {d === 0 ? 'Todos' : d === 7 ? 'Últimos 7d' : 'Últimos 30d'}
+            </button>
+          ))}
+        </div>
 
-        {/* Currency chips */}
+        {/* Categorías / nicho */}
+        {niches.length > 0 && (
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Categoría</span>
+            {['all', ...niches].map((n) => (
+              <button
+                key={n}
+                onClick={() => setNicheFilter(n)}
+                className={cn(
+                  'rounded-full border px-3 py-1 text-xs font-medium transition-all',
+                  nicheFilter === n
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
+                )}
+              >
+                {n === 'all' ? 'Todas' : n}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Moneda */}
         {currencies.length > 0 && (
           <div className="flex items-center gap-1.5">
+            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Moneda</span>
             {['all', ...currencies].map((c) => (
               <button
                 key={c}
                 onClick={() => setCurrencyFilter(c)}
                 className={cn(
-                  'rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
+                  'rounded-full border px-3 py-1 text-xs font-medium transition-all',
                   currencyFilter === c
                     ? 'border-primary bg-primary/10 text-primary'
                     : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
                 )}
               >
                 {c === 'all' ? 'Todas' : c}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Niche chips */}
-        {niches.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5">
-            {['all', ...niches].map((n) => (
-              <button
-                key={n}
-                onClick={() => setNicheFilter(n)}
-                className={cn(
-                  'rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
-                  nicheFilter === n
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
-                )}
-              >
-                {n === 'all' ? 'Todos los nichos' : n}
               </button>
             ))}
           </div>
@@ -153,7 +157,7 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, pr
           </span>
           {hasActiveFilters && (
             <button
-              onClick={() => { setNicheFilter('all'); setCurrencyFilter('all'); setPaOnly(false) }}
+              onClick={() => { setNicheFilter('all'); setCurrencyFilter('all'); setDateFilter(0) }}
               className="text-[10px] text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
             >
               Limpiar
