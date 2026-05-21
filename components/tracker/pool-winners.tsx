@@ -3,7 +3,6 @@
 import { Lock, Globe, TrendingUp, Crown } from 'lucide-react'
 import { ScoreRing } from '@/components/dashboard/score-ring'
 import { PerformanceBadge } from '@/components/dashboard/performance-badge'
-import { PhaseBadge } from '@/components/tracker/phase-badge'
 import { Sparkline } from '@/components/tracker/sparkline'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -51,7 +50,18 @@ export function PoolWinnersSection({ data, isLoading }: PoolWinnersSectionProps)
   return (
     <div className="mb-6 rounded-2xl border border-border bg-card p-6">
       <SectionHeader count={data.winners.length} />
-      <div className="mt-4 space-y-3">
+      {/* Column headers */}
+      <div className="mt-4 grid grid-cols-[28px_40px_1fr_80px_64px_64px_48px_64px] items-center gap-3 px-4 pb-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        <div>#</div>
+        <div />
+        <div>Producto</div>
+        <div>Tienda</div>
+        <div className="text-center">Tendencia</div>
+        <div className="text-center">Crecimiento</div>
+        <div className="text-center">Score</div>
+        <div className="text-center">Estado</div>
+      </div>
+      <div className="space-y-2">
         {data.winners.map((winner, i) => (
           <PoolWinnerRow key={winner.candidateId} winner={winner} position={i + 1} />
         ))}
@@ -141,12 +151,12 @@ function PoolWinnerRow({
   return (
     <div
       className={cn(
-        'flex items-center gap-4 rounded-xl border px-4 py-3 transition-colors hover:bg-secondary/30',
+        'grid grid-cols-[28px_40px_1fr_80px_64px_64px_48px_64px] items-center gap-3 rounded-xl border px-4 py-3 transition-colors hover:bg-secondary/30',
         isFirst ? 'border-amber-500/30 bg-amber-500/5' : 'border-border/50 bg-secondary/20'
       )}
     >
       {/* position */}
-      <div className="flex h-6 w-6 shrink-0 items-center justify-center">
+      <div className="flex items-center justify-center">
         {isFirst ? (
           <Crown className="h-4 w-4 text-amber-500" />
         ) : (
@@ -159,59 +169,65 @@ function PoolWinnerRow({
         <img
           src={winner.productImage}
           alt=""
-          className="h-10 w-10 shrink-0 rounded-lg object-cover"
+          className="h-10 w-10 rounded-lg object-cover"
         />
       ) : (
-        <div className="h-10 w-10 shrink-0 rounded-lg bg-secondary" />
+        <div className="h-10 w-10 rounded-lg bg-secondary" />
       )}
 
-      {/* info */}
-      <div className="min-w-0 flex-1">
+      {/* product title */}
+      <div className="min-w-0">
         <p className="truncate text-sm font-medium text-foreground">{winner.productTitle}</p>
-        <div className="mt-0.5 flex items-center gap-2">
-          <span className="rounded-md bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
-            {winner.storeName}
-          </span>
-          {winner.currentRank && (
-            <span className="text-[10px] text-muted-foreground">#{winner.currentRank}</span>
-          )}
-        </div>
+        {winner.currentRank && (
+          <span className="text-[10px] text-muted-foreground">Rank #{winner.currentRank}</span>
+        )}
+      </div>
+
+      {/* store */}
+      <div className="min-w-0">
+        <span className="block truncate rounded-md bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
+          {winner.storeName}
+        </span>
       </div>
 
       {/* sparkline — growth */}
-      <div className="shrink-0">
+      <div className="flex justify-center">
         {(() => {
           const history = (winner.growthHistory ?? []).slice(-7)
           return history.length >= 2
             ? <Sparkline data={history} width={64} height={28} />
-            : <div className="w-16 text-center text-[10px] text-muted-foreground/30">—</div>
+            : <span className="text-[10px] text-muted-foreground/30">—</span>
         })()}
       </div>
 
-      {/* growth */}
-      {winner.growthPct != null && (
+      {/* growth % */}
+      <div className="text-center">
         <span
           className={cn(
-            'shrink-0 text-xs font-semibold',
-            winner.growthPct > 0 ? 'text-emerald-500' : 'text-rose-500'
+            'text-xs font-semibold tabular-nums',
+            winner.growthPct != null && winner.growthPct > 0 ? 'text-emerald-500' : 'text-rose-500'
           )}
         >
-          {winner.growthPct > 0 ? '+' : ''}
-          {winner.growthPct.toFixed(1)}%
+          {winner.growthPct != null
+            ? `${winner.growthPct > 0 ? '+' : ''}${winner.growthPct.toFixed(1)}%`
+            : '—'}
         </span>
-      )}
+      </div>
 
       {/* score ring */}
-      <ScoreRing
-        score={winner.performanceScore}
-        size="sm"
-        showLabel={false}
-        confidence={winner.signalConfidence}
-      />
+      <div className="flex justify-center">
+        <ScoreRing
+          score={winner.performanceScore}
+          size="sm"
+          showLabel={false}
+          confidence={winner.signalConfidence}
+        />
+      </div>
 
-      {/* phase + label badges */}
-      <PhaseBadge phase={winner.cyclePhase} />
-      <PerformanceBadge label={winner.performanceLabel} size="sm" />
+      {/* status badge */}
+      <div className="flex justify-center">
+        <PerformanceBadge label={winner.performanceLabel} size="sm" />
+      </div>
     </div>
   )
 }
