@@ -178,10 +178,10 @@ function PoolWinnerRow({
         </div>
       </div>
 
-      {/* sparkline */}
+      {/* sparkline — growth */}
       <div className="shrink-0">
         {(() => {
-          const history = (winner.scoreHistory ?? []).slice(-7)
+          const history = (winner.growthHistory ?? []).slice(-7)
           return history.length >= 2
             ? <Sparkline data={history} width={64} height={28} />
             : <div className="w-16 text-center text-[10px] text-muted-foreground/30">—</div>

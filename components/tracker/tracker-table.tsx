@@ -298,14 +298,12 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                   />
                 </div>
 
-                {/* Trend sparkline — only shown when net growth exists in the period */}
+                {/* Trend sparkline — growth history */}
                 <div className="col-span-2 flex justify-center">
                   {(() => {
-                    const history = candidate.scoreHistory ?? []
-                    const sliced  = history.slice(-displayDays)
-                    const hasGrowth = sliced.length >= 2 && sliced[sliced.length - 1] > sliced[0]
-                    return hasGrowth
-                      ? <Sparkline data={sliced} width={80} height={32} />
+                    const history = (candidate.growthHistory ?? candidate.scoreHistory ?? []).slice(-displayDays)
+                    return history.length >= 2
+                      ? <Sparkline data={history} width={80} height={32} />
                       : <span className="text-[10px] text-muted-foreground/35">—</span>
                   })()}
                 </div>

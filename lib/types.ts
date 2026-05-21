@@ -40,6 +40,7 @@ export interface TrackerCandidate {
   signalConfidence: number
   cyclePhase: string | null
   scoreHistory?: number[]
+  growthHistory?: number[]
 }
 
 export interface CandidateDetail {

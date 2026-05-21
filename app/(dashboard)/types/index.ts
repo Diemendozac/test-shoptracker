@@ -31,6 +31,7 @@ export interface TrackerCandidate {
   signalConfidence: number
   cyclePhase: string | null
   scoreHistory?: number[]
+  growthHistory?: number[]
 }
 
 export interface WindowCandidate {
@@ -73,6 +74,7 @@ export interface PoolWinnerProduct extends WinnerProduct {
   storeId: string
   storeName: string
   scoreHistory?: number[]
+  growthHistory?: number[]
 }
 
 export interface PoolWinnersResponse {
