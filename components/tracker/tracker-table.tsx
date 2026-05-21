@@ -167,10 +167,13 @@ export function TrackerTable({ candidates }: TrackerTableProps) {
       <div className="overflow-hidden rounded-xl border border-border bg-card">
         {/* Header */}
         <div className="grid grid-cols-12 gap-4 border-b border-border bg-secondary/30 px-6 py-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          {/* Rank */}
+          <div className="col-span-1">Rank</div>
+
           {/* Product — sortable */}
           <button
             onClick={() => handleSort('productTitle')}
-            className="group/th col-span-4 flex items-center gap-1.5 text-left hover:text-foreground transition-colors"
+            className="group/th col-span-3 flex items-center gap-1.5 text-left hover:text-foreground transition-colors"
           >
             Product
             <SortIcon column="productTitle" sort={sort} />
@@ -240,10 +243,34 @@ export function TrackerTable({ candidates }: TrackerTableProps) {
                   idx % 2 === 0 && 'bg-secondary/5'
                 )}
               >
+                {/* Rank */}
+                <div className="col-span-1 flex items-center gap-1.5">
+                  {idx < 3 && (
+                    <span className={cn(
+                      'text-sm leading-none',
+                      idx === 0 ? 'text-yellow-400' : idx === 1 ? 'text-slate-400' : 'text-yellow-600'
+                    )}>★</span>
+                  )}
+                  <span className="text-sm font-semibold tabular-nums text-muted-foreground">
+                    {idx + 1}
+                  </span>
+                </div>
+
                 {/* Product */}
-                <div className="col-span-4 flex items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-secondary text-sm font-bold text-muted-foreground">
-                    {candidate.productTitle.charAt(0)}
+                <div className="col-span-3 flex items-center gap-3">
+                  {/* Image: layered so letter fallback shows if img fails */}
+                  <div className="relative h-10 w-10 shrink-0">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary text-sm font-bold text-muted-foreground">
+                      {candidate.productTitle.charAt(0)}
+                    </div>
+                    {candidate.productImage && (
+                      <img
+                        src={`/api/image-proxy?url=${encodeURIComponent(candidate.productImage)}`}
+                        alt=""
+                        className="absolute inset-0 h-10 w-10 rounded-lg object-cover"
+                        onError={(e) => { e.currentTarget.style.display = 'none' }}
+                      />
+                    )}
                   </div>
                   <div className="min-w-0">
                     <p className="truncate font-medium text-foreground">{candidate.productTitle}</p>
