@@ -87,6 +87,9 @@ export interface PoolWinnersResponse {
   locked: boolean
   plan: string
   winners: PoolWinnerProduct[]
+  total?: number
+  page?: number
+  totalPages?: number
 }
 
 export interface CandidateHistory {

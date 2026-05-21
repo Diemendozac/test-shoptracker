@@ -37,9 +37,12 @@ export const dashboardApi = createApi({
       providesTags: ['Winner'],
     }),
 
-    // GET /api/dashboard/pool/winners
-    getPoolWinners: builder.query<PoolWinnersResponse, void>({
-      query: () => '/pool/winners',
+    // GET /api/dashboard/pool/winners?page=&size=
+    getPoolWinners: builder.query<PoolWinnersResponse, { page?: number; size?: number }>({
+      query: ({ page = 0, size = 20 } = {}) => ({
+        url: '/pool/winners',
+        params: { page, size },
+      }),
       providesTags: ['Pool'],
     }),
 

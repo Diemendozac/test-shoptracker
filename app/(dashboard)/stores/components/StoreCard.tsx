@@ -1,6 +1,7 @@
 
 'use client'
 
+import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import {
   ExternalLink, MoreVertical, CheckCircle,
@@ -54,9 +55,8 @@ export function StoreCard({ store, isSyncing, isDeleting, onSync, onDelete }: St
       <div className="p-5">
         {/* Store header */}
         <div className="mb-4 flex items-start gap-3">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-secondary text-lg font-bold text-muted-foreground">
-            {store.storeName.charAt(0)}
-          </div>
+          <StoreLogo storeName={store.storeName} baseUrl={store.baseUrl} />
+
           <div className="min-w-0 flex-1">
             <h3 className="truncate font-semibold text-foreground">{store.storeName}</h3>
             
@@ -130,6 +130,37 @@ export function StoreCard({ store, isSyncing, isDeleting, onSync, onDelete }: St
           </DropdownMenu>
         </div>
       </div>
+    </div>
+  )
+}
+
+// ─── StoreLogo ────────────────────────────────────────────────────────────────
+
+function StoreLogo({ storeName, baseUrl }: { storeName: string; baseUrl: string }) {
+  const [imgFailed, setImgFailed] = useState(false)
+  let host = ''
+  try { host = new URL(baseUrl).hostname } catch { /* ignore */ }
+  const faviconUrl = host ? `https://www.google.com/s2/favicons?sz=64&domain=${host}` : ''
+
+  if (!imgFailed && faviconUrl) {
+    return (
+      <div className="relative h-12 w-12 shrink-0">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary text-lg font-bold text-muted-foreground">
+          {storeName.charAt(0)}
+        </div>
+        <img
+          src={faviconUrl}
+          alt=""
+          className="absolute inset-0 h-12 w-12 rounded-xl object-contain p-1"
+          onError={() => setImgFailed(true)}
+        />
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-secondary text-lg font-bold text-muted-foreground">
+      {storeName.charAt(0)}
     </div>
   )
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Lock, Globe, TrendingUp, Crown } from 'lucide-react'
+import { Lock, Globe, TrendingUp, Crown, ChevronLeft, ChevronRight } from 'lucide-react'
 import { ScoreRing } from '@/components/dashboard/score-ring'
 import { PerformanceBadge } from '@/components/dashboard/performance-badge'
 import { Sparkline } from '@/components/tracker/sparkline'
@@ -12,9 +12,11 @@ import type { PoolWinnersResponse, PoolWinnerProduct } from '@/app/(dashboard)/t
 interface PoolWinnersSectionProps {
   data: PoolWinnersResponse | undefined
   isLoading?: boolean
+  page?: number
+  onPageChange?: (page: number) => void
 }
 
-export function PoolWinnersSection({ data, isLoading }: PoolWinnersSectionProps) {
+export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange }: PoolWinnersSectionProps) {
   const [nicheFilter, setNicheFilter] = useState('all')
   const [currencyFilter, setCurrencyFilter] = useState('all')
   const [paFilter, setPaFilter] = useState('all')
@@ -74,7 +76,7 @@ export function PoolWinnersSection({ data, isLoading }: PoolWinnersSectionProps)
 
   return (
     <div className="mb-6 rounded-2xl border border-border bg-card p-6">
-      <SectionHeader count={filtered.length} />
+      <SectionHeader count={data?.total ?? filtered.length} />
 
       {/* Filter bar */}
       <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -115,10 +117,49 @@ export function PoolWinnersSection({ data, isLoading }: PoolWinnersSectionProps)
           </p>
         ) : (
           filtered.map((winner, i) => (
-            <PoolWinnerRow key={winner.candidateId} winner={winner} position={i + 1} />
+            <PoolWinnerRow key={winner.candidateId} winner={winner} position={page * 20 + i + 1} />
           ))
         )}
       </div>
+
+      {/* Pagination */}
+      {onPageChange && data && (data.totalPages ?? 1) > 1 && (
+        <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+          <span className="text-xs text-muted-foreground">
+            Mostrando {page * 20 + 1}–{Math.min((page + 1) * 20, data.total ?? 0)} de {data.total ?? 0} productos
+          </span>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => onPageChange(page - 1)}
+              disabled={page === 0}
+              className="flex h-7 w-7 items-center justify-center rounded-lg border border-border text-muted-foreground hover:border-primary/40 hover:text-foreground disabled:opacity-30 disabled:pointer-events-none transition-colors"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </button>
+            {Array.from({ length: data.totalPages ?? 1 }, (_, i) => i).map((p) => (
+              <button
+                key={p}
+                onClick={() => onPageChange(p)}
+                className={cn(
+                  'flex h-7 w-7 items-center justify-center rounded-lg text-xs font-medium transition-colors',
+                  p === page
+                    ? 'bg-primary text-primary-foreground'
+                    : 'border border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'
+                )}
+              >
+                {p + 1}
+              </button>
+            ))}
+            <button
+              onClick={() => onPageChange(page + 1)}
+              disabled={page >= (data.totalPages ?? 1) - 1}
+              className="flex h-7 w-7 items-center justify-center rounded-lg border border-border text-muted-foreground hover:border-primary/40 hover:text-foreground disabled:opacity-30 disabled:pointer-events-none transition-colors"
+            >
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -133,7 +174,7 @@ function SectionHeader({ count }: { count?: number }) {
         <h2 className="text-sm font-semibold text-foreground">Pool de Testeos</h2>
         {count !== undefined && (
           <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-            Top {count}
+            {count} productos
           </span>
         )}
       </div>
