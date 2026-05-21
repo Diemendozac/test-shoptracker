@@ -214,7 +214,6 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
         >
           <option value="all">Pago anticipado: Todos</option>
           <option value="yes">Solo pago anticipado</option>
-          <option value="no">Sin pago anticipado</option>
         </select>
 
         {/* Clear filters */}

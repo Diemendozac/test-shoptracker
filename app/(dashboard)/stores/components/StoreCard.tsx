@@ -81,14 +81,9 @@ export function StoreCard({ store, isSyncing, isDeleting, onSync, onDelete }: St
                   {store.currency}
                 </span>
               )}
-              {store.pagoAnticipado != null && (
-                <span className={cn(
-                  'rounded-md px-2 py-0.5 text-[10px] font-medium',
-                  store.pagoAnticipado
-                    ? 'bg-rising/10 text-rising'
-                    : 'bg-secondary text-muted-foreground'
-                )}>
-                  {store.pagoAnticipado ? 'Pago anticipado' : 'Contra entrega'}
+              {store.pagoAnticipado === true && (
+                <span className="rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600">
+                  Pago anticipado
                 </span>
               )}
               {store.niche && (
@@ -166,7 +161,9 @@ function StoreLogo({ storeName, baseUrl }: { storeName: string; baseUrl: string 
   const [imgFailed, setImgFailed] = useState(false)
   // Use favicon.ico directly — returns 404 when missing so onError fires correctly.
   // Google's favicon API always returns 200 (with a generic globe) so we can't detect failures.
-  const faviconUrl = baseUrl ? `${baseUrl.replace(/\/$/, '')}/favicon.ico` : ''
+  const faviconUrl = baseUrl
+    ? `/api/image-proxy?url=${encodeURIComponent(baseUrl.replace(/\/$/, '') + '/favicon.ico')}`
+    : ''
 
   return (
     <div className="relative h-12 w-12 shrink-0">

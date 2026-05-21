@@ -5,7 +5,7 @@ import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useStores } from './hooks/useStores'
 import { AddStoreModal } from './components/AddStoreModal'
-import { StoreCard } from './components/StoreCard'
+import { StoreRow } from './components/StoreRow'
 
 export default function StoresPage() {
   const {
@@ -16,55 +16,81 @@ export default function StoresPage() {
   } = useStores()
 
   return (
-    <PageLayout title="Stores" description="Manage your tracked Shopify stores">
+    <PageLayout title="Tiendas" description="Administra tus tiendas Shopify rastreadas">
       <AddStoreModal />
 
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          <span className="font-medium text-foreground">{stores.length}</span> of 50 stores registered
+          <span className="font-medium text-foreground">{stores.length}</span> de 50 tiendas registradas
         </p>
         <Button className="gap-2" onClick={openAddModal}>
           <Plus className="h-4 w-4" />
-          Add Store
+          Agregar tienda
         </Button>
       </div>
 
-      {/* Grid */}
-      {isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-70 animate-pulse rounded-xl bg-secondary" />
-          ))}
+      {/* Table */}
+      <div className="overflow-hidden rounded-2xl border border-border bg-card">
+        {/* Column headers */}
+        <div className="grid grid-cols-[40px_1fr_80px_60px_96px_96px_80px] items-center gap-3 border-b border-border px-4 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          <div />
+          <div>Tienda</div>
+          <div>Nicho</div>
+          <div className="text-center">Moneda</div>
+          <div className="text-center">Pago</div>
+          <div className="text-center">Estado</div>
+          <div />
         </div>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {stores.map((store) => (
-            <StoreCard
-              key={store.storeId}
-              store={store}
-              isSyncing={syncingStoreId === store.storeId}
-              isDeleting={deletingStoreId === store.storeId}
-              onSync={() => syncStore(store.storeId, store.storeName)}
-              onDelete={() => deleteStore(store.storeId)}
-            />
-          ))}
 
-          {/* Add Store card */}
+        {isLoading ? (
+          <div className="divide-y divide-border/50">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="flex items-center gap-3 px-4 py-3">
+                <div className="h-9 w-9 animate-pulse rounded-lg bg-secondary" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3 w-36 animate-pulse rounded bg-secondary" />
+                  <div className="h-2 w-24 animate-pulse rounded bg-secondary/60" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : stores.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-3 py-16 text-muted-foreground">
+            <p className="text-sm">No tienes tiendas registradas aún.</p>
+            <Button variant="outline" className="gap-2" onClick={openAddModal}>
+              <Plus className="h-4 w-4" />
+              Agregar primera tienda
+            </Button>
+          </div>
+        ) : (
+          <div className="divide-y divide-border/50">
+            {stores.map((store) => (
+              <StoreRow
+                key={store.storeId}
+                store={store}
+                isSyncing={syncingStoreId === store.storeId}
+                isDeleting={deletingStoreId === store.storeId}
+                onSync={() => syncStore(store.storeId, store.storeName)}
+                onDelete={() => deleteStore(store.storeId)}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Add row at bottom */}
+        {!isLoading && (
           <button
             onClick={openAddModal}
-            className="flex min-h-70 flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-card/50 text-muted-foreground transition-all hover:border-primary/40 hover:bg-card hover:text-foreground"
+            className="flex w-full items-center gap-3 border-t border-dashed border-border px-4 py-3 text-sm text-muted-foreground transition-colors hover:bg-secondary/20 hover:text-foreground"
           >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary">
-              <Plus className="h-6 w-6" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-dashed border-border">
+              <Plus className="h-4 w-4" />
             </div>
-            <div className="text-center">
-              <p className="font-medium">Add New Store</p>
-              <p className="text-xs text-muted-foreground">Track up to 50 Shopify stores</p>
-            </div>
+            <span>Agregar nueva tienda</span>
           </button>
-        </div>
-      )}
+        )}
+      </div>
     </PageLayout>
   )
 }

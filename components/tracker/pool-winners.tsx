@@ -110,7 +110,6 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange }: 
         <select value={paFilter} onChange={(e) => setPaFilter(e.target.value)} className={selectCls}>
           <option value="all">Pago anticipado: Todos</option>
           <option value="yes">Solo pago anticipado</option>
-          <option value="no">Sin pago anticipado</option>
         </select>
         {(nicheFilter !== 'all' || currencyFilter !== 'all' || paFilter !== 'all') && (
           <button
