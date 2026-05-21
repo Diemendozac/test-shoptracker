@@ -98,7 +98,7 @@ export function WinnerCard({ winner, runnersUp }: WinnerCardProps) {
         <div className="mb-3 flex items-center gap-2">
           <Crown className="h-4 w-4 text-yellow-400" />
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Winner de la semana
+            Señal más fuerte esta semana
           </span>
         </div>
 
@@ -134,7 +134,7 @@ export function WinnerCard({ winner, runnersUp }: WinnerCardProps) {
                 {formatGrowth(winner.growthPct)}
               </span>
               <span className="text-xs text-muted-foreground">
-                Score: <span className="font-semibold text-foreground">{formatScore(winner.performanceScore)}</span>
+                Señal: <span className="font-semibold text-foreground">~{formatScore(winner.performanceScore)}</span>
               </span>
               <span className="text-xs text-muted-foreground">
                 Confianza: <span className="font-semibold text-foreground">{Math.round(winner.signalConfidence * 100)}%</span>
@@ -161,7 +161,7 @@ export function WinnerCard({ winner, runnersUp }: WinnerCardProps) {
         {expanded && runnersUp.length > 0 && (
           <div className="mt-4 space-y-2 border-t border-border/50 pt-4">
             <p className="mb-2 text-xs font-medium text-muted-foreground">
-              Más cercanos al winner
+              Señales más cercanas
             </p>
             {runnersUp.map((product, i) => (
               <RunnerRow key={product.candidateId} product={product} position={i} />

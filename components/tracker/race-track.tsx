@@ -1,8 +1,9 @@
 'use client'
 
+import Link from 'next/link'
 import { ChevronDown, Trophy, Flag } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { TrackerCandidate } from '@/app/(dashboard)/types'
+import type { TrackerCandidate } from '@/lib/types'
 
 interface RaceTrackProps {
   candidates: TrackerCandidate[]
@@ -64,7 +65,7 @@ export function RaceTrack({ candidates, showTable, onToggleTable }: RaceTrackPro
           </span>
         </div>
         <span className="text-xs text-muted-foreground">
-          Posición = performance score
+          Posición = señal estimada
         </span>
       </div>
 
@@ -77,10 +78,11 @@ export function RaceTrack({ candidates, showTable, onToggleTable }: RaceTrackPro
           const badgeCls  = BADGE_COLORS[c.performanceLabel] ?? 'bg-slate-500 text-white'
 
           return (
-            <div
+            <Link
               key={c.candidateId}
+              href={`/tracker/${c.candidateId}?storeId=${c.storeId}`}
               className={cn(
-                'relative flex items-center overflow-hidden rounded-lg',
+                'relative flex items-center overflow-hidden rounded-lg transition-colors hover:brightness-110',
                 isLeader
                   ? 'border border-yellow-500/30 bg-yellow-500/5'
                   : 'bg-secondary/20',
@@ -89,7 +91,10 @@ export function RaceTrack({ candidates, showTable, onToggleTable }: RaceTrackPro
             >
               {/* Left strip ── days in bestseller + store avatar + short title */}
               <div className="z-10 flex w-56 shrink-0 items-center gap-2 px-2">
-                <span className="w-5 text-right text-xs font-bold tabular-nums text-muted-foreground">
+                <span
+                  className="w-5 text-right text-xs font-bold tabular-nums text-muted-foreground"
+                  title={`${c.daysInBestseller ?? 0} días con mejora de rank`}
+                >
                   {String(c.daysInBestseller ?? 0).padStart(2, '0')}
                 </span>
                 <div
@@ -159,11 +164,25 @@ export function RaceTrack({ candidates, showTable, onToggleTable }: RaceTrackPro
                       badgeCls,
                     )}
                   >
-                    {score.toFixed(0)}
+                    ~{score.toFixed(0)}
                   </span>
+                  {(() => {
+                    const entry = c.entryScore
+                    if (entry == null || c.daysElapsed <= 1) return null
+                    const delta = score - entry
+                    if (Math.abs(delta) < 0.5) return null
+                    return (
+                      <span className={cn(
+                        'whitespace-nowrap text-xs font-semibold tabular-nums',
+                        delta > 0 ? 'text-emerald-400' : 'text-red-400',
+                      )}>
+                        {delta > 0 ? '+' : ''}{delta.toFixed(0)}
+                      </span>
+                    )
+                  })()}
                 </div>
               </div>
-            </div>
+            </Link>
           )
         })}
       </div>

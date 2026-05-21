@@ -20,9 +20,26 @@ export interface TrackerCandidate {
   candidateId: string
   storeId: string
   productTitle: string
+  productImage: string | null
   storeName: string
   daysElapsed: number
   performanceScore: number | null
+  entryScore: number | null
+  performanceLabel: PerformanceLabel
+  growthPct: number | null
+  daysInBestseller: number
+  signalConfidence: number
+  cyclePhase: string | null
+}
+
+export interface WindowCandidate {
+  candidateId: string
+  storeId: string
+  productTitle: string
+  productImage: string | null
+  storeName: string
+  daysElapsed: number
+  windowScore: number
   performanceLabel: PerformanceLabel
   growthPct: number | null
   daysInBestseller: number

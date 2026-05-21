@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { SidebarProvider } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/layout/app-sidebar'
@@ -10,10 +10,18 @@ import { useAppSelector } from '@/store/hooks'
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    if (!isAuthenticated) router.replace('/login')
-  }, [isAuthenticated, router])
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (mounted && !isAuthenticated) router.replace('/login')
+  }, [mounted, isAuthenticated, router])
+
+  // Render nothing until client-side hydration — avoids server/client mismatch
+  if (!mounted) return null
 
   if (!isAuthenticated) return null
 

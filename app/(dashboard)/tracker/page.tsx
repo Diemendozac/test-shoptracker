@@ -4,14 +4,24 @@ import { useState } from 'react'
 import { PageLayout } from '@/components/layout/page-layout'
 import { TrackerTable } from '@/components/tracker/tracker-table'
 import { WinnerCard } from '@/components/tracker/winner-card'
-import { RaceTrack } from '@/components/tracker/race-track'
+import { ShootingStars } from '@/components/tracker/shooting-stars'
 import { PoolWinnersSection } from '@/components/tracker/pool-winners'
-import { useGetWeeklyWinnerQuery, useGetPoolWinnersQuery } from '../services/dashboardApi'
+import { PendingCandidatesSection } from '@/components/tracker/pending-candidates'
+import { useGetWeeklyWinnerQuery, useGetPoolWinnersQuery, useGetWindowCandidatesQuery } from '../services/dashboardApi'
 import type { PerformanceLabel } from '@/lib/types'
+import type { TrackerCandidate } from '../types'
 import { cn } from '@/lib/utils'
 import { Filter, SortAsc, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useDashboard } from '../hooks/useDashboard'
+import { KpiCards } from '@/components/tracker/kpi-cards'
+
+const WINDOW_OPTIONS = [
+  { label: 'Todos', days: 0 },
+  { label: '3d',    days: 3 },
+  { label: '5d',    days: 5 },
+  { label: '30d',   days: 30 },
+] as const
 
 const statusFilters: { label: string; value: PerformanceLabel | 'all' }[] = [
   { label: 'All', value: 'all' },
@@ -22,7 +32,7 @@ const statusFilters: { label: string; value: PerformanceLabel | 'all' }[] = [
 ]
 
 export default function TrackerPage() {
-  const [showTable, setShowTable] = useState(false)
+  const [windowDays, setWindowDays] = useState(0)
 
   const {
     trackerFilter,
@@ -45,8 +55,24 @@ export default function TrackerPage() {
 
   const { data: poolData, isLoading: isPoolLoading } = useGetPoolWinnersQuery()
 
+  const { data: windowData, isFetching: isWindowFetching } = useGetWindowCandidatesQuery(
+    { days: windowDays },
+    { skip: windowDays === 0 }
+  )
+
+  const windowAsTracker: TrackerCandidate[] = (windowData ?? []).map((w) => ({
+    ...w,
+    performanceScore: w.windowScore,
+    entryScore: null,
+  }))
+
+  const raceTrackCandidates = windowDays > 0 ? windowAsTracker : allCandidates
+
   return (
     <PageLayout title="Tracker" description="All active candidates in tracking window">
+      {/* Pending candidates — awaiting user approval */}
+      <PendingCandidatesSection />
+
       {/* Pool winners — global intelligence feed */}
       <PoolWinnersSection data={poolData} isLoading={isPoolLoading} />
 
@@ -55,73 +81,58 @@ export default function TrackerPage() {
         <WinnerCard winner={winnerData.winner} runnersUp={winnerData.runnersUp} />
       )}
 
-      {/* Race track — top 10 */}
-      {isTrackerLoading ? (
+      {/* Window selector */}
+      <div className="mb-4 flex items-center gap-2">
+        <span className="text-xs text-muted-foreground">Vista:</span>
+        <div className="flex rounded-lg border border-border bg-secondary/30 p-1">
+          {WINDOW_OPTIONS.map(({ label, days }) => (
+            <button
+              key={days}
+              onClick={() => setWindowDays(days)}
+              className={cn(
+                'rounded-md px-3 py-1 text-xs font-medium transition-all',
+                windowDays === days
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        {windowDays > 0 && (
+          <span className="text-[10px] text-muted-foreground">
+            Score promedio últimos {windowDays} días
+          </span>
+        )}
+      </div>
+
+      {/* Shooting stars — top 5 */}
+      {isTrackerLoading || (windowDays > 0 && isWindowFetching) ? (
         <div className="mb-6 space-y-2">
           {[...Array(5)].map((_, i) => (
             <div key={i} className="h-14 animate-pulse rounded-lg bg-secondary" />
           ))}
         </div>
       ) : (
-        <RaceTrack
-          candidates={allCandidates}
-          showTable={showTable}
-          onToggleTable={() => setShowTable((v) => !v)}
+        <ShootingStars
+          candidates={raceTrackCandidates}
+          onRequestFullTable={() => {}}
+          showFullTable={false}
         />
       )}
 
-      {/* Full table — visible only when showTable = true */}
-      {showTable && (
-        <>
-          {/* Filters */}
-          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <div className="flex rounded-lg border border-border bg-secondary/30 p-1">
-                {statusFilters.map((status) => (
-                  <button
-                    key={status.value}
-                    onClick={() => setFilter(status.value)}
-                    className={cn(
-                      'rounded-md px-3 py-1.5 text-xs font-medium transition-all',
-                      trackerFilter === status.value
-                        ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-                    )}
-                  >
-                    {status.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+      {/* KPI cards */}
+      {!isTrackerLoading && <KpiCards candidates={allCandidates} />}
 
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  value={searchQuery}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="h-9 w-64 rounded-lg border border-border bg-input pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                />
-              </div>
-              <Button variant="outline" size="sm" className="gap-2">
-                <SortAsc className="h-4 w-4" />
-                Sort
-              </Button>
-            </div>
-          </div>
-
-          <div className="mb-4">
-            <p className="text-sm text-muted-foreground">
-              Showing <span className="font-medium text-foreground">{filteredCandidates.length}</span> candidates
-            </p>
-          </div>
-
-          <TrackerTable candidates={filteredCandidates} />
-        </>
-      )}
+      {/* Product Leaderboard */}
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-foreground">Product Leaderboard</h2>
+        <span className="text-xs text-muted-foreground">
+          {filteredCandidates.length} candidatos
+        </span>
+      </div>
+      <TrackerTable candidates={filteredCandidates} />
     </PageLayout>
   )
 }

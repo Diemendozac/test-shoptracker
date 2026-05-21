@@ -10,8 +10,8 @@ interface ScoreChartProps {
 export function ScoreChart({ history }: ScoreChartProps) {
   const data = history.map((h) => ({
     day: `Day ${h.trackingDay}`,
-    score: Math.round(h.performanceScore * 100),
-    growth: Math.round(h.growthPct * 100),
+    score: Math.round(h.performanceScore),
+    growth: Math.round(h.growthPct),
     date: new Date(h.snapshotDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
   })).reverse()
 

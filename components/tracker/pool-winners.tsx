@@ -66,14 +66,14 @@ function SectionHeader({ count }: { count?: number }) {
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2">
         <Globe className="h-4 w-4 text-primary" />
-        <h2 className="text-sm font-semibold text-foreground">Pool Winners</h2>
+        <h2 className="text-sm font-semibold text-foreground">Pool de Testeos</h2>
         {count !== undefined && (
           <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
             Top {count}
           </span>
         )}
       </div>
-      <span className="text-[10px] text-muted-foreground">Mejores candidatos del pool</span>
+      <span className="text-[10px] text-muted-foreground">Señales más fuertes del pool</span>
     </div>
   )
 }
@@ -106,9 +106,9 @@ function LockedState() {
             <Lock className="h-5 w-5 text-primary" />
           </div>
           <div className="text-center">
-            <p className="text-sm font-semibold text-foreground">Winners del pool bloqueados</p>
+            <p className="text-sm font-semibold text-foreground">Señales del pool bloqueadas</p>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              El plan Básico desbloquea los top 10 productos del pool
+              El plan Básico desbloquea las señales del Pool de Testeos
             </p>
           </div>
           <Button size="sm" className="mt-1 gap-1.5">
@@ -122,7 +122,7 @@ function LockedState() {
       <div className="border-t border-border px-6 py-3">
         <div className="flex items-center gap-2">
           <Globe className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground">Pool Winners — requiere plan Básico</span>
+          <span className="text-xs text-muted-foreground">Pool de Testeos — requiere plan Básico</span>
         </div>
       </div>
     </div>

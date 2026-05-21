@@ -184,7 +184,7 @@ function CandidateDetailContent() {
             </div>
             {summary != null ? (
               <p className={`text-2xl font-bold ${summary.growthPct >= 0 ? 'text-rising' : 'text-declining'}`}>
-                {summary.growthPct >= 0 ? '+' : ''}{Math.round(summary.growthPct * 100)}%
+                {summary.growthPct >= 0 ? '+' : ''}{Math.round(summary.growthPct)}%
               </p>
             ) : (
               <p className="text-2xl font-bold text-muted-foreground">—</p>
@@ -294,10 +294,10 @@ function CandidateDetailContent() {
                       {entry.bestsellerRank ? `#${entry.bestsellerRank}` : '-'}
                     </td>
                     <td className={`px-4 py-3 text-center text-sm font-medium ${entry.growthPct >= 0 ? 'text-rising' : 'text-declining'}`}>
-                      {entry.growthPct >= 0 ? '+' : ''}{Math.round(entry.growthPct * 100)}%
+                      {entry.growthPct >= 0 ? '+' : ''}{Math.round(entry.growthPct)}%
                     </td>
                     <td className="px-4 py-3 text-center text-sm font-medium text-primary">
-                      {Math.round(entry.performanceScore * 100)}%
+                      {Math.round(entry.performanceScore)}
                     </td>
                     <td className="px-4 py-3 text-center">
                       <PerformanceBadge label={entry.performanceLabel} size="sm" showIcon={false} />

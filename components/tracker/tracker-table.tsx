@@ -47,7 +47,7 @@ function SortIcon({ column, sort }: { column: SortKey; sort: SortState }) {
 
 export function TrackerTable({ candidates }: TrackerTableProps) {
   // Sort state
-  const [sort, setSort] = useState<SortState>({ key: null, dir: 'asc' })
+  const [sort, setSort] = useState<SortState>({ key: 'performanceScore', dir: 'desc' })
 
   // Filter state
   const [search, setSearch] = useState('')

@@ -124,7 +124,7 @@ export function ScoreRing({
             hasConfidence ? 'text-foreground' : fallbackTextColor,
           )}
         >
-          {Math.round(clamped)}
+          ~{Math.round(clamped)}
         </span>
         {showLabel && label && (
           <span className={cn('font-medium text-muted-foreground', config.labelSize)}>
