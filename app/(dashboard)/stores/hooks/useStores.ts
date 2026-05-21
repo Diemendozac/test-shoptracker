@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { openAddModal, closeAddModal, setDeletingStore, setSyncingStore } from '../store/storesSlice'
 import {
@@ -8,11 +9,13 @@ import {
   useDeleteStoreMutation,
   useSyncStoreMutation,
 } from '../services/storeApi'
+import { candidateApi } from '@/app/(dashboard)/services/candidateApi'
 import { useToast } from '@/hooks/use-toast'
 import type { CreateStoreRequest } from '../types'
 
 export function useStores() {
   const dispatch = useAppDispatch()
+  const router = useRouter()
   const { toast } = useToast()
   const { isAddModalOpen, deletingStoreId, syncingStoreId } = useAppSelector((s) => s.stores)
 
@@ -38,16 +41,34 @@ export function useStores() {
   const syncStore = async (storeId: string, storeName: string) => {
     dispatch(setSyncingStore(storeId))
     try {
-      await syncStoreMutation(storeId).unwrap()
-      toast({
-        title: 'Sync complete',
-        description: `${storeName} data has been updated successfully.`,
-      })
+      const result = await syncStoreMutation(storeId).unwrap()
+      dispatch(candidateApi.util.invalidateTags(['Pending']))
+
+      if (result.newCandidates > 0) {
+        const n = result.newCandidates
+        toast({
+          title: `${n} producto${n !== 1 ? 's' : ''} nuevo${n !== 1 ? 's' : ''} detectado${n !== 1 ? 's' : ''}`,
+          description: 'Revísalos en Testeos → Mis tiendas',
+          action: (
+            <button
+              onClick={() => router.push('/tracker')}
+              className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              Ver ahora
+            </button>
+          ) as any,
+        })
+      } else {
+        toast({
+          title: 'Sync completo',
+          description: `${storeName} actualizada sin productos nuevos.`,
+        })
+      }
     } catch {
       toast({
         variant: 'destructive',
-        title: 'Sync failed',
-        description: `Could not sync ${storeName}. Please try again.`,
+        title: 'Sync fallido',
+        description: `No se pudo sincronizar ${storeName}. Intenta de nuevo.`,
       })
     } finally {
       dispatch(setSyncingStore(null))

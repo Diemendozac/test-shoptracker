@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { useAppSelector } from '@/store/hooks'
+import { useGetPendingCandidatesQuery } from '@/app/(dashboard)/services/candidateApi'
 import {
   LayoutDashboard,
   FlaskConical,
@@ -35,6 +36,9 @@ export function AppSidebar() {
   const { user } = useAppSelector((s) => s.auth)
   const displayName = user?.email?.split('@')[0] ?? '—'
   const avatarLetter = displayName[0]?.toUpperCase() ?? '?'
+
+  const { data: pending } = useGetPendingCandidatesQuery()
+  const pendingCount = pending?.length ?? 0
 
   const inTesteos = pathname.startsWith('/tracker') || pathname.startsWith('/pool')
   const [open, setOpen] = useState(inTesteos)
@@ -107,6 +111,8 @@ export function AppSidebar() {
             <div className="ml-3 mt-0.5 space-y-0.5 border-l border-border pl-3">
               {TESTEOS_ITEMS.map((item) => {
                 const isActive = pathname.startsWith(item.href)
+                const isMisTiendas = item.href === '/tracker'
+                const showBadge = isMisTiendas && pendingCount > 0
                 return (
                   <Link key={item.name} href={item.href}
                     className={cn(
@@ -119,7 +125,16 @@ export function AppSidebar() {
                     <item.icon className={cn('h-3.5 w-3.5 shrink-0',
                       isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-primary')} />
                     {item.name}
-                    {isActive && <div className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" />}
+                    <div className="ml-auto flex items-center gap-1.5">
+                      {showBadge && (
+                        <span className="rounded-full bg-amber-500 px-1.5 py-0.5 text-[9px] font-bold leading-none text-white">
+                          {pendingCount}
+                        </span>
+                      )}
+                      {isActive && !showBadge && (
+                        <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                      )}
+                    </div>
                   </Link>
                 )
               })}

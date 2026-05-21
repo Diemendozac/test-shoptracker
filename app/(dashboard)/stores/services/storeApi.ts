@@ -3,6 +3,17 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import type { RootState } from '@/store'
 import type { StoreResponse, CreateStoreRequest } from '../types'
 
+export interface SyncResult {
+  storeId: string
+  storeName: string
+  snapshotDate: string
+  bestsellerSnapshots: number
+  newCandidates: number
+  trackingUpdated: number
+  success: boolean
+  errorMessage: string | null
+}
+
 export const storesApi = createApi({
   reducerPath: 'storesApi',
   baseQuery: fetchBaseQuery({
@@ -35,8 +46,9 @@ export const storesApi = createApi({
     }),
 
     // POST /api/stores/:storeId/sync
-    syncStore: builder.mutation<void, string>({
+    syncStore: builder.mutation<SyncResult, string>({
       query: (storeId) => ({ url: `/${storeId}/sync`, method: 'POST' }),
+      invalidatesTags: ['Store'],
     }),
 
   }),
