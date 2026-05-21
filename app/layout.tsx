@@ -38,7 +38,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#0f0a1a',
+  themeColor: '#f5f7ff',
   width: 'device-width',
   initialScale: 1,
 }
@@ -49,7 +49,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en">
       <body className={`${inter.variable} ${geistMono.variable} font-sans antialiased`}>
         <StoreProvider>
           {children}
