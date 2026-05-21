@@ -11,7 +11,7 @@ const FALLBACK: DashboardInsight = {
   type: 'total',
   isTask: false,
   emoji: '',
-  message: 'Sincroniza tus tiendas para ver insights en tiempo real',
+  message: 'Sincroniza para ver insights del día',
   cta: 'Sincronizar',
   ctaPath: '/stores',
 }
