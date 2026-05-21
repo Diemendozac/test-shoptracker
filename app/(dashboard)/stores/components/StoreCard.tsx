@@ -161,8 +161,9 @@ function StoreLogo({ storeName, baseUrl }: { storeName: string; baseUrl: string 
   const [imgFailed, setImgFailed] = useState(false)
   // Use favicon.ico directly — returns 404 when missing so onError fires correctly.
   // Google's favicon API always returns 200 (with a generic globe) so we can't detect failures.
-  const faviconUrl = baseUrl
-    ? `/api/image-proxy?url=${encodeURIComponent(baseUrl.replace(/\/$/, '') + '/favicon.ico')}`
+  const domain = baseUrl ? baseUrl.replace(/^https?:\/\//, '').replace(/\/$/, '') : ''
+  const faviconUrl = domain
+    ? `/api/image-proxy?url=${encodeURIComponent(`https://icons.duckduckgo.com/ip3/${domain}.ico`)}`
     : ''
 
   return (

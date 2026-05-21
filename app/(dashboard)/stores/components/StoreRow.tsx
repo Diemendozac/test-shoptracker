@@ -152,8 +152,9 @@ export function StoreRow({ store, isSyncing, isDeleting, onSync, onDelete }: Sto
 
 function StoreLogo({ storeName, baseUrl }: { storeName: string; baseUrl: string }) {
   const [imgFailed, setImgFailed] = useState(false)
-  const faviconUrl = baseUrl
-    ? `/api/image-proxy?url=${encodeURIComponent(baseUrl.replace(/\/$/, '') + '/favicon.ico')}`
+  const domain = baseUrl ? baseUrl.replace(/^https?:\/\//, '').replace(/\/$/, '') : ''
+  const faviconUrl = domain
+    ? `/api/image-proxy?url=${encodeURIComponent(`https://icons.duckduckgo.com/ip3/${domain}.ico`)}`
     : ''
 
   return (
