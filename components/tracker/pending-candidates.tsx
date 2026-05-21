@@ -6,17 +6,9 @@ import { useGetPendingCandidatesQuery, useActivateCandidateMutation, useCancelCa
 import type { PendingCandidate } from '@/app/(dashboard)/services/candidateApi'
 
 export function PendingCandidatesSection() {
-  const { data: candidates, isLoading, error } = useGetPendingCandidatesQuery()
+  const { data: candidates, isLoading } = useGetPendingCandidatesQuery()
   const [activate, { isLoading: activating }] = useActivateCandidateMutation()
   const [cancel] = useCancelCandidateMutation()
-
-  if (error) {
-    return (
-      <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/5 p-4">
-        <p className="text-xs text-red-400">Error cargando candidatos pendientes: {JSON.stringify(error)}</p>
-      </div>
-    )
-  }
 
   if (isLoading) {
     return (
