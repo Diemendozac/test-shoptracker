@@ -31,6 +31,7 @@ interface SortState {
 
 interface TrackerTableProps {
   candidates: TrackerCandidate[]
+  windowDays?: number  // 0=Todos, 3, 5, 30 — from the window selector
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -45,7 +46,9 @@ function SortIcon({ column, sort }: { column: SortKey; sort: SortState }) {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function TrackerTable({ candidates }: TrackerTableProps) {
+export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) {
+  // Anything < 7 or 0 (Todos) defaults to 7 days
+  const displayDays = windowDays === 30 ? 30 : 7
   // Sort state
   const [sort, setSort] = useState<SortState>({ key: 'performanceScore', dir: 'desc' })
 
@@ -197,8 +200,8 @@ export function TrackerTable({ candidates }: TrackerTableProps) {
             <SortIcon column="performanceScore" sort={sort} />
           </button>
 
-          {/* Trend — sparkline */}
-          <div className="col-span-2 text-center">Trend</div>
+          {/* Trend — sparkline, period-aware */}
+          <div className="col-span-2 text-center">Trend ({displayDays}d)</div>
 
           {/* Status — not sortable */}
           <div className="col-span-1 text-center">Status</div>
@@ -295,9 +298,16 @@ export function TrackerTable({ candidates }: TrackerTableProps) {
                   />
                 </div>
 
-                {/* Trend sparkline */}
+                {/* Trend sparkline — only shown when net growth exists in the period */}
                 <div className="col-span-2 flex justify-center">
-                  <Sparkline data={candidate.scoreHistory ?? []} width={80} height={32} />
+                  {(() => {
+                    const history = candidate.scoreHistory ?? []
+                    const sliced  = history.slice(-displayDays)
+                    const hasGrowth = sliced.length >= 2 && sliced[sliced.length - 1] > sliced[0]
+                    return hasGrowth
+                      ? <Sparkline data={sliced} width={80} height={32} />
+                      : <span className="text-[10px] text-muted-foreground/35">—</span>
+                  })()}
                 </div>
 
                 {/* Status */}

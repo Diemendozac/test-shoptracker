@@ -132,7 +132,7 @@ export default function TrackerPage() {
           {filteredCandidates.length} candidatos
         </span>
       </div>
-      <TrackerTable candidates={filteredCandidates} />
+      <TrackerTable candidates={filteredCandidates} windowDays={windowDays} />
     </PageLayout>
   )
 }
