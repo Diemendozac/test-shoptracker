@@ -5,9 +5,8 @@ import { PageLayout } from '@/components/layout/page-layout'
 import { TrackerTable } from '@/components/tracker/tracker-table'
 import { WinnerCard } from '@/components/tracker/winner-card'
 import { ShootingStars } from '@/components/tracker/shooting-stars'
-import { PoolWinnersSection } from '@/components/tracker/pool-winners'
 import { PendingCandidatesSection } from '@/components/tracker/pending-candidates'
-import { useGetWeeklyWinnerQuery, useGetPoolWinnersQuery, useGetWindowCandidatesQuery } from '../services/dashboardApi'
+import { useGetWeeklyWinnerQuery, useGetWindowCandidatesQuery } from '../services/dashboardApi'
 import type { PerformanceLabel } from '@/lib/types'
 import type { TrackerCandidate } from '../types'
 import { cn } from '@/lib/utils'
@@ -53,8 +52,6 @@ export default function TrackerPage() {
     { skip: !winnerStoreId }
   )
 
-  const { data: poolData, isLoading: isPoolLoading } = useGetPoolWinnersQuery()
-
   const { data: windowData, isFetching: isWindowFetching } = useGetWindowCandidatesQuery(
     { days: windowDays },
     { skip: windowDays === 0 }
@@ -72,9 +69,6 @@ export default function TrackerPage() {
     <PageLayout title="Tracker" description="All active candidates in tracking window">
       {/* Pending candidates — awaiting user approval */}
       <PendingCandidatesSection />
-
-      {/* Pool winners — global intelligence feed */}
-      <PoolWinnersSection data={poolData} isLoading={isPoolLoading} />
 
       {/* Winner banner — per-store */}
       {winnerData?.winner && (

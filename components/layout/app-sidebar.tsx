@@ -10,11 +10,13 @@ import {
   Store,
   Settings,
   TrendingUp,
+  Globe,
 } from 'lucide-react'
 
 const navigation = [
   { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Tracker', href: '/tracker', icon: Target },
+  { name: 'Pool', href: '/pool', icon: Globe },
   { name: 'Stores', href: '/stores', icon: Store },
   { name: 'Settings', href: '/settings', icon: Settings },
 ]
