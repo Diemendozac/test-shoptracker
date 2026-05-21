@@ -15,6 +15,30 @@ interface PoolWinnersSectionProps {
 }
 
 export function PoolWinnersSection({ data, isLoading }: PoolWinnersSectionProps) {
+  const [nicheFilter, setNicheFilter] = useState('all')
+  const [currencyFilter, setCurrencyFilter] = useState('all')
+  const [paFilter, setPaFilter] = useState('all')
+
+  const winners = data?.winners ?? []
+
+  const niches = useMemo(
+    () => Array.from(new Set(winners.map((w) => w.niche).filter(Boolean) as string[])).sort(),
+    [winners]
+  )
+  const currencies = useMemo(
+    () => Array.from(new Set(winners.map((w) => w.currency).filter(Boolean) as string[])).sort(),
+    [winners]
+  )
+  const filtered = useMemo(() => {
+    let r = winners
+    if (nicheFilter !== 'all') r = r.filter((w) => w.niche === nicheFilter)
+    if (currencyFilter !== 'all') r = r.filter((w) => w.currency === currencyFilter)
+    if (paFilter !== 'all') r = r.filter((w) => (paFilter === 'yes') === !!w.pagoAnticipado)
+    return r
+  }, [winners, nicheFilter, currencyFilter, paFilter])
+
+  const selectCls = 'h-8 appearance-none rounded-lg border border-border bg-secondary/40 px-3 text-xs text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer'
+
   if (isLoading) {
     return (
       <div className="mb-6 rounded-2xl border border-border bg-card p-6">
@@ -47,29 +71,6 @@ export function PoolWinnersSection({ data, isLoading }: PoolWinnersSectionProps)
       </div>
     )
   }
-
-  const [nicheFilter, setNicheFilter] = useState('all')
-  const [currencyFilter, setCurrencyFilter] = useState('all')
-  const [paFilter, setPaFilter] = useState('all')
-
-  const niches = useMemo(
-    () => Array.from(new Set(data.winners.map((w) => w.niche).filter(Boolean) as string[])).sort(),
-    [data.winners]
-  )
-  const currencies = useMemo(
-    () => Array.from(new Set(data.winners.map((w) => w.currency).filter(Boolean) as string[])).sort(),
-    [data.winners]
-  )
-
-  const filtered = useMemo(() => {
-    let r = data.winners
-    if (nicheFilter !== 'all') r = r.filter((w) => w.niche === nicheFilter)
-    if (currencyFilter !== 'all') r = r.filter((w) => w.currency === currencyFilter)
-    if (paFilter !== 'all') r = r.filter((w) => (paFilter === 'yes') === !!w.pagoAnticipado)
-    return r
-  }, [data.winners, nicheFilter, currencyFilter, paFilter])
-
-  const selectCls = 'h-8 appearance-none rounded-lg border border-border bg-secondary/40 px-3 text-xs text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer'
 
   return (
     <div className="mb-6 rounded-2xl border border-border bg-card p-6">
