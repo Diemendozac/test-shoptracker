@@ -291,8 +291,7 @@ export default function SettingsPage() {
               <div>
                 <p className="text-sm font-medium text-foreground">Detectar candidatos automáticamente</p>
                 <p className="text-xs text-muted-foreground">
-                  Cuando está activo, cada sync detecta productos nuevos y los muestra en Tracker para que los testees.
-                  Si está inactivo, los candidatos no se agregan hasta que lo hagas manualmente.
+                  Acepta todos los testeos automáticamente en cada sync.
                 </p>
               </div>
               <Toggle
