@@ -289,9 +289,9 @@ export default function SettingsPage() {
           <div className="divide-y divide-border">
             <div className="flex items-center justify-between px-6 py-4">
               <div>
-                <p className="text-sm font-medium text-foreground">Detectar candidatos automáticamente</p>
+                <p className="text-sm font-medium text-foreground">Testear candidatos automáticamente</p>
                 <p className="text-xs text-muted-foreground">
-                  Acepta todos los testeos automáticamente en cada sync.
+                  Los nuevos productos detectados se agregan directo al tracker sin necesitar tu aprobación.
                 </p>
               </div>
               <Toggle
