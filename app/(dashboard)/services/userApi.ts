@@ -9,6 +9,31 @@ export interface UserProfile {
   createdAt: string
 }
 
+export interface NotificationPending {
+  candidateId: string
+  productTitle: string
+  storeName: string
+  storeId: string
+  firstSeenDate: string
+  firstSeenRank: number
+}
+
+export interface NotificationAlert {
+  candidateId: string
+  storeId: string
+  productTitle: string
+  storeName: string
+  performanceScore: number
+  performanceLabel: string
+  growthPct: number
+  alertSentAt: string
+}
+
+export interface NotificationsResponse {
+  pending: NotificationPending[]
+  alerts: NotificationAlert[]
+}
+
 export const userApi = createApi({
   reducerPath: 'userApi',
   baseQuery: fetchBaseQuery({
@@ -31,7 +56,12 @@ export const userApi = createApi({
       query: (body) => ({ url: '/me/password', method: 'PUT', body }),
     }),
 
+    getNotifications: builder.query<NotificationsResponse, void>({
+      query: () => '/notifications',
+      providesTags: ['Me'],
+    }),
+
   }),
 })
 
-export const { useGetMeQuery, useChangePasswordMutation } = userApi
+export const { useGetMeQuery, useChangePasswordMutation, useGetNotificationsQuery } = userApi
