@@ -31,6 +31,9 @@ export interface TrackerCandidate {
   productTitle: string
   productImage: string | null
   storeName: string
+  niche: string | null
+  currency: string | null
+  pagoAnticipado: boolean | null
   daysElapsed: number
   performanceScore: number | null
   entryScore: number | null

@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useMemo } from 'react'
 import { Lock, Globe, TrendingUp, Crown } from 'lucide-react'
 import { ScoreRing } from '@/components/dashboard/score-ring'
 import { PerformanceBadge } from '@/components/dashboard/performance-badge'
@@ -47,11 +48,56 @@ export function PoolWinnersSection({ data, isLoading }: PoolWinnersSectionProps)
     )
   }
 
+  const [nicheFilter, setNicheFilter] = useState('all')
+  const [currencyFilter, setCurrencyFilter] = useState('all')
+  const [paFilter, setPaFilter] = useState('all')
+
+  const niches = useMemo(
+    () => Array.from(new Set(data.winners.map((w) => w.niche).filter(Boolean) as string[])).sort(),
+    [data.winners]
+  )
+  const currencies = useMemo(
+    () => Array.from(new Set(data.winners.map((w) => w.currency).filter(Boolean) as string[])).sort(),
+    [data.winners]
+  )
+
+  const filtered = useMemo(() => {
+    let r = data.winners
+    if (nicheFilter !== 'all') r = r.filter((w) => w.niche === nicheFilter)
+    if (currencyFilter !== 'all') r = r.filter((w) => w.currency === currencyFilter)
+    if (paFilter !== 'all') r = r.filter((w) => (paFilter === 'yes') === !!w.pagoAnticipado)
+    return r
+  }, [data.winners, nicheFilter, currencyFilter, paFilter])
+
+  const selectCls = 'h-8 appearance-none rounded-lg border border-border bg-secondary/40 px-3 text-xs text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer'
+
   return (
     <div className="mb-6 rounded-2xl border border-border bg-card p-6">
-      <SectionHeader count={data.winners.length} />
+      <SectionHeader count={filtered.length} />
+
+      {/* Filter bar */}
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {niches.length > 0 && (
+          <select value={nicheFilter} onChange={(e) => setNicheFilter(e.target.value)} className={selectCls}>
+            <option value="all">Todos los nichos</option>
+            {niches.map((n) => <option key={n} value={n}>{n}</option>)}
+          </select>
+        )}
+        {currencies.length > 0 && (
+          <select value={currencyFilter} onChange={(e) => setCurrencyFilter(e.target.value)} className={selectCls}>
+            <option value="all">Todas las monedas</option>
+            {currencies.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        )}
+        <select value={paFilter} onChange={(e) => setPaFilter(e.target.value)} className={selectCls}>
+          <option value="all">Pago anticipado: Todos</option>
+          <option value="yes">Solo pago anticipado</option>
+          <option value="no">Sin pago anticipado</option>
+        </select>
+      </div>
+
       {/* Column headers */}
-      <div className="mt-4 grid grid-cols-[28px_40px_1fr_80px_64px_64px_48px_64px] items-center gap-3 px-4 pb-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+      <div className="mt-3 grid grid-cols-[28px_40px_1fr_80px_64px_64px_48px_64px] items-center gap-3 px-4 pb-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
         <div>#</div>
         <div />
         <div>Producto</div>
@@ -62,9 +108,15 @@ export function PoolWinnersSection({ data, isLoading }: PoolWinnersSectionProps)
         <div className="text-center">Estado</div>
       </div>
       <div className="space-y-2">
-        {data.winners.map((winner, i) => (
-          <PoolWinnerRow key={winner.candidateId} winner={winner} position={i + 1} />
-        ))}
+        {filtered.length === 0 ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            No hay productos que coincidan con los filtros.
+          </p>
+        ) : (
+          filtered.map((winner, i) => (
+            <PoolWinnerRow key={winner.candidateId} winner={winner} position={i + 1} />
+          ))
+        )}
       </div>
     </div>
   )

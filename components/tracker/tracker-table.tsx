@@ -55,10 +55,21 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
   // Filter state
   const [search, setSearch] = useState('')
   const [storeFilter, setStoreFilter] = useState<string>('all')
+  const [nicheFilter, setNicheFilter] = useState<string>('all')
+  const [currencyFilter, setCurrencyFilter] = useState<string>('all')
+  const [paFilter, setPaFilter] = useState<string>('all') // 'all' | 'yes' | 'no'
 
   // Derived filter options
   const stores = useMemo(
     () => ['all', ...Array.from(new Set(candidates.map((c) => c.storeName))).sort()],
+    [candidates]
+  )
+  const niches = useMemo(
+    () => ['all', ...Array.from(new Set(candidates.map((c) => c.niche).filter(Boolean) as string[])).sort()],
+    [candidates]
+  )
+  const currencies = useMemo(
+    () => ['all', ...Array.from(new Set(candidates.map((c) => c.currency).filter(Boolean) as string[])).sort()],
     [candidates]
   )
 
@@ -86,6 +97,21 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
       result = result.filter((c) => c.storeName === storeFilter)
     }
 
+    // Niche filter
+    if (nicheFilter !== 'all') {
+      result = result.filter((c) => c.niche === nicheFilter)
+    }
+
+    // Currency filter
+    if (currencyFilter !== 'all') {
+      result = result.filter((c) => c.currency === currencyFilter)
+    }
+
+    // Pago anticipado filter
+    if (paFilter !== 'all') {
+      result = result.filter((c) => (paFilter === 'yes') === !!c.pagoAnticipado)
+    }
+
     // Sort
     if (sort.key) {
       const k = sort.key
@@ -98,13 +124,16 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
     }
 
     return result
-  }, [candidates, search, storeFilter, sort])
+  }, [candidates, search, storeFilter, nicheFilter, currencyFilter, paFilter, sort])
 
-  const hasActiveFilters = search || storeFilter !== 'all'
+  const hasActiveFilters = search || storeFilter !== 'all' || nicheFilter !== 'all' || currencyFilter !== 'all' || paFilter !== 'all'
 
   function clearFilters() {
     setSearch('')
     setStoreFilter('all')
+    setNicheFilter('all')
+    setCurrencyFilter('all')
+    setPaFilter('all')
   }
 
   // ─── Render ─────────────────────────────────────────────────────────────────
@@ -148,6 +177,45 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
           </select>
           <SlidersHorizontal className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
         </div>
+
+        {/* Niche filter — only shown when there's data */}
+        {niches.length > 1 && (
+          <select
+            value={nicheFilter}
+            onChange={(e) => setNicheFilter(e.target.value)}
+            className="h-9 appearance-none rounded-lg border border-border bg-secondary/40 px-3 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
+          >
+            <option value="all">Todos los nichos</option>
+            {niches.filter((n) => n !== 'all').map((n) => (
+              <option key={n} value={n}>{n}</option>
+            ))}
+          </select>
+        )}
+
+        {/* Currency filter */}
+        {currencies.length > 1 && (
+          <select
+            value={currencyFilter}
+            onChange={(e) => setCurrencyFilter(e.target.value)}
+            className="h-9 appearance-none rounded-lg border border-border bg-secondary/40 px-3 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
+          >
+            <option value="all">Todas las monedas</option>
+            {currencies.filter((c) => c !== 'all').map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+        )}
+
+        {/* Pago anticipado filter */}
+        <select
+          value={paFilter}
+          onChange={(e) => setPaFilter(e.target.value)}
+          className="h-9 appearance-none rounded-lg border border-border bg-secondary/40 px-3 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
+        >
+          <option value="all">Pago anticipado: Todos</option>
+          <option value="yes">Solo pago anticipado</option>
+          <option value="no">Sin pago anticipado</option>
+        </select>
 
         {/* Clear filters */}
         {hasActiveFilters && (

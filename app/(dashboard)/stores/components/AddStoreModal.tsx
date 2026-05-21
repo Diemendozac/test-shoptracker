@@ -58,6 +58,31 @@ function extractApiError(err: unknown): string {
 
 // ─── component ───────────────────────────────────────────────────────────────
 
+const NICHES = [
+  { value: 'moda',      label: 'Moda & Ropa' },
+  { value: 'gadgets',   label: 'Gadgets & Tecnología' },
+  { value: 'joyeria',   label: 'Joyería & Accesorios' },
+  { value: 'hogar',     label: 'Hogar & Decoración' },
+  { value: 'belleza',   label: 'Belleza & Cuidado' },
+  { value: 'deportes',  label: 'Deportes & Fitness' },
+  { value: 'mascotas',  label: 'Mascotas' },
+  { value: 'bebes',     label: 'Bebés & Niños' },
+  { value: 'salud',     label: 'Salud & Bienestar' },
+  { value: 'alimentos', label: 'Alimentos & Bebidas' },
+  { value: 'otro',      label: 'Otro' },
+]
+
+const CURRENCIES = [
+  { value: 'USD', label: 'USD — Estados Unidos' },
+  { value: 'MXN', label: 'MXN — México' },
+  { value: 'COP', label: 'COP — Colombia' },
+  { value: 'ARS', label: 'ARS — Argentina' },
+  { value: 'CLP', label: 'CLP — Chile' },
+  { value: 'PEN', label: 'PEN — Perú' },
+  { value: 'BRL', label: 'BRL — Brasil' },
+  { value: 'EUR', label: 'EUR — España / Europa' },
+]
+
 export function AddStoreModal() {
   const { isAddModalOpen, closeAddModal, addStore, isCreating } = useStores()
 
@@ -65,6 +90,9 @@ export function AddStoreModal() {
   const [storeName, setStoreName]         = useState<FieldState>(makeField())
   const [baseUrl, setBaseUrl]             = useState<FieldState>(makeField())
   const [bestsellerUrl, setBestsellerUrl] = useState<FieldState>(makeField())
+  const [niche, setNiche]                 = useState('')
+  const [currency, setCurrency]           = useState('')
+  const [pagoAnticipado, setPagoAnticipado] = useState(false)
   const [submitError, setSubmitError]     = useState<string | null>(null)
 
   // reset everything when modal closes
@@ -74,6 +102,9 @@ export function AddStoreModal() {
       setStoreName(makeField())
       setBaseUrl(makeField())
       setBestsellerUrl(makeField())
+      setNiche('')
+      setCurrency('')
+      setPagoAnticipado(false)
       setSubmitError(null)
     }
   }, [isAddModalOpen])
@@ -107,9 +138,12 @@ export function AddStoreModal() {
       try {
         const parsed = new URL(baseUrl.value.trim())
         await addStore({
-          storeName:     storeName.value.trim(),
-          baseUrl:       parsed.origin,
-          bestsellerUrl: parsed.origin + DEFAULT_BESTSELLER_PATH,
+          storeName:      storeName.value.trim(),
+          baseUrl:        parsed.origin,
+          bestsellerUrl:  parsed.origin + DEFAULT_BESTSELLER_PATH,
+          niche:          niche || undefined,
+          currency:       currency || undefined,
+          pagoAnticipado: pagoAnticipado || undefined,
         })
       } catch (err) {
         setSubmitError(extractApiError(err))
@@ -125,9 +159,12 @@ export function AddStoreModal() {
       try {
         const bsUrl = new URL(bestsellerUrl.value.trim())
         await addStore({
-          storeName:     storeName.value.trim(),
-          baseUrl:       bsUrl.origin,
-          bestsellerUrl: bestsellerUrl.value.trim(),
+          storeName:      storeName.value.trim(),
+          baseUrl:        bsUrl.origin,
+          bestsellerUrl:  bestsellerUrl.value.trim(),
+          niche:          niche || undefined,
+          currency:       currency || undefined,
+          pagoAnticipado: pagoAnticipado || undefined,
         })
       } catch (err) {
         setSubmitError(extractApiError(err))
@@ -246,6 +283,50 @@ export function AddStoreModal() {
             </>
           )}
 
+          {/* ── niche + currency ── */}
+          <div className="grid grid-cols-2 gap-3">
+            <SelectField
+              label="Nicho"
+              value={niche}
+              disabled={isCreating}
+              placeholder="Selecciona…"
+              options={NICHES}
+              onChange={setNiche}
+            />
+            <SelectField
+              label="Moneda"
+              value={currency}
+              disabled={isCreating}
+              placeholder="Selecciona…"
+              options={CURRENCIES}
+              onChange={setCurrency}
+            />
+          </div>
+
+          {/* ── pago anticipado ── */}
+          <label className="flex cursor-pointer items-center justify-between rounded-lg border border-border bg-secondary/30 px-3 py-2.5">
+            <div>
+              <p className="text-xs font-medium text-foreground">Pago anticipado</p>
+              <p className="text-[10px] text-muted-foreground">La tienda usa modelo de pago antes del envío</p>
+            </div>
+            <button
+              type="button"
+              disabled={isCreating}
+              onClick={() => setPagoAnticipado((v) => !v)}
+              className={cn(
+                'relative h-5 w-9 rounded-full transition-colors focus:outline-none disabled:opacity-50',
+                pagoAnticipado ? 'bg-primary' : 'bg-secondary'
+              )}
+            >
+              <span
+                className={cn(
+                  'absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform',
+                  pagoAnticipado && 'translate-x-4'
+                )}
+              />
+            </button>
+          </label>
+
           {/* server error */}
           {submitError && (
             <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-xs text-destructive">
@@ -325,6 +406,41 @@ interface FieldProps {
   placeholder?: string
   onChange: (v: string) => void
   onBlur?: () => void
+}
+
+// ─── SelectField ──────────────────────────────────────────────────────────────
+
+interface SelectFieldProps {
+  label: string
+  value: string
+  disabled?: boolean
+  placeholder: string
+  options: { value: string; label: string }[]
+  onChange: (v: string) => void
+}
+
+function SelectField({ label, value, disabled, placeholder, options, onChange }: SelectFieldProps) {
+  return (
+    <div className="space-y-1.5">
+      <label className="text-xs font-medium text-foreground">{label}</label>
+      <select
+        value={value}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.value)}
+        className={cn(
+          'w-full appearance-none rounded-lg border border-border bg-secondary/50 px-3 py-2 text-sm text-foreground',
+          'outline-none transition-colors focus:border-primary/60 focus:ring-2 focus:ring-primary/20',
+          'disabled:cursor-not-allowed disabled:opacity-50',
+          !value && 'text-muted-foreground/60'
+        )}
+      >
+        <option value="">{placeholder}</option>
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
+    </div>
+  )
 }
 
 function Field({ label, hint, icon, value, error, disabled, placeholder, onChange, onBlur }: FieldProps) {

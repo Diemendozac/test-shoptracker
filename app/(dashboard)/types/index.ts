@@ -22,6 +22,9 @@ export interface TrackerCandidate {
   productTitle: string
   productImage: string | null
   storeName: string
+  niche: string | null
+  currency: string | null
+  pagoAnticipado: boolean | null
   daysElapsed: number
   performanceScore: number | null
   entryScore: number | null
@@ -73,6 +76,9 @@ export interface WeeklyWinnerResponse {
 export interface PoolWinnerProduct extends WinnerProduct {
   storeId: string
   storeName: string
+  niche: string | null
+  currency: string | null
+  pagoAnticipado: boolean | null
   scoreHistory?: number[]
   growthHistory?: number[]
 }
