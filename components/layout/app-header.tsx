@@ -9,7 +9,7 @@ import { TopbarTicker } from '@/components/layout/topbar-ticker'
 import { cn } from '@/lib/utils'
 
 interface AppHeaderProps {
-  title: string
+  title?: string
   description?: string
 }
 
@@ -187,12 +187,7 @@ export function AppHeader({ title, description }: AppHeaderProps) {
 
   return (
     <header className="sticky top-0 z-40 grid h-16 grid-cols-3 items-center border-b border-border bg-background/80 px-6 backdrop-blur-sm">
-      <div className="flex flex-col">
-        <h1 className="text-lg font-semibold text-foreground">{title}</h1>
-        {description && (
-          <p className="text-sm text-muted-foreground">{description}</p>
-        )}
-      </div>
+      <div />
 
       <TopbarTicker />
 

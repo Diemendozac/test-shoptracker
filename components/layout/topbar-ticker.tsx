@@ -10,7 +10,7 @@ import type { DashboardInsight } from '@/app/(dashboard)/types'
 const FALLBACK: DashboardInsight = {
   type: 'total',
   isTask: false,
-  emoji: '🔄',
+  emoji: '',
   message: 'Sincroniza tus tiendas para ver insights en tiempo real',
   cta: 'Sincronizar',
   ctaPath: '/stores',
@@ -51,11 +51,11 @@ export function TopbarTicker() {
   const isTask = msg.isTask
 
   return (
-    <div className="flex items-center justify-center overflow-hidden">
+    <div className="flex items-center justify-center min-w-0">
       <Link
         href={msg.ctaPath}
         className={cn(
-          'group flex items-center gap-2 rounded-full border px-3.5 py-1.5 shadow-sm',
+          'group flex min-w-0 items-center gap-2 rounded-full border px-3.5 py-1.5 shadow-sm',
           'transition-all duration-300',
           visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1.5',
           isTask
@@ -71,16 +71,12 @@ export function TopbarTicker() {
           </span>
         )}
 
-        <span className="text-sm leading-none">{msg.emoji}</span>
-
-        <span className={cn('text-xs font-medium whitespace-nowrap', accent)}>
+        <span className={cn('min-w-0 truncate text-xs font-medium', accent)}>
           {msg.message}
         </span>
 
-        <span className="flex items-center gap-0.5 whitespace-nowrap text-[10px] font-semibold text-muted-foreground transition-colors group-hover:text-foreground">
-          {isTask
-            ? <CheckCircle2 className="mr-0.5 h-3 w-3 text-amber-500" />
-            : null}
+        <span className="flex shrink-0 items-center gap-0.5 text-[10px] font-semibold text-muted-foreground transition-colors group-hover:text-foreground">
+          {isTask && <CheckCircle2 className="mr-0.5 h-3 w-3 text-amber-500" />}
           {msg.cta}
           <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
         </span>

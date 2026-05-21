@@ -30,7 +30,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex min-h-screen w-full bg-background">
         <AppSidebar />
         <main className="flex flex-1 flex-col pl-64">
-          <AppHeader title="Shop Tracker" />
+          <AppHeader />
           <div className="flex-1 overflow-auto">{children}</div>
         </main>
       </div>
