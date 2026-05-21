@@ -1,148 +1,335 @@
 'use client'
 
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { PageLayout } from '@/components/layout/page-layout'
 import { Button } from '@/components/ui/button'
-import { useAppSelector } from '@/store/hooks'
-import { User, Mail, Bell, Shield, CreditCard, LogOut } from 'lucide-react'
+import { useAppDispatch } from '@/store/hooks'
+import { logout } from '@/app/(auth)/store/authSlice'
+import { useGetMeQuery, useChangePasswordMutation } from '@/app/(dashboard)/services/userApi'
+import { User, Mail, Bell, Shield, CreditCard, LogOut, Eye, EyeOff, Check, X } from 'lucide-react'
+import { cn } from '@/lib/utils'
+
+// ─── Plan badge ───────────────────────────────────────────────────────────────
+
+const PLAN_LABELS: Record<string, { label: string; color: string }> = {
+  free:    { label: 'Free',    color: 'bg-secondary text-muted-foreground' },
+  basic:   { label: 'Básico',  color: 'bg-blue-500/20 text-blue-400' },
+  pro:     { label: 'Pro',     color: 'bg-primary/20 text-primary' },
+  admin:   { label: 'Admin',   color: 'bg-amber-500/20 text-amber-400' },
+}
+
+// ─── Toggle ───────────────────────────────────────────────────────────────────
+
+function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      onClick={() => onChange(!checked)}
+      role="switch"
+      aria-checked={checked}
+      className={cn(
+        'relative h-6 w-11 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background',
+        checked ? 'bg-primary' : 'bg-secondary'
+      )}
+    >
+      <span className={cn(
+        'block h-5 w-5 rounded-full bg-white shadow transition-transform',
+        checked ? 'translate-x-[22px]' : 'translate-x-0.5'
+      )} />
+    </button>
+  )
+}
+
+// ─── Password form ────────────────────────────────────────────────────────────
+
+function PasswordSection() {
+  const [open, setOpen]             = useState(false)
+  const [current, setCurrent]       = useState('')
+  const [next, setNext]             = useState('')
+  const [confirm, setConfirm]       = useState('')
+  const [showCurrent, setShowCurrent] = useState(false)
+  const [showNext, setShowNext]     = useState(false)
+  const [success, setSuccess]       = useState(false)
+  const [errorMsg, setErrorMsg]     = useState('')
+
+  const [changePassword, { isLoading }] = useChangePasswordMutation()
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setErrorMsg('')
+    if (next.length < 8) { setErrorMsg('La nueva contraseña debe tener al menos 8 caracteres'); return }
+    if (next !== confirm) { setErrorMsg('Las contraseñas no coinciden'); return }
+    try {
+      await changePassword({ currentPassword: current, newPassword: next }).unwrap()
+      setSuccess(true)
+      setCurrent(''); setNext(''); setConfirm('')
+      setTimeout(() => { setSuccess(false); setOpen(false) }, 2000)
+    } catch (err: any) {
+      setErrorMsg(err?.data?.message ?? 'Contraseña actual incorrecta')
+    }
+  }
+
+  function handleCancel() {
+    setOpen(false); setCurrent(''); setNext(''); setConfirm(''); setErrorMsg('')
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="font-medium text-foreground">Cambiar contraseña</p>
+          <p className="text-sm text-muted-foreground">Actualiza tu contraseña de acceso</p>
+        </div>
+        {!open && (
+          <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+            Cambiar
+          </Button>
+        )}
+      </div>
+
+      {open && (
+        <form onSubmit={handleSubmit} className="space-y-3 rounded-lg border border-border bg-secondary/20 p-4">
+          {/* Current password */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">Contraseña actual</label>
+            <div className="relative">
+              <input
+                type={showCurrent ? 'text' : 'password'}
+                value={current}
+                onChange={(e) => setCurrent(e.target.value)}
+                required
+                className="h-9 w-full rounded-lg border border-border bg-input px-3 pr-9 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+              <button type="button" onClick={() => setShowCurrent(!showCurrent)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                {showCurrent ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+              </button>
+            </div>
+          </div>
+
+          {/* New password */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">Nueva contraseña</label>
+            <div className="relative">
+              <input
+                type={showNext ? 'text' : 'password'}
+                value={next}
+                onChange={(e) => setNext(e.target.value)}
+                required
+                className="h-9 w-full rounded-lg border border-border bg-input px-3 pr-9 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+              <button type="button" onClick={() => setShowNext(!showNext)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                {showNext ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+              </button>
+            </div>
+            {next && next.length < 8 && (
+              <p className="text-[10px] text-amber-400">Mínimo 8 caracteres</p>
+            )}
+          </div>
+
+          {/* Confirm */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">Confirmar contraseña</label>
+            <input
+              type="password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              required
+              className="h-9 w-full rounded-lg border border-border bg-input px-3 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+            {confirm && next !== confirm && (
+              <p className="text-[10px] text-red-400">No coinciden</p>
+            )}
+          </div>
+
+          {errorMsg && <p className="text-xs text-red-400">{errorMsg}</p>}
+          {success && (
+            <p className="flex items-center gap-1.5 text-xs text-emerald-400">
+              <Check className="h-3.5 w-3.5" /> Contraseña actualizada
+            </p>
+          )}
+
+          <div className="flex justify-end gap-2 pt-1">
+            <Button type="button" variant="outline" size="sm" onClick={handleCancel}>
+              Cancelar
+            </Button>
+            <Button type="submit" size="sm" disabled={isLoading}>
+              {isLoading ? 'Guardando…' : 'Guardar'}
+            </Button>
+          </div>
+        </form>
+      )}
+    </div>
+  )
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
-  const { user } = useAppSelector((s) => s.auth)
-  const email = user?.email ?? '—'
-  const userId = (user as any)?.id ?? ''
-  const avatarLetter = email.charAt(0).toUpperCase()
+  const router   = useRouter()
+  const dispatch = useAppDispatch()
+  const { data: me, isLoading } = useGetMeQuery()
+
+  const [notifications, setNotifications] = useState({
+    dailyDigest:  false,
+    risingAlerts: true,
+    weeklyReport: false,
+  })
+
+  function toggleNotif(key: keyof typeof notifications) {
+    setNotifications((prev) => ({ ...prev, [key]: !prev[key] }))
+  }
+
+  function handleLogout() {
+    dispatch(logout())
+    router.push('/login')
+  }
+
+  const plan = me?.plan ?? 'free'
+  const planMeta = PLAN_LABELS[plan] ?? PLAN_LABELS.free
+  const avatarLetter = me?.email?.charAt(0).toUpperCase() ?? '—'
+  const joinedDate = me?.createdAt
+    ? new Date(me.createdAt).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })
+    : '—'
 
   return (
     <PageLayout title="Settings" description="Manage your account and preferences">
       <div className="mx-auto max-w-3xl space-y-6">
-        {/* Profile Section */}
+
+        {/* ── Profile ── */}
         <div className="rounded-xl border border-border bg-card">
           <div className="border-b border-border p-4">
             <h2 className="flex items-center gap-2 font-semibold text-foreground">
               <User className="h-4 w-4" />
-              Profile
+              Perfil
             </h2>
           </div>
-          <div className="p-4 space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/20 text-2xl font-bold text-primary">
-                {avatarLetter}
-              </div>
-              <div>
-                <p className="font-medium text-foreground">{email}</p>
-                <p className="text-sm text-muted-foreground">User ID: {userId ? userId.slice(0, 8) + '...' : '—'}</p>
-              </div>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Email</label>
-                <div className="flex h-10 items-center rounded-lg border border-border bg-input px-3 text-sm text-muted-foreground">
-                  <Mail className="mr-2 h-4 w-4" />
-                  {email}
+          <div className="p-6 space-y-5">
+            {isLoading ? (
+              <div className="flex items-center gap-4">
+                <div className="h-16 w-16 animate-pulse rounded-full bg-secondary" />
+                <div className="space-y-2">
+                  <div className="h-4 w-40 animate-pulse rounded bg-secondary" />
+                  <div className="h-3 w-24 animate-pulse rounded bg-secondary" />
                 </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Plan</label>
-                <div className="flex h-10 items-center rounded-lg border border-border bg-input px-3 text-sm">
-                  <span className="rounded bg-primary/20 px-2 py-0.5 text-xs font-medium text-primary">Free</span>
-                  <span className="ml-2 text-muted-foreground">50 stores limit</span>
+            ) : (
+              <div className="flex items-center gap-4">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/20 text-2xl font-bold text-primary">
+                  {avatarLetter}
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground">{me?.email ?? '—'}</p>
+                  <p className="text-xs text-muted-foreground">Miembro desde {joinedDate}</p>
+                </div>
+              </div>
+            )}
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Email</label>
+                <div className="flex h-10 items-center rounded-lg border border-border bg-input px-3 text-sm text-muted-foreground">
+                  <Mail className="mr-2 h-3.5 w-3.5 shrink-0" />
+                  {me?.email ?? '—'}
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Plan</label>
+                <div className="flex h-10 items-center gap-2 rounded-lg border border-border bg-input px-3 text-sm">
+                  <span className={cn('rounded px-2 py-0.5 text-xs font-semibold', planMeta.color)}>
+                    {planMeta.label}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {me?.maxStores ?? 1} {me?.maxStores === 1 ? 'tienda' : 'tiendas'} máx.
+                  </span>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Notifications */}
+        {/* ── Notifications ── */}
         <div className="rounded-xl border border-border bg-card">
           <div className="border-b border-border p-4">
             <h2 className="flex items-center gap-2 font-semibold text-foreground">
               <Bell className="h-4 w-4" />
-              Notifications
+              Notificaciones
             </h2>
           </div>
-          <div className="p-4 space-y-4">
-            {[
-              { label: 'Daily digest email', description: 'Receive a summary of top performers each day' },
-              { label: 'Rising alerts', description: 'Get notified when a product starts trending' },
-              { label: 'Weekly reports', description: 'Comprehensive weekly performance report' },
-            ].map((item, idx) => (
-              <div key={idx} className="flex items-center justify-between">
+          <div className="divide-y divide-border">
+            {([
+              { key: 'dailyDigest',  label: 'Resumen diario',      desc: 'Email con los top productos de cada día' },
+              { key: 'risingAlerts', label: 'Alertas Rising',       desc: 'Te avisamos cuando un producto entra en tendencia' },
+              { key: 'weeklyReport', label: 'Reporte semanal',      desc: 'Resumen completo de performance cada semana' },
+            ] as const).map(({ key, label, desc }) => (
+              <div key={key} className="flex items-center justify-between px-6 py-4">
                 <div>
-                  <p className="font-medium text-foreground">{item.label}</p>
-                  <p className="text-sm text-muted-foreground">{item.description}</p>
+                  <p className="text-sm font-medium text-foreground">{label}</p>
+                  <p className="text-xs text-muted-foreground">{desc}</p>
                 </div>
-                <button
-                  className="relative h-6 w-11 rounded-full bg-secondary transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
-                  role="switch"
-                  aria-checked="false"
-                >
-                  <span className="block h-5 w-5 translate-x-0.5 rounded-full bg-muted-foreground transition-transform" />
-                </button>
+                <Toggle
+                  checked={notifications[key]}
+                  onChange={() => toggleNotif(key)}
+                />
               </div>
             ))}
           </div>
         </div>
 
-        {/* Security */}
+        {/* ── Security ── */}
         <div className="rounded-xl border border-border bg-card">
           <div className="border-b border-border p-4">
             <h2 className="flex items-center gap-2 font-semibold text-foreground">
               <Shield className="h-4 w-4" />
-              Security
+              Seguridad
             </h2>
           </div>
-          <div className="p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-foreground">Change Password</p>
-                <p className="text-sm text-muted-foreground">Update your account password</p>
-              </div>
-              <Button variant="outline" size="sm">Update</Button>
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-foreground">Two-Factor Authentication</p>
-                <p className="text-sm text-muted-foreground">Add an extra layer of security</p>
-              </div>
-              <Button variant="outline" size="sm">Enable</Button>
-            </div>
+          <div className="p-6">
+            <PasswordSection />
           </div>
         </div>
 
-        {/* Billing */}
-        <div className="rounded-xl border border-border bg-card">
-          <div className="border-b border-border p-4">
-            <h2 className="flex items-center gap-2 font-semibold text-foreground">
-              <CreditCard className="h-4 w-4" />
-              Billing
-            </h2>
-          </div>
-          <div className="p-4">
-            <div className="flex items-center justify-between rounded-lg bg-gradient-to-r from-primary/20 via-primary/10 to-transparent p-4">
-              <div>
-                <p className="font-semibold text-foreground">Upgrade to Pro</p>
-                <p className="text-sm text-muted-foreground">Unlock unlimited stores and advanced features</p>
+        {/* ── Billing ── */}
+        {plan !== 'admin' && (
+          <div className="rounded-xl border border-border bg-card">
+            <div className="border-b border-border p-4">
+              <h2 className="flex items-center gap-2 font-semibold text-foreground">
+                <CreditCard className="h-4 w-4" />
+                Plan
+              </h2>
+            </div>
+            <div className="p-6">
+              <div className="flex items-center justify-between rounded-xl bg-gradient-to-r from-primary/20 via-primary/10 to-transparent p-4">
+                <div>
+                  <p className="font-semibold text-foreground">Actualizar a Pro</p>
+                  <p className="text-sm text-muted-foreground">Más tiendas, historial ilimitado y señales del pool</p>
+                </div>
+                <Button>Ver planes</Button>
               </div>
-              <Button>Upgrade</Button>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Danger Zone */}
+        {/* ── Session ── */}
         <div className="rounded-xl border border-destructive/30 bg-card">
           <div className="border-b border-destructive/30 p-4">
             <h2 className="flex items-center gap-2 font-semibold text-destructive">
               <LogOut className="h-4 w-4" />
-              Danger Zone
+              Sesión
             </h2>
           </div>
-          <div className="p-4 flex items-center justify-between">
+          <div className="p-6 flex items-center justify-between">
             <div>
-              <p className="font-medium text-foreground">Delete Account</p>
-              <p className="text-sm text-muted-foreground">Permanently delete your account and all data</p>
+              <p className="font-medium text-foreground">Cerrar sesión</p>
+              <p className="text-sm text-muted-foreground">Salir de tu cuenta en este dispositivo</p>
             </div>
-            <Button variant="destructive" size="sm">Delete</Button>
+            <Button variant="destructive" size="sm" onClick={handleLogout}>
+              Cerrar sesión
+            </Button>
           </div>
         </div>
+
       </div>
     </PageLayout>
   )
