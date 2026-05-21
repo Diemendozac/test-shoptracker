@@ -3,6 +3,7 @@
 import { PageLayout } from '@/components/layout/page-layout'
 import { StatsCard } from '@/components/dashboard/stats-card'
 import { StoreCard } from '@/components/dashboard/store-card'
+import { PendingCandidatesSection } from '@/components/dashboard/pending-candidates-section'
 import { Store, Target, TrendingUp, Activity } from 'lucide-react'
 import { useDashboard } from '../hooks/useDashboard'
 
@@ -39,6 +40,8 @@ export default function DashboardPage() {
           variant="warning"
         />
       </div>
+
+      <PendingCandidatesSection />
 
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-foreground">Top Performers by Store</h2>
