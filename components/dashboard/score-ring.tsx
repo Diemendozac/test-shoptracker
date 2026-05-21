@@ -25,38 +25,17 @@ export function ScoreRing({
   label,
   size = 'md',
   showLabel = true,
-  confidence,
+  confidence: _confidence,
 }: ScoreRingProps) {
-  const clamped     = Math.max(0, Math.min(score, 100))
-  const normalized  = clamped / 100
-  const config      = sizeConfig[size]
+  const clamped    = Math.max(0, Math.min(score, 100))
+  const normalized = clamped / 100
+  const config     = sizeConfig[size]
+  const arcLen     = CIRCUMFERENCE * normalized
 
-  const hasConfidence = confidence !== undefined
-
-  // Arc lengths
-  const confirmedLen   = hasConfidence
-    ? CIRCUMFERENCE * normalized * confidence!
-    : CIRCUMFERENCE * normalized
-  const unconfirmedLen = hasConfidence
-    ? CIRCUMFERENCE * normalized * (1 - confidence!)
-    : 0
-
-  // Green arc starts at 12 o'clock (dashoffset = 0)
-  // Yellow arc starts right after green (dashoffset = CIRCUMFERENCE - confirmedLen)
-  const yellowOffset = CIRCUMFERENCE - confirmedLen
-
-  // Fallback color when no confidence prop (legacy single-arc behavior)
-  const fallbackColor =
-    normalized >= 0.6 ? 'stroke-rising'
-    : normalized >= 0.4 ? 'stroke-watching'
-    : normalized >= 0.2 ? 'stroke-stable'
-    : 'stroke-declining'
-
-  const fallbackTextColor =
-    normalized >= 0.6 ? 'text-rising'
-    : normalized >= 0.4 ? 'text-watching'
-    : normalized >= 0.2 ? 'text-stable'
-    : 'text-declining'
+  // Color rule: green at 65+, yellow below
+  const isGreen    = clamped >= 65
+  const arcColor   = isGreen ? 'stroke-emerald-500' : 'stroke-amber-400'
+  const textColor  = isGreen ? 'text-emerald-400'   : 'text-amber-400'
 
   return (
     <div
@@ -68,7 +47,7 @@ export function ScoreRing({
         viewBox="0 0 100 100"
         style={{ width: config.width, height: config.width }}
       >
-        {/* Track background */}
+        {/* Track */}
         <circle
           cx="50" cy="50" r={RADIUS}
           fill="none" strokeWidth="8"
@@ -76,54 +55,22 @@ export function ScoreRing({
           className="text-border"
         />
 
-        {hasConfidence ? (
-          <>
-            {/* Yellow arc — unconfirmed portion (draw first, below green) */}
-            {unconfirmedLen > 0.5 && (
-              <circle
-                cx="50" cy="50" r={RADIUS}
-                fill="none" strokeWidth="8"
-                strokeLinecap="butt"
-                strokeDasharray={`${unconfirmedLen} ${CIRCUMFERENCE}`}
-                strokeDashoffset={yellowOffset}
-                className="stroke-amber-400 transition-all duration-700 ease-out"
-              />
-            )}
-
-            {/* Green arc — confirmed portion (draw on top) */}
-            {confirmedLen > 0.5 && (
-              <circle
-                cx="50" cy="50" r={RADIUS}
-                fill="none" strokeWidth="8"
-                strokeLinecap="round"
-                strokeDasharray={`${confirmedLen} ${CIRCUMFERENCE}`}
-                strokeDashoffset={0}
-                className="stroke-emerald-500 transition-all duration-700 ease-out"
-              />
-            )}
-          </>
-        ) : (
-          /* Legacy single-arc when no confidence provided */
+        {/* Score arc */}
+        {arcLen > 0.5 && (
           <circle
             cx="50" cy="50" r={RADIUS}
             fill="none" strokeWidth="8"
             strokeLinecap="round"
-            strokeDasharray={`${confirmedLen} ${CIRCUMFERENCE}`}
+            strokeDasharray={`${arcLen} ${CIRCUMFERENCE}`}
             strokeDashoffset={0}
-            className={cn('transition-all duration-700 ease-out', fallbackColor)}
+            className={cn('transition-all duration-700 ease-out', arcColor)}
           />
         )}
       </svg>
 
       {/* Inner text */}
       <div className="flex flex-col items-center justify-center">
-        <span
-          className={cn(
-            'font-bold tabular-nums',
-            config.fontSize,
-            hasConfidence ? 'text-foreground' : fallbackTextColor,
-          )}
-        >
+        <span className={cn('font-bold tabular-nums', config.fontSize, textColor)}>
           ~{Math.round(clamped)}
         </span>
         {showLabel && label && (
