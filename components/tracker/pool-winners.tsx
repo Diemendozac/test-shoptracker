@@ -75,11 +75,26 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange }: 
   }
 
   return (
-    <div className="mb-6 rounded-2xl border border-border bg-card p-6">
+    <div className="mb-6 overflow-hidden rounded-2xl border border-border bg-card">
+      <div className="px-6 pt-5 pb-0">
       <SectionHeader count={data?.total ?? filtered.length} />
 
+      </div>{/* /header wrapper */}
+
+      {/* Column headers */}
+      <div className="mt-3 grid grid-cols-[28px_40px_1fr_80px_64px_64px_48px_64px] items-center gap-3 border-b border-border px-6 pb-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        <div>#</div>
+        <div />
+        <div>Producto</div>
+        <div>Tienda</div>
+        <div className="text-center">Tendencia</div>
+        <div className="text-center">Crecimiento</div>
+        <div className="text-center">Score</div>
+        <div className="text-center">Estado</div>
+      </div>
+
       {/* Filter bar */}
-      <div className="mt-3 flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2 border-b border-border/50 bg-secondary/20 px-6 py-2">
         {niches.length > 0 && (
           <select value={nicheFilter} onChange={(e) => setNicheFilter(e.target.value)} className={selectCls}>
             <option value="all">Todos los nichos</option>
@@ -97,20 +112,16 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange }: 
           <option value="yes">Solo pago anticipado</option>
           <option value="no">Sin pago anticipado</option>
         </select>
+        {(nicheFilter !== 'all' || currencyFilter !== 'all' || paFilter !== 'all') && (
+          <button
+            onClick={() => { setNicheFilter('all'); setCurrencyFilter('all'); setPaFilter('all') }}
+            className="ml-auto text-[10px] text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
+          >
+            Limpiar filtros
+          </button>
+        )}
       </div>
-
-      {/* Column headers */}
-      <div className="mt-3 grid grid-cols-[28px_40px_1fr_80px_64px_64px_48px_64px] items-center gap-3 px-4 pb-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-        <div>#</div>
-        <div />
-        <div>Producto</div>
-        <div>Tienda</div>
-        <div className="text-center">Tendencia</div>
-        <div className="text-center">Crecimiento</div>
-        <div className="text-center">Score</div>
-        <div className="text-center">Estado</div>
-      </div>
-      <div className="space-y-2">
+      <div className="divide-y divide-border/50 px-2">
         {filtered.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
             No hay productos que coincidan con los filtros.
@@ -124,7 +135,7 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange }: 
 
       {/* Pagination */}
       {onPageChange && data && (data.totalPages ?? 1) > 1 && (
-        <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+        <div className="flex items-center justify-between border-t border-border px-6 py-3">
           <span className="text-xs text-muted-foreground">
             Mostrando {page * 20 + 1}–{Math.min((page + 1) * 20, data.total ?? 0)} de {data.total ?? 0} productos
           </span>
@@ -159,6 +170,11 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange }: 
             </button>
           </div>
         </div>
+      )}
+
+      {/* bottom padding when no pagination */}
+      {!(onPageChange && data && (data.totalPages ?? 1) > 1) && (
+        <div className="pb-4" />
       )}
     </div>
   )
@@ -245,8 +261,8 @@ function PoolWinnerRow({
   return (
     <div
       className={cn(
-        'grid grid-cols-[28px_40px_1fr_80px_64px_64px_48px_64px] items-center gap-3 rounded-xl border px-4 py-3 transition-colors hover:bg-secondary/30',
-        isFirst ? 'border-amber-500/30 bg-amber-500/5' : 'border-border/50 bg-secondary/20'
+        'grid grid-cols-[28px_40px_1fr_80px_64px_64px_48px_64px] items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/20',
+        isFirst ? 'bg-amber-500/5' : ''
       )}
     >
       {/* position */}
