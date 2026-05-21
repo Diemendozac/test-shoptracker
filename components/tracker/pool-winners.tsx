@@ -8,15 +8,17 @@ import { Sparkline } from '@/components/tracker/sparkline'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { PoolWinnersResponse, PoolWinnerProduct } from '@/app/(dashboard)/types'
+import type { PoolPreset } from '@/app/(dashboard)/pool/page'
 
 interface PoolWinnersSectionProps {
   data: PoolWinnersResponse | undefined
   isLoading?: boolean
   page?: number
   onPageChange?: (page: number) => void
+  preset?: PoolPreset
 }
 
-export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange }: PoolWinnersSectionProps) {
+export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, preset = 'all' }: PoolWinnersSectionProps) {
   const [nicheFilter, setNicheFilter] = useState('all')
   const [currencyFilter, setCurrencyFilter] = useState('all')
   const [paOnly, setPaOnly] = useState(false)
@@ -31,13 +33,20 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange }: 
     () => Array.from(new Set(winners.map((w) => w.currency).filter(Boolean) as string[])).sort(),
     [winners]
   )
+
   const filtered = useMemo(() => {
     let r = winners
+    // Tab preset filters
+    if (preset === 'rising')          r = r.filter((w) => w.performanceLabel === 'Rising')
+    if (preset === 'pago_anticipado') r = r.filter((w) => w.pagoAnticipado === true)
+    if (preset === 'top_score')       r = [...r].sort((a, b) => b.performanceScore - a.performanceScore).slice(0, 20)
+    if (preset === 'new')             r = r.filter((w) => w.daysElapsed <= 7)
+    // Chip filters on top
     if (nicheFilter !== 'all') r = r.filter((w) => w.niche === nicheFilter)
     if (currencyFilter !== 'all') r = r.filter((w) => w.currency === currencyFilter)
     if (paOnly) r = r.filter((w) => w.pagoAnticipado === true)
     return r
-  }, [winners, nicheFilter, currencyFilter, paOnly])
+  }, [winners, preset, nicheFilter, currencyFilter, paOnly])
 
   const hasActiveFilters = nicheFilter !== 'all' || currencyFilter !== 'all' || paOnly
 
