@@ -60,6 +60,15 @@ export default function TrackerPage() {
     ...w,
     performanceScore: w.windowScore,
     entryScore: null,
+    productPrice: null,
+    currentRank: null,
+    estUnitsDayLow: null,
+    estRevDayLow: null,
+    niche: null,
+    currency: null,
+    pagoAnticipado: null,
+    signalConfidence: 0,
+    cyclePhase: null,
   }))
 
   const raceTrackCandidates = windowDays > 0 ? windowAsTracker : allCandidates

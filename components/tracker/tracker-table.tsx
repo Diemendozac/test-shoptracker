@@ -20,6 +20,13 @@ import {
 } from 'lucide-react'
 import { HoverImagePreview } from '@/components/ui/image-preview'
 
+const PL_S1_CONS = 13.3785
+const PL_ALPHA   = 2.1598
+function plEst(rank: number | null | undefined): number {
+  if (!rank || rank <= 0) return 0
+  return PL_S1_CONS * Math.pow(rank, -PL_ALPHA)
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type SortKey = 'productTitle' | 'storeName' | 'performanceScore' | 'growthPct' | 'daysElapsed' | 'daysInBestseller'
@@ -237,7 +244,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
       {/* ── Table ── */}
       <div className="overflow-hidden rounded-xl border border-border bg-card">
         {/* Header */}
-        <div className="grid grid-cols-[40px_72px_210px_1fr_72px_80px_56px_80px_80px_68px_80px] items-center gap-4 border-b border-border bg-secondary/30 px-6 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        <div className="grid grid-cols-[40px_72px_1fr_150px_72px_80px_56px_80px_80px_68px_80px] items-center gap-4 border-b border-border bg-secondary/30 px-6 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           <div>#</div>
           <div />
           <button
@@ -289,10 +296,13 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
               </button>
             </div>
           ) : (
-            processed.map((candidate, idx) => (
+            processed.map((candidate, idx) => {
+              const uds = candidate.estUnitsDayLow ?? plEst(candidate.currentRank)
+              const rev = candidate.estRevDayLow ?? (candidate.productPrice != null && uds > 0 ? uds * candidate.productPrice : 0)
+              return (
               <div
                 key={candidate.candidateId}
-                className="grid grid-cols-[40px_72px_210px_1fr_72px_80px_56px_80px_80px_68px_80px] items-center gap-4 px-6 py-3 transition-colors hover:bg-secondary/30"
+                className="grid grid-cols-[40px_72px_1fr_150px_72px_80px_56px_80px_80px_68px_80px] items-center gap-4 px-6 py-3 transition-colors hover:bg-secondary/30"
               >
                 {/* Rank */}
                 <div className="flex items-center justify-center">
@@ -341,9 +351,9 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
 
                 {/* Est. ventas/día */}
                 <div className="text-center">
-                  {(candidate.estUnitsDayLow ?? 0) >= 0.01 ? (
+                  {uds >= 0.01 ? (
                     <span className="text-sm font-semibold tabular-nums text-foreground">
-                      ~{fmtUnits(candidate.estUnitsDayLow!)}
+                      ~{fmtUnits(uds)}
                     </span>
                   ) : (
                     <span className="text-[10px] text-muted-foreground/30">—</span>
@@ -353,9 +363,9 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
 
                 {/* Est. ingresos/día */}
                 <div className="text-center">
-                  {candidate.estRevDayLow != null && candidate.estRevDayLow > 0 ? (
+                  {rev > 0 ? (
                     <span className="text-sm font-semibold tabular-nums text-emerald-500">
-                      ~${fmtCompact(candidate.estRevDayLow)}
+                      ~${fmtCompact(rev)}
                     </span>
                   ) : (
                     <span className="text-[10px] text-muted-foreground/30">—</span>
@@ -411,7 +421,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                   </Link>
                 </div>
               </div>
-            ))
+            )})
           )}
         </div>
       </div>

@@ -17,6 +17,7 @@ export interface TopCandidate {
 export interface StoreOverviewItem {
   storeId: string
   storeName: string
+  inactivityTier: 'ACTIVA' | 'MODERADA' | 'INACTIVA' | 'ZOMBIE' | null
   topCandidate: TopCandidate | null
 }
 

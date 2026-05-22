@@ -11,6 +11,13 @@ import { cn, fmtCompact, fmtUnits } from '@/lib/utils'
 import type { PoolWinnersResponse, PoolWinnerProduct } from '@/app/(dashboard)/types'
 import type { PoolPreset } from '@/app/(dashboard)/pool/page'
 
+const PL_S1_CONS = 13.3785
+const PL_ALPHA   = 2.1598
+function plEst(rank: number | null | undefined): number {
+  if (!rank || rank <= 0) return 0
+  return PL_S1_CONS * Math.pow(rank, -PL_ALPHA)
+}
+
 interface PoolWinnersSectionProps {
   data: PoolWinnersResponse | undefined
   isLoading?: boolean
@@ -168,7 +175,7 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, pr
       </div>
 
       {/* Column headers */}
-      <div className="grid grid-cols-[28px_72px_220px_1fr_72px_80px_80px_72px_56px_72px] items-center gap-4 border-b border-border px-6 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+      <div className="grid grid-cols-[28px_72px_1fr_150px_72px_80px_80px_72px_56px_72px] items-center gap-4 border-b border-border px-6 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
         <div>#</div>
         <div />
         <div>Producto</div>
@@ -295,9 +302,11 @@ function LockedState() {
 
 function PoolWinnerRow({ winner, position }: { winner: PoolWinnerProduct; position: number }) {
   const isFirst = position === 1
+  const uds = winner.estUnitsDayLow ?? plEst(winner.currentRank)
+  const rev = winner.estRevDayLow ?? (winner.productPrice != null && uds > 0 ? uds * winner.productPrice : 0)
   return (
     <div className={cn(
-      'grid grid-cols-[28px_72px_220px_1fr_72px_80px_80px_72px_56px_72px] items-center gap-4 px-6 py-3 transition-colors hover:bg-secondary/30',
+      'grid grid-cols-[28px_72px_1fr_150px_72px_80px_80px_72px_56px_72px] items-center gap-4 px-6 py-3 transition-colors hover:bg-secondary/30',
       isFirst && 'bg-amber-500/5',
     )}>
       {/* Position */}
@@ -337,9 +346,9 @@ function PoolWinnerRow({ winner, position }: { winner: PoolWinnerProduct; positi
 
       {/* Est. ventas/día */}
       <div className="text-center">
-        {(winner.estUnitsDayLow ?? 0) >= 0.01 ? (
+        {uds >= 0.01 ? (
           <span className="text-sm font-semibold tabular-nums text-foreground">
-            ~{fmtUnits(winner.estUnitsDayLow!)}
+            ~{fmtUnits(uds)}
           </span>
         ) : (
           <span className="text-[10px] text-muted-foreground/30">—</span>
@@ -349,9 +358,9 @@ function PoolWinnerRow({ winner, position }: { winner: PoolWinnerProduct; positi
 
       {/* Est. ingresos/día */}
       <div className="text-center">
-        {winner.estRevDayLow != null && winner.estRevDayLow > 0 ? (
+        {rev > 0 ? (
           <span className="text-sm font-semibold tabular-nums text-emerald-500">
-            ~${fmtCompact(winner.estRevDayLow)}
+            ~${fmtCompact(rev)}
           </span>
         ) : (
           <span className="text-[10px] text-muted-foreground/30">—</span>
