@@ -297,8 +297,9 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
             </div>
           ) : (
             processed.map((candidate, idx) => {
-              const uds = candidate.estUnitsDayLow ?? plEst(candidate.currentRank)
-              const rev = candidate.estRevDayLow ?? (candidate.productPrice != null && uds > 0 ? uds * candidate.productPrice : 0)
+              const uds    = candidate.estUnitsDayLow ?? plEst(candidate.currentRank)
+              const udsInt = uds >= 0.5 ? Math.max(1, Math.round(uds)) : 0
+              const rev    = udsInt > 0 && candidate.productPrice != null ? udsInt * candidate.productPrice : 0
               return (
               <div
                 key={candidate.candidateId}
@@ -351,9 +352,9 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
 
                 {/* Est. ventas/día */}
                 <div className="text-center">
-                  {uds >= 0.01 ? (
+                  {udsInt > 0 ? (
                     <span className="text-sm font-semibold tabular-nums text-foreground">
-                      ~{fmtUnits(uds)}
+                      ~{udsInt}
                     </span>
                   ) : (
                     <span className="text-[10px] text-muted-foreground/30">—</span>

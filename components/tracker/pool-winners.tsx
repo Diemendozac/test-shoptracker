@@ -302,8 +302,9 @@ function LockedState() {
 
 function PoolWinnerRow({ winner, position }: { winner: PoolWinnerProduct; position: number }) {
   const isFirst = position === 1
-  const uds = winner.estUnitsDayLow ?? plEst(winner.currentRank)
-  const rev = winner.estRevDayLow ?? (winner.productPrice != null && uds > 0 ? uds * winner.productPrice : 0)
+  const uds    = winner.estUnitsDayLow ?? plEst(winner.currentRank)
+  const udsInt = uds >= 0.5 ? Math.max(1, Math.round(uds)) : 0
+  const rev    = udsInt > 0 && winner.productPrice != null ? udsInt * winner.productPrice : 0
   return (
     <div className={cn(
       'grid grid-cols-[28px_72px_1fr_150px_72px_80px_80px_72px_56px_72px] items-center gap-4 px-6 py-3 transition-colors hover:bg-secondary/30',
@@ -346,9 +347,9 @@ function PoolWinnerRow({ winner, position }: { winner: PoolWinnerProduct; positi
 
       {/* Est. ventas/día */}
       <div className="text-center">
-        {uds >= 0.01 ? (
+        {udsInt > 0 ? (
           <span className="text-sm font-semibold tabular-nums text-foreground">
-            ~{fmtUnits(uds)}
+            ~{udsInt}
           </span>
         ) : (
           <span className="text-[10px] text-muted-foreground/30">—</span>

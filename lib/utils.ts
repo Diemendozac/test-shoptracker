@@ -12,7 +12,7 @@ export function fmtCompact(n: number): string {
   return String(Math.round(n))
 }
 
-/** Formatea unidades/día con 1 decimal si < 10, entero si ≥ 10 */
+/** Redondea unidades/día al entero más cercano (mínimo 1). Usar solo si u >= 0.5 */
 export function fmtUnits(u: number): string {
-  return u < 10 ? u.toFixed(1) : String(Math.round(u))
+  return String(Math.max(1, Math.round(u)))
 }
