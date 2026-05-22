@@ -18,7 +18,7 @@ export function HoverImagePreview({
   size = 72,
   previewSize = 240,
 }: HoverImagePreviewProps) {
-  const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
+  const [pos, setPos] = useState<{ x: number; top: number; bottom: number } | null>(null)
 
   const imgSrc = src && proxy
     ? `/api/image-proxy?url=${encodeURIComponent(src)}`
@@ -31,7 +31,7 @@ export function HoverImagePreview({
       onMouseEnter={(e) => {
         if (!imgSrc) return
         const r = e.currentTarget.getBoundingClientRect()
-        setPos({ x: r.left + r.width / 2, y: r.top })
+        setPos({ x: r.left + r.width / 2, top: r.top, bottom: r.bottom })
       }}
       onMouseLeave={() => setPos(null)}
     >
@@ -53,25 +53,39 @@ export function HoverImagePreview({
       )}
 
       {/* Fixed popup — escapes overflow-hidden on any ancestor */}
-      {pos && imgSrc && (
-        <div
-          className="pointer-events-none fixed z-50"
-          style={{
-            left: pos.x,
-            top: pos.y,
-            transform: 'translate(-50%, calc(-100% - 10px))',
-          }}
-        >
-          <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
-            <img
-              src={imgSrc}
-              alt=""
-              style={{ width: previewSize, height: previewSize }}
-              className="object-cover"
-            />
+      {pos && imgSrc && (() => {
+        const gap = 10
+        const spaceAbove = pos.top - gap
+        const showAbove = spaceAbove >= previewSize + gap
+
+        return (
+          <div
+            className="pointer-events-none fixed z-50"
+            style={
+              showAbove
+                ? {
+                    left: pos.x,
+                    top: pos.top,
+                    transform: `translate(-50%, calc(-100% - ${gap}px))`,
+                  }
+                : {
+                    left: pos.x,
+                    top: pos.bottom + gap,
+                    transform: 'translate(-50%, 0)',
+                  }
+            }
+          >
+            <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
+              <img
+                src={imgSrc}
+                alt=""
+                style={{ width: previewSize, height: previewSize }}
+                className="object-cover"
+              />
+            </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
     </div>
   )
 }
