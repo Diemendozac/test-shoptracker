@@ -5,7 +5,6 @@ import { PageLayout } from '@/components/layout/page-layout'
 import { TrackerTable } from '@/components/tracker/tracker-table'
 import { WinnerCard } from '@/components/tracker/winner-card'
 import { ShootingStars } from '@/components/tracker/shooting-stars'
-import { PendingCandidatesSection } from '@/components/tracker/pending-candidates'
 import { useGetWeeklyWinnerQuery, useGetWindowCandidatesQuery } from '../services/dashboardApi'
 import type { PerformanceLabel } from '@/lib/types'
 import type { TrackerCandidate } from '../types'
@@ -67,9 +66,6 @@ export default function TrackerPage() {
 
   return (
     <PageLayout>
-      {/* Pending candidates — awaiting user approval */}
-      <PendingCandidatesSection />
-
       {/* Winner banner — per-store */}
       {winnerData?.winner && (
         <WinnerCard winner={winnerData.winner} runnersUp={winnerData.runnersUp} />
