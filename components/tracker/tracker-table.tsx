@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { cn, fmtCompact } from '@/lib/utils'
-import { convertCurrency } from '@/lib/currency'
+import { convertCurrency, currencySymbol } from '@/lib/currency'
 import { useGetMeQuery } from '@/app/(dashboard)/services/userApi'
 import { PerformanceBadge } from '@/components/dashboard/performance-badge'
 import { ScoreRing } from '@/components/dashboard/score-ring'
@@ -303,9 +303,10 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
             processed.map((candidate, idx) => {
               const uds    = candidate.estUnitsDayLow ?? plEst(candidate.currentRank)
               const udsInt = uds >= 0.5 ? Math.max(1, Math.round(uds)) : 0
-              const revRaw = udsInt > 0 && candidate.productPrice != null ? udsInt * candidate.productPrice : 0
-              const rev    = convertCurrency(revRaw, candidate.currency, preferredCurrency)
-              const displayCurrency = preferredCurrency ?? candidate.currency ?? 'USD'
+              const revRaw      = udsInt > 0 && candidate.productPrice != null ? udsInt * candidate.productPrice : 0
+              const rev         = convertCurrency(revRaw, candidate.currency, preferredCurrency)
+              const displayCurr = preferredCurrency ?? candidate.currency ?? 'USD'
+              const sym         = currencySymbol(displayCurr)
               return (
               <div
                 key={candidate.candidateId}
@@ -373,9 +374,9 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                   {rev > 0 ? (
                     <>
                       <span className="text-sm font-semibold tabular-nums text-emerald-500">
-                        ~${fmtCompact(rev)}
+                        ~{sym}{fmtCompact(rev)}
                       </span>
-                      <p className="text-[9px] text-muted-foreground/50">{displayCurrency} p5</p>
+                      <p className="text-[9px] text-muted-foreground/50">{displayCurr} p5</p>
                     </>
                   ) : (
                     <span className="text-[10px] text-muted-foreground/30">—</span>

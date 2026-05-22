@@ -8,7 +8,7 @@ import { Sparkline } from '@/components/tracker/sparkline'
 import { Button } from '@/components/ui/button'
 import { HoverImagePreview } from '@/components/ui/image-preview'
 import { cn, fmtCompact } from '@/lib/utils'
-import { convertCurrency } from '@/lib/currency'
+import { convertCurrency, currencySymbol } from '@/lib/currency'
 import { useGetMeQuery } from '@/app/(dashboard)/services/userApi'
 import type { PoolWinnersResponse, PoolWinnerProduct } from '@/app/(dashboard)/types'
 import type { PoolPreset } from '@/app/(dashboard)/pool/page'
@@ -308,9 +308,10 @@ function PoolWinnerRow({ winner, position, preferredCurrency }: { winner: PoolWi
   const isFirst = position === 1
   const uds    = winner.estUnitsDayLow ?? plEst(winner.currentRank)
   const udsInt = uds >= 0.5 ? Math.max(1, Math.round(uds)) : 0
-  const revRaw = udsInt > 0 && winner.productPrice != null ? udsInt * winner.productPrice : 0
-  const rev    = convertCurrency(revRaw, winner.currency, preferredCurrency)
-  const displayCurrency = preferredCurrency ?? winner.currency ?? 'USD'
+  const revRaw      = udsInt > 0 && winner.productPrice != null ? udsInt * winner.productPrice : 0
+  const rev         = convertCurrency(revRaw, winner.currency, preferredCurrency)
+  const displayCurr = preferredCurrency ?? winner.currency ?? 'USD'
+  const sym         = currencySymbol(displayCurr)
   return (
     <div className={cn(
       'grid grid-cols-[28px_72px_1fr_150px_72px_80px_80px_72px_56px_72px] items-center gap-4 px-6 py-3 transition-colors hover:bg-secondary/30',
@@ -368,9 +369,9 @@ function PoolWinnerRow({ winner, position, preferredCurrency }: { winner: PoolWi
         {rev > 0 ? (
           <>
             <span className="text-sm font-semibold tabular-nums text-emerald-500">
-              ~${fmtCompact(rev)}
+              ~{sym}{fmtCompact(rev)}
             </span>
-            <p className="text-[9px] text-muted-foreground/50">{displayCurrency} p5</p>
+            <p className="text-[9px] text-muted-foreground/50">{displayCurr} p5</p>
           </>
         ) : (
           <span className="text-[10px] text-muted-foreground/30">—</span>

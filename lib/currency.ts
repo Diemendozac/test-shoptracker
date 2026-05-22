@@ -22,7 +22,19 @@ export function convertCurrency(
 }
 
 export const CURRENCY_SYMBOLS: Record<string, string> = {
-  USD: '$', COP: '$', MXN: '$', ARS: '$',
+  USD: 'US$',
+  COP: '$',
+  MXN: 'MX$',
+  ARS: 'AR$',
+  EUR: '€',
+  BRL: 'R$',
+  PEN: 'S/',
+  CLP: '$',
+}
+
+export function currencySymbol(code: string | null | undefined): string {
+  if (!code) return '$'
+  return CURRENCY_SYMBOLS[code] ?? code
 }
 
 export const SUPPORTED_CURRENCIES = ['USD', 'COP', 'MXN', 'ARS'] as const
