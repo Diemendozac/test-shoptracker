@@ -7,6 +7,7 @@ import { Store, Target, TrendingUp, Activity, ArrowRight } from 'lucide-react'
 import { useDashboard } from '../hooks/useDashboard'
 import Link from 'next/link'
 import type { DashboardItem } from '@/lib/types'
+import { WinnerPodiumOverview } from '@/components/dashboard/winner-podium-overview'
 
 function sortByScore(items: DashboardItem[]): DashboardItem[] {
   return [...items].sort((a, b) => {
@@ -51,6 +52,8 @@ export default function DashboardPage() {
           variant="warning"
         />
       </div>
+
+      <WinnerPodiumOverview />
 
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-foreground">Top Performers by Store</h2>
