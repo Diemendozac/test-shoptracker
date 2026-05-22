@@ -150,6 +150,7 @@ export interface CandidateDetail {
     productPrice: number
     productImage: string | null
     firstSeenDate: string
+    currency: string | null
     daysElapsed: number
   }
   summary: {

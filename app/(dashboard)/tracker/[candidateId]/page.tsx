@@ -9,6 +9,8 @@ import { ScoreRing } from '@/components/dashboard/score-ring'
 import { RankChart } from '@/components/tracker/rank-chart'
 import { ScoreChart } from '@/components/tracker/score-chart'
 import { useGetCandidateDetailQuery } from '@/app/(dashboard)/services/dashboardApi'
+import { useCurrency } from '@/store/hooks'
+import { convertCurrency, currencySymbol } from '@/lib/currency'
 import {
   ArrowLeft,
   ExternalLink,
@@ -46,6 +48,8 @@ function CandidateDetailContent() {
     { skip: !storeId }
   )
 
+  const { currency: preferredCurrency } = useCurrency()
+
   const formatDate = (dateStr: string) =>
     new Date(dateStr).toLocaleDateString('en-US', {
       month: 'short',
@@ -53,8 +57,11 @@ function CandidateDetailContent() {
       year: 'numeric',
     })
 
-  const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(amount)
+  const formatCurrency = (amount: number, sourceCurrency?: string | null) => {
+    const converted = convertCurrency(amount, sourceCurrency ?? 'USD', preferredCurrency)
+    const sym = currencySymbol(preferredCurrency)
+    return `${sym}${converted.toLocaleString('es-CO', { maximumFractionDigits: 0 })}`
+  }
 
   if (!storeId) {
     return (
@@ -124,7 +131,7 @@ function CandidateDetailContent() {
                   </span>
                   {summary && <PerformanceBadge label={summary.performanceLabel} size="md" />}
                   <span className="text-sm font-semibold text-foreground">
-                    {formatCurrency(candidate.productPrice)}
+                    {formatCurrency(candidate.productPrice, candidate.currency)}
                   </span>
                 </div>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">

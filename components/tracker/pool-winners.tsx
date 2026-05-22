@@ -336,7 +336,7 @@ function PoolWinnerRow({ winner, position, preferredCurrency }: { winner: PoolWi
         </p>
         {winner.productPrice != null && (
           <p className="mt-1 text-xs font-medium text-primary">
-            ${winner.productPrice.toLocaleString('es-CO')}
+            {sym}{fmtCompact(convertCurrency(winner.productPrice, winner.currency, preferredCurrency))}
           </p>
         )}
         {winner.currentRank && (

@@ -337,7 +337,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                   </p>
                   {candidate.productPrice != null && (
                     <p className="mt-0.5 text-xs font-medium text-primary">
-                      ${candidate.productPrice.toLocaleString('es-CO')}
+                      {sym}{fmtCompact(convertCurrency(candidate.productPrice, candidate.currency, preferredCurrency))}
                     </p>
                   )}
                   <div className="mt-0.5 flex items-center gap-2">

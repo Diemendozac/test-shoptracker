@@ -4,11 +4,14 @@ import { FlaskConical, X, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useGetPendingCandidatesQuery, useActivateCandidateMutation, useCancelCandidateMutation } from '@/app/(dashboard)/services/candidateApi'
 import type { PendingCandidate } from '@/app/(dashboard)/services/candidateApi'
+import { useCurrency } from '@/store/hooks'
+import { convertCurrency, currencySymbol } from '@/lib/currency'
 
 export function PendingCandidatesSection() {
   const { data: candidates, isLoading } = useGetPendingCandidatesQuery()
   const [activate, { isLoading: activating }] = useActivateCandidateMutation()
   const [cancel] = useCancelCandidateMutation()
+  const { currency: preferredCurrency } = useCurrency()
 
   if (isLoading) {
     return (
@@ -46,6 +49,7 @@ export function PendingCandidatesSection() {
           <PendingRow
             key={c.candidateId}
             candidate={c}
+            preferredCurrency={preferredCurrency}
             onActivate={() => activate(c.candidateId)}
             onCancel={() => cancel(c.candidateId)}
             isActivating={activating}
@@ -58,11 +62,13 @@ export function PendingCandidatesSection() {
 
 function PendingRow({
   candidate,
+  preferredCurrency,
   onActivate,
   onCancel,
   isActivating,
 }: {
   candidate: PendingCandidate
+  preferredCurrency: string
   onActivate: () => void
   onCancel: () => void
   isActivating: boolean
@@ -102,7 +108,7 @@ function PendingRow({
       {/* price */}
       {candidate.productPrice != null && (
         <span className="shrink-0 text-xs font-medium text-muted-foreground">
-          ${candidate.productPrice.toLocaleString('es-CO')}
+          {currencySymbol(preferredCurrency)}{convertCurrency(candidate.productPrice, candidate.currency ?? 'USD', preferredCurrency).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
         </span>
       )}
 

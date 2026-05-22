@@ -4,9 +4,12 @@ import Link from 'next/link'
 import { ArrowRight, FlaskConical } from 'lucide-react'
 import { HoverImagePreview } from '@/components/ui/image-preview'
 import { useGetPendingCandidatesQuery } from '@/app/(dashboard)/services/candidateApi'
+import { useCurrency } from '@/store/hooks'
+import { convertCurrency, currencySymbol } from '@/lib/currency'
 
 export function PendingCandidatesSection() {
   const { data: pending = [], isLoading } = useGetPendingCandidatesQuery()
+  const { currency: preferredCurrency } = useCurrency()
 
   if (isLoading) return <Skeleton />
   if (pending.length === 0) return null
@@ -60,7 +63,7 @@ export function PendingCandidatesSection() {
                 </span>
                 {p.productPrice != null && (
                   <span className="text-[11px] font-semibold text-primary">
-                    ${p.productPrice.toLocaleString('es-CO')}
+                    {currencySymbol(preferredCurrency)}{convertCurrency(p.productPrice, p.currency ?? 'USD', preferredCurrency).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
                   </span>
                 )}
                 {p.firstSeenRank != null && (

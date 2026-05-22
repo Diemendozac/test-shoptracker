@@ -10,6 +10,7 @@ export interface PendingCandidate {
   productImage: string | null
   productUrl: string | null
   productPrice: number | null
+  currency: string | null
   firstSeenDate: string
   firstSeenRank: number | null
 }
