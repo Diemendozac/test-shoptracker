@@ -28,9 +28,9 @@ const BOTTOM_NAV = [
 ]
 
 const TESTEOS_ITEMS = [
-  { name: 'Mis tiendas', href: '/tracker',    icon: Building2 },
-  { name: 'Todas',       href: '/pool',       icon: Globe },
-  { name: 'Pendientes',  href: '/pendientes', icon: Clock },
+  { name: 'Mis testeos',      href: '/tracker',    icon: Building2 },
+  { name: 'Explorar testeos', href: '/pool',       icon: Globe },
+  { name: 'Pendientes',       href: '/pendientes', icon: Clock },
 ]
 
 export function AppSidebar() {
