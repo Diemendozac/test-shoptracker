@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
 import { PageLayout } from '@/components/layout/page-layout'
 import { StatsCard } from '@/components/dashboard/stats-card'
 import { StoreCard } from '@/components/dashboard/store-card'
-import { Store, Target, TrendingUp, Activity, ChevronDown } from 'lucide-react'
+import { Store, Target, TrendingUp, Activity, ArrowRight } from 'lucide-react'
 import { useDashboard } from '../hooks/useDashboard'
+import Link from 'next/link'
 import type { DashboardItem } from '@/lib/types'
 
 function sortByScore(items: DashboardItem[]): DashboardItem[] {
@@ -18,10 +18,9 @@ function sortByScore(items: DashboardItem[]): DashboardItem[] {
 
 export default function DashboardPage() {
   const { overviewItems, stats, isOverviewLoading } = useDashboard()
-  const [showAll, setShowAll] = useState(false)
 
   const sorted = sortByScore(overviewItems)
-  const visible = showAll ? sorted : sorted.slice(0, 3)
+  const visible = sorted.slice(0, 3)
   const hasMore = sorted.length > 3
 
   return (
@@ -76,13 +75,13 @@ export default function DashboardPage() {
 
           {hasMore && (
             <div className="mt-4 flex justify-center">
-              <button
-                onClick={() => setShowAll((v) => !v)}
+              <Link
+                href="/stores"
                 className="flex items-center gap-1.5 rounded-lg border border-border bg-secondary/50 px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
               >
-                <ChevronDown className={`h-4 w-4 transition-transform ${showAll ? 'rotate-180' : ''}`} />
-                {showAll ? 'Ver menos' : `Ver ${sorted.length - 3} tiendas más`}
-              </button>
+                Ver {sorted.length - 3} tiendas más
+                <ArrowRight className="h-4 w-4" />
+              </Link>
             </div>
           )}
         </>
