@@ -151,25 +151,27 @@ export function StoreRow({ store, isSyncing, isDeleting, onSync, onDelete }: Sto
 // ─── StoreLogo ────────────────────────────────────────────────────────────────
 
 function StoreLogo({ storeName, baseUrl }: { storeName: string; baseUrl: string }) {
-  const [imgFailed, setImgFailed] = useState(false)
-  const domain = baseUrl ? baseUrl.replace(/^https?:\/\//, '').replace(/\/$/, '') : ''
+  const [failed, setFailed] = useState(false)
+  const domain = baseUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')
   const faviconUrl = domain
-    ? `/api/image-proxy?url=${encodeURIComponent(`https://icons.duckduckgo.com/ip3/${domain}.ico`)}`
+    ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=64`
     : ''
+  const initials = storeName.slice(0, 2).toUpperCase()
+
+  if (!faviconUrl || failed) {
+    return (
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
+        {initials}
+      </div>
+    )
+  }
 
   return (
-    <div className="relative h-9 w-9 shrink-0">
-      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary text-sm font-bold text-muted-foreground">
-        {storeName.charAt(0).toUpperCase()}
-      </div>
-      {!imgFailed && faviconUrl && (
-        <img
-          src={faviconUrl}
-          alt=""
-          className="absolute inset-0 h-9 w-9 rounded-lg object-contain p-1 bg-secondary"
-          onError={() => setImgFailed(true)}
-        />
-      )}
-    </div>
+    <img
+      src={faviconUrl}
+      alt=""
+      className="h-9 w-9 shrink-0 rounded-lg object-contain bg-secondary p-0.5"
+      onError={() => setFailed(true)}
+    />
   )
 }
