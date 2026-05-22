@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { cn, fmtCompact } from '@/lib/utils'
 import { convertCurrency, currencySymbol } from '@/lib/currency'
-import { useGetMeQuery } from '@/app/(dashboard)/services/userApi'
+import { useCurrency } from '@/store/hooks'
 import { PerformanceBadge } from '@/components/dashboard/performance-badge'
 import { ScoreRing } from '@/components/dashboard/score-ring'
 import { PhaseBadge } from '@/components/tracker/phase-badge'
@@ -57,8 +57,7 @@ function SortIcon({ column, sort }: { column: SortKey; sort: SortState }) {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) {
-  const { data: me } = useGetMeQuery()
-  const preferredCurrency = me?.preferredCurrency ?? 'USD'
+  const { currency: preferredCurrency } = useCurrency()
   // Anything < 7 or 0 (Todos) defaults to 7 days
   const displayDays = windowDays === 30 ? 30 : 7
   // Sort state

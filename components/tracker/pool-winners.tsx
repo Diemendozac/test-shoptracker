@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { HoverImagePreview } from '@/components/ui/image-preview'
 import { cn, fmtCompact } from '@/lib/utils'
 import { convertCurrency, currencySymbol } from '@/lib/currency'
-import { useGetMeQuery } from '@/app/(dashboard)/services/userApi'
+import { useCurrency } from '@/store/hooks'
 import type { PoolWinnersResponse, PoolWinnerProduct } from '@/app/(dashboard)/types'
 import type { PoolPreset } from '@/app/(dashboard)/pool/page'
 
@@ -29,8 +29,7 @@ interface PoolWinnersSectionProps {
 }
 
 export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, preset = 'all' }: PoolWinnersSectionProps) {
-  const { data: me } = useGetMeQuery()
-  const preferredCurrency = me?.preferredCurrency ?? 'USD'
+  const { currency: preferredCurrency } = useCurrency()
   const [nicheFilter, setNicheFilter] = useState('all')
   const [currencyFilter, setCurrencyFilter] = useState('all')
   const [dateFilter, setDateFilter] = useState<7 | 30 | 0>(0)

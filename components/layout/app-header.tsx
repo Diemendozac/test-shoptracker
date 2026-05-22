@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Bell, Search, FlaskConical, TrendingUp, X, ChevronDown, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useGetNotificationsQuery, useGetMeQuery, useUpdatePreferencesMutation } from '@/app/(dashboard)/services/userApi'
+import { useGetNotificationsQuery } from '@/app/(dashboard)/services/userApi'
+import { useCurrency } from '@/store/hooks'
 import { TopbarTicker } from '@/components/layout/topbar-ticker'
 import { SUPPORTED_CURRENCIES, currencySymbol } from '@/lib/currency'
 import { cn } from '@/lib/utils'
@@ -172,12 +173,9 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
 // ─── Currency selector ────────────────────────────────────────────────────────
 
 function CurrencySelector() {
-  const { data: me } = useGetMeQuery()
-  const [updatePreferences] = useUpdatePreferencesMutation()
+  const { currency: current, setCurrency } = useCurrency()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
-
-  const current = me?.preferredCurrency ?? 'USD'
 
   useEffect(() => {
     function handler(e: MouseEvent) {
@@ -188,7 +186,7 @@ function CurrencySelector() {
   }, [])
 
   function select(code: string) {
-    updatePreferences({ preferredCurrency: code })
+    setCurrency(code)
     setOpen(false)
   }
 
