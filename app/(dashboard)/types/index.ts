@@ -83,6 +83,25 @@ export interface PoolWinnerProduct extends WinnerProduct {
   growthHistory?: number[]
 }
 
+export interface PodiumWinner {
+  candidateId: string
+  productTitle: string
+  productImage: string | null
+  storeName: string
+  storeId: string
+  performanceScore: number
+  performanceLabel: string
+  growthPct: number | null
+  currentRank: number | null
+  dateReachedTop1: string | null
+  daysAtTop1: number
+}
+
+export interface PodiumResponse {
+  winners: PodiumWinner[]
+  days: number
+}
+
 export interface PoolWinnersResponse {
   locked: boolean
   plan: string

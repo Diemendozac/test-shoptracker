@@ -1,7 +1,7 @@
 
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import type { RootState } from '@/store'
-import type { StoreOverviewItem, TrackerCandidate, WindowCandidate, CandidateDetail, WeeklyWinnerResponse, PoolWinnersResponse, DashboardInsight } from '../types'
+import type { StoreOverviewItem, TrackerCandidate, WindowCandidate, CandidateDetail, WeeklyWinnerResponse, PoolWinnersResponse, DashboardInsight, PodiumResponse } from '../types'
 
 export const dashboardApi = createApi({
   reducerPath: 'dashboardApi',
@@ -65,6 +65,12 @@ export const dashboardApi = createApi({
       providesTags: ['Tracker'],
     }),
 
+    // GET /api/dashboard/podium?days=N (0 = all time)
+    getPodium: builder.query<PodiumResponse, { days: number }>({
+      query: ({ days }) => ({ url: '/podium', params: { days } }),
+      providesTags: ['Winner'],
+    }),
+
   }),
 })
 
@@ -76,4 +82,5 @@ export const {
   useGetWeeklyWinnerQuery,
   useGetPoolWinnersQuery,
   useGetInsightsQuery,
+  useGetPodiumQuery,
 } = dashboardApi

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { PageLayout } from '@/components/layout/page-layout'
 import { TrackerTable } from '@/components/tracker/tracker-table'
 import { WinnerCard } from '@/components/tracker/winner-card'
+import { WinnerPodium } from '@/components/tracker/winner-podium'
 import { ShootingStars } from '@/components/tracker/shooting-stars'
 import { useGetWeeklyWinnerQuery, useGetWindowCandidatesQuery } from '../services/dashboardApi'
 import type { PerformanceLabel } from '@/lib/types'
@@ -66,6 +67,9 @@ export default function TrackerPage() {
 
   return (
     <PageLayout>
+      {/* Podium — top 5 products that reached rank #1 */}
+      <WinnerPodium />
+
       {/* Winner banner — per-store */}
       {winnerData?.winner && (
         <WinnerCard winner={winnerData.winner} runnersUp={winnerData.runnersUp} />
