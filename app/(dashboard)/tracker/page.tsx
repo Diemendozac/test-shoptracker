@@ -66,7 +66,7 @@ export default function TrackerPage() {
   const raceTrackCandidates = windowDays > 0 ? windowAsTracker : allCandidates
 
   return (
-    <PageLayout title="Tracker" description="All active candidates in tracking window">
+    <PageLayout>
       {/* Pending candidates — awaiting user approval */}
       <PendingCandidatesSection />
 

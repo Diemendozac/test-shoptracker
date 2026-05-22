@@ -15,6 +15,7 @@ import {
   ChevronDown,
   Building2,
   Globe,
+  Clock,
 } from 'lucide-react'
 
 const TOP_NAV = [
@@ -27,8 +28,9 @@ const BOTTOM_NAV = [
 ]
 
 const TESTEOS_ITEMS = [
-  { name: 'Mis tiendas', href: '/tracker', icon: Building2 },
-  { name: 'Todas',       href: '/pool',    icon: Globe },
+  { name: 'Mis tiendas', href: '/tracker',    icon: Building2 },
+  { name: 'Todas',       href: '/pool',       icon: Globe },
+  { name: 'Pendientes',  href: '/pendientes', icon: Clock },
 ]
 
 export function AppSidebar() {
@@ -40,7 +42,7 @@ export function AppSidebar() {
   const { data: pending } = useGetPendingCandidatesQuery()
   const pendingCount = pending?.length ?? 0
 
-  const inTesteos = pathname.startsWith('/tracker') || pathname.startsWith('/pool')
+  const inTesteos = pathname.startsWith('/tracker') || pathname.startsWith('/pool') || pathname.startsWith('/pendientes')
   const [open, setOpen] = useState(inTesteos)
 
   // Keep open when navigating to a testeos route
@@ -106,13 +108,13 @@ export function AppSidebar() {
           {/* Sub-items */}
           <div className={cn(
             'overflow-hidden transition-all duration-200',
-            open ? 'max-h-24 opacity-100' : 'max-h-0 opacity-0',
+            open ? 'max-h-36 opacity-100' : 'max-h-0 opacity-0',
           )}>
             <div className="ml-3 mt-0.5 space-y-0.5 border-l border-border pl-3">
               {TESTEOS_ITEMS.map((item) => {
                 const isActive = pathname.startsWith(item.href)
-                const isMisTiendas = item.href === '/tracker'
-                const showBadge = isMisTiendas && pendingCount > 0
+                const isPendientes = item.href === '/pendientes'
+                const showBadge = isPendientes && pendingCount > 0
                 return (
                   <Link key={item.name} href={item.href}
                     className={cn(
