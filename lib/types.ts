@@ -14,6 +14,10 @@ export interface TopCandidate {
   candidateId: string
   productTitle: string
   productImage: string | null
+  productPrice: number | null
+  currentRank: number | null
+  estUnitsDayLow: number | null
+  estRevDayLow: number | null
   performanceScore: number
   performanceLabel: PerformanceLabel
   growthPct: number
@@ -23,6 +27,7 @@ export interface DashboardItem {
   storeId: string
   storeName: string
   storeUrl?: string
+  inactivityTier: 'ACTIVA' | 'MODERADA' | 'INACTIVA' | 'ZOMBIE' | null
   topCandidate: TopCandidate | null
 }
 
@@ -31,7 +36,10 @@ export interface TrackerCandidate {
   storeId: string
   productTitle: string
   productImage: string | null
-  productPrice?: number | null
+  productPrice: number | null
+  currentRank: number | null
+  estUnitsDayLow: number | null
+  estRevDayLow: number | null
   storeName: string
   niche: string | null
   currency: string | null

@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
-import { cn } from '@/lib/utils'
+import { cn, fmtCompact, fmtUnits } from '@/lib/utils'
 import { PerformanceBadge } from '@/components/dashboard/performance-badge'
 import { ScoreRing } from '@/components/dashboard/score-ring'
 import { PhaseBadge } from '@/components/tracker/phase-badge'
@@ -237,7 +237,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
       {/* ── Table ── */}
       <div className="overflow-hidden rounded-xl border border-border bg-card">
         {/* Header */}
-        <div className="grid grid-cols-[40px_72px_260px_1fr_56px_80px_80px_68px_80px] items-center gap-4 border-b border-border bg-secondary/30 px-6 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        <div className="grid grid-cols-[40px_72px_210px_1fr_72px_80px_56px_80px_80px_68px_80px] items-center gap-4 border-b border-border bg-secondary/30 px-6 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           <div>#</div>
           <div />
           <button
@@ -254,6 +254,8 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
             Tienda
             <SortIcon column="storeName" sort={sort} />
           </button>
+          <div className="text-center">~Ventas/d</div>
+          <div className="text-center">~Ingr./d</div>
           <button
             onClick={() => handleSort('performanceScore')}
             className="group/th flex items-center justify-center gap-1.5 hover:text-foreground transition-colors"
@@ -290,7 +292,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
             processed.map((candidate, idx) => (
               <div
                 key={candidate.candidateId}
-                className="grid grid-cols-[40px_72px_260px_1fr_56px_80px_80px_68px_80px] items-center gap-4 px-6 py-3 transition-colors hover:bg-secondary/30"
+                className="grid grid-cols-[40px_72px_210px_1fr_72px_80px_56px_80px_80px_68px_80px] items-center gap-4 px-6 py-3 transition-colors hover:bg-secondary/30"
               >
                 {/* Rank */}
                 <div className="flex items-center justify-center">
@@ -317,7 +319,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                     {candidate.productTitle}
                   </p>
                   {candidate.productPrice != null && (
-                    <p className="mt-1 text-xs font-medium text-primary">
+                    <p className="mt-0.5 text-xs font-medium text-primary">
                       ${candidate.productPrice.toLocaleString('es-CO')}
                     </p>
                   )}
@@ -335,6 +337,30 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                   <span className="block truncate rounded-md bg-secondary px-2 py-1 text-[11px] font-medium text-muted-foreground">
                     {candidate.storeName}
                   </span>
+                </div>
+
+                {/* Est. ventas/día */}
+                <div className="text-center">
+                  {(candidate.estUnitsDayLow ?? 0) >= 0.01 ? (
+                    <span className="text-sm font-semibold tabular-nums text-foreground">
+                      ~{fmtUnits(candidate.estUnitsDayLow!)}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-muted-foreground/30">—</span>
+                  )}
+                  <p className="text-[9px] text-muted-foreground/50">uds/d</p>
+                </div>
+
+                {/* Est. ingresos/día */}
+                <div className="text-center">
+                  {candidate.estRevDayLow != null && candidate.estRevDayLow > 0 ? (
+                    <span className="text-sm font-semibold tabular-nums text-emerald-500">
+                      ~${fmtCompact(candidate.estRevDayLow)}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-muted-foreground/30">—</span>
+                  )}
+                  <p className="text-[9px] text-muted-foreground/50">p5</p>
                 </div>
 
                 {/* Score */}

@@ -7,7 +7,7 @@ import { PerformanceBadge } from '@/components/dashboard/performance-badge'
 import { Sparkline } from '@/components/tracker/sparkline'
 import { Button } from '@/components/ui/button'
 import { HoverImagePreview } from '@/components/ui/image-preview'
-import { cn } from '@/lib/utils'
+import { cn, fmtCompact, fmtUnits } from '@/lib/utils'
 import type { PoolWinnersResponse, PoolWinnerProduct } from '@/app/(dashboard)/types'
 import type { PoolPreset } from '@/app/(dashboard)/pool/page'
 
@@ -168,11 +168,13 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, pr
       </div>
 
       {/* Column headers */}
-      <div className="grid grid-cols-[28px_72px_260px_1fr_80px_72px_56px_72px] items-center gap-4 border-b border-border px-6 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+      <div className="grid grid-cols-[28px_72px_220px_1fr_72px_80px_80px_72px_56px_72px] items-center gap-4 border-b border-border px-6 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
         <div>#</div>
         <div />
         <div>Producto</div>
         <div>Tienda</div>
+        <div className="text-center">~Ventas/d</div>
+        <div className="text-center">~Ingr./d</div>
         <div className="text-center">Tendencia</div>
         <div className="text-center">Crecimiento</div>
         <div className="text-center">Score</div>
@@ -295,7 +297,7 @@ function PoolWinnerRow({ winner, position }: { winner: PoolWinnerProduct; positi
   const isFirst = position === 1
   return (
     <div className={cn(
-      'grid grid-cols-[28px_72px_260px_1fr_80px_72px_56px_72px] items-center gap-4 px-6 py-3 transition-colors hover:bg-secondary/30',
+      'grid grid-cols-[28px_72px_220px_1fr_72px_80px_80px_72px_56px_72px] items-center gap-4 px-6 py-3 transition-colors hover:bg-secondary/30',
       isFirst && 'bg-amber-500/5',
     )}>
       {/* Position */}
@@ -333,12 +335,36 @@ function PoolWinnerRow({ winner, position }: { winner: PoolWinnerProduct; positi
         </span>
       </div>
 
+      {/* Est. ventas/día */}
+      <div className="text-center">
+        {(winner.estUnitsDayLow ?? 0) >= 0.01 ? (
+          <span className="text-sm font-semibold tabular-nums text-foreground">
+            ~{fmtUnits(winner.estUnitsDayLow!)}
+          </span>
+        ) : (
+          <span className="text-[10px] text-muted-foreground/30">—</span>
+        )}
+        <p className="text-[9px] text-muted-foreground/50">uds/d</p>
+      </div>
+
+      {/* Est. ingresos/día */}
+      <div className="text-center">
+        {winner.estRevDayLow != null && winner.estRevDayLow > 0 ? (
+          <span className="text-sm font-semibold tabular-nums text-emerald-500">
+            ~${fmtCompact(winner.estRevDayLow)}
+          </span>
+        ) : (
+          <span className="text-[10px] text-muted-foreground/30">—</span>
+        )}
+        <p className="text-[9px] text-muted-foreground/50">p5</p>
+      </div>
+
       {/* Sparkline */}
       <div className="flex justify-center">
         {(() => {
           const h = (winner.growthHistory ?? []).slice(-7)
           return h.length >= 2
-            ? <Sparkline data={h} width={80} height={32} />
+            ? <Sparkline data={h} width={72} height={32} />
             : <span className="text-[10px] text-muted-foreground/30">—</span>
         })()}
       </div>

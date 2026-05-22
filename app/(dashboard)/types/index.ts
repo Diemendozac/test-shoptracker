@@ -5,6 +5,10 @@ export interface TopCandidate {
   candidateId: string
   productTitle: string
   productImage: string | null
+  productPrice: number | null
+  currentRank: number | null
+  estUnitsDayLow: number | null
+  estRevDayLow: number | null
   performanceScore: number
   performanceLabel: PerformanceLabel
   growthPct: number
@@ -21,6 +25,10 @@ export interface TrackerCandidate {
   storeId: string
   productTitle: string
   productImage: string | null
+  productPrice: number | null
+  currentRank: number | null
+  estUnitsDayLow: number | null
+  estRevDayLow: number | null
   storeName: string
   niche: string | null
   currency: string | null
@@ -79,6 +87,8 @@ export interface PoolWinnerProduct extends WinnerProduct {
   niche: string | null
   currency: string | null
   pagoAnticipado: boolean | null
+  estUnitsDayLow: number | null
+  estRevDayLow: number | null
   scoreHistory?: number[]
   growthHistory?: number[]
 }

@@ -9,6 +9,8 @@ export interface StoreResponse {
   niche: string | null
   currency: string | null
   pagoAnticipado: boolean | null
+  inactivityScore: number | null
+  inactivityTier: 'ACTIVA' | 'MODERADA' | 'INACTIVA' | 'ZOMBIE' | null
 }
 
 export interface CreateStoreRequest {
