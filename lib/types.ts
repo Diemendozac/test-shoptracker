@@ -22,6 +22,7 @@ export interface TopCandidate {
 export interface DashboardItem {
   storeId: string
   storeName: string
+  storeUrl?: string
   topCandidate: TopCandidate | null
 }
 
