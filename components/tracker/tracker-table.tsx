@@ -58,7 +58,7 @@ function SortIcon({ column, sort }: { column: SortKey; sort: SortState }) {
 
 export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) {
   const { data: me } = useGetMeQuery()
-  const preferredCurrency = me?.preferredCurrency ?? null
+  const preferredCurrency = me?.preferredCurrency ?? 'USD'
   // Anything < 7 or 0 (Todos) defaults to 7 days
   const displayDays = windowDays === 30 ? 30 : 7
   // Sort state

@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { Bell, Search, FlaskConical, TrendingUp, X } from 'lucide-react'
+import { Bell, Search, FlaskConical, TrendingUp, X, ChevronDown, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useGetNotificationsQuery } from '@/app/(dashboard)/services/userApi'
+import { useGetNotificationsQuery, useGetMeQuery, useUpdatePreferencesMutation } from '@/app/(dashboard)/services/userApi'
 import { TopbarTicker } from '@/components/layout/topbar-ticker'
+import { SUPPORTED_CURRENCIES, currencySymbol } from '@/lib/currency'
 import { cn } from '@/lib/utils'
 
 interface AppHeaderProps {
@@ -168,6 +169,61 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
   )
 }
 
+// ─── Currency selector ────────────────────────────────────────────────────────
+
+function CurrencySelector() {
+  const { data: me } = useGetMeQuery()
+  const [updatePreferences] = useUpdatePreferencesMutation()
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  const current = me?.preferredCurrency ?? 'USD'
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  function select(code: string) {
+    updatePreferences({ preferredCurrency: code })
+    setOpen(false)
+  }
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex h-9 items-center gap-1 rounded-lg border border-border bg-secondary/40 px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+      >
+        <span className="font-semibold text-foreground">{currencySymbol(current)}</span>
+        <span>{current}</span>
+        <ChevronDown className={cn('h-3 w-3 transition-transform', open && 'rotate-180')} />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full z-50 mt-1.5 w-36 overflow-hidden rounded-xl border border-border bg-card shadow-xl">
+          {SUPPORTED_CURRENCIES.map((code) => (
+            <button
+              key={code}
+              onClick={() => select(code)}
+              className="flex w-full items-center justify-between px-3 py-2 text-xs hover:bg-secondary/50 transition-colors"
+            >
+              <span className="flex items-center gap-2">
+                <span className="font-semibold text-foreground w-6">{currencySymbol(code)}</span>
+                <span className="text-muted-foreground">{code}</span>
+              </span>
+              {code === current && <Check className="h-3 w-3 text-primary" />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Header ───────────────────────────────────────────────────────────────────
 
 export function AppHeader({ title, description }: AppHeaderProps) {
@@ -196,6 +252,8 @@ export function AppHeader({ title, description }: AppHeaderProps) {
           <Search className="h-4 w-4" />
           <span className="sr-only">Search</span>
         </Button>
+
+        <CurrencySelector />
 
         {/* Bell */}
         <div ref={ref} className="relative">

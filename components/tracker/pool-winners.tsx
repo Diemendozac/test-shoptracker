@@ -30,7 +30,7 @@ interface PoolWinnersSectionProps {
 
 export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, preset = 'all' }: PoolWinnersSectionProps) {
   const { data: me } = useGetMeQuery()
-  const preferredCurrency = me?.preferredCurrency ?? null
+  const preferredCurrency = me?.preferredCurrency ?? 'USD'
   const [nicheFilter, setNicheFilter] = useState('all')
   const [currencyFilter, setCurrencyFilter] = useState('all')
   const [dateFilter, setDateFilter] = useState<7 | 30 | 0>(0)
