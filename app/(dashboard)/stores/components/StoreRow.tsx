@@ -154,7 +154,7 @@ function StoreLogo({ storeName, baseUrl }: { storeName: string; baseUrl: string 
   const [failed, setFailed] = useState(false)
   const domain = baseUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')
   const faviconUrl = domain
-    ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=64`
+    ? `https://icons.duckduckgo.com/ip3/${domain}.ico`
     : ''
   const initials = storeName.slice(0, 2).toUpperCase()
 

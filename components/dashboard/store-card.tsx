@@ -16,8 +16,9 @@ function StoreFavicon({ url, name }: { url?: string; name: string }) {
   const [failed, setFailed] = useState(false)
   const initials = name.slice(0, 2).toUpperCase()
 
-  const faviconUrl = url
-    ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(url)}&sz=64`
+  const domain = url ? url.replace(/^https?:\/\//, '').replace(/\/$/, '') : null
+  const faviconUrl = domain
+    ? `https://icons.duckduckgo.com/ip3/${domain}.ico`
     : null
 
   if (!faviconUrl || failed) {
