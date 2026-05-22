@@ -1,22 +1,35 @@
 'use client'
 
+import { useState } from 'react'
 import { PageLayout } from '@/components/layout/page-layout'
 import { StatsCard } from '@/components/dashboard/stats-card'
 import { StoreCard } from '@/components/dashboard/store-card'
-import { Store, Target, TrendingUp, Activity } from 'lucide-react'
+import { Store, Target, TrendingUp, Activity, ChevronDown } from 'lucide-react'
 import { useDashboard } from '../hooks/useDashboard'
+import type { DashboardItem } from '@/lib/types'
+
+function sortByScore(items: DashboardItem[]): DashboardItem[] {
+  return [...items].sort((a, b) => {
+    const sa = a.topCandidate?.performanceScore ?? -1
+    const sb = b.topCandidate?.performanceScore ?? -1
+    return sb - sa
+  })
+}
 
 export default function DashboardPage() {
   const { overviewItems, stats, isOverviewLoading } = useDashboard()
+  const [showAll, setShowAll] = useState(false)
 
-  const activeStores = overviewItems.length
+  const sorted = sortByScore(overviewItems)
+  const visible = showAll ? sorted : sorted.slice(0, 3)
+  const hasMore = sorted.length > 3
 
   return (
     <PageLayout title="Overview" description="Your competitive intelligence at a glance">
       <div className="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatsCard
           title="Active Stores"
-          value={activeStores}
+          value={overviewItems.length}
           icon={Store}
           variant="primary"
         />
@@ -54,11 +67,25 @@ export default function DashboardPage() {
           ))}
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {overviewItems.map((item) => (
-            <StoreCard key={item.storeId} item={item} />
-          ))}
-        </div>
+        <>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {visible.map((item) => (
+              <StoreCard key={item.storeId} item={item} />
+            ))}
+          </div>
+
+          {hasMore && (
+            <div className="mt-4 flex justify-center">
+              <button
+                onClick={() => setShowAll((v) => !v)}
+                className="flex items-center gap-1.5 rounded-lg border border-border bg-secondary/50 px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              >
+                <ChevronDown className={`h-4 w-4 transition-transform ${showAll ? 'rotate-180' : ''}`} />
+                {showAll ? 'Ver menos' : `Ver ${sorted.length - 3} tiendas más`}
+              </button>
+            </div>
+          )}
+        </>
       )}
     </PageLayout>
   )
