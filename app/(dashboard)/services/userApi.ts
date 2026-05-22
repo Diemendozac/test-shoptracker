@@ -8,6 +8,7 @@ export interface UserProfile {
   maxStores: number
   createdAt: string
   autoDetectCandidates: boolean
+  preferredCurrency: string | null
 }
 
 export interface NotificationPending {
@@ -57,7 +58,7 @@ export const userApi = createApi({
       query: (body) => ({ url: '/me/password', method: 'PUT', body }),
     }),
 
-    updatePreferences: builder.mutation<void, { autoDetectCandidates?: boolean }>({
+    updatePreferences: builder.mutation<void, { autoDetectCandidates?: boolean; preferredCurrency?: string | null }>({
       query: (body) => ({ url: '/me/preferences', method: 'PATCH', body }),
       invalidatesTags: ['Me'],
     }),
