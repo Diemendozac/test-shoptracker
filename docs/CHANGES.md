@@ -6,6 +6,24 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-010 — Eliminar estimaciones de ventas e ingresos del dashboard
+**Fecha:** 2026-05-22
+**Tipo:** ui
+
+**Qué cambió:** Se removieron todas las estimaciones de unidades/día e ingresos/día del dashboard y el pool. El modelo power law existe pero aún no está suficientemente calibrado para mostrarlo al usuario — se quitó para evitar ruido y expectativas incorrectas.
+
+**Archivos modificados:**
+- `components/tracker/tracker-table.tsx` — eliminadas columnas `~Ventas/d` e `~Ingr./d`, grid de 11 a 9 columnas, removidas constantes PL y función `plEst`
+- `components/tracker/pool-winners.tsx` — ídem: columnas de estimación eliminadas, grid de 10 a 8 columnas, removidas constantes PL
+- `components/dashboard/store-card.tsx` — eliminada línea `~X uds/día · ~$Y/día` bajo el top candidato
+- `components/tracker/kpi-cards.tsx` — card `~Artículos/día` reemplazada por `Score promedio`, removidos `fmtUnits` y `totalUnits`
+
+**Relacionado con backend:** El modelo sigue en el backend (`DashboardController`, constantes `PL_ALPHA`, `PL_S1_CONS`). Solo se oculta en el frontend.
+
+**Wiki actualizado:** No aplica (cambio de visibilidad de UI, sin impacto en lógica documentada).
+
+---
+
 ### CHANGE-009 — Conversión de moneda a preferredCurrency del usuario
 **Fecha:** 2026-05-22
 **Tipo:** feature

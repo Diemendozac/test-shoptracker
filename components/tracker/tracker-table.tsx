@@ -22,13 +22,6 @@ import {
 } from 'lucide-react'
 import { HoverImagePreview } from '@/components/ui/image-preview'
 
-const PL_S1_CONS = 13.3785
-const PL_ALPHA   = 2.1598
-function plEst(rank: number | null | undefined): number {
-  if (!rank || rank <= 0) return 0
-  return PL_S1_CONS * Math.pow(rank, -PL_ALPHA)
-}
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type SortKey = 'productTitle' | 'storeName' | 'performanceScore' | 'growthPct' | 'daysElapsed' | 'daysInBestseller'
@@ -247,7 +240,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
       {/* ── Table ── */}
       <div className="overflow-hidden rounded-xl border border-border bg-card">
         {/* Header */}
-        <div className="grid grid-cols-[40px_72px_1fr_150px_72px_80px_56px_80px_80px_68px_80px] items-center gap-4 border-b border-border bg-secondary/30 px-6 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        <div className="grid grid-cols-[40px_72px_1fr_150px_56px_80px_80px_68px_80px] items-center gap-4 border-b border-border bg-secondary/30 px-6 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           <div>#</div>
           <div />
           <button
@@ -264,8 +257,6 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
             Tienda
             <SortIcon column="storeName" sort={sort} />
           </button>
-          <div className="text-center">~Ventas/d</div>
-          <div className="text-center">~Ingr./d</div>
           <button
             onClick={() => handleSort('performanceScore')}
             className="group/th flex items-center justify-center gap-1.5 hover:text-foreground transition-colors"
@@ -300,16 +291,11 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
             </div>
           ) : (
             processed.map((candidate, idx) => {
-              const uds    = candidate.estUnitsDayLow ?? plEst(candidate.currentRank)
-              const udsInt = uds >= 0.5 ? Math.max(1, Math.round(uds)) : 0
-              const revRaw      = udsInt > 0 && candidate.productPrice != null ? udsInt * candidate.productPrice : 0
-              const rev         = convertCurrency(revRaw, candidate.currency, preferredCurrency)
-              const displayCurr = preferredCurrency ?? candidate.currency ?? 'USD'
-              const sym         = currencySymbol(displayCurr)
+              const sym = currencySymbol(preferredCurrency ?? candidate.currency ?? 'USD')
               return (
               <div
                 key={candidate.candidateId}
-                className="grid grid-cols-[40px_72px_1fr_150px_72px_80px_56px_80px_80px_68px_80px] items-center gap-4 px-6 py-3 transition-colors hover:bg-secondary/30"
+                className="grid grid-cols-[40px_72px_1fr_150px_56px_80px_80px_68px_80px] items-center gap-4 px-6 py-3 transition-colors hover:bg-secondary/30"
               >
                 {/* Rank */}
                 <div className="flex items-center justify-center">
@@ -354,32 +340,6 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                   <span className="block truncate rounded-md bg-secondary px-2 py-1 text-[11px] font-medium text-muted-foreground">
                     {candidate.storeName}
                   </span>
-                </div>
-
-                {/* Est. ventas/día */}
-                <div className="text-center">
-                  {udsInt > 0 ? (
-                    <span className="text-sm font-semibold tabular-nums text-foreground">
-                      ~{udsInt}
-                    </span>
-                  ) : (
-                    <span className="text-[10px] text-muted-foreground/30">—</span>
-                  )}
-                  <p className="text-[9px] text-muted-foreground/50">uds/d</p>
-                </div>
-
-                {/* Est. ingresos/día */}
-                <div className="text-center">
-                  {rev > 0 ? (
-                    <>
-                      <span className="text-sm font-semibold tabular-nums text-emerald-500">
-                        ~{sym}{fmtCompact(rev)}
-                      </span>
-                      <p className="text-[9px] text-muted-foreground/50">{displayCurr} p5</p>
-                    </>
-                  ) : (
-                    <span className="text-[10px] text-muted-foreground/30">—</span>
-                  )}
                 </div>
 
                 {/* Score */}

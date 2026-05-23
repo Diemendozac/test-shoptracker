@@ -13,13 +13,6 @@ import { useCurrency } from '@/store/hooks'
 import type { PoolWinnersResponse, PoolWinnerProduct } from '@/app/(dashboard)/types'
 import type { PoolPreset } from '@/app/(dashboard)/pool/page'
 
-const PL_S1_CONS = 13.3785
-const PL_ALPHA   = 2.1598
-function plEst(rank: number | null | undefined): number {
-  if (!rank || rank <= 0) return 0
-  return PL_S1_CONS * Math.pow(rank, -PL_ALPHA)
-}
-
 interface PoolWinnersSectionProps {
   data: PoolWinnersResponse | undefined
   isLoading?: boolean
@@ -178,13 +171,11 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, pr
       </div>
 
       {/* Column headers */}
-      <div className="grid grid-cols-[28px_72px_1fr_150px_72px_80px_80px_72px_56px_72px] items-center gap-4 border-b border-border px-6 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+      <div className="grid grid-cols-[28px_72px_1fr_150px_80px_72px_56px_72px] items-center gap-4 border-b border-border px-6 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
         <div>#</div>
         <div />
         <div>Producto</div>
         <div>Tienda</div>
-        <div className="text-center">~Ventas/d</div>
-        <div className="text-center">~Ingr./d</div>
         <div className="text-center">Tendencia</div>
         <div className="text-center">Crecimiento</div>
         <div className="text-center">Score</div>
@@ -305,15 +296,10 @@ function LockedState() {
 
 function PoolWinnerRow({ winner, position, preferredCurrency }: { winner: PoolWinnerProduct; position: number; preferredCurrency: string | null }) {
   const isFirst = position === 1
-  const uds    = winner.estUnitsDayLow ?? plEst(winner.currentRank)
-  const udsInt = uds >= 0.5 ? Math.max(1, Math.round(uds)) : 0
-  const revRaw      = udsInt > 0 && winner.productPrice != null ? udsInt * winner.productPrice : 0
-  const rev         = convertCurrency(revRaw, winner.currency, preferredCurrency)
-  const displayCurr = preferredCurrency ?? winner.currency ?? 'USD'
-  const sym         = currencySymbol(displayCurr)
+  const sym = currencySymbol(preferredCurrency ?? winner.currency ?? 'USD')
   return (
     <div className={cn(
-      'grid grid-cols-[28px_72px_1fr_150px_72px_80px_80px_72px_56px_72px] items-center gap-4 px-6 py-3 transition-colors hover:bg-secondary/30',
+      'grid grid-cols-[28px_72px_1fr_150px_80px_72px_56px_72px] items-center gap-4 px-6 py-3 transition-colors hover:bg-secondary/30',
       isFirst && 'bg-amber-500/5',
     )}>
       {/* Position */}
@@ -349,32 +335,6 @@ function PoolWinnerRow({ winner, position, preferredCurrency }: { winner: PoolWi
         <span className="block truncate rounded-md bg-secondary px-2 py-1 text-[11px] font-medium text-muted-foreground">
           {winner.storeName}
         </span>
-      </div>
-
-      {/* Est. ventas/día */}
-      <div className="text-center">
-        {udsInt > 0 ? (
-          <span className="text-sm font-semibold tabular-nums text-foreground">
-            ~{udsInt}
-          </span>
-        ) : (
-          <span className="text-[10px] text-muted-foreground/30">—</span>
-        )}
-        <p className="text-[9px] text-muted-foreground/50">uds/d</p>
-      </div>
-
-      {/* Est. ingresos/día */}
-      <div className="text-center">
-        {rev > 0 ? (
-          <>
-            <span className="text-sm font-semibold tabular-nums text-emerald-500">
-              ~{sym}{fmtCompact(rev)}
-            </span>
-            <p className="text-[9px] text-muted-foreground/50">{displayCurr} p5</p>
-          </>
-        ) : (
-          <span className="text-[10px] text-muted-foreground/30">—</span>
-        )}
       </div>
 
       {/* Sparkline */}

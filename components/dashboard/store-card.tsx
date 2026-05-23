@@ -7,7 +7,7 @@ import { PerformanceBadge } from './performance-badge'
 import { ScoreRing } from './score-ring'
 import type { DashboardItem } from '@/lib/types'
 import { ExternalLink, Package, TrendingUp } from 'lucide-react'
-import { fmtCompact, fmtUnits } from '@/lib/utils'
+import { fmtCompact } from '@/lib/utils'
 
 interface StoreCardProps {
   item: DashboardItem
@@ -98,14 +98,7 @@ export function StoreCard({ item }: StoreCardProps) {
                     {topCandidate.growthPct >= 0 ? '+' : ''}{Math.round(topCandidate.growthPct * 100)}% growth
                   </span>
                 </div>
-                {(topCandidate.estUnitsDayLow ?? 0) >= 0.01 && (
-                  <p className="text-[11px] text-muted-foreground/60 tabular-nums">
-                    ~{fmtUnits(topCandidate.estUnitsDayLow!)} uds/día
-                    {topCandidate.estRevDayLow != null && topCandidate.estRevDayLow > 0 && (
-                      <> · ~${fmtCompact(topCandidate.estRevDayLow)}/día</>
-                    )}
-                  </p>
-                )}
+
               </div>
             </div>
 

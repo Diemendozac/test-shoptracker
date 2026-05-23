@@ -1,7 +1,6 @@
 'use client'
 
-import { TrendingUp, Target, Rocket, ShoppingCart } from 'lucide-react'
-import { fmtUnits } from '@/lib/utils'
+import { TrendingUp, Target, Rocket, Activity } from 'lucide-react'
 import type { TrackerCandidate } from '@/app/(dashboard)/types'
 import { cn } from '@/lib/utils'
 
@@ -10,10 +9,12 @@ interface KpiCardsProps {
 }
 
 export function KpiCards({ candidates }: KpiCardsProps) {
-  const total        = candidates.length
-  const rising       = candidates.filter((c) => c.performanceLabel === 'Rising').length
-  const totalUnits   = candidates.reduce((s, c) => s + (c.estUnitsDayLow ?? 0), 0)
-  const stores       = new Set(candidates.map((c) => c.storeId)).size
+  const total    = candidates.length
+  const rising   = candidates.filter((c) => c.performanceLabel === 'Rising').length
+  const avgScore = total > 0
+    ? Math.round(candidates.reduce((s, c) => s + (c.performanceScore ?? 0), 0) / total)
+    : 0
+  const stores   = new Set(candidates.map((c) => c.storeId)).size
 
   const cards = [
     {
@@ -26,10 +27,10 @@ export function KpiCards({ candidates }: KpiCardsProps) {
       border: 'rgba(168,85,247,0.25)',
     },
     {
-      icon: ShoppingCart,
-      label: '~Artículos/día',
-      value: `~${fmtUnits(totalUnits)}`,
-      sub: 'est. vendidos (p5)',
+      icon: Activity,
+      label: 'Score promedio',
+      value: avgScore,
+      sub: 'de candidatos activos',
       color: 'text-orange-400',
       glow: 'rgba(249,115,22,0.15)',
       border: 'rgba(249,115,22,0.25)',
