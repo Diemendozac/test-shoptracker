@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import Link from 'next/link'
 import { Lock, TrendingUp, Crown, ChevronLeft, ChevronRight, Globe } from 'lucide-react'
 import { ScoreRing } from '@/components/dashboard/score-ring'
 import { PerformanceBadge } from '@/components/dashboard/performance-badge'
@@ -317,9 +318,12 @@ function PoolWinnerRow({ winner, position, preferredCurrency }: { winner: PoolWi
 
       {/* Product info */}
       <div className="min-w-0">
-        <p className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">
+        <Link
+          href={`/tracker/${winner.candidateId}?storeId=${winner.storeId}`}
+          className="line-clamp-2 text-sm font-semibold leading-snug text-foreground hover:text-primary hover:underline transition-colors"
+        >
           {winner.productTitle}
-        </p>
+        </Link>
         {winner.productPrice != null && (
           <p className="mt-1 text-xs font-medium text-primary">
             {sym}{fmtCompact(convertCurrency(winner.productPrice, winner.currency, preferredCurrency))}

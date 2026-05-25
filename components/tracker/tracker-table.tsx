@@ -324,9 +324,12 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
 
                 {/* Product info */}
                 <div className="min-w-0">
-                  <p className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">
+                  <Link
+                    href={`/tracker/${candidate.candidateId}?storeId=${candidate.storeId}`}
+                    className="line-clamp-2 text-sm font-semibold leading-snug text-foreground hover:text-primary hover:underline transition-colors"
+                  >
                     {candidate.productTitle}
-                  </p>
+                  </Link>
                   {candidate.productPrice != null && (
                     <p className="mt-0.5 text-xs font-medium text-primary">
                       {sym}{fmtCompact(convertCurrency(candidate.productPrice, candidate.currency, preferredCurrency))}
