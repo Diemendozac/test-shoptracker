@@ -63,7 +63,10 @@ function ProductGallery({ images, productTitle }: { images: string[]; productTit
     <>
       <div className="flex gap-2 shrink-0">
         {/* Main image */}
-        <div className="relative group w-52 h-52 rounded-xl overflow-hidden bg-secondary">
+        <div
+          className="relative group w-52 h-52 rounded-xl overflow-hidden bg-secondary cursor-zoom-in"
+          onClick={() => openLightbox(activeIdx)}
+        >
           <img
             src={images[activeIdx]}
             alt={productTitle}
@@ -72,25 +75,22 @@ function ProductGallery({ images, productTitle }: { images: string[]; productTit
           {images.length > 1 && (
             <>
               <button
-                onClick={prev}
+                onClick={e => { e.stopPropagation(); prev() }}
                 className="absolute left-1 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
               <button
-                onClick={next}
+                onClick={e => { e.stopPropagation(); next() }}
                 className="absolute right-1 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
             </>
           )}
-          <button
-            onClick={() => openLightbox(activeIdx)}
-            className="absolute bottom-1 right-1 flex h-7 w-7 items-center justify-center rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity"
-          >
+          <div className="absolute bottom-1 right-1 flex h-7 w-7 items-center justify-center rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
             <ZoomIn className="h-3.5 w-3.5" />
-          </button>
+          </div>
           {images.length > 1 && (
             <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
               {images.map((_, i) => (
