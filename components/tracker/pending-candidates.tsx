@@ -1,9 +1,11 @@
 'use client'
 
+import Link from 'next/link'
 import { FlaskConical, X, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useGetPendingCandidatesQuery, useActivateCandidateMutation, useCancelCandidateMutation } from '@/app/(dashboard)/services/candidateApi'
 import type { PendingCandidate } from '@/app/(dashboard)/services/candidateApi'
+import { useGetStoresQuery } from '@/app/(dashboard)/stores/services/storeApi'
 import { useCurrency } from '@/store/hooks'
 import { convertCurrency, currencySymbol } from '@/lib/currency'
 
@@ -12,6 +14,8 @@ export function PendingCandidatesSection() {
   const [activate, { isLoading: activating }] = useActivateCandidateMutation()
   const [cancel] = useCancelCandidateMutation()
   const { currency: preferredCurrency } = useCurrency()
+  const { data: stores } = useGetStoresQuery()
+  const storeBaseUrlMap = Object.fromEntries((stores ?? []).map(s => [s.storeId, s.baseUrl]))
 
   if (isLoading) {
     return (
@@ -49,6 +53,7 @@ export function PendingCandidatesSection() {
           <PendingRow
             key={c.candidateId}
             candidate={c}
+            storeBaseUrl={storeBaseUrlMap[c.storeId] ?? ''}
             preferredCurrency={preferredCurrency}
             onActivate={() => activate(c.candidateId)}
             onCancel={() => cancel(c.candidateId)}
@@ -62,12 +67,14 @@ export function PendingCandidatesSection() {
 
 function PendingRow({
   candidate,
+  storeBaseUrl,
   preferredCurrency,
   onActivate,
   onCancel,
   isActivating,
 }: {
   candidate: PendingCandidate
+  storeBaseUrl: string
   preferredCurrency: string
   onActivate: () => void
   onCancel: () => void
@@ -77,6 +84,14 @@ function PendingRow({
     day: 'numeric',
     month: 'short',
   })
+
+  const productUrl = (() => {
+    const raw = candidate.productUrl
+    if (!raw) return null
+    if (raw.startsWith('http')) return raw
+    const base = storeBaseUrl.replace(/\/$/, '')
+    return base ? `${base}${raw}` : null
+  })()
 
   return (
     <div className="flex items-center gap-4 rounded-xl border border-amber-500/20 bg-card px-4 py-3 transition-colors hover:bg-secondary/30">
@@ -93,7 +108,18 @@ function PendingRow({
 
       {/* info */}
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-foreground">{candidate.productTitle}</p>
+        {productUrl ? (
+          <a
+            href={productUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="truncate text-sm font-medium text-foreground hover:text-primary hover:underline transition-colors"
+          >
+            {candidate.productTitle}
+          </a>
+        ) : (
+          <p className="truncate text-sm font-medium text-foreground">{candidate.productTitle}</p>
+        )}
         <div className="mt-0.5 flex items-center gap-2">
           <span className="rounded-md bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
             {candidate.storeName}
