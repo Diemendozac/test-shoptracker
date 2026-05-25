@@ -38,6 +38,7 @@ export interface TrackerCandidate {
   firstSeenDate: string | null
   performanceScore: number | null
   entryScore: number | null
+  entryRank: number | null
   performanceLabel: PerformanceLabel
   growthPct: number | null
   daysInBestseller: number
