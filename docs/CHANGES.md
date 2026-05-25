@@ -6,6 +6,20 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-011 — Home page + logo clickeable
+**Fecha:** 2026-05-25
+**Tipo:** feature
+
+**Qué cambió:** Se creó una vista `/home` como landing page principal de la plataforma. El logo "ShopTracker" en el sidebar ahora es un link que lleva a `/home`.
+
+**Archivos modificados:**
+- `app/(dashboard)/home/page.tsx` — nueva página con: hero + buscador, KPI strip (tiendas activas, en testeo, en alza), acceso rápido a 4 secciones, ranking top productos del pool, panel de insights
+- `components/layout/app-sidebar.tsx` — logo envuelto en `<Link href="/home">` con hover opacity
+
+**Relacionado con backend:** Usa los mismos endpoints existentes: `GET /api/dashboard/overview`, `GET /api/tracker/candidates`, `GET /api/pool/winners`, `GET /api/dashboard/insights`.
+
+---
+
 ### CHANGE-010 — Eliminar estimaciones de ventas e ingresos del dashboard
 **Fecha:** 2026-05-22
 **Tipo:** ui

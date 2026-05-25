@@ -53,7 +53,7 @@ export function AppSidebar() {
   return (
     <aside className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-sidebar">
       {/* Logo */}
-      <div className="flex h-16 items-center gap-3 border-b border-border px-6">
+      <Link href="/home" className="flex h-16 items-center gap-3 border-b border-border px-6 transition-opacity hover:opacity-80">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
           <TrendingUp className="h-5 w-5 text-primary-foreground" />
         </div>
@@ -61,7 +61,7 @@ export function AppSidebar() {
           <span className="text-sm font-semibold text-foreground">ShopTracker</span>
           <span className="text-xs text-muted-foreground">Intelligence Platform</span>
         </div>
-      </div>
+      </Link>
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 px-3 py-4">
