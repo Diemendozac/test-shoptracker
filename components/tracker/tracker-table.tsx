@@ -28,7 +28,7 @@ import { HoverImagePreview } from '@/components/ui/image-preview'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type SortKey = 'productTitle' | 'storeName' | 'performanceScore' | 'growthPct' | 'daysElapsed' | 'daysInBestseller'
+type SortKey = 'productTitle' | 'storeName' | 'performanceScore' | 'growthPct' | 'daysElapsed' | 'daysInBestseller' | 'firstSeenDate'
 type SortDir = 'asc' | 'desc'
 
 interface SortState {
@@ -128,6 +128,9 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
       result.sort((a, b) => {
         const av = a[k]
         const bv = b[k]
+        if (av == null && bv == null) return 0
+        if (av == null) return 1
+        if (bv == null) return -1
         const cmp = typeof av === 'string' ? av.localeCompare(bv as string) : (av as number) - (bv as number)
         return sort.dir === 'asc' ? cmp : -cmp
       })
@@ -136,7 +139,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
     return result
   }, [candidates, search, storeFilter, nicheFilter, currencyFilter, paFilter, sort])
 
-  const hasActiveFilters = search || storeFilter !== 'all' || nicheFilter !== 'all' || currencyFilter !== 'all' || paFilter !== 'all' || sort.key === 'daysElapsed'
+  const hasActiveFilters = search || storeFilter !== 'all' || nicheFilter !== 'all' || currencyFilter !== 'all' || paFilter !== 'all' || sort.key === 'firstSeenDate'
 
   function clearFilters() {
     setSearch('')
@@ -230,13 +233,13 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
         {/* Date sort */}
         <select
           value={
-            sort.key === 'daysElapsed' && sort.dir === 'asc' ? 'recent'
-            : sort.key === 'daysElapsed' && sort.dir === 'desc' ? 'oldest'
+            sort.key === 'firstSeenDate' && sort.dir === 'desc' ? 'recent'
+            : sort.key === 'firstSeenDate' && sort.dir === 'asc' ? 'oldest'
             : 'relevance'
           }
           onChange={(e) => {
-            if (e.target.value === 'recent')    setSort({ key: 'daysElapsed', dir: 'asc' })
-            else if (e.target.value === 'oldest') setSort({ key: 'daysElapsed', dir: 'desc' })
+            if (e.target.value === 'recent')      setSort({ key: 'firstSeenDate', dir: 'desc' })
+            else if (e.target.value === 'oldest') setSort({ key: 'firstSeenDate', dir: 'asc' })
             else                                  setSort({ key: 'performanceScore', dir: 'desc' })
           }}
           className="h-9 appearance-none rounded-lg border border-border bg-secondary/40 px-3 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
