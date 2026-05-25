@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
+import { useDispatch } from 'react-redux'
 import Link from 'next/link'
 import { cn, fmtCompact } from '@/lib/utils'
 import { convertCurrency, currencySymbol } from '@/lib/currency'
@@ -23,6 +23,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import { useRemoveCandidateMutation } from '@/app/(dashboard)/services/candidateApi'
+import { dashboardApi } from '@/app/(dashboard)/services/dashboardApi'
 import { HoverImagePreview } from '@/components/ui/image-preview'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -54,7 +55,7 @@ function SortIcon({ column, sort }: { column: SortKey; sort: SortState }) {
 
 export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) {
   const { currency: preferredCurrency } = useCurrency()
-  const router = useRouter()
+  const dispatch = useDispatch()
   const [removeCandidate] = useRemoveCandidateMutation()
   // Anything < 7 or 0 (Todos) defaults to 7 days
   const displayDays = windowDays === 30 ? 30 : 7
@@ -397,7 +398,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                     onClick={async () => {
                       if (confirm(`¿Eliminar "${candidate.productTitle}"?`)) {
                         await removeCandidate(candidate.candidateId)
-                        router.refresh()
+                        dispatch(dashboardApi.util.invalidateTags(['Tracker', 'Overview']))
                       }
                     }}
                     className="rounded-lg p-1.5 text-muted-foreground/50 transition-colors hover:bg-rose-500/10 hover:text-rose-500"
