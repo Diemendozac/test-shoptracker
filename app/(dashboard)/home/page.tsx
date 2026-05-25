@@ -193,7 +193,7 @@ export default function HomePage() {
 
                         {/* Score */}
                         <div className="shrink-0">
-                          <ScoreRing score={product.performanceScore} size={36} signalConfidence={1} />
+                          <ScoreRing score={product.performanceScore} size="sm" showLabel={false} />
                         </div>
 
                         {/* Price */}
