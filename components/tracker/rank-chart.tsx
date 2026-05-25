@@ -13,7 +13,11 @@ export function RankChart({ history }: RankChartProps) {
     rank: h.bestsellerRank ?? 0,
     score: Math.round(h.performanceScore * 100),
     date: new Date(h.snapshotDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-  })).reverse()
+  }))
+  // oldest entry on the left, newest on the right — no .reverse()
+
+  const validRanks = data.filter(d => d.rank > 0).map(d => d.rank)
+  const bestRank = validRanks.length > 0 ? Math.min(...validRanks) : null
 
   return (
     <div className="h-64 w-full">
@@ -42,12 +46,15 @@ export function RankChart({ history }: RankChartProps) {
           <Tooltip
             content={({ active, payload }) => {
               if (active && payload && payload.length) {
-                const data = payload[0].payload
+                const d = payload[0].payload
                 return (
                   <div className="rounded-lg border border-border bg-popover px-3 py-2 shadow-lg">
-                    <p className="text-xs text-muted-foreground">{data.date}</p>
-                    <p className="text-sm font-semibold text-foreground">Rank #{data.rank}</p>
-                    <p className="text-xs text-primary">Score: {data.score}%</p>
+                    <p className="text-xs text-muted-foreground">{d.date}</p>
+                    <p className="text-sm font-semibold text-foreground">Rank #{d.rank}</p>
+                    {bestRank !== null && d.rank === bestRank && (
+                      <p className="text-xs font-medium text-emerald-500">★ Mejor posición alcanzada</p>
+                    )}
+                    <p className="text-xs text-primary">Score: {d.score}%</p>
                   </div>
                 )
               }
@@ -60,6 +67,24 @@ export function RankChart({ history }: RankChartProps) {
             stroke="oklch(0.7 0.2 285)"
             strokeWidth={2}
             fill="url(#rankGradient)"
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            dot={(props: any) => {
+              if (bestRank !== null && props.payload.rank === bestRank) {
+                return (
+                  <circle
+                    key={`best-${props.index}`}
+                    cx={props.cx}
+                    cy={props.cy}
+                    r={5}
+                    fill="oklch(0.7 0.2 285)"
+                    stroke="white"
+                    strokeWidth={2}
+                  />
+                )
+              }
+              return <g key={`dot-${props.index}`} />
+            }}
+            activeDot={{ r: 4, strokeWidth: 2 }}
           />
         </AreaChart>
       </ResponsiveContainer>
