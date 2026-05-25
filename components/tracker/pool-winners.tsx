@@ -486,7 +486,7 @@ function PoolWinnerRow({ winner, position, preferredCurrency, storeBaseUrl }: {
         {winner.growthPct != null && (
           <span className="mt-0.5 block text-[10px] leading-tight text-muted-foreground">
             {winner.growthPct > 1
-              ? `↑ top ${Math.max(1, Math.round(100 - winner.performanceScore))}% en tienda`
+              ? `↑ subiendo`
               : winner.growthPct < -1
               ? `↓ bajando`
               : 'sin cambio'}
@@ -494,7 +494,7 @@ function PoolWinnerRow({ winner, position, preferredCurrency, storeBaseUrl }: {
         )}
       </div>
 
-      {/* Contexto bar */}
+      {/* Contexto bar — based on performance score (no store total in pool view) */}
       {(() => {
         const s = Math.round(Math.min(100, Math.max(0, winner.performanceScore ?? 0)))
         const color = s >= 60 ? 'bg-emerald-500' : s >= 30 ? 'bg-amber-500' : 'bg-rose-500'
@@ -503,7 +503,7 @@ function PoolWinnerRow({ winner, position, preferredCurrency, storeBaseUrl }: {
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
               <div className={cn('h-full rounded-full transition-all duration-500', color)} style={{ width: `${s}%` }} />
             </div>
-            <span className="text-[11px] font-medium tabular-nums text-muted-foreground">{s}%</span>
+            <span className="text-[11px] font-medium tabular-nums text-muted-foreground">score {s}</span>
           </div>
         )
       })()}

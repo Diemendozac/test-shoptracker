@@ -37,16 +37,22 @@ function SortIcon({ column, sort }: { column: SortKey; sort: SortState }) {
     : <ArrowDown className="h-3 w-3 text-primary" />
 }
 
-function ContextBar({ score, total }: { score: number | null; total?: number | null }) {
-  const s = Math.round(Math.min(100, Math.max(0, score ?? 0)))
-  const color = s >= 60 ? 'bg-emerald-500' : s >= 30 ? 'bg-amber-500' : 'bg-rose-500'
+function ContextBar({ rank, total }: { rank: number | null; total?: number | null }) {
+  // topPct = how far from the top (rank #1 = top 1%)
+  const topPct = rank != null && total && total > 0
+    ? Math.max(1, Math.round((rank / total) * 100))
+    : null
+  // bar fills inversely: rank #1 → 99% full (good), rank #89 → ~1% full (bad)
+  const barFill = topPct != null ? Math.max(1, 100 - topPct) : 0
+  const color = barFill >= 70 ? 'bg-emerald-500' : barFill >= 40 ? 'bg-amber-500' : 'bg-rose-500'
   return (
     <div className="space-y-1 w-full">
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
-        <div className={cn('h-full rounded-full transition-all duration-500', color)} style={{ width: `${s}%` }} />
+        <div className={cn('h-full rounded-full transition-all duration-500', color)} style={{ width: `${barFill}%` }} />
       </div>
       <span className="text-[11px] font-medium tabular-nums text-muted-foreground">
-        {s}%{total ? ` de ${total} prods.` : ''}
+        {topPct != null ? `top ${topPct}%` : '—'}
+        {total ? <span className="text-muted-foreground/60"> · {total} prods.</span> : ''}
       </span>
     </div>
   )
@@ -263,13 +269,15 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                 : candidate.growthPct != null && candidate.growthPct < -1 ? 'down'
                 : null
 
-              // Crecimiento sub-text derived from performance score
-              const score = candidate.performanceScore ?? 0
-              const topPct = Math.max(1, Math.round(100 - score))
+              // Crecimiento sub-text — uses same rank-based percentile as ContextBar
+              const total = candidate.storeProductCount
+              const topPct = candidate.currentRank != null && total && total > 0
+                ? Math.max(1, Math.round((candidate.currentRank / total) * 100))
+                : null
               const gp = candidate.growthPct
               const subText = gp == null ? null
-                : gp > 1  ? `↑ top ${topPct}% en tienda`
-                : gp < -1 ? `↓ bottom ${Math.min(99, Math.round(score))}% en tienda`
+                : gp > 1  ? `↑ top ${topPct ?? '—'}% en tienda`
+                : gp < -1 ? `↓ bajando en tienda`
                 : 'sin cambio'
 
               return (
@@ -380,7 +388,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                   </div>
 
                   {/* Contexto */}
-                  <ContextBar score={candidate.performanceScore} total={candidate.storeProductCount} />
+                  <ContextBar rank={candidate.currentRank} total={candidate.storeProductCount} />
 
                   {/* Acción */}
                   <div className="flex items-center justify-center gap-1.5">
