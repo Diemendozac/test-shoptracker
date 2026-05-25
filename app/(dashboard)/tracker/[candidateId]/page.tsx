@@ -22,6 +22,7 @@ import {
   Clock,
   Zap,
   AlertCircle,
+  Store,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -46,7 +47,9 @@ function CandidateDetailContent() {
   const fromTracker = searchParams.get('from') !== 'pool'
 
   const { data: stores } = useGetStoresQuery()
-  const storeBaseUrl = stores?.find(s => s.storeId === storeId)?.baseUrl ?? ''
+  const store = stores?.find(s => s.storeId === storeId)
+  const storeBaseUrl = store?.baseUrl ?? ''
+  const storeName = store?.storeName ?? null
 
   const { data, isLoading, isError } = useGetCandidateDetailQuery(
     { storeId: storeId!, candidateId },
@@ -145,6 +148,17 @@ function CandidateDetailContent() {
               )}
               <div>
                 <h1 className="mb-1 text-2xl font-bold text-foreground">{candidate.productTitle}</h1>
+                {storeName && (
+                  <div className="mb-2">
+                    <Link
+                      href="/stores"
+                      className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                    >
+                      <Store className="h-3.5 w-3.5" />
+                      {storeName}
+                    </Link>
+                  </div>
+                )}
                 <div className="mb-3 flex flex-wrap items-center gap-3">
                   <span className="rounded-md bg-secondary px-2 py-1 text-xs font-medium text-muted-foreground">
                     {candidate.productHandle}
