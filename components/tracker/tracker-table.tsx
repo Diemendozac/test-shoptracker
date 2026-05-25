@@ -280,6 +280,8 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                 : gp < -1 ? `↓ bajando en tienda`
                 : 'sin cambio'
 
+              const score = Math.round(candidate.performanceScore ?? 0)
+
               return (
                 <div
                   key={candidate.candidateId}
