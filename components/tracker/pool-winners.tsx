@@ -319,7 +319,7 @@ function PoolWinnerRow({ winner, position, preferredCurrency }: { winner: PoolWi
       {/* Product info */}
       <div className="min-w-0">
         <Link
-          href={`/tracker/${winner.candidateId}?storeId=${winner.storeId}`}
+          href={`/tracker/${winner.candidateId}?storeId=${winner.storeId}&from=pool`}
           className="line-clamp-2 text-sm font-semibold leading-snug text-foreground hover:text-primary hover:underline transition-colors"
         >
           {winner.productTitle}

@@ -42,6 +42,7 @@ function CandidateDetailContent() {
   const router = useRouter()
 
   const storeId = searchParams.get('storeId')
+  const fromTracker = searchParams.get('from') !== 'pool'
 
   const { data, isLoading, isError } = useGetCandidateDetailQuery(
     { storeId: storeId!, candidateId },
@@ -120,9 +121,17 @@ function CandidateDetailContent() {
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             {/* Product Info */}
             <div className="flex items-start gap-5">
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-secondary text-2xl font-bold text-muted-foreground">
-                {candidate.productTitle.charAt(0)}
-              </div>
+              {candidate.productImage ? (
+                <img
+                  src={candidate.productImage}
+                  alt=""
+                  className="h-16 w-16 shrink-0 rounded-xl object-cover bg-secondary"
+                />
+              ) : (
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-secondary text-2xl font-bold text-muted-foreground">
+                  {candidate.productTitle.charAt(0)}
+                </div>
+              )}
               <div>
                 <h1 className="mb-1 text-2xl font-bold text-foreground">{candidate.productTitle}</h1>
                 <div className="mb-3 flex flex-wrap items-center gap-3">
@@ -152,10 +161,10 @@ function CandidateDetailContent() {
               {summary && (
                 <ScoreRing score={summary.performanceScore} label={summary.performanceLabel} size="lg" />
               )}
-              {candidate.productUrl && (
+              {fromTracker && candidate.productUrl && (
                 <Button variant="outline" size="sm" asChild>
                   <a href={candidate.productUrl} target="_blank" rel="noopener noreferrer" className="gap-2">
-                    View Product
+                    Ver producto
                     <ExternalLink className="h-4 w-4" />
                   </a>
                 </Button>

@@ -325,7 +325,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                 {/* Product info */}
                 <div className="min-w-0">
                   <Link
-                    href={`/tracker/${candidate.candidateId}?storeId=${candidate.storeId}`}
+                    href={`/tracker/${candidate.candidateId}?storeId=${candidate.storeId}&from=tracker`}
                     className="line-clamp-2 text-sm font-semibold leading-snug text-foreground hover:text-primary hover:underline transition-colors"
                   >
                     {candidate.productTitle}
