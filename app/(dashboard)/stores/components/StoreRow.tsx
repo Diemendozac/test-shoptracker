@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import {
   ExternalLink, MoreVertical, CheckCircle,
@@ -41,7 +42,12 @@ export function StoreRow({ store, isSyncing, isDeleting, onSync, onDelete }: Sto
 
       {/* Name + URL */}
       <div className="min-w-0">
-        <p className="truncate text-sm font-medium text-foreground">{store.storeName}</p>
+        <Link
+          href={`/stores/${store.storeId}`}
+          className="truncate text-sm font-medium text-foreground hover:text-primary hover:underline transition-colors"
+        >
+          {store.storeName}
+        </Link>
         <a
           href={store.baseUrl}
           target="_blank"
