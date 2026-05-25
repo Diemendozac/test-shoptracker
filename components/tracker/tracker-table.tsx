@@ -19,7 +19,9 @@ import {
   Search,
   X,
   SlidersHorizontal,
+  Trash2,
 } from 'lucide-react'
+import { useRemoveCandidateMutation } from '@/app/(dashboard)/services/candidateApi'
 import { HoverImagePreview } from '@/components/ui/image-preview'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -51,6 +53,7 @@ function SortIcon({ column, sort }: { column: SortKey; sort: SortState }) {
 
 export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) {
   const { currency: preferredCurrency } = useCurrency()
+  const [removeCandidate] = useRemoveCandidateMutation()
   // Anything < 7 or 0 (Todos) defaults to 7 days
   const displayDays = windowDays === 30 ? 30 : 7
   // Sort state
@@ -380,7 +383,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                 </div>
 
                 {/* Action */}
-                <div className="flex justify-center">
+                <div className="flex items-center justify-center gap-1.5">
                   <Link
                     href={`/tracker/${candidate.candidateId}?storeId=${candidate.storeId}`}
                     className="flex items-center gap-1 rounded-lg bg-secondary px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
@@ -388,6 +391,17 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                     Ver
                     <ExternalLink className="h-3 w-3" />
                   </Link>
+                  <button
+                    onClick={() => {
+                      if (confirm(`¿Eliminar "${candidate.productTitle}"?`)) {
+                        removeCandidate(candidate.candidateId)
+                      }
+                    }}
+                    className="rounded-lg p-1.5 text-muted-foreground/50 transition-colors hover:bg-rose-500/10 hover:text-rose-500"
+                    title="Eliminar"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               </div>
             )})

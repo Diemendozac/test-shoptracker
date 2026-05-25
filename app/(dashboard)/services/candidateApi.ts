@@ -25,7 +25,7 @@ export const candidateApi = createApi({
       return headers
     },
   }),
-  tagTypes: ['Pending'],
+  tagTypes: ['Pending', 'Tracker'],
   endpoints: (builder) => ({
 
     getPendingCandidates: builder.query<PendingCandidate[], void>({
@@ -49,6 +49,14 @@ export const candidateApi = createApi({
       invalidatesTags: ['Pending'],
     }),
 
+    removeCandidate: builder.mutation<void, string>({
+      query: (candidateId) => ({
+        url: `/${candidateId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Pending', 'Tracker'],
+    }),
+
   }),
 })
 
@@ -56,4 +64,5 @@ export const {
   useGetPendingCandidatesQuery,
   useActivateCandidateMutation,
   useCancelCandidateMutation,
+  useRemoveCandidateMutation,
 } = candidateApi
