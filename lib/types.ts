@@ -42,6 +42,7 @@ export interface TrackerCandidate {
   estRevDayLow: number | null
   storeName: string
   niche: string | null
+  productNiche: string | null
   currency: string | null
   pagoAnticipado: boolean | null
   daysElapsed: number
