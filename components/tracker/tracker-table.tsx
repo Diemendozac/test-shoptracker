@@ -136,7 +136,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
     return result
   }, [candidates, search, storeFilter, nicheFilter, currencyFilter, paFilter, sort])
 
-  const hasActiveFilters = search || storeFilter !== 'all' || nicheFilter !== 'all' || currencyFilter !== 'all' || paFilter !== 'all'
+  const hasActiveFilters = search || storeFilter !== 'all' || nicheFilter !== 'all' || currencyFilter !== 'all' || paFilter !== 'all' || sort.key === 'daysElapsed'
 
   function clearFilters() {
     setSearch('')
@@ -144,6 +144,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
     setNicheFilter('all')
     setCurrencyFilter('all')
     setPaFilter('all')
+    setSort({ key: 'performanceScore', dir: 'desc' })
   }
 
   // ─── Render ─────────────────────────────────────────────────────────────────
@@ -224,6 +225,25 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
         >
           <option value="all">Pago anticipado: Todos</option>
           <option value="yes">Solo pago anticipado</option>
+        </select>
+
+        {/* Date sort */}
+        <select
+          value={
+            sort.key === 'daysElapsed' && sort.dir === 'asc' ? 'recent'
+            : sort.key === 'daysElapsed' && sort.dir === 'desc' ? 'oldest'
+            : 'relevance'
+          }
+          onChange={(e) => {
+            if (e.target.value === 'recent')    setSort({ key: 'daysElapsed', dir: 'asc' })
+            else if (e.target.value === 'oldest') setSort({ key: 'daysElapsed', dir: 'desc' })
+            else                                  setSort({ key: 'performanceScore', dir: 'desc' })
+          }}
+          className="h-9 appearance-none rounded-lg border border-border bg-secondary/40 px-3 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
+        >
+          <option value="relevance">Ordenar: Relevancia</option>
+          <option value="recent">Más recientes</option>
+          <option value="oldest">Más antiguos</option>
         </select>
 
         {/* Clear filters */}
