@@ -163,13 +163,12 @@ export function StoreRow({ store, isSyncing, isDeleting, onSync, onDelete }: Sto
 function StoreLogo({ storeName, baseUrl }: { storeName: string; baseUrl: string }) {
   const [failed, setFailed] = useState(false)
   const initials = storeName.slice(0, 2).toUpperCase()
-  const faviconUrl = baseUrl
-    ? `/api/image-proxy?url=${encodeURIComponent(baseUrl.replace(/\/$/, '') + '/favicon.ico')}`
-    : ''
+  const domain = baseUrl ? baseUrl.replace(/^https?:\/\//, '').replace(/\/$/, '') : null
+  const faviconUrl = domain ? `https://icons.duckduckgo.com/ip3/${domain}.ico` : null
 
   if (!faviconUrl || failed) {
     return (
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
         {initials}
       </div>
     )
@@ -179,7 +178,7 @@ function StoreLogo({ storeName, baseUrl }: { storeName: string; baseUrl: string 
     <img
       src={faviconUrl}
       alt=""
-      className="h-9 w-9 shrink-0 rounded-lg object-contain bg-secondary p-0.5"
+      className="h-9 w-9 shrink-0 rounded-full object-contain bg-secondary p-0.5"
       onError={() => setFailed(true)}
     />
   )
