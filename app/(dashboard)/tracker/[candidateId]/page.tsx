@@ -485,7 +485,7 @@ function CandidateDetailContent() {
             <div className="flex items-center gap-2 text-sm">
               <span className="text-muted-foreground">Peak:</span>
               <span className="font-medium text-rising">
-                {summary?.peakGrowthPct != null ? `${Math.round(summary.peakGrowthPct * 100)}%` : '—'}
+                {summary?.peakGrowthPct != null ? `${Math.round(summary.peakGrowthPct)}%` : '—'}
               </span>
             </div>
           </div>

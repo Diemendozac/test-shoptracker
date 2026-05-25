@@ -11,7 +11,7 @@ export function RankChart({ history }: RankChartProps) {
   const data = history.map((h) => ({
     day: `Day ${h.trackingDay}`,
     rank: h.bestsellerRank ?? 0,
-    score: Math.round(h.performanceScore * 100),
+    score: Math.round(h.performanceScore),
     date: new Date(h.snapshotDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
   }))
   // oldest entry on the left, newest on the right — no .reverse()
