@@ -68,6 +68,14 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
     () => ['all', ...Array.from(new Set(candidates.map(c => c.storeName))).sort()],
     [candidates],
   )
+
+  const storeProductCount = useMemo(
+    () => candidates.reduce<Record<string, number>>((acc, c) => {
+      acc[c.storeId] = (acc[c.storeId] ?? 0) + 1
+      return acc
+    }, {}),
+    [candidates],
+  )
   const niches = useMemo(
     () => ['all', ...Array.from(new Set(candidates.map(c => c.niche).filter(Boolean) as string[])).sort()],
     [candidates],
@@ -306,6 +314,9 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                   <div className="min-w-0">
                     <span className="block truncate rounded-md bg-secondary px-2 py-1 text-[11px] font-medium text-muted-foreground">
                       {candidate.storeName}
+                    </span>
+                    <span className="mt-0.5 block pl-1 text-[10px] text-muted-foreground/50">
+                      {storeProductCount[candidate.storeId] ?? 0} productos
                     </span>
                   </div>
 
