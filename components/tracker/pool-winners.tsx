@@ -1,16 +1,16 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import Link from 'next/link'
-import { Lock, TrendingUp, Crown, ChevronLeft, ChevronRight, Globe } from 'lucide-react'
+import { Lock, TrendingUp, Crown, ChevronLeft, ChevronRight, Globe, X, ZoomIn } from 'lucide-react'
 import { ScoreRing } from '@/components/dashboard/score-ring'
 import { PerformanceBadge } from '@/components/dashboard/performance-badge'
 import { Sparkline } from '@/components/tracker/sparkline'
 import { Button } from '@/components/ui/button'
-import { HoverImagePreview } from '@/components/ui/image-preview'
 import { cn, fmtCompact } from '@/lib/utils'
 import { convertCurrency, currencySymbol } from '@/lib/currency'
 import { useCurrency } from '@/store/hooks'
+import { useGetStoresQuery } from '@/app/(dashboard)/stores/services/storeApi'
 import type { PoolWinnersResponse, PoolWinnerProduct } from '@/app/(dashboard)/types'
 import type { PoolPreset } from '@/app/(dashboard)/pool/page'
 
@@ -24,6 +24,11 @@ interface PoolWinnersSectionProps {
 
 export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, preset = 'all' }: PoolWinnersSectionProps) {
   const { currency: preferredCurrency } = useCurrency()
+  const { data: stores } = useGetStoresQuery()
+  const storeBaseUrlMap = useMemo(
+    () => Object.fromEntries((stores ?? []).map(s => [s.storeId, s.baseUrl])),
+    [stores],
+  )
   const [nicheFilter, setNicheFilter] = useState('all')
   const [currencyFilter, setCurrencyFilter] = useState('all')
   const [dateFilter, setDateFilter] = useState<7 | 30 | 0>(0)
@@ -189,7 +194,13 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, pr
           </p>
         ) : (
           filtered.map((winner, i) => (
-            <PoolWinnerRow key={winner.candidateId} winner={winner} position={page * 20 + i + 1} preferredCurrency={preferredCurrency} />
+            <PoolWinnerRow
+              key={winner.candidateId}
+              winner={winner}
+              position={page * 20 + i + 1}
+              preferredCurrency={preferredCurrency}
+              storeBaseUrl={storeBaseUrlMap[winner.storeId] ?? ''}
+            />
           ))
         )}
       </div>
@@ -295,10 +306,107 @@ function LockedState() {
   )
 }
 
-function PoolWinnerRow({ winner, position, preferredCurrency }: { winner: PoolWinnerProduct; position: number; preferredCurrency: string | null }) {
+function PoolWinnerRow({ winner, position, preferredCurrency, storeBaseUrl }: {
+  winner: PoolWinnerProduct
+  position: number
+  preferredCurrency: string | null
+  storeBaseUrl: string
+}) {
   const isFirst = position === 1
   const sym = currencySymbol(preferredCurrency ?? winner.currency ?? 'USD')
+
+  // gallery state
+  const [galleryOpen, setGalleryOpen] = useState(false)
+  const [images, setImages] = useState<string[] | null>(null)
+  const [galleryIdx, setGalleryIdx] = useState(0)
+
+  // extract handle from productUrl  e.g. "/products/some-handle"
+  const handle = winner.productUrl?.split('/products/')[1]?.split('?')[0] ?? null
+
+  const openGallery = () => {
+    setGalleryIdx(0)
+    setGalleryOpen(true)
+    if (images !== null) return
+    if (handle && storeBaseUrl) {
+      fetch(`/api/product-images?baseUrl=${encodeURIComponent(storeBaseUrl)}&handle=${encodeURIComponent(handle)}`)
+        .then(r => r.json())
+        .then(({ images: imgs }) => setImages(imgs?.length > 0 ? imgs : winner.productImage ? [winner.productImage] : []))
+        .catch(() => setImages(winner.productImage ? [winner.productImage] : []))
+    } else {
+      setImages(winner.productImage ? [winner.productImage] : [])
+    }
+  }
+
+  const closeGallery = useCallback(() => setGalleryOpen(false), [])
+  const galleryPrev = useCallback(() => setGalleryIdx(i => images ? (i - 1 + images.length) % images.length : 0), [images])
+  const galleryNext = useCallback(() => setGalleryIdx(i => images ? (i + 1) % images.length : 0), [images])
+
+  useEffect(() => {
+    if (!galleryOpen) return
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeGallery()
+      if (e.key === 'ArrowLeft') galleryPrev()
+      if (e.key === 'ArrowRight') galleryNext()
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [galleryOpen, closeGallery, galleryPrev, galleryNext])
+
   return (
+    <>
+    {galleryOpen && images !== null && images.length > 0 && (
+      <div
+        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90"
+        onClick={closeGallery}
+      >
+        <div
+          className="relative flex items-center justify-center"
+          onClick={e => e.stopPropagation()}
+        >
+          <button
+            onClick={galleryPrev}
+            className="absolute -left-14 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <img
+            src={images[galleryIdx]}
+            alt={winner.productTitle}
+            className="max-h-[70vh] max-w-[80vw] rounded-xl object-contain"
+          />
+          <button
+            onClick={galleryNext}
+            className="absolute -right-14 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        </div>
+        {images.length > 1 && (
+          <div className="mt-4 flex items-center gap-2" onClick={e => e.stopPropagation()}>
+            {images.map((img, i) => (
+              <button
+                key={i}
+                onClick={() => setGalleryIdx(i)}
+                className={cn(
+                  'h-14 w-14 shrink-0 overflow-hidden rounded-lg border-2 transition-all',
+                  i === galleryIdx ? 'border-white' : 'border-transparent opacity-50 hover:opacity-80',
+                )}
+              >
+                <img src={img} alt="" className="h-full w-full object-cover" />
+              </button>
+            ))}
+          </div>
+        )}
+        <button
+          onClick={closeGallery}
+          className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+        >
+          <X className="h-5 w-5" />
+        </button>
+        <p className="absolute bottom-4 text-sm text-white/60">{galleryIdx + 1} / {images.length}</p>
+      </div>
+    )}
+
     <div className={cn(
       'grid grid-cols-[28px_72px_1fr_150px_80px_72px_56px_72px] items-center gap-4 px-6 py-3 transition-colors hover:bg-secondary/30',
       isFirst && 'bg-amber-500/5',
@@ -310,11 +418,22 @@ function PoolWinnerRow({ winner, position, preferredCurrency }: { winner: PoolWi
           : <span className="text-xs font-bold text-muted-foreground">#{position}</span>}
       </div>
 
-      {/* Image with hover preview */}
-      <HoverImagePreview
-        src={winner.productImage}
-        fallback={winner.productTitle.charAt(0)}
-      />
+      {/* Clickable image → gallery */}
+      <button
+        onClick={openGallery}
+        className="relative group h-[72px] w-[72px] shrink-0 overflow-hidden rounded-xl cursor-zoom-in"
+      >
+        {winner.productImage ? (
+          <img src={winner.productImage} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-secondary text-xl font-bold text-muted-foreground">
+            {winner.productTitle.charAt(0)}
+          </div>
+        )}
+        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+          <ZoomIn className="h-5 w-5 text-white" />
+        </div>
+      </button>
 
       {/* Product info */}
       <div className="min-w-0">
@@ -373,5 +492,6 @@ function PoolWinnerRow({ winner, position, preferredCurrency }: { winner: PoolWi
         <PerformanceBadge label={winner.performanceLabel} size="sm" />
       </div>
     </div>
+    </>
   )
 }
