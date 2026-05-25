@@ -252,9 +252,16 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                 ? convertCurrency(candidate.productPrice, candidate.currency, preferredCurrency)
                 : null
 
-              // Rank delta: improvement from entry rank (positive = climbed up the list)
+              // Rank delta: positions climbed since entry (requires backend entryRank field)
               const rankDelta = candidate.entryRank != null && candidate.currentRank != null
                 ? candidate.entryRank - candidate.currentRank
+                : null
+
+              // Directional fallback from growthPct when entryRank not yet available
+              const rankDir = rankDelta !== null
+                ? (rankDelta > 0 ? 'up' : rankDelta < 0 ? 'down' : null)
+                : candidate.growthPct != null && candidate.growthPct > 1 ? 'up'
+                : candidate.growthPct != null && candidate.growthPct < -1 ? 'down'
                 : null
 
               // Crecimiento sub-text derived from performance score
@@ -297,14 +304,15 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                       <span className="text-[11px] text-muted-foreground tabular-nums">
                         {candidate.currentRank != null ? `Rank #${candidate.currentRank}` : 'Sin rank'}
                       </span>
-                      {rankDelta !== null && rankDelta !== 0 && (
+                      {rankDir && (
                         <span className={cn(
                           'inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[11px] font-bold tabular-nums',
-                          rankDelta > 0
+                          rankDir === 'up'
                             ? 'bg-emerald-500/10 text-emerald-600'
                             : 'bg-rose-500/10 text-rose-500',
                         )}>
-                          {rankDelta > 0 ? '↑' : '↓'}{Math.abs(rankDelta)}
+                          {rankDir === 'up' ? '↑' : '↓'}
+                          {rankDelta !== null ? Math.abs(rankDelta) : ''}
                         </span>
                       )}
                     </div>
