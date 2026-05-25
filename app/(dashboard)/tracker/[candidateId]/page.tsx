@@ -241,16 +241,22 @@ function CandidateDetailContent() {
   )
 
   const [productImages, setProductImages] = useState<string[]>([])
+
+  // Step 1: seed gallery immediately from the known cover image so it always renders
+  useEffect(() => {
+    if (data?.candidate.productImage && productImages.length === 0) {
+      setProductImages([data.candidate.productImage])
+    }
+  }, [data?.candidate.productImage])  // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Step 2: enhance with full image set from Shopify JSON when store is ready
   useEffect(() => {
     if (!storeBaseUrl || !data?.candidate.productHandle) return
     fetch(`/api/product-images?baseUrl=${encodeURIComponent(storeBaseUrl)}&handle=${encodeURIComponent(data.candidate.productHandle)}`)
       .then(r => r.json())
-      .then(({ images }) => {
-        if (images?.length > 0) setProductImages(images)
-        else if (data.candidate.productImage) setProductImages([data.candidate.productImage])
-      })
-      .catch(() => { if (data?.candidate.productImage) setProductImages([data.candidate.productImage]) })
-  }, [storeBaseUrl, data?.candidate.productHandle, data?.candidate.productImage])
+      .then(({ images }) => { if (images?.length > 0) setProductImages(images) })
+      .catch(() => {/* keep the seeded single image */})
+  }, [storeBaseUrl, data?.candidate.productHandle])
 
   const { currency: preferredCurrency } = useCurrency()
 
