@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { cn, fmtCompact } from '@/lib/utils'
 import { convertCurrency, currencySymbol } from '@/lib/currency'
@@ -53,6 +54,7 @@ function SortIcon({ column, sort }: { column: SortKey; sort: SortState }) {
 
 export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) {
   const { currency: preferredCurrency } = useCurrency()
+  const router = useRouter()
   const [removeCandidate] = useRemoveCandidateMutation()
   // Anything < 7 or 0 (Todos) defaults to 7 days
   const displayDays = windowDays === 30 ? 30 : 7
@@ -392,9 +394,10 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                     <ExternalLink className="h-3 w-3" />
                   </Link>
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       if (confirm(`¿Eliminar "${candidate.productTitle}"?`)) {
-                        removeCandidate(candidate.candidateId)
+                        await removeCandidate(candidate.candidateId)
+                        router.refresh()
                       }
                     }}
                     className="rounded-lg p-1.5 text-muted-foreground/50 transition-colors hover:bg-rose-500/10 hover:text-rose-500"
