@@ -46,6 +46,7 @@ export interface TrackerCandidate {
   pagoAnticipado: boolean | null
   daysElapsed: number
   firstSeenDate: string | null
+  createdAt: string | null
   performanceScore: number | null
   entryScore: number | null
   entryRank: number | null

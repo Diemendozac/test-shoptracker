@@ -22,7 +22,7 @@ import { ScoreRing } from '@/components/dashboard/score-ring'
 type SortKey =
   | 'productTitle' | 'storeName' | 'productPrice'
   | 'performanceScore' | 'growthPct'
-  | 'daysElapsed' | 'daysInBestseller' | 'firstSeenDate'
+  | 'daysElapsed' | 'daysInBestseller' | 'createdAt'
 type SortDir = 'asc' | 'desc'
 interface SortState { key: SortKey | null; dir: SortDir }
 interface TrackerTableProps { candidates: TrackerCandidate[]; windowDays?: number }
@@ -115,7 +115,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
 
   const hasActiveFilters =
     !!search || storeFilter !== 'all' || nicheFilter !== 'all' ||
-    currencyFilter !== 'all' || paFilter !== 'all' || sort.key === 'firstSeenDate'
+    currencyFilter !== 'all' || paFilter !== 'all' || sort.key === 'createdAt'
 
   function clearFilters() {
     setSearch('')
@@ -180,13 +180,13 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
 
         <select
           value={
-            sort.key === 'firstSeenDate' && sort.dir === 'desc' ? 'recent'
-            : sort.key === 'firstSeenDate' && sort.dir === 'asc' ? 'oldest'
+            sort.key === 'createdAt' && sort.dir === 'desc' ? 'recent'
+            : sort.key === 'createdAt' && sort.dir === 'asc' ? 'oldest'
             : 'relevance'
           }
           onChange={e => {
-            if (e.target.value === 'recent')      setSort({ key: 'firstSeenDate', dir: 'desc' })
-            else if (e.target.value === 'oldest') setSort({ key: 'firstSeenDate', dir: 'asc' })
+            if (e.target.value === 'recent')      setSort({ key: 'createdAt', dir: 'desc' })
+            else if (e.target.value === 'oldest') setSort({ key: 'createdAt', dir: 'asc' })
             else                                  setSort({ key: 'performanceScore', dir: 'desc' })
           }}
           className="h-9 appearance-none rounded-lg border border-border bg-secondary/40 px-3 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer">
