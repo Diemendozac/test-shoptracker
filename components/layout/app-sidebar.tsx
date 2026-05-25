@@ -1,8 +1,8 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { useAppSelector } from '@/store/hooks'
 import { useGetPendingCandidatesQuery } from '@/app/(dashboard)/services/candidateApi'
@@ -33,7 +33,11 @@ const TESTEOS_ITEMS = [
   { name: 'Pendientes',       href: '/pendientes', icon: Clock },
 ]
 
-export function AppSidebar() {
+interface AppSidebarProps {
+  pinned: boolean
+}
+
+export function AppSidebar({ pinned }: AppSidebarProps) {
   const pathname = usePathname()
   const { user } = useAppSelector((s) => s.auth)
   const displayName = user?.email?.split('@')[0] ?? '—'
@@ -44,34 +48,59 @@ export function AppSidebar() {
 
   const inTesteos = pathname.startsWith('/tracker') || pathname.startsWith('/pool') || pathname.startsWith('/pendientes')
   const [open, setOpen] = useState(inTesteos)
+  const [hovered, setHovered] = useState(false)
 
-  // Keep open when navigating to a testeos route
+  const expanded = pinned || hovered
+
   useEffect(() => {
     if (inTesteos) setOpen(true)
   }, [inTesteos])
 
+  // Collapse hover state when sidebar becomes pinned
+  useEffect(() => {
+    if (pinned) setHovered(false)
+  }, [pinned])
+
   return (
-    <aside className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-sidebar">
+    <aside
+      className={cn(
+        'fixed inset-y-0 left-0 z-50 flex flex-col border-r border-border bg-sidebar transition-all duration-300 ease-in-out',
+        expanded ? 'w-64' : 'w-16',
+      )}
+      onMouseEnter={() => !pinned && setHovered(true)}
+      onMouseLeave={() => !pinned && setHovered(false)}
+    >
       {/* Logo */}
-      <Link href="/home" className="flex h-16 items-center gap-3 border-b border-border px-6 transition-opacity hover:opacity-80">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
+      <Link
+        href="/home"
+        className={cn(
+          'flex h-16 shrink-0 items-center border-b border-border transition-opacity hover:opacity-80',
+          expanded ? 'gap-3 px-6' : 'justify-center',
+        )}
+      >
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary">
           <TrendingUp className="h-5 w-5 text-primary-foreground" />
         </div>
-        <div className="flex flex-col">
-          <span className="text-sm font-semibold text-foreground">ShopTracker</span>
-          <span className="text-xs text-muted-foreground">Intelligence Platform</span>
+        <div className={cn(
+          'flex flex-col overflow-hidden transition-all duration-300',
+          expanded ? 'max-w-[160px] opacity-100' : 'max-w-0 opacity-0',
+        )}>
+          <span className="whitespace-nowrap text-sm font-semibold text-foreground">ShopTracker</span>
+          <span className="whitespace-nowrap text-xs text-muted-foreground">Intelligence Platform</span>
         </div>
       </Link>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-3 py-4">
+      <nav className="flex-1 space-y-1 px-2 py-4">
+
         {/* Top items */}
         {TOP_NAV.map((item) => {
           const isActive = pathname === item.href
           return (
             <Link key={item.name} href={item.href}
               className={cn(
-                'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
+                'group flex items-center rounded-lg py-2.5 text-sm font-medium transition-all duration-200',
+                expanded ? 'gap-3 px-3' : 'justify-center',
                 isActive
                   ? 'bg-sidebar-accent text-sidebar-accent-foreground'
                   : 'text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground',
@@ -79,8 +108,13 @@ export function AppSidebar() {
             >
               <item.icon className={cn('h-4 w-4 shrink-0 transition-colors',
                 isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-primary')} />
-              {item.name}
-              {isActive && <div className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" />}
+              <span className={cn(
+                'overflow-hidden whitespace-nowrap transition-all duration-300',
+                expanded ? 'max-w-[160px] opacity-100' : 'max-w-0 opacity-0',
+              )}>
+                {item.name}
+              </span>
+              {isActive && expanded && <div className="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />}
             </Link>
           )
         })}
@@ -88,9 +122,10 @@ export function AppSidebar() {
         {/* Testeos accordion */}
         <div>
           <button
-            onClick={() => setOpen((v) => !v)}
+            onClick={() => expanded && setOpen((v) => !v)}
             className={cn(
-              'group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
+              'group flex w-full items-center rounded-lg py-2.5 text-sm font-medium transition-all duration-200',
+              expanded ? 'gap-3 px-3' : 'justify-center',
               inTesteos
                 ? 'bg-sidebar-accent text-sidebar-accent-foreground'
                 : 'text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground',
@@ -98,17 +133,22 @@ export function AppSidebar() {
           >
             <FlaskConical className={cn('h-4 w-4 shrink-0 transition-colors',
               inTesteos ? 'text-primary' : 'text-muted-foreground group-hover:text-primary')} />
-            <span className="flex-1 text-left">Testeos</span>
+            <span className={cn(
+              'flex-1 overflow-hidden whitespace-nowrap text-left transition-all duration-300',
+              expanded ? 'max-w-[120px] opacity-100' : 'max-w-0 opacity-0',
+            )}>
+              Testeos
+            </span>
             <ChevronDown className={cn(
-              'h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-200',
-              open && 'rotate-180',
+              'h-3.5 w-3.5 shrink-0 text-muted-foreground transition-all duration-300',
+              open && expanded ? 'rotate-180' : '',
+              expanded ? 'opacity-100' : 'max-w-0 opacity-0 overflow-hidden',
             )} />
           </button>
 
-          {/* Sub-items */}
           <div className={cn(
             'overflow-hidden transition-all duration-200',
-            open ? 'max-h-36 opacity-100' : 'max-h-0 opacity-0',
+            (open && expanded) ? 'max-h-36 opacity-100' : 'max-h-0 opacity-0',
           )}>
             <div className="ml-3 mt-0.5 space-y-0.5 border-l border-border pl-3">
               {TESTEOS_ITEMS.map((item) => {
@@ -150,7 +190,8 @@ export function AppSidebar() {
           return (
             <Link key={item.name} href={item.href}
               className={cn(
-                'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
+                'group flex items-center rounded-lg py-2.5 text-sm font-medium transition-all duration-200',
+                expanded ? 'gap-3 px-3' : 'justify-center',
                 isActive
                   ? 'bg-sidebar-accent text-sidebar-accent-foreground'
                   : 'text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground',
@@ -158,22 +199,33 @@ export function AppSidebar() {
             >
               <item.icon className={cn('h-4 w-4 shrink-0 transition-colors',
                 isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-primary')} />
-              {item.name}
-              {isActive && <div className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" />}
+              <span className={cn(
+                'overflow-hidden whitespace-nowrap transition-all duration-300',
+                expanded ? 'max-w-[160px] opacity-100' : 'max-w-0 opacity-0',
+              )}>
+                {item.name}
+              </span>
+              {isActive && expanded && <div className="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />}
             </Link>
           )
         })}
       </nav>
 
       {/* User Section */}
-      <div className="border-t border-border p-4">
-        <div className="flex items-center gap-3 rounded-lg bg-secondary/50 px-3 py-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-sm font-medium text-primary">
+      <div className="border-t border-border p-3">
+        <div className={cn(
+          'flex items-center rounded-lg bg-secondary/50 transition-all duration-300',
+          expanded ? 'gap-3 px-3 py-2.5' : 'justify-center py-2',
+        )}>
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/20 text-sm font-medium text-primary">
             {avatarLetter}
           </div>
-          <div className="flex min-w-0 flex-col">
-            <span className="truncate text-sm font-medium text-foreground">{displayName}</span>
-            <span className="text-xs text-muted-foreground">{user?.email ?? ''}</span>
+          <div className={cn(
+            'flex min-w-0 flex-col overflow-hidden transition-all duration-300',
+            expanded ? 'max-w-[160px] opacity-100' : 'max-w-0 opacity-0',
+          )}>
+            <span className="truncate whitespace-nowrap text-sm font-medium text-foreground">{displayName}</span>
+            <span className="whitespace-nowrap text-xs text-muted-foreground">{user?.email ?? ''}</span>
           </div>
         </div>
       </div>
