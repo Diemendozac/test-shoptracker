@@ -205,7 +205,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
       {/* ── Table ── */}
       <div className="overflow-hidden rounded-xl border border-border bg-card">
         {/* Header */}
-        <div className="grid grid-cols-[40px_56px_1fr_140px_72px_80px_130px_100px_72px] items-center gap-4 border-b border-border bg-secondary/30 px-6 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        <div className="grid grid-cols-[40px_56px_1fr_140px_72px_80px_130px_100px_72px] items-center gap-6 border-b border-border bg-secondary/30 px-6 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           <div>#</div>
           <div />
           <button onClick={() => handleSort('productTitle')} className="group/th flex items-center gap-1.5 text-left hover:text-foreground transition-colors">
@@ -261,7 +261,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
               return (
                 <div
                   key={candidate.candidateId}
-                  className="grid grid-cols-[40px_56px_1fr_140px_72px_80px_130px_100px_72px] items-center gap-4 px-6 py-3 transition-colors hover:bg-secondary/30"
+                  className="grid grid-cols-[40px_56px_1fr_140px_72px_80px_130px_100px_72px] items-center gap-6 px-6 py-3 transition-colors hover:bg-secondary/30"
                 >
                   {/* # */}
                   <div className="flex items-center justify-center">
@@ -278,23 +278,25 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                   <HoverImagePreview src={candidate.productImage} fallback={candidate.productTitle.charAt(0)} proxy />
 
                   {/* Producto */}
-                  <div className="min-w-0">
+                  <div className="min-w-0 pl-2">
                     <Link
                       href={`/tracker/${candidate.candidateId}?storeId=${candidate.storeId}&from=tracker`}
                       className="line-clamp-2 text-sm font-semibold leading-snug text-foreground hover:text-primary hover:underline transition-colors"
                     >
                       {candidate.productTitle}
                     </Link>
-                    <div className="mt-0.5 flex items-center gap-2">
-                      <span className="text-[11px] text-muted-foreground">
+                    <div className="mt-1 flex items-center gap-1.5">
+                      <span className="text-[11px] text-muted-foreground tabular-nums">
                         {candidate.currentRank != null ? `Rank #${candidate.currentRank}` : 'Sin rank'}
                       </span>
-                      {rankDelta !== null && (
+                      {rankDelta !== null && rankDelta !== 0 && (
                         <span className={cn(
-                          'text-[11px] font-medium tabular-nums',
-                          rankDelta > 0 ? 'text-emerald-600' : rankDelta < 0 ? 'text-rose-500' : 'text-muted-foreground/60',
+                          'inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[11px] font-bold tabular-nums',
+                          rankDelta > 0
+                            ? 'bg-emerald-500/10 text-emerald-600'
+                            : 'bg-rose-500/10 text-rose-500',
                         )}>
-                          {rankDelta > 0 ? `↑${rankDelta}` : rankDelta < 0 ? `↓${Math.abs(rankDelta)}` : '→'}
+                          {rankDelta > 0 ? '↑' : '↓'}{Math.abs(rankDelta)}
                         </span>
                       )}
                     </div>
