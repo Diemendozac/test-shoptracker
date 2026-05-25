@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Store, Link, ArrowRight, Loader2, AlertCircle, Wand2, Settings2 } from 'lucide-react'
+import { X, Store, Link, ArrowRight, Loader2, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useStores } from '../hooks/useStores'
 import { cn } from '@/lib/utils'
@@ -9,8 +9,6 @@ import { cn } from '@/lib/utils'
 // ─── constants ───────────────────────────────────────────────────────────────
 
 const DEFAULT_BESTSELLER_PATH = '/collections/all?sort_by=best-selling'
-
-type Mode = 'generic' | 'custom'
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -58,117 +56,45 @@ function extractApiError(err: unknown): string {
 
 // ─── component ───────────────────────────────────────────────────────────────
 
-const NICHES = [
-  { value: 'moda',      label: 'Moda & Ropa' },
-  { value: 'gadgets',   label: 'Gadgets & Tecnología' },
-  { value: 'joyeria',   label: 'Joyería & Accesorios' },
-  { value: 'hogar',     label: 'Hogar & Decoración' },
-  { value: 'belleza',   label: 'Belleza & Cuidado' },
-  { value: 'deportes',  label: 'Deportes & Fitness' },
-  { value: 'mascotas',  label: 'Mascotas' },
-  { value: 'bebes',     label: 'Bebés & Niños' },
-  { value: 'salud',     label: 'Salud & Bienestar' },
-  { value: 'alimentos', label: 'Alimentos & Bebidas' },
-  { value: 'otro',      label: 'Otro' },
-]
-
-const CURRENCIES = [
-  { value: 'USD', label: 'USD — Estados Unidos' },
-  { value: 'MXN', label: 'MXN — México' },
-  { value: 'COP', label: 'COP — Colombia' },
-  { value: 'ARS', label: 'ARS — Argentina' },
-  { value: 'CLP', label: 'CLP — Chile' },
-  { value: 'PEN', label: 'PEN — Perú' },
-  { value: 'BRL', label: 'BRL — Brasil' },
-  { value: 'EUR', label: 'EUR — España / Europa' },
-]
-
 export function AddStoreModal() {
   const { isAddModalOpen, closeAddModal, addStore, isCreating } = useStores()
 
-  const [mode, setMode]                   = useState<Mode>('generic')
-  const [storeName, setStoreName]         = useState<FieldState>(makeField())
-  const [baseUrl, setBaseUrl]             = useState<FieldState>(makeField())
-  const [bestsellerUrl, setBestsellerUrl] = useState<FieldState>(makeField())
-  const [niche, setNiche]                 = useState('')
-  const [currency, setCurrency]           = useState('')
+  const [storeName, setStoreName]           = useState<FieldState>(makeField())
+  const [baseUrl, setBaseUrl]               = useState<FieldState>(makeField())
   const [pagoAnticipado, setPagoAnticipado] = useState(false)
-  const [submitError, setSubmitError]     = useState<string | null>(null)
+  const [submitError, setSubmitError]       = useState<string | null>(null)
 
   // reset everything when modal closes
   useEffect(() => {
     if (!isAddModalOpen) {
-      setMode('generic')
       setStoreName(makeField())
       setBaseUrl(makeField())
-      setBestsellerUrl(makeField())
-      setNiche('')
-      setCurrency('')
       setPagoAnticipado(false)
       setSubmitError(null)
     }
   }, [isAddModalOpen])
 
-  // reset url fields when switching modes — keep store name
-  const switchMode = (next: Mode) => {
-    if (next === mode) return
-    setMode(next)
-    setBaseUrl(makeField())
-    setBestsellerUrl(makeField())
-    setSubmitError(null)
-  }
-
   if (!isAddModalOpen) return null
-
-  // ── derived preview (generic mode) ───────────────────────────────────────
-  const previewBase       = baseUrl.value.trim().replace(/\/$/, '')
-  const previewBestseller = previewBase ? previewBase + DEFAULT_BESTSELLER_PATH : DEFAULT_BESTSELLER_PATH
 
   // ── submit ────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     setSubmitError(null)
+    const snErr = validateStoreName(storeName.value)
+    const buErr = validateUrl(baseUrl.value, 'Base URL')
+    setStoreName((f) => ({ ...f, touched: true, error: snErr }))
+    setBaseUrl((f)   => ({ ...f, touched: true, error: buErr }))
+    if (snErr || buErr) return
 
-    if (mode === 'generic') {
-      const snErr = validateStoreName(storeName.value)
-      const buErr = validateUrl(baseUrl.value, 'Base URL')
-      setStoreName((f) => ({ ...f, touched: true, error: snErr }))
-      setBaseUrl((f)   => ({ ...f, touched: true, error: buErr }))
-      if (snErr || buErr) return
-
-      try {
-        const parsed = new URL(baseUrl.value.trim())
-        await addStore({
-          storeName:      storeName.value.trim(),
-          baseUrl:        parsed.origin,
-          bestsellerUrl:  parsed.origin + DEFAULT_BESTSELLER_PATH,
-          niche:          niche || undefined,
-          currency:       currency || undefined,
-          pagoAnticipado: pagoAnticipado || undefined,
-        })
-      } catch (err) {
-        setSubmitError(extractApiError(err))
-      }
-
-    } else {
-      const snErr = validateStoreName(storeName.value)
-      const buErr = validateUrl(bestsellerUrl.value, 'Bestseller URL')
-      setStoreName((f)       => ({ ...f, touched: true, error: snErr }))
-      setBestsellerUrl((f)   => ({ ...f, touched: true, error: buErr }))
-      if (snErr || buErr) return
-
-      try {
-        const bsUrl = new URL(bestsellerUrl.value.trim())
-        await addStore({
-          storeName:      storeName.value.trim(),
-          baseUrl:        bsUrl.origin,
-          bestsellerUrl:  bestsellerUrl.value.trim(),
-          niche:          niche || undefined,
-          currency:       currency || undefined,
-          pagoAnticipado: pagoAnticipado || undefined,
-        })
-      } catch (err) {
-        setSubmitError(extractApiError(err))
-      }
+    try {
+      const parsed = new URL(baseUrl.value.trim())
+      await addStore({
+        storeName:      storeName.value.trim(),
+        baseUrl:        parsed.origin,
+        bestsellerUrl:  parsed.origin + DEFAULT_BESTSELLER_PATH,
+        pagoAnticipado: pagoAnticipado || undefined,
+      })
+    } catch (err) {
+      setSubmitError(extractApiError(err))
     }
   }
 
@@ -210,25 +136,6 @@ export function AddStoreModal() {
         {/* body */}
         <div className="space-y-4 px-6 py-5">
 
-          {/* mode toggle */}
-          <div className="flex gap-1 rounded-lg bg-secondary/60 p-1">
-            <ModeTab
-              active={mode === 'generic'}
-              icon={<Wand2 className="h-3.5 w-3.5" />}
-              label="Generic"
-              description="Auto-generate paths"
-              onClick={() => switchMode('generic')}
-            />
-            <ModeTab
-              active={mode === 'custom'}
-              icon={<Settings2 className="h-3.5 w-3.5" />}
-              label="Custom"
-              description="Define URLs manually"
-              onClick={() => switchMode('custom')}
-            />
-          </div>
-
-          {/* store name — always visible */}
           <Field
             label="Store Name"
             hint="Display name"
@@ -241,66 +148,24 @@ export function AddStoreModal() {
             onBlur={() => setStoreName((f) => ({ ...f, touched: true, error: validateStoreName(f.value) }))}
           />
 
-          {/* ── generic ── */}
-          {mode === 'generic' && (
-            <>
-              <Field
-                label="Store Base URL"
-                hint="Root domain only"
-                icon={<Link className="h-3.5 w-3.5" />}
-                value={baseUrl.value}
-                error={baseUrl.touched ? baseUrl.error : ''}
-                disabled={isCreating}
-                placeholder="https://netviral.shop"
-                onChange={(v) => setBaseUrl((f) => ({ ...f, value: v, error: '' }))}
-                onBlur={() => setBaseUrl((f) => ({ ...f, touched: true, error: validateUrl(f.value, 'Base URL') }))}
-              />
+          <Field
+            label="Store Base URL"
+            hint="Root domain only"
+            icon={<Link className="h-3.5 w-3.5" />}
+            value={baseUrl.value}
+            error={baseUrl.touched ? baseUrl.error : ''}
+            disabled={isCreating}
+            placeholder="https://netviral.shop"
+            onChange={(v) => setBaseUrl((f) => ({ ...f, value: v, error: '' }))}
+            onBlur={() => setBaseUrl((f) => ({ ...f, touched: true, error: validateUrl(f.value, 'Base URL') }))}
+          />
 
-              {/* auto-generated preview */}
-              <div className="rounded-lg border border-border/60 bg-secondary/30 px-3 py-3 space-y-2">
-                <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-                  Auto-generated paths
-                </p>
-                <PreviewRow label="Bestseller" value={previewBestseller} />
-              </div>
-            </>
-          )}
-
-          {/* ── custom ── */}
-          {mode === 'custom' && (
-            <>
-              <Field
-                label="Bestseller URL"
-                hint="Sorted by best-selling"
-                icon={<Link className="h-3.5 w-3.5" />}
-                value={bestsellerUrl.value}
-                error={bestsellerUrl.touched ? bestsellerUrl.error : ''}
-                disabled={isCreating}
-                placeholder="https://store.com/collections/all?sort_by=best-selling"
-                onChange={(v) => setBestsellerUrl((f) => ({ ...f, value: v, error: '' }))}
-                onBlur={() => setBestsellerUrl((f) => ({ ...f, touched: true, error: validateUrl(f.value, 'Bestseller URL') }))}
-              />
-            </>
-          )}
-
-          {/* ── niche + currency ── */}
-          <div className="grid grid-cols-2 gap-3">
-            <SelectField
-              label="Nicho"
-              value={niche}
-              disabled={isCreating}
-              placeholder="Selecciona…"
-              options={NICHES}
-              onChange={setNiche}
-            />
-            <SelectField
-              label="Moneda"
-              value={currency}
-              disabled={isCreating}
-              placeholder="Selecciona…"
-              options={CURRENCIES}
-              onChange={setCurrency}
-            />
+          {/* auto-generated preview */}
+          <div className="rounded-lg border border-border/60 bg-secondary/30 px-3 py-3 space-y-2">
+            <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+              Auto-generated paths
+            </p>
+            <PreviewRow label="Bestseller" value={baseUrl.value.trim().replace(/\/$/, '') + DEFAULT_BESTSELLER_PATH} />
           </div>
 
           {/* ── pago anticipado ── */}
@@ -359,32 +224,6 @@ export function AddStoreModal() {
 
 // ─── sub-components ───────────────────────────────────────────────────────────
 
-function ModeTab({ active, icon, label, description, onClick }: {
-  active: boolean
-  icon: React.ReactNode
-  label: string
-  description: string
-  onClick: () => void
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        'flex flex-1 items-center gap-2 rounded-md px-3 py-2 text-left transition-all',
-        active ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
-      )}
-    >
-      <span className={cn('shrink-0 transition-colors', active ? 'text-primary' : '')}>
-        {icon}
-      </span>
-      <div className="min-w-0">
-        <p className="text-xs font-medium leading-none">{label}</p>
-        <p className="mt-0.5 truncate text-[10px] text-muted-foreground">{description}</p>
-      </div>
-    </button>
-  )
-}
-
 function PreviewRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-start gap-2">
@@ -406,41 +245,6 @@ interface FieldProps {
   placeholder?: string
   onChange: (v: string) => void
   onBlur?: () => void
-}
-
-// ─── SelectField ──────────────────────────────────────────────────────────────
-
-interface SelectFieldProps {
-  label: string
-  value: string
-  disabled?: boolean
-  placeholder: string
-  options: { value: string; label: string }[]
-  onChange: (v: string) => void
-}
-
-function SelectField({ label, value, disabled, placeholder, options, onChange }: SelectFieldProps) {
-  return (
-    <div className="space-y-1.5">
-      <label className="text-xs font-medium text-foreground">{label}</label>
-      <select
-        value={value}
-        disabled={disabled}
-        onChange={(e) => onChange(e.target.value)}
-        className={cn(
-          'w-full appearance-none rounded-lg border border-border bg-secondary/50 px-3 py-2 text-sm text-foreground',
-          'outline-none transition-colors focus:border-primary/60 focus:ring-2 focus:ring-primary/20',
-          'disabled:cursor-not-allowed disabled:opacity-50',
-          !value && 'text-muted-foreground/60'
-        )}
-      >
-        <option value="">{placeholder}</option>
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>{o.label}</option>
-        ))}
-      </select>
-    </div>
-  )
 }
 
 function Field({ label, hint, icon, value, error, disabled, placeholder, onChange, onBlur }: FieldProps) {
