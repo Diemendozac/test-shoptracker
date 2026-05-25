@@ -45,8 +45,12 @@ export interface TrackerCandidate {
   currency: string | null
   pagoAnticipado: boolean | null
   daysElapsed: number
+  firstSeenDate: string | null
   performanceScore: number | null
   entryScore: number | null
+  entryRank: number | null
+  previousRank: number | null
+  storeProductCount: number | null
   performanceLabel: PerformanceLabel
   growthPct: number | null
   daysInBestseller: number
@@ -54,6 +58,7 @@ export interface TrackerCandidate {
   cyclePhase: string | null
   scoreHistory?: number[]
   growthHistory?: number[]
+  rankHistory?: number[]
 }
 
 export interface CandidateDetail {

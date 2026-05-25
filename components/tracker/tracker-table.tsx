@@ -15,6 +15,7 @@ import {
 import { useRemoveCandidateMutation } from '@/app/(dashboard)/services/candidateApi'
 import { dashboardApi } from '@/app/(dashboard)/services/dashboardApi'
 import { HoverImagePreview } from '@/components/ui/image-preview'
+import { ScoreRing } from '@/components/dashboard/score-ring'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -36,7 +37,7 @@ function SortIcon({ column, sort }: { column: SortKey; sort: SortState }) {
     : <ArrowDown className="h-3 w-3 text-primary" />
 }
 
-function ContextBar({ score }: { score: number | null }) {
+function ContextBar({ score, total }: { score: number | null; total?: number | null }) {
   const s = Math.round(Math.min(100, Math.max(0, score ?? 0)))
   const color = s >= 60 ? 'bg-emerald-500' : s >= 30 ? 'bg-amber-500' : 'bg-rose-500'
   return (
@@ -44,7 +45,9 @@ function ContextBar({ score }: { score: number | null }) {
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
         <div className={cn('h-full rounded-full transition-all duration-500', color)} style={{ width: `${s}%` }} />
       </div>
-      <span className="text-[11px] font-medium tabular-nums text-muted-foreground">~{s}%</span>
+      <span className="text-[11px] font-medium tabular-nums text-muted-foreground">
+        {s}%{total ? ` de ${total} prods.` : ''}
+      </span>
     </div>
   )
 }
@@ -69,13 +72,6 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
     [candidates],
   )
 
-  const storeProductCount = useMemo(
-    () => candidates.reduce<Record<string, number>>((acc, c) => {
-      acc[c.storeId] = (acc[c.storeId] ?? 0) + 1
-      return acc
-    }, {}),
-    [candidates],
-  )
   const niches = useMemo(
     () => ['all', ...Array.from(new Set(candidates.map(c => c.niche).filter(Boolean) as string[])).sort()],
     [candidates],
@@ -213,7 +209,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
       {/* ── Table ── */}
       <div className="overflow-hidden rounded-xl border border-border bg-card">
         {/* Header */}
-        <div className="grid grid-cols-[40px_56px_1fr_140px_72px_80px_130px_100px_72px] items-center gap-6 border-b border-border bg-secondary/30 px-6 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        <div className="grid grid-cols-[40px_56px_1fr_140px_72px_56px_80px_130px_100px_72px] items-center gap-6 border-b border-border bg-secondary/30 px-6 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           <div>#</div>
           <div />
           <button onClick={() => handleSort('productTitle')} className="group/th flex items-center gap-1.5 text-left hover:text-foreground transition-colors">
@@ -225,13 +221,14 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
           <button onClick={() => handleSort('productPrice')} className="group/th flex items-center gap-1.5 hover:text-foreground transition-colors">
             Precio <SortIcon column="productPrice" sort={sort} />
           </button>
+          <button onClick={() => handleSort('performanceScore')} className="group/th flex items-center gap-1.5 hover:text-foreground transition-colors">
+            Score <SortIcon column="performanceScore" sort={sort} />
+          </button>
           <div className="text-center">Tendencia ({displayDays}d)</div>
           <button onClick={() => handleSort('growthPct')} className="group/th flex items-center gap-1.5 hover:text-foreground transition-colors">
             Crecimiento <SortIcon column="growthPct" sort={sort} />
           </button>
-          <button onClick={() => handleSort('performanceScore')} className="group/th flex items-center gap-1.5 hover:text-foreground transition-colors">
-            Contexto <SortIcon column="performanceScore" sort={sort} />
-          </button>
+          <div>Contexto</div>
           <div className="text-center">Acción</div>
         </div>
 
@@ -252,14 +249,16 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                 ? convertCurrency(candidate.productPrice, candidate.currency, preferredCurrency)
                 : null
 
-              // Rank delta: positions climbed since entry (requires backend entryRank field)
-              const rankDelta = candidate.entryRank != null && candidate.currentRank != null
-                ? candidate.entryRank - candidate.currentRank
+              // Rank delta vs ayer: penúltimo valor del rankHistory
+              const rh = candidate.rankHistory
+              const prevRank = rh && rh.length >= 2 ? rh[rh.length - 2] : (candidate.previousRank ?? null)
+              const rankDelta = prevRank != null && candidate.currentRank != null
+                ? prevRank - candidate.currentRank
                 : null
 
-              // Directional fallback from growthPct when entryRank not yet available
-              const rankDir = rankDelta !== null
-                ? (rankDelta > 0 ? 'up' : rankDelta < 0 ? 'down' : null)
+              // Fallback direccional de growthPct cuando no hay historial (primer día)
+              const rankDir = rankDelta !== null && rankDelta !== 0
+                ? (rankDelta > 0 ? 'up' : 'down')
                 : candidate.growthPct != null && candidate.growthPct > 1 ? 'up'
                 : candidate.growthPct != null && candidate.growthPct < -1 ? 'down'
                 : null
@@ -276,7 +275,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
               return (
                 <div
                   key={candidate.candidateId}
-                  className="grid grid-cols-[40px_56px_1fr_140px_72px_80px_130px_100px_72px] items-center gap-6 px-6 py-3 transition-colors hover:bg-secondary/30"
+                  className="grid grid-cols-[40px_56px_1fr_140px_72px_56px_80px_130px_100px_72px] items-center gap-6 px-6 py-3 transition-colors hover:bg-secondary/30"
                 >
                   {/* # */}
                   <div className="flex items-center justify-center">
@@ -323,9 +322,11 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                     <span className="block truncate rounded-md bg-secondary px-2 py-1 text-[11px] font-medium text-muted-foreground">
                       {candidate.storeName}
                     </span>
-                    <span className="mt-0.5 block pl-1 text-[10px] text-muted-foreground/50">
-                      {storeProductCount[candidate.storeId] ?? 0} productos
-                    </span>
+                    {candidate.storeProductCount != null && candidate.storeProductCount > 0 && (
+                      <span className="mt-0.5 block pl-1 text-[10px] text-muted-foreground/50">
+                        {candidate.storeProductCount} productos
+                      </span>
+                    )}
                   </div>
 
                   {/* Precio */}
@@ -334,6 +335,20 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                       <span className="text-xs font-semibold text-primary tabular-nums">
                         {sym}{fmtCompact(price)}
                       </span>
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground/40">—</span>
+                    )}
+                  </div>
+
+                  {/* Score */}
+                  <div className="flex items-center justify-center">
+                    {score > 0 ? (
+                      <ScoreRing
+                        score={score}
+                        label={candidate.performanceLabel}
+                        size="sm"
+                        showLabel={false}
+                      />
                     ) : (
                       <span className="text-[10px] text-muted-foreground/40">—</span>
                     )}
@@ -365,7 +380,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                   </div>
 
                   {/* Contexto */}
-                  <ContextBar score={candidate.performanceScore} />
+                  <ContextBar score={candidate.performanceScore} total={candidate.storeProductCount} />
 
                   {/* Acción */}
                   <div className="flex items-center justify-center gap-1.5">
