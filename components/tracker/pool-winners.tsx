@@ -4,7 +4,6 @@ import { useState, useMemo, useCallback, useEffect } from 'react'
 import Link from 'next/link'
 import { Lock, TrendingUp, Crown, ChevronLeft, ChevronRight, Globe, X, ZoomIn } from 'lucide-react'
 import { ScoreRing } from '@/components/dashboard/score-ring'
-import { PerformanceBadge } from '@/components/dashboard/performance-badge'
 import { Sparkline } from '@/components/tracker/sparkline'
 import { Button } from '@/components/ui/button'
 import { cn, fmtCompact } from '@/lib/utils'
@@ -177,15 +176,16 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, pr
       </div>
 
       {/* Column headers */}
-      <div className="grid grid-cols-[28px_72px_1fr_150px_80px_72px_56px_72px] items-center gap-4 border-b border-border px-6 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+      <div className="grid grid-cols-[40px_72px_1fr_72px_56px_80px_130px_100px_72px] items-center gap-6 border-b border-border bg-secondary/30 px-6 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
         <div>#</div>
         <div />
         <div>Producto</div>
-        <div>Tienda</div>
-        <div className="text-center">Tendencia</div>
-        <div className="text-center">Crecimiento</div>
+        <div>Precio</div>
         <div className="text-center">Score</div>
-        <div className="text-center">Estado</div>
+        <div className="text-center">Tendencia (7d)</div>
+        <div>Crecimiento</div>
+        <div>Contexto</div>
+        <div className="text-center">Acción</div>
       </div>
       <div className="divide-y divide-border/50 px-2">
         {filtered.length === 0 ? (
@@ -408,88 +408,114 @@ function PoolWinnerRow({ winner, position, preferredCurrency, storeBaseUrl }: {
     )}
 
     <div className={cn(
-      'grid grid-cols-[28px_72px_1fr_150px_80px_72px_56px_72px] items-center gap-4 px-6 py-3 transition-colors hover:bg-secondary/30',
+      'grid grid-cols-[40px_72px_1fr_72px_56px_80px_130px_100px_72px] items-center gap-6 px-6 py-3 transition-colors hover:bg-secondary/30',
       isFirst && 'bg-amber-500/5',
     )}>
-      {/* Position */}
+      {/* # */}
       <div className="flex items-center justify-center">
         {isFirst
           ? <Crown className="h-4 w-4 text-amber-500" />
+          : position <= 3
+          ? <span className={cn('text-sm leading-none', position === 2 ? 'text-slate-400' : 'text-amber-700')}>★</span>
           : <span className="text-xs font-bold text-muted-foreground">#{position}</span>}
       </div>
 
-      {/* Clickable image → gallery */}
-      <button
-        onClick={openGallery}
-        className="relative group h-[72px] w-[72px] shrink-0 overflow-hidden rounded-xl cursor-zoom-in"
-      >
+      {/* Image */}
+      <button onClick={openGallery} className="relative group h-[56px] w-[56px] shrink-0 overflow-hidden rounded-xl cursor-zoom-in">
         {winner.productImage ? (
           <img src={winner.productImage} alt="" className="h-full w-full object-cover" />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-secondary text-xl font-bold text-muted-foreground">
+          <div className="flex h-full w-full items-center justify-center bg-secondary text-lg font-bold text-muted-foreground">
             {winner.productTitle.charAt(0)}
           </div>
         )}
         <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
-          <ZoomIn className="h-5 w-5 text-white" />
+          <ZoomIn className="h-4 w-4 text-white" />
         </div>
       </button>
 
-      {/* Product info */}
-      <div className="min-w-0">
+      {/* Producto + rank */}
+      <div className="min-w-0 pl-2">
         <Link
           href={`/tracker/${winner.candidateId}?storeId=${winner.storeId}&from=pool`}
           className="line-clamp-2 text-sm font-semibold leading-snug text-foreground hover:text-primary hover:underline transition-colors"
         >
           {winner.productTitle}
         </Link>
-        {winner.productPrice != null && (
-          <p className="mt-1 text-xs font-medium text-primary">
+        {winner.currentRank != null && (
+          <span className="mt-1 block text-[11px] text-muted-foreground tabular-nums">
+            Rank #{winner.currentRank}
+          </span>
+        )}
+      </div>
+
+      {/* Precio */}
+      <div>
+        {winner.productPrice != null ? (
+          <span className="text-xs font-semibold text-primary tabular-nums">
             {sym}{fmtCompact(convertCurrency(winner.productPrice, winner.currency, preferredCurrency))}
-          </p>
-        )}
-        {winner.currentRank && (
-          <p className="mt-0.5 text-[10px] text-muted-foreground">Rank #{winner.currentRank}</p>
+          </span>
+        ) : (
+          <span className="text-[10px] text-muted-foreground/40">—</span>
         )}
       </div>
 
-      {/* Store */}
-      <div className="min-w-0">
-        <span className="block truncate rounded-md bg-secondary px-2 py-1 text-[11px] font-medium text-muted-foreground">
-          {winner.storeName}
-        </span>
+      {/* Score */}
+      <div className="flex items-center justify-center">
+        <ScoreRing score={winner.performanceScore} size="sm" showLabel={false} confidence={winner.signalConfidence} />
       </div>
 
-      {/* Sparkline */}
+      {/* Tendencia sparkline */}
       <div className="flex justify-center">
         {(() => {
           const h = (winner.growthHistory ?? []).slice(-7)
           return h.length >= 2
-            ? <Sparkline data={h} width={72} height={32} />
+            ? <Sparkline data={h} width={80} height={32} />
             : <span className="text-[10px] text-muted-foreground/30">—</span>
         })()}
       </div>
 
-      {/* Growth % */}
-      <div className="text-center">
+      {/* Crecimiento */}
+      <div>
         <span className={cn(
-          'text-sm font-bold tabular-nums',
-          winner.growthPct != null && winner.growthPct > 0 ? 'text-emerald-600' : 'text-rose-500',
+          'block text-sm font-bold tabular-nums',
+          winner.growthPct != null && winner.growthPct >= 0 ? 'text-emerald-600' : 'text-rose-500',
         )}>
-          {winner.growthPct != null
-            ? `${winner.growthPct > 0 ? '+' : ''}${winner.growthPct.toFixed(1)}%`
-            : '—'}
+          {winner.growthPct != null ? `${winner.growthPct >= 0 ? '+' : ''}${winner.growthPct.toFixed(1)}%` : '—'}
         </span>
+        {winner.growthPct != null && (
+          <span className="mt-0.5 block text-[10px] leading-tight text-muted-foreground">
+            {winner.growthPct > 1
+              ? `↑ top ${Math.max(1, Math.round(100 - winner.performanceScore))}% en tienda`
+              : winner.growthPct < -1
+              ? `↓ bajando`
+              : 'sin cambio'}
+          </span>
+        )}
       </div>
 
-      {/* Score ring */}
-      <div className="flex justify-center">
-        <ScoreRing score={winner.performanceScore} size="sm" showLabel={false} confidence={winner.signalConfidence} />
-      </div>
+      {/* Contexto bar */}
+      {(() => {
+        const s = Math.round(Math.min(100, Math.max(0, winner.performanceScore ?? 0)))
+        const color = s >= 60 ? 'bg-emerald-500' : s >= 30 ? 'bg-amber-500' : 'bg-rose-500'
+        return (
+          <div className="space-y-1 w-full">
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+              <div className={cn('h-full rounded-full transition-all duration-500', color)} style={{ width: `${s}%` }} />
+            </div>
+            <span className="text-[11px] font-medium tabular-nums text-muted-foreground">{s}%</span>
+          </div>
+        )
+      })()}
 
-      {/* Status */}
-      <div className="flex justify-center">
-        <PerformanceBadge label={winner.performanceLabel} size="sm" />
+      {/* Acción */}
+      <div className="flex items-center justify-center">
+        <Link
+          href={`/tracker/${winner.candidateId}?storeId=${winner.storeId}&from=pool`}
+          className="flex items-center gap-1 rounded-lg bg-secondary px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
+        >
+          Ver
+        </Link>
       </div>
     </div>
     </>
