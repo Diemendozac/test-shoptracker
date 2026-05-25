@@ -9,6 +9,7 @@ import { ScoreRing } from '@/components/dashboard/score-ring'
 import { RankChart } from '@/components/tracker/rank-chart'
 import { ScoreChart } from '@/components/tracker/score-chart'
 import { useGetCandidateDetailQuery } from '@/app/(dashboard)/services/dashboardApi'
+import { useGetStoresQuery } from '@/app/(dashboard)/stores/services/storeApi'
 import { useCurrency } from '@/store/hooks'
 import { convertCurrency, currencySymbol } from '@/lib/currency'
 import {
@@ -44,6 +45,9 @@ function CandidateDetailContent() {
   const storeId = searchParams.get('storeId')
   const fromTracker = searchParams.get('from') !== 'pool'
 
+  const { data: stores } = useGetStoresQuery()
+  const storeBaseUrl = stores?.find(s => s.storeId === storeId)?.baseUrl ?? ''
+
   const { data, isLoading, isError } = useGetCandidateDetailQuery(
     { storeId: storeId!, candidateId },
     { skip: !storeId }
@@ -57,6 +61,13 @@ function CandidateDetailContent() {
       day: 'numeric',
       year: 'numeric',
     })
+
+  const buildProductUrl = (rawUrl: string | null, handle: string) => {
+    if (!rawUrl) return null
+    if (rawUrl.startsWith('http')) return rawUrl
+    const base = storeBaseUrl.replace(/\/$/, '')
+    return base ? `${base}${rawUrl}` : null
+  }
 
   const formatCurrency = (amount: number, sourceCurrency?: string | null) => {
     const converted = convertCurrency(amount, sourceCurrency ?? 'USD', preferredCurrency)
@@ -161,14 +172,17 @@ function CandidateDetailContent() {
               {summary && (
                 <ScoreRing score={summary.performanceScore} label={summary.performanceLabel} size="lg" />
               )}
-              {fromTracker && candidate.productUrl && (
-                <Button variant="outline" size="sm" asChild>
-                  <a href={candidate.productUrl} target="_blank" rel="noopener noreferrer" className="gap-2">
-                    Ver producto
-                    <ExternalLink className="h-4 w-4" />
-                  </a>
-                </Button>
-              )}
+              {fromTracker && (() => {
+                const url = buildProductUrl(candidate.productUrl, candidate.productHandle)
+                return url ? (
+                  <Button variant="outline" size="sm" asChild>
+                    <a href={url} target="_blank" rel="noopener noreferrer" className="gap-2">
+                      Ver producto
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  </Button>
+                ) : null
+              })()}
             </div>
           </div>
         </div>
