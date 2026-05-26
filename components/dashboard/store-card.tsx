@@ -9,6 +9,28 @@ import type { DashboardItem } from '@/lib/types'
 import { ExternalLink, Package, TrendingUp } from 'lucide-react'
 import { fmtCompact } from '@/lib/utils'
 
+function ProductImage({ src, title }: { src: string | null; title: string }) {
+  const [failed, setFailed] = useState(false)
+  const proxySrc = src ? `/api/image-proxy?url=${encodeURIComponent(src)}` : null
+
+  if (!proxySrc || failed) {
+    return (
+      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-secondary text-xs font-bold text-muted-foreground">
+        {title.slice(0, 2).toUpperCase()}
+      </div>
+    )
+  }
+
+  return (
+    <img
+      src={proxySrc}
+      alt=""
+      className="h-16 w-16 shrink-0 rounded-lg object-cover"
+      onError={() => setFailed(true)}
+    />
+  )
+}
+
 interface StoreCardProps {
   item: DashboardItem
 }
@@ -79,14 +101,10 @@ export function StoreCard({ item }: StoreCardProps) {
         {/* Content */}
         {topCandidate ? (
           <div className="space-y-4">
-            <div className="flex items-start gap-4">
-              <ScoreRing
-                score={topCandidate.performanceScore}
-                label={topCandidate.performanceLabel}
-                size="md"
-              />
-              <div className="flex-1 space-y-2">
-                <h4 className="font-medium leading-tight text-foreground">
+            <div className="flex items-start gap-3">
+              <ProductImage src={topCandidate.productImage} title={topCandidate.productTitle} />
+              <div className="flex min-w-0 flex-1 flex-col gap-2">
+                <h4 className="line-clamp-2 text-sm font-medium leading-tight text-foreground">
                   {topCandidate.productTitle}
                 </h4>
                 <div className="flex flex-wrap items-center gap-2">
@@ -98,7 +116,13 @@ export function StoreCard({ item }: StoreCardProps) {
                     {topCandidate.growthPct >= 0 ? '+' : ''}{Math.round(topCandidate.growthPct * 100)}% growth
                   </span>
                 </div>
-
+                <div className="flex items-center">
+                  <ScoreRing
+                    score={topCandidate.performanceScore}
+                    label={topCandidate.performanceLabel}
+                    size="sm"
+                  />
+                </div>
               </div>
             </div>
 
