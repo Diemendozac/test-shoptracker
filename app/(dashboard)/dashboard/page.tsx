@@ -9,12 +9,20 @@ import Link from 'next/link'
 import type { DashboardItem } from '@/lib/types'
 import { WinnerPodiumOverview } from '@/components/dashboard/winner-podium-overview'
 
+const TEST_KEYWORDS = /prueba|test|scout|demo|ejemplo/i
+
+function isTestProduct(title: string | undefined): boolean {
+  return title ? TEST_KEYWORDS.test(title) : true
+}
+
 function sortByScore(items: DashboardItem[]): DashboardItem[] {
-  return [...items].sort((a, b) => {
-    const sa = a.topCandidate?.performanceScore ?? -1
-    const sb = b.topCandidate?.performanceScore ?? -1
-    return sb - sa
-  })
+  return [...items]
+    .filter(item => item.topCandidate && !isTestProduct(item.topCandidate.productTitle))
+    .sort((a, b) => {
+      const sa = a.topCandidate?.performanceScore ?? -1
+      const sb = b.topCandidate?.performanceScore ?? -1
+      return sb - sa
+    })
 }
 
 export default function DashboardPage() {

@@ -119,12 +119,19 @@ export function StoreCard({ item }: StoreCardProps) {
                 </h4>
                 <div className="flex flex-wrap items-center gap-2">
                   <PerformanceBadge label={resolveLabel(topCandidate.performanceLabel, topCandidate.scoreHistory)} size="sm" />
-                  <span className={cn(
-                    'text-xs font-medium',
-                    topCandidate.growthPct >= 0 ? 'text-rising' : 'text-declining'
-                  )}>
-                    {topCandidate.growthPct >= 0 ? '+' : ''}{Math.round(topCandidate.growthPct * 100)}% growth
-                  </span>
+                  {(() => {
+                    const gp = topCandidate.growthPct ?? 0
+                    const capped = gp > 500
+                    const display = capped ? '+500%' : `${gp >= 0 ? '+' : ''}${Math.round(gp)}%`
+                    return (
+                      <span
+                        className={cn('text-xs font-medium', gp >= 0 ? 'text-rising' : 'text-declining')}
+                        title={capped ? 'Crecimiento extraordinario — pocos días de datos' : undefined}
+                      >
+                        {display} growth
+                      </span>
+                    )
+                  })()}
                 </div>
               </div>
             </div>
