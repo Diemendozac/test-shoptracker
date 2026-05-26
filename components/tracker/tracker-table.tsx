@@ -67,6 +67,11 @@ function ContextBar({ rank, total }: { rank: number | null; total?: number | nul
           <span className={cn('text-[10px] font-semibold', tier.labelColor)}>{tier.label}</span>
         )}
       </div>
+      {total != null && total > 0 && (
+        <span className="text-[11px] tabular-nums text-muted-foreground/60">
+          de {total} productos
+        </span>
+      )}
     </div>
   )
 }
