@@ -476,34 +476,75 @@ function PoolWinnerRow({ winner, position, preferredCurrency, storeBaseUrl }: {
       </div>
 
       {/* Crecimiento */}
-      <div>
-        <span className={cn(
-          'block text-sm font-bold tabular-nums',
-          winner.growthPct != null && winner.growthPct >= 0 ? 'text-emerald-600' : 'text-rose-500',
-        )}>
-          {winner.growthPct != null ? `${winner.growthPct >= 0 ? '+' : ''}${winner.growthPct.toFixed(1)}%` : '—'}
-        </span>
-        {winner.growthPct != null && (
-          <span className="mt-0.5 block text-[10px] leading-tight text-muted-foreground">
-            {winner.growthPct > 1
-              ? `↑ subiendo`
-              : winner.growthPct < -1
-              ? `↓ bajando`
-              : 'sin cambio'}
-          </span>
-        )}
-      </div>
-
-      {/* Contexto bar — based on performance score (no store total in pool view) */}
       {(() => {
-        const s = Math.round(Math.min(100, Math.max(0, winner.performanceScore ?? 0)))
-        const color = s >= 60 ? 'bg-emerald-500' : s >= 30 ? 'bg-amber-500' : 'bg-rose-500'
+        const gp = winner.growthPct
+        const total = winner.storeProductCount
+        const superadoPct = winner.currentRank != null && total && total > 0
+          ? Math.round(((total - winner.currentRank) / total) * 100)
+          : null
+        const subColor = superadoPct == null ? ''
+          : superadoPct <= 25 ? 'text-rose-500'
+          : superadoPct <= 50 ? 'text-amber-600'
+          : superadoPct <= 75 ? 'text-green-700'
+          : 'text-emerald-600'
+        const subText = gp == null ? null
+          : gp > 1 && superadoPct != null
+            ? { text: `↑ superó al ${superadoPct}% del catálogo`, color: subColor }
+          : gp < -1
+            ? { text: '↓ bajando en tienda', color: 'text-rose-500' }
+          : null
+        return (
+          <div>
+            <span className={cn(
+              'block text-sm font-bold tabular-nums',
+              gp != null && gp >= 0 ? 'text-emerald-600' : 'text-rose-500',
+            )}>
+              {gp != null ? `${gp >= 0 ? '+' : ''}${gp.toFixed(1)}%` : '—'}
+            </span>
+            {subText && (
+              <span className={cn('mt-0.5 block text-[10px] leading-tight', subText.color)}>
+                {subText.text}
+              </span>
+            )}
+          </div>
+        )
+      })()}
+
+      {/* Contexto bar — rank-based, igual que tracker table */}
+      {(() => {
+        const total = winner.storeProductCount
+        const topPct = winner.currentRank != null && total && total > 0
+          ? Math.max(1, Math.round((winner.currentRank / total) * 100))
+          : null
+        const barFill = topPct != null ? Math.max(1, 100 - topPct) : 0
+        const tier = topPct != null
+          ? topPct <= 10 ? { color: 'bg-emerald-500', labelColor: 'text-emerald-500', label: 'Winner' }
+          : topPct <= 25 ? { color: 'bg-emerald-400', labelColor: 'text-emerald-400', label: 'Strong' }
+          : topPct <= 50 ? { color: 'bg-yellow-400',  labelColor: 'text-yellow-400',  label: 'Mid'    }
+          : topPct <= 75 ? { color: 'bg-orange-400',  labelColor: 'text-orange-400',  label: 'Low'    }
+          :                { color: 'bg-rose-500',    labelColor: 'text-rose-500',    label: 'Weak'   }
+          : null
         return (
           <div className="space-y-1 w-full">
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
-              <div className={cn('h-full rounded-full transition-all duration-500', color)} style={{ width: `${s}%` }} />
+              <div
+                className={cn('h-full rounded-full transition-all duration-500', tier?.color ?? 'bg-secondary')}
+                style={{ width: `${barFill}%` }}
+              />
             </div>
-            <span className="text-[11px] font-medium tabular-nums text-muted-foreground">score {s}</span>
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-[11px] tabular-nums text-muted-foreground">
+                {topPct != null ? `top ${topPct}%` : '—'}
+              </span>
+              {tier && (
+                <span className={cn('text-[10px] font-semibold', tier.labelColor)}>{tier.label}</span>
+              )}
+            </div>
+            {total != null && total > 0 && (
+              <span className="text-[11px] tabular-nums text-muted-foreground/60">
+                de {total} productos
+              </span>
+            )}
           </div>
         )
       })()}

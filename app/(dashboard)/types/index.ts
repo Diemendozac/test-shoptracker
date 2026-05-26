@@ -92,6 +92,7 @@ export interface PoolWinnerProduct extends WinnerProduct {
   pagoAnticipado: boolean | null
   estUnitsDayLow: number | null
   estRevDayLow: number | null
+  storeProductCount: number | null
   scoreHistory?: number[]
   growthHistory?: number[]
 }
