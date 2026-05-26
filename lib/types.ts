@@ -21,6 +21,7 @@ export interface TopCandidate {
   performanceScore: number
   performanceLabel: PerformanceLabel
   growthPct: number
+  scoreHistory?: number[]
 }
 
 export interface DashboardItem {

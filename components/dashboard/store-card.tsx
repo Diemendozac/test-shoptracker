@@ -61,6 +61,13 @@ function StoreFavicon({ url, name }: { url?: string; name: string }) {
   )
 }
 
+function resolveLabel(label: string, scoreHistory?: number[]): string {
+  if (label !== 'Declining') return label
+  if (!scoreHistory || scoreHistory.length < 3) return label
+  const [a, b, c] = scoreHistory.slice(-3)
+  return (c > b && b > a) ? 'Rising' : label
+}
+
 function getDashboardStoreStatus(item: { lastScrapedAt?: string | null; inactivityTier: string | null }) {
   const hoursAgo = item.lastScrapedAt
     ? (Date.now() - new Date(item.lastScrapedAt).getTime()) / (1000 * 60 * 60)
@@ -111,7 +118,7 @@ export function StoreCard({ item }: StoreCardProps) {
                   {topCandidate.productTitle}
                 </h4>
                 <div className="flex flex-wrap items-center gap-2">
-                  <PerformanceBadge label={topCandidate.performanceLabel} size="sm" />
+                  <PerformanceBadge label={resolveLabel(topCandidate.performanceLabel, topCandidate.scoreHistory)} size="sm" />
                   <span className={cn(
                     'text-xs font-medium',
                     topCandidate.growthPct >= 0 ? 'text-rising' : 'text-declining'
