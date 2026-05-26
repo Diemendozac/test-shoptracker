@@ -175,7 +175,7 @@ function StoreLogo({ storeName, baseUrl }: { storeName: string; baseUrl: string 
   const [failed, setFailed] = useState(false)
   const initials = storeName.slice(0, 2).toUpperCase()
   const domain = baseUrl ? baseUrl.replace(/^https?:\/\//, '').replace(/\/$/, '') : null
-  const faviconUrl = domain ? `https://icons.duckduckgo.com/ip3/${domain}.ico` : null
+  const faviconUrl = domain ? `https://${domain}/favicon.ico` : null
 
   if (!faviconUrl || failed) {
     return (

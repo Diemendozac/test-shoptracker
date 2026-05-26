@@ -1,17 +1,29 @@
 'use client'
 
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
-import { Lock, TrendingUp, Crown, ChevronLeft, ChevronRight, Globe, X, ZoomIn } from 'lucide-react'
+import { Lock, TrendingUp, Crown, ChevronLeft, ChevronRight, Globe, ExternalLink, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { ScoreRing } from '@/components/dashboard/score-ring'
 import { Sparkline } from '@/components/tracker/sparkline'
 import { Button } from '@/components/ui/button'
 import { cn, fmtCompact } from '@/lib/utils'
 import { convertCurrency, currencySymbol } from '@/lib/currency'
 import { useCurrency } from '@/store/hooks'
-import { useGetStoresQuery } from '@/app/(dashboard)/stores/services/storeApi'
+import { HoverImagePreview } from '@/components/ui/image-preview'
 import type { PoolWinnersResponse, PoolWinnerProduct } from '@/app/(dashboard)/types'
 import type { PoolPreset } from '@/app/(dashboard)/pool/page'
+
+type PoolSortKey = 'productTitle' | 'productPrice' | 'performanceScore' | 'growthPct' | 'currentRank'
+type SortDir = 'asc' | 'desc'
+interface SortState { key: PoolSortKey | null; dir: SortDir }
+
+function SortIcon({ column, sort }: { column: PoolSortKey; sort: SortState }) {
+  if (sort.key !== column)
+    return <ArrowUpDown className="h-3 w-3 opacity-50 transition-opacity group-hover/th:opacity-100" />
+  return sort.dir === 'asc'
+    ? <ArrowUp className="h-3 w-3 text-primary" />
+    : <ArrowDown className="h-3 w-3 text-primary" />
+}
 
 interface PoolWinnersSectionProps {
   data: PoolWinnersResponse | undefined
@@ -23,14 +35,18 @@ interface PoolWinnersSectionProps {
 
 export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, preset = 'all' }: PoolWinnersSectionProps) {
   const { currency: preferredCurrency } = useCurrency()
-  const { data: stores } = useGetStoresQuery()
-  const storeBaseUrlMap = useMemo(
-    () => Object.fromEntries((stores ?? []).map(s => [s.storeId, s.baseUrl])),
-    [stores],
-  )
   const [nicheFilter, setNicheFilter] = useState('all')
   const [currencyFilter, setCurrencyFilter] = useState('all')
   const [dateFilter, setDateFilter] = useState<7 | 30 | 0>(0)
+  const [sort, setSort] = useState<SortState>({ key: 'performanceScore', dir: 'desc' })
+
+  function handleSort(key: PoolSortKey) {
+    setSort(prev =>
+      prev.key === key
+        ? { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' }
+        : { key, dir: key === 'productTitle' ? 'asc' : 'desc' },
+    )
+  }
 
   const winners = data?.winners ?? []
 
@@ -54,8 +70,21 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, pr
     if (dateFilter > 0)            r = r.filter((w) => w.daysElapsed <= dateFilter)
     if (nicheFilter !== 'all')     r = r.filter((w) => w.niche === nicheFilter)
     if (currencyFilter !== 'all')  r = r.filter((w) => w.currency === currencyFilter)
+    // Sort
+    if (sort.key) {
+      const k = sort.key
+      r = [...r].sort((a, b) => {
+        const av = a[k as keyof PoolWinnerProduct] as string | number | null | undefined
+        const bv = b[k as keyof PoolWinnerProduct] as string | number | null | undefined
+        if (av == null && bv == null) return 0
+        if (av == null) return 1
+        if (bv == null) return -1
+        const cmp = typeof av === 'string' ? av.localeCompare(bv as string) : (av as number) - (bv as number)
+        return sort.dir === 'asc' ? cmp : -cmp
+      })
+    }
     return r
-  }, [winners, preset, dateFilter, nicheFilter, currencyFilter])
+  }, [winners, preset, dateFilter, nicheFilter, currencyFilter, sort])
 
   const hasActiveFilters = nicheFilter !== 'all' || currencyFilter !== 'all' || dateFilter > 0
 
@@ -176,15 +205,40 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, pr
       </div>
 
       {/* Column headers */}
-      <div className="grid grid-cols-[40px_72px_1fr_72px_56px_80px_130px_100px_72px] items-center gap-6 border-b border-border bg-secondary/30 px-6 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+      <div className="grid grid-cols-[40px_56px_1fr_72px_56px_80px_130px_100px_72px] items-center gap-6 border-b border-border bg-secondary/30 px-6 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
         <div>#</div>
         <div />
-        <div>Producto</div>
-        <div>Precio</div>
-        <div className="text-center">Score</div>
+        <button
+          onClick={() => handleSort('productTitle')}
+          className="group/th flex items-center gap-1 hover:text-foreground transition-colors"
+        >
+          Producto <SortIcon column="productTitle" sort={sort} />
+        </button>
+        <button
+          onClick={() => handleSort('productPrice')}
+          className="group/th flex items-center gap-1 hover:text-foreground transition-colors"
+        >
+          Precio <SortIcon column="productPrice" sort={sort} />
+        </button>
+        <button
+          onClick={() => handleSort('performanceScore')}
+          className="group/th flex items-center justify-center gap-1 hover:text-foreground transition-colors"
+        >
+          Score <SortIcon column="performanceScore" sort={sort} />
+        </button>
         <div className="text-center">Tendencia (7d)</div>
-        <div>Crecimiento</div>
-        <div>Contexto</div>
+        <button
+          onClick={() => handleSort('growthPct')}
+          className="group/th flex items-center gap-1 hover:text-foreground transition-colors"
+        >
+          Crecimiento <SortIcon column="growthPct" sort={sort} />
+        </button>
+        <button
+          onClick={() => handleSort('currentRank')}
+          className="group/th flex items-center gap-1 hover:text-foreground transition-colors"
+        >
+          Contexto <SortIcon column="currentRank" sort={sort} />
+        </button>
         <div className="text-center">Acción</div>
       </div>
       <div className="divide-y divide-border/50 px-2">
@@ -199,7 +253,6 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, pr
               winner={winner}
               position={page * 20 + i + 1}
               preferredCurrency={preferredCurrency}
-              storeBaseUrl={storeBaseUrlMap[winner.storeId] ?? ''}
             />
           ))
         )}
@@ -306,109 +359,55 @@ function LockedState() {
   )
 }
 
-function PoolWinnerRow({ winner, position, preferredCurrency, storeBaseUrl }: {
+function PoolWinnerRow({ winner, position, preferredCurrency }: {
   winner: PoolWinnerProduct
   position: number
   preferredCurrency: string | null
-  storeBaseUrl: string
 }) {
   const isFirst = position === 1
   const sym = currencySymbol(preferredCurrency ?? winner.currency ?? 'USD')
 
-  // gallery state
-  const [galleryOpen, setGalleryOpen] = useState(false)
-  const [images, setImages] = useState<string[] | null>(null)
-  const [galleryIdx, setGalleryIdx] = useState(0)
+  const rh = winner.rankHistory
+  const prevRank = rh && rh.length >= 2 ? rh[rh.length - 2] : (winner.previousRank ?? null)
+  const rankDelta = prevRank != null && winner.currentRank != null ? prevRank - winner.currentRank : null
+  const rankDir = rankDelta !== null && rankDelta !== 0
+    ? (rankDelta > 0 ? 'up' : 'down')
+    : winner.growthPct != null && winner.growthPct > 1 ? 'up'
+    : winner.growthPct != null && winner.growthPct < -1 ? 'down'
+    : null
 
-  // extract handle from productUrl  e.g. "/products/some-handle"
-  const handle = winner.productUrl?.split('/products/')[1]?.split('?')[0] ?? null
+  const gp = winner.growthPct
+  const total = winner.storeProductCount
+  const superadoPct = winner.currentRank != null && total && total > 0
+    ? Math.max(0, Math.round(((total - winner.currentRank) / total) * 100))
+    : null
+  const subColor = superadoPct == null ? ''
+    : superadoPct <= 25 ? 'text-rose-500'
+    : superadoPct <= 50 ? 'text-amber-600'
+    : superadoPct <= 75 ? 'text-green-700'
+    : 'text-emerald-600'
+  const subText = gp == null ? null
+    : gp > 1 && superadoPct != null
+      ? { text: `↑ superó al ${superadoPct}% del catálogo`, color: subColor }
+    : gp < -1
+      ? { text: '↓ bajando en tienda', color: 'text-rose-500' }
+    : null
 
-  const openGallery = () => {
-    setGalleryIdx(0)
-    setGalleryOpen(true)
-    if (images !== null) return
-    if (handle && storeBaseUrl) {
-      fetch(`/api/product-images?baseUrl=${encodeURIComponent(storeBaseUrl)}&handle=${encodeURIComponent(handle)}`)
-        .then(r => r.json())
-        .then(({ images: imgs }) => setImages(imgs?.length > 0 ? imgs : winner.productImage ? [winner.productImage] : []))
-        .catch(() => setImages(winner.productImage ? [winner.productImage] : []))
-    } else {
-      setImages(winner.productImage ? [winner.productImage] : [])
-    }
-  }
-
-  const closeGallery = useCallback(() => setGalleryOpen(false), [])
-  const galleryPrev = useCallback(() => setGalleryIdx(i => images ? (i - 1 + images.length) % images.length : 0), [images])
-  const galleryNext = useCallback(() => setGalleryIdx(i => images ? (i + 1) % images.length : 0), [images])
-
-  useEffect(() => {
-    if (!galleryOpen) return
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') closeGallery()
-      if (e.key === 'ArrowLeft') galleryPrev()
-      if (e.key === 'ArrowRight') galleryNext()
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [galleryOpen, closeGallery, galleryPrev, galleryNext])
+  const topPct = winner.currentRank != null && total && total > 0
+    ? Math.min(100, Math.max(1, Math.round((winner.currentRank / total) * 100)))
+    : null
+  const barFill = topPct != null ? Math.max(1, 100 - topPct) : 0
+  const tier = topPct != null
+    ? topPct <= 10 ? { color: 'bg-emerald-500', labelColor: 'text-emerald-500', label: 'Winner' }
+    : topPct <= 25 ? { color: 'bg-emerald-400', labelColor: 'text-emerald-400', label: 'Strong' }
+    : topPct <= 50 ? { color: 'bg-yellow-400',  labelColor: 'text-yellow-400',  label: 'Mid'    }
+    : topPct <= 75 ? { color: 'bg-orange-400',  labelColor: 'text-orange-400',  label: 'Low'    }
+    :                { color: 'bg-rose-500',    labelColor: 'text-rose-500',    label: 'Weak'   }
+    : null
 
   return (
-    <>
-    {galleryOpen && images !== null && images.length > 0 && (
-      <div
-        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90"
-        onClick={closeGallery}
-      >
-        <div
-          className="relative flex items-center justify-center"
-          onClick={e => e.stopPropagation()}
-        >
-          <button
-            onClick={galleryPrev}
-            className="absolute -left-14 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <img
-            src={images[galleryIdx]}
-            alt={winner.productTitle}
-            className="max-h-[70vh] max-w-[80vw] rounded-xl object-contain"
-          />
-          <button
-            onClick={galleryNext}
-            className="absolute -right-14 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
-          >
-            <ChevronRight className="h-5 w-5" />
-          </button>
-        </div>
-        {images.length > 1 && (
-          <div className="mt-4 flex items-center gap-2" onClick={e => e.stopPropagation()}>
-            {images.map((img, i) => (
-              <button
-                key={i}
-                onClick={() => setGalleryIdx(i)}
-                className={cn(
-                  'h-14 w-14 shrink-0 overflow-hidden rounded-lg border-2 transition-all',
-                  i === galleryIdx ? 'border-white' : 'border-transparent opacity-50 hover:opacity-80',
-                )}
-              >
-                <img src={img} alt="" className="h-full w-full object-cover" />
-              </button>
-            ))}
-          </div>
-        )}
-        <button
-          onClick={closeGallery}
-          className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
-        >
-          <X className="h-5 w-5" />
-        </button>
-        <p className="absolute bottom-4 text-sm text-white/60">{galleryIdx + 1} / {images.length}</p>
-      </div>
-    )}
-
     <div className={cn(
-      'grid grid-cols-[40px_72px_1fr_72px_56px_80px_130px_100px_72px] items-center gap-6 px-6 py-3 transition-colors hover:bg-secondary/30',
+      'grid grid-cols-[40px_56px_1fr_72px_56px_80px_130px_100px_72px] items-center gap-6 px-6 py-3 transition-colors hover:bg-secondary/30',
       isFirst && 'bg-amber-500/5',
     )}>
       {/* # */}
@@ -421,18 +420,11 @@ function PoolWinnerRow({ winner, position, preferredCurrency, storeBaseUrl }: {
       </div>
 
       {/* Image */}
-      <button onClick={openGallery} className="relative group h-[56px] w-[56px] shrink-0 overflow-hidden rounded-xl cursor-zoom-in">
-        {winner.productImage ? (
-          <img src={winner.productImage} alt="" className="h-full w-full object-cover" />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-secondary text-lg font-bold text-muted-foreground">
-            {winner.productTitle.charAt(0)}
-          </div>
-        )}
-        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
-          <ZoomIn className="h-4 w-4 text-white" />
-        </div>
-      </button>
+      <HoverImagePreview
+        src={winner.productImage}
+        fallback={winner.productTitle.charAt(0)}
+        proxy
+      />
 
       {/* Producto + rank */}
       <div className="min-w-0 pl-2">
@@ -443,9 +435,20 @@ function PoolWinnerRow({ winner, position, preferredCurrency, storeBaseUrl }: {
           {winner.productTitle}
         </Link>
         {winner.currentRank != null && (
-          <span className="mt-1 block text-[11px] text-muted-foreground tabular-nums">
-            Rank #{winner.currentRank}
-          </span>
+          <div className="mt-1 flex items-center gap-1.5">
+            <span className="text-[11px] text-muted-foreground tabular-nums">
+              Rank #{winner.currentRank}
+            </span>
+            {rankDir && (
+              <span className={cn(
+                'inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[11px] font-bold tabular-nums',
+                rankDir === 'up' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-500',
+              )}>
+                {rankDir === 'up' ? '↑' : '↓'}
+                {rankDelta !== null ? Math.abs(rankDelta) : ''}
+              </span>
+            )}
+          </div>
         )}
       </div>
 
@@ -476,78 +479,42 @@ function PoolWinnerRow({ winner, position, preferredCurrency, storeBaseUrl }: {
       </div>
 
       {/* Crecimiento */}
-      {(() => {
-        const gp = winner.growthPct
-        const total = winner.storeProductCount
-        const superadoPct = winner.currentRank != null && total && total > 0
-          ? Math.max(0, Math.round(((total - winner.currentRank) / total) * 100))
-          : null
-        const subColor = superadoPct == null ? ''
-          : superadoPct <= 25 ? 'text-rose-500'
-          : superadoPct <= 50 ? 'text-amber-600'
-          : superadoPct <= 75 ? 'text-green-700'
-          : 'text-emerald-600'
-        const subText = gp == null ? null
-          : gp > 1 && superadoPct != null
-            ? { text: `↑ superó al ${superadoPct}% del catálogo`, color: subColor }
-          : gp < -1
-            ? { text: '↓ bajando en tienda', color: 'text-rose-500' }
-          : null
-        return (
-          <div>
-            <span className={cn(
-              'block text-sm font-bold tabular-nums',
-              gp != null && gp >= 0 ? 'text-emerald-600' : 'text-rose-500',
-            )}>
-              {gp != null ? `${gp >= 0 ? '+' : ''}${gp.toFixed(1)}%` : '—'}
-            </span>
-            {subText && (
-              <span className={cn('mt-0.5 block text-[10px] leading-tight', subText.color)}>
-                {subText.text}
-              </span>
-            )}
-          </div>
-        )
-      })()}
+      <div>
+        <span className={cn(
+          'block text-sm font-bold tabular-nums',
+          gp != null && gp >= 0 ? 'text-emerald-600' : 'text-rose-500',
+        )}>
+          {gp != null ? `${gp >= 0 ? '+' : ''}${gp.toFixed(1)}%` : '—'}
+        </span>
+        {subText && (
+          <span className={cn('mt-0.5 block text-[10px] leading-tight', subText.color)}>
+            {subText.text}
+          </span>
+        )}
+      </div>
 
-      {/* Contexto bar — rank-based, igual que tracker table */}
-      {(() => {
-        const total = winner.storeProductCount
-        const topPct = winner.currentRank != null && total && total > 0
-          ? Math.min(100, Math.max(1, Math.round((winner.currentRank / total) * 100)))
-          : null
-        const barFill = topPct != null ? Math.max(1, 100 - topPct) : 0
-        const tier = topPct != null
-          ? topPct <= 10 ? { color: 'bg-emerald-500', labelColor: 'text-emerald-500', label: 'Winner' }
-          : topPct <= 25 ? { color: 'bg-emerald-400', labelColor: 'text-emerald-400', label: 'Strong' }
-          : topPct <= 50 ? { color: 'bg-yellow-400',  labelColor: 'text-yellow-400',  label: 'Mid'    }
-          : topPct <= 75 ? { color: 'bg-orange-400',  labelColor: 'text-orange-400',  label: 'Low'    }
-          :                { color: 'bg-rose-500',    labelColor: 'text-rose-500',    label: 'Weak'   }
-          : null
-        return (
-          <div className="space-y-1 w-full">
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
-              <div
-                className={cn('h-full rounded-full transition-all duration-500', tier?.color ?? 'bg-secondary')}
-                style={{ width: `${barFill}%` }}
-              />
-            </div>
-            <div className="flex items-center justify-between gap-1">
-              <span className="text-[11px] tabular-nums text-muted-foreground">
-                {topPct != null ? `top ${topPct}%` : '—'}
-              </span>
-              {tier && (
-                <span className={cn('text-[10px] font-semibold', tier.labelColor)}>{tier.label}</span>
-              )}
-            </div>
-            {total != null && total > 0 && (
-              <span className="text-[11px] tabular-nums text-muted-foreground/60">
-                de {total} productos
-              </span>
-            )}
-          </div>
-        )
-      })()}
+      {/* Contexto */}
+      <div className="space-y-1 w-full">
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+          <div
+            className={cn('h-full rounded-full transition-all duration-500', tier?.color ?? 'bg-secondary')}
+            style={{ width: `${barFill}%` }}
+          />
+        </div>
+        <div className="flex items-center justify-between gap-1">
+          <span className="text-[11px] tabular-nums text-muted-foreground">
+            {topPct != null ? `top ${topPct}%` : '—'}
+          </span>
+          {tier && (
+            <span className={cn('text-[10px] font-semibold', tier.labelColor)}>{tier.label}</span>
+          )}
+        </div>
+        {total != null && total > 0 && (
+          <span className="text-[11px] tabular-nums text-muted-foreground/60">
+            de {total} productos
+          </span>
+        )}
+      </div>
 
       {/* Acción */}
       <div className="flex items-center justify-center">
@@ -555,10 +522,9 @@ function PoolWinnerRow({ winner, position, preferredCurrency, storeBaseUrl }: {
           href={`/tracker/${winner.candidateId}?storeId=${winner.storeId}&from=pool`}
           className="flex items-center gap-1 rounded-lg bg-secondary px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
         >
-          Ver
+          Ver <ExternalLink className="h-3 w-3" />
         </Link>
       </div>
     </div>
-    </>
   )
 }

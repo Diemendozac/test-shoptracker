@@ -93,8 +93,10 @@ export interface PoolWinnerProduct extends WinnerProduct {
   estUnitsDayLow: number | null
   estRevDayLow: number | null
   storeProductCount: number | null
+  previousRank: number | null
   scoreHistory?: number[]
   growthHistory?: number[]
+  rankHistory?: number[]
 }
 
 export interface PodiumWinner {
