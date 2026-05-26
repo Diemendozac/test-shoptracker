@@ -20,6 +20,44 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
+// ─── Smart label ─────────────────────────────────────────────────────────────
+// Single source of truth for the status label displayed anywhere in this page.
+// "Declining" is overridden when the score trajectory is clearly upward, because
+// the raw backend label lags one cycle behind the visible rank improvement.
+
+import type { CandidateHistory } from '@/app/(dashboard)/types'
+
+function computeSmartLabel(
+  entry: CandidateHistory,
+  prev: CandidateHistory | null,
+  prevPrev: CandidateHistory | null,
+): string {
+  if (entry.trackingDay <= 2) return 'New'
+  if (entry.growthPct === 0 && entry.performanceScore < 5) return 'Watching'
+
+  const label = entry.performanceLabel
+
+  if (label === 'Watching') {
+    if (entry.growthPct > 0 && prev != null && prev.growthPct > 0) return 'Rising'
+    return label
+  }
+
+  if (label === 'Declining') {
+    const onUptrend = prev != null && prevPrev != null
+      && entry.performanceScore > prev.performanceScore
+      && prev.performanceScore > prevPrev.performanceScore
+    if (onUptrend) return 'Rising'
+
+    const scoreDrop = prev != null && entry.performanceScore < prev.performanceScore
+    const rankWorse = prev != null
+      && entry.bestsellerRank != null && prev.bestsellerRank != null
+      && entry.bestsellerRank > prev.bestsellerRank
+    if (!(scoreDrop && rankWorse)) return 'Watching'
+  }
+
+  return label
+}
+
 // ─── ProductGallery ───────────────────────────────────────────────────────────
 
 function ProductGallery({ images, productTitle }: { images: string[]; productTitle: string }) {
@@ -315,6 +353,15 @@ function CandidateDetailContent() {
 
   const { candidate, summary, history } = data
 
+  // Derive the current label from the latest history entries using smart logic,
+  // so the header badge always agrees with the last row of the tracking table.
+  const lastEntry    = history.length > 0 ? history[history.length - 1] : null
+  const prevEntry    = history.length > 1 ? history[history.length - 2] : null
+  const prevPrevEntry = history.length > 2 ? history[history.length - 3] : null
+  const currentLabel = lastEntry
+    ? computeSmartLabel(lastEntry, prevEntry, prevPrevEntry)
+    : (summary?.performanceLabel ?? 'Watching')
+
   return (
     <PageLayout title="Product Details" description="Deep dive into candidate performance">
       {/* Back Link */}
@@ -363,7 +410,7 @@ function CandidateDetailContent() {
                   <span className="rounded-md bg-secondary px-2 py-1 text-xs font-medium text-muted-foreground">
                     {candidate.productHandle}
                   </span>
-                  {summary && <PerformanceBadge label={summary.performanceLabel} size="md" />}
+                  {summary && <PerformanceBadge label={currentLabel} size="md" />}
                   <FormattedPrice
                     amount={candidate.productPrice}
                     originalCurrency={candidate.currency}
@@ -387,7 +434,7 @@ function CandidateDetailContent() {
             {/* Score Ring */}
             <div className="flex items-center gap-6">
               {summary && (
-                <ScoreRing score={summary.performanceScore} label={summary.performanceLabel} size="lg" />
+                <ScoreRing score={summary.performanceScore} label={currentLabel} size="lg" />
               )}
               {fromTracker && (() => {
                 const url = buildProductUrl(candidate.productUrl, candidate.productHandle)
@@ -546,37 +593,9 @@ function CandidateDetailContent() {
                 </tr>
               ) : (
                 history.map((entry, idx) => {
-                  // Smart status: reflects trajectory, not just absolute score
-                  let dayLabel = entry.performanceLabel
-                  const prev = idx > 0 ? history[idx - 1] : null
+                  const prev     = idx > 0 ? history[idx - 1] : null
                   const prevPrev = idx > 1 ? history[idx - 2] : null
-
-                  if (entry.trackingDay <= 2) {
-                    dayLabel = 'New'
-                  } else if (entry.growthPct === 0 && entry.performanceScore < 5) {
-                    dayLabel = 'Watching'
-                  } else if (entry.performanceLabel === 'Watching') {
-                    if (entry.growthPct > 0 && prev != null && prev.growthPct > 0) {
-                      dayLabel = 'Rising'
-                    }
-                  } else if (dayLabel === 'Declining') {
-                    // Never show Declining when score has been rising for 2+ consecutive days
-                    const onUptrend = prev != null && prevPrev != null
-                      && entry.performanceScore > prev.performanceScore
-                      && prev.performanceScore > prevPrev.performanceScore
-                    if (onUptrend) {
-                      dayLabel = 'Rising'
-                    } else {
-                      // Only keep Declining when both score dropped AND rank got worse vs yesterday
-                      const scoreDrop = prev != null && entry.performanceScore < prev.performanceScore
-                      const rankWorse = prev != null
-                        && entry.bestsellerRank != null && prev.bestsellerRank != null
-                        && entry.bestsellerRank > prev.bestsellerRank
-                      if (!(scoreDrop && rankWorse)) {
-                        dayLabel = 'Watching'
-                      }
-                    }
-                  }
+                  const dayLabel = computeSmartLabel(entry, prev, prevPrev)
                   return (
                     <tr key={entry.trackingDay} className="transition-colors hover:bg-secondary/20">
                       <td className="px-4 py-3 text-sm font-medium text-foreground">Day {entry.trackingDay}</td>
