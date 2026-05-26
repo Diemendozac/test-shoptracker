@@ -37,23 +37,36 @@ function SortIcon({ column, sort }: { column: SortKey; sort: SortState }) {
     : <ArrowDown className="h-3 w-3 text-primary" />
 }
 
+function contextTier(topPct: number) {
+  if (topPct <= 10) return { color: 'bg-emerald-500',  labelColor: 'text-emerald-500',  label: 'Winner' }
+  if (topPct <= 25) return { color: 'bg-emerald-400',  labelColor: 'text-emerald-400',  label: 'Strong' }
+  if (topPct <= 50) return { color: 'bg-yellow-400',   labelColor: 'text-yellow-400',   label: 'Mid'    }
+  if (topPct <= 75) return { color: 'bg-orange-400',   labelColor: 'text-orange-400',   label: 'Low'    }
+  return               { color: 'bg-rose-500',     labelColor: 'text-rose-500',     label: 'Weak'   }
+}
+
 function ContextBar({ rank, total }: { rank: number | null; total?: number | null }) {
-  // topPct = how far from the top (rank #1 = top 1%)
   const topPct = rank != null && total && total > 0
     ? Math.max(1, Math.round((rank / total) * 100))
     : null
-  // bar fills inversely: rank #1 → 99% full (good), rank #89 → ~1% full (bad)
   const barFill = topPct != null ? Math.max(1, 100 - topPct) : 0
-  const color = barFill >= 70 ? 'bg-emerald-500' : barFill >= 40 ? 'bg-amber-500' : 'bg-rose-500'
+  const tier = topPct != null ? contextTier(topPct) : null
   return (
     <div className="space-y-1 w-full">
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
-        <div className={cn('h-full rounded-full transition-all duration-500', color)} style={{ width: `${barFill}%` }} />
+        <div
+          className={cn('h-full rounded-full transition-all duration-500', tier?.color ?? 'bg-secondary')}
+          style={{ width: `${barFill}%` }}
+        />
       </div>
-      <span className="text-[11px] font-medium tabular-nums text-muted-foreground">
-        {topPct != null ? `top ${topPct}%` : '—'}
-        {total ? <span className="text-muted-foreground/60"> · {total} prods.</span> : ''}
-      </span>
+      <div className="flex items-center justify-between gap-1">
+        <span className="text-[11px] tabular-nums text-muted-foreground">
+          {topPct != null ? `top ${topPct}%` : '—'}
+        </span>
+        {tier && (
+          <span className={cn('text-[10px] font-semibold', tier.labelColor)}>{tier.label}</span>
+        )}
+      </div>
     </div>
   )
 }
