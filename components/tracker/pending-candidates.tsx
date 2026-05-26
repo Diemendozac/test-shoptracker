@@ -36,7 +36,7 @@ export function PendingCandidatesSection() {
   if (!candidates || candidates.length === 0) return null
 
   return (
-    <div className="mb-6 rounded-2xl border border-amber-500/30 bg-amber-500/5 p-6">
+    <div className="mb-6 w-full overflow-hidden rounded-2xl border border-amber-500/30 bg-amber-500/5 p-6">
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <FlaskConical className="h-4 w-4 text-amber-500" />
