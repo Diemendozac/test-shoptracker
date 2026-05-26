@@ -13,6 +13,7 @@ import {
   DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import type { StoreResponse } from '../types'
+import { getStoreStatus } from '../utils/storeStatus'
 
 function formatLastScraped(dateStr: string) {
   const diffHours = Math.round(
@@ -97,27 +98,24 @@ export function StoreRow({ store, isSyncing, isDeleting, onSync, onDelete }: Sto
         )}
       </div>
 
-      {/* Status + last scraped + inactivity tier */}
+      {/* Status + last scraped — single unified badge */}
       <div className="min-w-0 text-center">
-        <div className={cn(
-          'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium',
-          store.isActive ? 'bg-emerald-500/10 text-emerald-600' : 'bg-muted text-muted-foreground',
-        )}>
-          {store.isActive
-            ? <><CheckCircle className="h-2.5 w-2.5" />Activa</>
-            : <><XCircle className="h-2.5 w-2.5" />Pausada</>
-          }
-        </div>
-        {store.inactivityTier && store.inactivityTier !== 'ACTIVA' && (
-          <div className={cn(
-            'mt-0.5 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium',
-            store.inactivityTier === 'MODERADA' && 'bg-yellow-500/10 text-yellow-600',
-            store.inactivityTier === 'INACTIVA' && 'bg-orange-500/10 text-orange-600',
-            store.inactivityTier === 'ZOMBIE'   && 'bg-red-500/10 text-red-500',
-          )}>
-            {store.inactivityTier}
-          </div>
-        )}
+        {(() => {
+          const status = getStoreStatus(store)
+          if (status === 'ACTIVA') return (
+            <div className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600">
+              <CheckCircle className="h-2.5 w-2.5" />Activa
+            </div>
+          )
+          return (
+            <div className={cn(
+              'inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium',
+              status === 'ZOMBIE' ? 'bg-red-500/10 text-red-500' : 'bg-orange-500/10 text-orange-600',
+            )}>
+              {status}
+            </div>
+          )
+        })()}
         <p className="mt-0.5 flex items-center justify-center gap-1 text-[10px] text-muted-foreground">
           <Clock className="h-2.5 w-2.5" />
           {store.lastScrapedAt ? formatLastScraped(store.lastScrapedAt) : 'Nunca'}

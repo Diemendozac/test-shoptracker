@@ -13,6 +13,7 @@ import {
   DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import type { StoreResponse } from '../types'
+import { getStoreStatus } from '../utils/storeStatus'
 
 function formatLastScraped(dateStr: string) {
   const diffHours = Math.round(
@@ -32,25 +33,26 @@ interface StoreCardProps {
 }
 
 export function StoreCard({ store, isSyncing, isDeleting, onSync, onDelete }: StoreCardProps) {
+  const status = getStoreStatus(store)
+
   return (
     <div
       className={cn(
         'group relative overflow-hidden rounded-xl border bg-card transition-all duration-300 hover:shadow-lg',
-        store.isActive
+        status === 'ACTIVA'
           ? 'border-border hover:border-primary/40 hover:shadow-primary/5'
-          : 'border-border/50 opacity-60',
+          : 'border-border/50 opacity-70',
       )}
     >
-      {/* Status badge */}
-      <div className={cn(
-        'absolute right-3 top-3 flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium',
-        store.isActive ? 'bg-rising/10 text-rising' : 'bg-muted text-muted-foreground',
-      )}>
-        {store.isActive
-          ? <><CheckCircle className="h-3 w-3" />Active</>
-          : <><XCircle className="h-3 w-3" />Paused</>
-        }
-      </div>
+      {/* Single status badge — only shown when not healthy */}
+      {status !== 'ACTIVA' && (
+        <div className={cn(
+          'absolute right-3 top-3 flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium',
+          status === 'ZOMBIE' ? 'bg-red-500/10 text-red-500' : 'bg-orange-500/10 text-orange-600',
+        )}>
+          {status}
+        </div>
+      )}
 
       <div className="p-5">
         {/* Store header */}

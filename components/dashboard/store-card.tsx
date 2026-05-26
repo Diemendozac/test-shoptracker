@@ -62,7 +62,7 @@ function StoreFavicon({ url, name }: { url?: string; name: string }) {
 }
 
 const TIER_STYLES = {
-  MODERADA: 'bg-yellow-500/10 text-yellow-600',
+  MODERADA: 'bg-orange-500/10 text-orange-600',
   INACTIVA: 'bg-orange-500/10 text-orange-600',
   ZOMBIE:   'bg-red-500/10 text-red-500',
 } as const
