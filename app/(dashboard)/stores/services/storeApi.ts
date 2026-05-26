@@ -51,6 +51,12 @@ export const storesApi = createApi({
       invalidatesTags: ['Store'],
     }),
 
+    // POST /api/stores/redetect-payments
+    redetectPayments: builder.mutation<{ updated: number }, void>({
+      query: () => ({ url: '/redetect-payments', method: 'POST' }),
+      invalidatesTags: ['Store'],
+    }),
+
   }),
 })
 
@@ -58,5 +64,6 @@ export const {
   useGetStoresQuery,
   useCreateStoreMutation,
   useDeleteStoreMutation,
-  useSyncStoreMutation
+  useSyncStoreMutation,
+  useRedetectPaymentsMutation,
 } = storesApi
