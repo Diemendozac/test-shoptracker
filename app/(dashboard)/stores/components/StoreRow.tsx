@@ -175,7 +175,9 @@ function StoreLogo({ storeName, baseUrl }: { storeName: string; baseUrl: string 
   const [failed, setFailed] = useState(false)
   const initials = storeName.slice(0, 2).toUpperCase()
   const domain = baseUrl ? baseUrl.replace(/^https?:\/\//, '').replace(/\/$/, '') : null
-  const faviconUrl = domain ? `https://${domain}/favicon.ico` : null
+  // Use proxy route: parses <link rel="icon"> from the homepage (Shopify stores
+  // keep their favicon on the CDN, not at /favicon.ico). Returns 404 → initials fallback.
+  const faviconUrl = domain ? `/api/favicon?domain=${encodeURIComponent(domain)}` : null
 
   if (!faviconUrl || failed) {
     return (
