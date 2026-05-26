@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react'
 import { useDispatch } from 'react-redux'
 import Link from 'next/link'
 import { cn, fmtCompact } from '@/lib/utils'
-import { convertCurrency, currencySymbol } from '@/lib/currency'
+import { FormattedPrice } from '@/components/ui/formatted-price'
 import { useCurrency } from '@/store/hooks'
 import { Sparkline } from '@/components/tracker/sparkline'
 import type { TrackerCandidate } from '@/lib/types'
@@ -268,11 +268,6 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
             </div>
           ) : (
             processed.map((candidate, idx) => {
-              const sym = currencySymbol(preferredCurrency ?? candidate.currency ?? 'USD')
-              const price = candidate.productPrice != null
-                ? convertCurrency(candidate.productPrice, candidate.currency, preferredCurrency)
-                : null
-
               // Rank delta vs ayer: penúltimo valor del rankHistory
               const rh = candidate.rankHistory
               const prevRank = rh && rh.length >= 2 ? rh[rh.length - 2] : (candidate.previousRank ?? null)
@@ -369,13 +364,12 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
 
                   {/* Precio */}
                   <div>
-                    {price != null ? (
-                      <span className="text-xs font-semibold text-primary tabular-nums">
-                        {sym}{fmtCompact(price)}
-                      </span>
-                    ) : (
-                      <span className="text-[10px] text-muted-foreground/40">—</span>
-                    )}
+                    <FormattedPrice
+                      amount={candidate.productPrice}
+                      originalCurrency={candidate.currency}
+                      preferredCurrency={preferredCurrency}
+                      compact
+                    />
                   </div>
 
                   {/* Score */}

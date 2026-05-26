@@ -7,7 +7,7 @@ import { ScoreRing } from '@/components/dashboard/score-ring'
 import { Sparkline } from '@/components/tracker/sparkline'
 import { Button } from '@/components/ui/button'
 import { cn, fmtCompact } from '@/lib/utils'
-import { convertCurrency, currencySymbol } from '@/lib/currency'
+import { FormattedPrice } from '@/components/ui/formatted-price'
 import { useCurrency } from '@/store/hooks'
 import { HoverImagePreview } from '@/components/ui/image-preview'
 import type { PoolWinnersResponse, PoolWinnerProduct } from '@/app/(dashboard)/types'
@@ -365,7 +365,6 @@ function PoolWinnerRow({ winner, position, preferredCurrency }: {
   preferredCurrency: string | null
 }) {
   const isFirst = position === 1
-  const sym = currencySymbol(preferredCurrency ?? winner.currency ?? 'USD')
 
   const rh = winner.rankHistory
   const prevRank = rh && rh.length >= 2 ? rh[rh.length - 2] : (winner.previousRank ?? null)
@@ -454,13 +453,12 @@ function PoolWinnerRow({ winner, position, preferredCurrency }: {
 
       {/* Precio */}
       <div>
-        {winner.productPrice != null ? (
-          <span className="text-xs font-semibold text-primary tabular-nums">
-            {sym}{fmtCompact(convertCurrency(winner.productPrice, winner.currency, preferredCurrency))}
-          </span>
-        ) : (
-          <span className="text-[10px] text-muted-foreground/40">—</span>
-        )}
+        <FormattedPrice
+          amount={winner.productPrice}
+          originalCurrency={winner.currency}
+          preferredCurrency={preferredCurrency ?? 'USD'}
+          compact
+        />
       </div>
 
       {/* Score */}

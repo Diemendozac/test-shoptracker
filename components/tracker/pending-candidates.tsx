@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { FlaskConical, X, Trash2 } from 'lucide-react'
+import { FormattedPrice } from '@/components/ui/formatted-price'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -14,7 +15,6 @@ import {
 import type { PendingCandidate } from '@/app/(dashboard)/services/candidateApi'
 import { useGetStoresQuery } from '@/app/(dashboard)/stores/services/storeApi'
 import { useCurrency } from '@/store/hooks'
-import { convertCurrency, currencySymbol } from '@/lib/currency'
 
 export function PendingCandidatesSection() {
   const { data: candidates, isLoading } = useGetPendingCandidatesQuery()
@@ -223,11 +223,12 @@ function PendingRow({
 
       {/* price + actions */}
       <div className="flex items-center gap-3">
-        {candidate.productPrice != null && (
-          <span className="text-xs font-medium text-muted-foreground">
-            {currencySymbol(preferredCurrency)}{convertCurrency(candidate.productPrice, candidate.currency ?? 'USD', preferredCurrency).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
-          </span>
-        )}
+        <FormattedPrice
+          amount={candidate.productPrice}
+          originalCurrency={candidate.currency}
+          preferredCurrency={preferredCurrency}
+          compact
+        />
         <div className="flex items-center gap-2">
           <Button
             size="sm"

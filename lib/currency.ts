@@ -38,3 +38,21 @@ export function currencySymbol(code: string | null | undefined): string {
 }
 
 export const SUPPORTED_CURRENCIES = ['USD', 'COP', 'MXN', 'ARS'] as const
+
+/**
+ * Convert using live rates (all relative to USD base).
+ * Formula: amount × (rates[to] / rates[from])
+ * Falls back to the hardcoded table if either rate is missing.
+ */
+export function convertWithRates(
+  amount: number,
+  from: string | null | undefined,
+  to: string | null | undefined,
+  rates: Record<string, number>,
+): number {
+  if (!from || !to || from === to) return amount
+  const fromRate = rates[from]
+  const toRate = rates[to]
+  if (fromRate == null || toRate == null) return convertCurrency(amount, from, to)
+  return amount * (toRate / fromRate)
+}

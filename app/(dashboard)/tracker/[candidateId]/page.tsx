@@ -12,7 +12,7 @@ import { ScoreChart } from '@/components/tracker/score-chart'
 import { useGetCandidateDetailQuery } from '@/app/(dashboard)/services/dashboardApi'
 import { useGetStoresQuery } from '@/app/(dashboard)/stores/services/storeApi'
 import { useCurrency } from '@/store/hooks'
-import { convertCurrency, currencySymbol } from '@/lib/currency'
+import { FormattedPrice } from '@/components/ui/formatted-price'
 import {
   ArrowLeft, ExternalLink, Calendar, TrendingUp, Target,
   Award, Clock, Zap, AlertCircle, Store,
@@ -274,11 +274,6 @@ function CandidateDetailContent() {
     return base ? `${base}${rawUrl}` : null
   }
 
-  const formatCurrency = (amount: number, sourceCurrency?: string | null) => {
-    const converted = convertCurrency(amount, sourceCurrency ?? 'USD', preferredCurrency)
-    const sym = currencySymbol(preferredCurrency)
-    return `${sym}${converted.toLocaleString('es-CO', { maximumFractionDigits: 0 })}`
-  }
 
   if (!storeId) {
     return (
@@ -369,9 +364,12 @@ function CandidateDetailContent() {
                     {candidate.productHandle}
                   </span>
                   {summary && <PerformanceBadge label={summary.performanceLabel} size="md" />}
-                  <span className="text-sm font-semibold text-foreground">
-                    {formatCurrency(candidate.productPrice, candidate.currency)}
-                  </span>
+                  <FormattedPrice
+                    amount={candidate.productPrice}
+                    originalCurrency={candidate.currency}
+                    preferredCurrency={preferredCurrency}
+                    className="items-start"
+                  />
                 </div>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1.5">
