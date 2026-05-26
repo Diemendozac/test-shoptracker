@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { PerformanceBadge } from './performance-badge'
-import { ScoreRing } from './score-ring'
 import type { DashboardItem } from '@/lib/types'
 import { ExternalLink, Package, TrendingUp } from 'lucide-react'
 import { fmtCompact } from '@/lib/utils'
@@ -115,13 +114,6 @@ export function StoreCard({ item }: StoreCardProps) {
                   )}>
                     {topCandidate.growthPct >= 0 ? '+' : ''}{Math.round(topCandidate.growthPct * 100)}% growth
                   </span>
-                </div>
-                <div className="flex items-center">
-                  <ScoreRing
-                    score={topCandidate.performanceScore}
-                    label={topCandidate.performanceLabel}
-                    size="sm"
-                  />
                 </div>
               </div>
             </div>
