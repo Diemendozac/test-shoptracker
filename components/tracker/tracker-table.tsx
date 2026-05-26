@@ -282,16 +282,26 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                 : candidate.growthPct != null && candidate.growthPct < -1 ? 'down'
                 : null
 
-              // Crecimiento sub-text — uses same rank-based percentile as ContextBar
               const total = candidate.storeProductCount
-              const topPct = candidate.currentRank != null && total && total > 0
-                ? Math.max(1, Math.round((candidate.currentRank / total) * 100))
-                : null
               const gp = candidate.growthPct
-              const subText = gp == null ? null
-                : gp > 1  ? `↑ top ${topPct ?? '—'}% en tienda`
-                : gp < -1 ? `↓ bajando en tienda`
-                : 'sin cambio'
+
+              // "superó al X% del catálogo" = productos por debajo del rank actual
+              const superadoPct = candidate.currentRank != null && total && total > 0
+                ? Math.round(((total - candidate.currentRank) / total) * 100)
+                : null
+
+              const subColor = superadoPct == null ? ''
+                : superadoPct <= 25  ? 'text-rose-500'
+                : superadoPct <= 50  ? 'text-amber-600'
+                : superadoPct <= 75  ? 'text-green-700'
+                : 'text-emerald-600'
+
+              const subText: { text: string; color: string } | null = gp == null ? null
+                : gp > 1 && superadoPct != null
+                  ? { text: `↑ superó al ${superadoPct}% del catálogo`, color: subColor }
+                : gp < -1
+                  ? { text: '↓ bajando en tienda', color: 'text-rose-500' }
+                : null
 
               const score = Math.round(candidate.performanceScore ?? 0)
 
@@ -396,8 +406,8 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                       {gp != null ? `${gp >= 0 ? '+' : ''}${gp.toFixed(1)}%` : '—'}
                     </span>
                     {subText && (
-                      <span className="mt-0.5 block text-[10px] leading-tight text-muted-foreground">
-                        {subText}
+                      <span className={cn('mt-0.5 block text-[10px] leading-tight', subText.color)}>
+                        {subText.text}
                       </span>
                     )}
                   </div>
