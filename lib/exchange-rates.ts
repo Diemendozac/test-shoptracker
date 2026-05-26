@@ -11,7 +11,7 @@ export const FALLBACK_RATES: RatesMap = {
   CLP: 900, CAD: 1.36, AUD: 1.52,
 }
 
-const CACHE_KEY = 'shoptracker_fx_v2'
+const CACHE_KEY = 'shoptracker_fx_v3' // bumped: v2 lacked COP in merged rates
 const TTL = 24 * 60 * 60 * 1000 // 24 hours
 
 // Module-level cache: shared across all hook instances in the same page session,
@@ -53,12 +53,15 @@ export function useExchangeRates(): { rates: RatesMap; loaded: boolean } {
       .then(r => r.json())
       .then(({ rates: r }: { rates?: RatesMap }) => {
         if (r && typeof r === 'object') {
-          modRates = r
+          // Frankfurter doesn't cover COP, ARS, PEN, CLP — merge live rates on top of
+          // FALLBACK so those currencies always have a value (live wins where available).
+          const merged: RatesMap = { ...FALLBACK_RATES, ...r }
+          modRates = merged
           modTs = Date.now()
-          setRates(r)
+          setRates(merged)
           setLoaded(true)
           try {
-            localStorage.setItem(CACHE_KEY, JSON.stringify({ rates: r, ts: modTs }))
+            localStorage.setItem(CACHE_KEY, JSON.stringify({ rates: merged, ts: modTs }))
           } catch {}
         }
       })
