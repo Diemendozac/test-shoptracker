@@ -94,7 +94,7 @@ function PendingRow({
   })()
 
   return (
-    <div className="flex items-center gap-4 rounded-xl border border-amber-500/20 bg-card px-4 py-3 transition-colors hover:bg-secondary/30">
+    <div className="flex min-w-0 items-center gap-4 rounded-xl border border-amber-500/20 bg-card px-4 py-3 transition-colors hover:bg-secondary/30">
       {/* image */}
       {candidate.productImage ? (
         <img
@@ -113,7 +113,7 @@ function PendingRow({
             href={productUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="truncate text-sm font-medium text-foreground hover:text-primary hover:underline transition-colors"
+            className="block truncate text-sm font-medium text-foreground hover:text-primary hover:underline transition-colors"
           >
             {candidate.productTitle}
           </a>
