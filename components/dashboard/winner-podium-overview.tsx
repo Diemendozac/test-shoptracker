@@ -1,6 +1,6 @@
 'use client'
 
-import { Trophy, Crown, Store, Calendar } from 'lucide-react'
+import { Trophy, Crown, Calendar } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useGetPodiumQuery } from '@/app/(dashboard)/services/dashboardApi'
 import type { PodiumWinner } from '@/app/(dashboard)/types'
@@ -40,10 +40,6 @@ function WinnerRow({ winner, position }: { winner: PodiumWinner; position: numbe
       <div className="min-w-0 flex-1">
         <p className="truncate text-xs font-medium text-foreground">{winner.productTitle}</p>
         <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-          <span className="flex items-center gap-0.5">
-            <Store className="h-2.5 w-2.5" />
-            {winner.storeName}
-          </span>
           {winner.dateReachedTop && (
             <span className="flex items-center gap-0.5">
               <Calendar className="h-2.5 w-2.5" />
