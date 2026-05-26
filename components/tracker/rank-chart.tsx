@@ -25,8 +25,8 @@ export function RankChart({ history }: RankChartProps) {
         <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="rankGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="oklch(0.7 0.2 285)" stopOpacity={0.3} />
-              <stop offset="95%" stopColor="oklch(0.7 0.2 285)" stopOpacity={0} />
+              <stop offset="5%" stopColor="oklch(0.7 0.2 285)" stopOpacity={0.25} />
+              <stop offset="95%" stopColor="oklch(0.7 0.2 285)" stopOpacity={0.03} />
             </linearGradient>
           </defs>
           <XAxis
@@ -64,6 +64,7 @@ export function RankChart({ history }: RankChartProps) {
           <Area
             type="monotone"
             dataKey="rank"
+            baseValue="dataMax"
             stroke="oklch(0.7 0.2 285)"
             strokeWidth={2}
             fill="url(#rankGradient)"

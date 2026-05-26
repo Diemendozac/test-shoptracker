@@ -493,8 +493,36 @@ function CandidateDetailContent() {
         </div>
       </div>
 
+      {/* Narrative summary */}
+      {summary && (() => {
+        const gained = summary.entryRank != null && summary.currentRank != null
+          ? summary.entryRank - summary.currentRank : null
+        const totalProducts = store?.productCount ?? 0
+        const topPct = totalProducts > 0 && summary.currentRank != null
+          ? Math.round((summary.currentRank / totalProducts) * 100) : null
+        const zone = topPct == null ? null : topPct <= 25 ? 'alta' : topPct <= 60 ? 'media' : 'baja'
+        const growth = summary.growthPct != null ? Math.round(summary.growthPct) : null
+
+        let movePart = ''
+        if (gained != null && gained > 0)
+          movePart = `Subió ${gained} posición${gained !== 1 ? 'es' : ''} en ${candidate.daysElapsed} días${growth != null ? ` (+${growth}%)` : ''}.`
+        else if (gained != null && gained < 0)
+          movePart = `Bajó ${Math.abs(gained)} posición${Math.abs(gained) !== 1 ? 'es' : ''} en ${candidate.daysElapsed} días${growth != null ? ` (${growth}%)` : ''}.`
+        else
+          movePart = `${candidate.daysElapsed} días en seguimiento${growth != null ? `, crecimiento ${growth >= 0 ? '+' : ''}${growth}%` : ''}.`
+
+        const zonePart = zone && topPct != null
+          ? ` Aún en zona ${zone} del catálogo (top ${topPct}%).` : ''
+
+        return (
+          <p className="mt-6 mb-2" style={{ fontSize: 13, color: 'var(--color-muted-foreground)' }}>
+            {movePart}{zonePart}
+          </p>
+        )
+      })()}
+
       {/* History Table */}
-      <div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
+      <div className="mt-2 overflow-hidden rounded-xl border border-border bg-card">
         <div className="border-b border-border p-4">
           <h3 className="font-semibold text-foreground">Tracking History</h3>
           <p className="text-sm text-muted-foreground">Daily snapshots from the observation window</p>
@@ -519,24 +547,38 @@ function CandidateDetailContent() {
                   </td>
                 </tr>
               ) : (
-                history.map((entry) => (
-                  <tr key={entry.trackingDay} className="transition-colors hover:bg-secondary/20">
-                    <td className="px-4 py-3 text-sm font-medium text-foreground">Day {entry.trackingDay}</td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">{formatDate(entry.snapshotDate)}</td>
-                    <td className="px-4 py-3 text-center text-sm font-medium text-foreground">
-                      {entry.bestsellerRank ? `#${entry.bestsellerRank}` : '-'}
-                    </td>
-                    <td className={`px-4 py-3 text-center text-sm font-medium ${entry.growthPct >= 0 ? 'text-rising' : 'text-declining'}`}>
-                      {entry.growthPct >= 0 ? '+' : ''}{Math.round(entry.growthPct)}%
-                    </td>
-                    <td className="px-4 py-3 text-center text-sm font-medium text-primary">
-                      {Math.round(entry.performanceScore)}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <PerformanceBadge label={entry.performanceLabel} size="sm" showIcon={false} />
-                    </td>
-                  </tr>
-                ))
+                history.map((entry, idx) => {
+                  // Smart status: reflects trajectory, not just absolute score
+                  let dayLabel = entry.performanceLabel
+                  if (entry.trackingDay <= 2) {
+                    dayLabel = 'New'
+                  } else if (entry.growthPct === 0 && entry.performanceScore < 5) {
+                    dayLabel = 'Watching'
+                  } else if (entry.performanceLabel === 'Watching') {
+                    const prev = idx > 0 ? history[idx - 1] : null
+                    if (entry.growthPct > 0 && prev != null && prev.growthPct > 0) {
+                      dayLabel = 'Rising'
+                    }
+                  }
+                  return (
+                    <tr key={entry.trackingDay} className="transition-colors hover:bg-secondary/20">
+                      <td className="px-4 py-3 text-sm font-medium text-foreground">Day {entry.trackingDay}</td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground">{formatDate(entry.snapshotDate)}</td>
+                      <td className="px-4 py-3 text-center text-sm font-medium text-foreground">
+                        {entry.bestsellerRank ? `#${entry.bestsellerRank}` : '-'}
+                      </td>
+                      <td className={`px-4 py-3 text-center text-sm font-medium ${entry.growthPct >= 0 ? 'text-rising' : 'text-declining'}`}>
+                        {entry.growthPct >= 0 ? '+' : ''}{Math.round(entry.growthPct)}%
+                      </td>
+                      <td className="px-4 py-3 text-center text-sm font-medium text-primary">
+                        {Math.round(entry.performanceScore)}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <PerformanceBadge label={dayLabel} size="sm" showIcon={false} />
+                      </td>
+                    </tr>
+                  )
+                })
               )}
             </tbody>
           </table>
