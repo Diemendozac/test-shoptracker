@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { TrendingUp, TrendingDown, Minus, Eye } from 'lucide-react'
+import { TrendingUp, TrendingDown, Minus, Eye, Sparkles } from 'lucide-react'
 
 /**
  * Labels soportados por la UI (sistema cerrado)
@@ -11,6 +11,7 @@ export type PerformanceLabel =
   | 'Watching'
   | 'Declining'
   | 'Stable'
+  | 'New'
 
 interface PerformanceBadgeProps {
   label: string // 👈 ahora acepta cualquier string (viene de API)
@@ -54,6 +55,12 @@ const labelConfig: Record<
     borderColor: 'border-stable/20',
     icon: Minus,
   },
+  New: {
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
+    borderColor: 'border-primary/20',
+    icon: Sparkles,
+  },
 }
 
 /**
@@ -68,6 +75,7 @@ function mapPerformanceLabel(apiLabel: string): PerformanceLabel {
     watching: 'Watching',
     declining: 'Declining',
     stable: 'Stable',
+    new: 'New',
   }
 
   return map[apiLabel.toLowerCase()] ?? 'Stable'

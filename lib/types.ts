@@ -106,7 +106,7 @@ export interface CandidateFullDetail {
   history: HistoryEntry[]
 }
 
-export type PerformanceLabel = 'Rising' | 'Watching' | 'Declining' | 'Stable'
+export type PerformanceLabel = 'Rising' | 'Watching' | 'Declining' | 'Stable' | 'New'
 
 export interface User {
   userId: string

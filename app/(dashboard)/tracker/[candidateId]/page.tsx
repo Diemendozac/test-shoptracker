@@ -550,14 +550,33 @@ function CandidateDetailContent() {
                 history.map((entry, idx) => {
                   // Smart status: reflects trajectory, not just absolute score
                   let dayLabel = entry.performanceLabel
+                  const prev = idx > 0 ? history[idx - 1] : null
+                  const prevPrev = idx > 1 ? history[idx - 2] : null
+
                   if (entry.trackingDay <= 2) {
                     dayLabel = 'New'
                   } else if (entry.growthPct === 0 && entry.performanceScore < 5) {
                     dayLabel = 'Watching'
                   } else if (entry.performanceLabel === 'Watching') {
-                    const prev = idx > 0 ? history[idx - 1] : null
                     if (entry.growthPct > 0 && prev != null && prev.growthPct > 0) {
                       dayLabel = 'Rising'
+                    }
+                  } else if (dayLabel === 'Declining') {
+                    // Never show Declining when score has been rising for 2+ consecutive days
+                    const onUptrend = prev != null && prevPrev != null
+                      && entry.performanceScore > prev.performanceScore
+                      && prev.performanceScore > prevPrev.performanceScore
+                    if (onUptrend) {
+                      dayLabel = 'Rising'
+                    } else {
+                      // Only keep Declining when both score dropped AND rank got worse vs yesterday
+                      const scoreDrop = prev != null && entry.performanceScore < prev.performanceScore
+                      const rankWorse = prev != null
+                        && entry.bestsellerRank != null && prev.bestsellerRank != null
+                        && entry.bestsellerRank > prev.bestsellerRank
+                      if (!(scoreDrop && rankWorse)) {
+                        dayLabel = 'Watching'
+                      }
                     }
                   }
                   return (
