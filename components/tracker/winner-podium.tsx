@@ -58,15 +58,15 @@ function FilledSlot({ winner, position }: { winner: PodiumWinner; position: numb
             <Store className="h-3 w-3" />
             {winner.storeName}
           </span>
-          {winner.dateReachedTop1 && (
+          {winner.dateReachedTop && (
             <span className="flex items-center gap-0.5">
               <Calendar className="h-3 w-3" />
-              {formatDate(winner.dateReachedTop1)}
+              {formatDate(winner.dateReachedTop)}
             </span>
           )}
-          {winner.daysAtTop1 > 0 && (
+          {winner.daysInTop > 0 && (
             <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-              {winner.daysAtTop1}d en #1
+              {winner.daysInTop}d en top 10%
             </span>
           )}
         </div>
@@ -122,7 +122,7 @@ export function WinnerPodium() {
           <Trophy className="h-4 w-4 text-yellow-400" />
           <h2 className="text-sm font-semibold text-foreground">Podio de Winners</h2>
           <span className="rounded-full bg-yellow-400/15 px-2 py-0.5 text-[10px] font-medium text-yellow-600">
-            Top #1 confirmados
+            Top 10% del catálogo
           </span>
         </div>
 
@@ -165,7 +165,7 @@ export function WinnerPodium() {
       {winners.length === 0 && !isLoading && (
         <p className="mt-3 text-center text-xs text-muted-foreground">
           {days === 0
-            ? 'Ningún producto ha llegado a #1 todavía — el podio se llena a medida que los productos suben'
+            ? 'Ningún producto ha superado el 90% del catálogo todavía — el podio se llena a medida que los productos suben'
             : `Ningún winner en los últimos ${days} días — prueba un período más amplio`}
         </p>
       )}

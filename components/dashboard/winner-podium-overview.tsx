@@ -44,15 +44,15 @@ function WinnerRow({ winner, position }: { winner: PodiumWinner; position: numbe
             <Store className="h-2.5 w-2.5" />
             {winner.storeName}
           </span>
-          {winner.dateReachedTop1 && (
+          {winner.dateReachedTop && (
             <span className="flex items-center gap-0.5">
               <Calendar className="h-2.5 w-2.5" />
-              {formatDate(winner.dateReachedTop1)}
+              {formatDate(winner.dateReachedTop)}
             </span>
           )}
-          {winner.daysAtTop1 > 0 && (
+          {winner.daysInTop > 0 && (
             <span className="rounded bg-primary/10 px-1 py-0.5 text-[9px] font-medium text-primary">
-              {winner.daysAtTop1}d en #1
+              {winner.daysInTop}d en top 10%
             </span>
           )}
         </div>
@@ -111,7 +111,7 @@ export function WinnerPodiumOverview() {
             ))}
           </div>
           <p className="text-[11px] text-muted-foreground/50">
-            Cuando un producto llegue a #1, aparecerá aquí
+            Cuando un producto supere al 90% del catálogo, aparecerá aquí
           </p>
         </div>
       ) : (
