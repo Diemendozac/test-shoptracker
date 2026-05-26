@@ -19,7 +19,7 @@ function StoreFavicon({ url, name }: { url?: string; name: string }) {
 
   const domain = url ? url.replace(/^https?:\/\//, '').replace(/\/$/, '') : null
   const faviconUrl = domain
-    ? `https://icons.duckduckgo.com/ip3/${domain}.ico`
+    ? `/api/favicon?domain=${encodeURIComponent(domain)}`
     : null
 
   if (!faviconUrl || failed) {
