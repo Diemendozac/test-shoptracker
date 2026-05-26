@@ -480,7 +480,7 @@ function PoolWinnerRow({ winner, position, preferredCurrency, storeBaseUrl }: {
         const gp = winner.growthPct
         const total = winner.storeProductCount
         const superadoPct = winner.currentRank != null && total && total > 0
-          ? Math.round(((total - winner.currentRank) / total) * 100)
+          ? Math.max(0, Math.round(((total - winner.currentRank) / total) * 100))
           : null
         const subColor = superadoPct == null ? ''
           : superadoPct <= 25 ? 'text-rose-500'
@@ -514,7 +514,7 @@ function PoolWinnerRow({ winner, position, preferredCurrency, storeBaseUrl }: {
       {(() => {
         const total = winner.storeProductCount
         const topPct = winner.currentRank != null && total && total > 0
-          ? Math.max(1, Math.round((winner.currentRank / total) * 100))
+          ? Math.min(100, Math.max(1, Math.round((winner.currentRank / total) * 100)))
           : null
         const barFill = topPct != null ? Math.max(1, 100 - topPct) : 0
         const tier = topPct != null

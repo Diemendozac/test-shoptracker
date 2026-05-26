@@ -47,7 +47,7 @@ function contextTier(topPct: number) {
 
 function ContextBar({ rank, total }: { rank: number | null; total?: number | null }) {
   const topPct = rank != null && total && total > 0
-    ? Math.max(1, Math.round((rank / total) * 100))
+    ? Math.min(100, Math.max(1, Math.round((rank / total) * 100)))
     : null
   const barFill = topPct != null ? Math.max(1, 100 - topPct) : 0
   const tier = topPct != null ? contextTier(topPct) : null
@@ -292,7 +292,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
 
               // "superó al X% del catálogo" = productos por debajo del rank actual
               const superadoPct = candidate.currentRank != null && total && total > 0
-                ? Math.round(((total - candidate.currentRank) / total) * 100)
+                ? Math.max(0, Math.round(((total - candidate.currentRank) / total) * 100))
                 : null
 
               const subColor = superadoPct == null ? ''
