@@ -104,7 +104,7 @@ export function StoreCard({ item }: StoreCardProps) {
 
             {/* Action */}
             <Link
-              href={`/tracker/${topCandidate.candidateId}`}
+              href={`/stores/${storeId}`}
               className="flex items-center justify-center gap-2 rounded-lg bg-secondary py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
             >
               <TrendingUp className="h-4 w-4" />
