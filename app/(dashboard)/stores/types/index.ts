@@ -11,6 +11,7 @@ export interface StoreResponse {
   pagoAnticipado: boolean | null
   inactivityScore: number | null
   inactivityTier: 'ACTIVA' | 'MODERADA' | 'INACTIVA' | 'ZOMBIE' | null
+  productCount: number | null
 }
 
 export interface CreateStoreRequest {

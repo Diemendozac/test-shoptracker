@@ -40,11 +40,11 @@ export function StoreRow({ store, isSyncing, isDeleting, onSync, onDelete }: Sto
       {/* Logo */}
       <StoreLogo storeName={store.storeName} baseUrl={store.baseUrl} />
 
-      {/* Name + URL */}
+      {/* Name + URL + products */}
       <div className="min-w-0">
         <Link
           href={`/stores/${store.storeId}`}
-          className="truncate text-sm font-medium text-foreground hover:text-primary hover:underline transition-colors"
+          className="block truncate text-sm font-medium text-foreground hover:text-primary hover:underline transition-colors"
         >
           {store.storeName}
         </Link>
@@ -57,6 +57,11 @@ export function StoreRow({ store, isSyncing, isDeleting, onSync, onDelete }: Sto
           {store.baseUrl.replace(/^https?:\/\//, '')}
           <ExternalLink className="h-2.5 w-2.5" />
         </a>
+        {store.productCount != null && store.productCount > 0 && (
+          <p className="text-[10px] text-muted-foreground/50 tabular-nums">
+            {store.productCount} productos
+          </p>
+        )}
       </div>
 
       {/* Niche */}
