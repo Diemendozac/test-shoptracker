@@ -47,7 +47,7 @@ const TIER_STYLES = {
 } as const
 
 export function StoreCard({ item }: StoreCardProps) {
-  const { storeName, storeUrl, topCandidate, inactivityTier } = item
+  const { storeId, storeName, storeUrl, topCandidate, inactivityTier } = item
 
   return (
     <div className="group relative overflow-hidden rounded-xl border border-border bg-card transition-all duration-300 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5">
