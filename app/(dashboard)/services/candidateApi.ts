@@ -41,6 +41,24 @@ export const candidateApi = createApi({
       invalidatesTags: ['Pending'],
     }),
 
+    bulkActivateCandidates: builder.mutation<{ activated: number }, string[]>({
+      query: (candidateIds) => ({
+        url: '/bulk-activate',
+        method: 'POST',
+        body: { candidateIds },
+      }),
+      invalidatesTags: ['Pending'],
+    }),
+
+    bulkCancelCandidates: builder.mutation<{ deleted: number }, string[]>({
+      query: (candidateIds) => ({
+        url: '/bulk',
+        method: 'DELETE',
+        body: { candidateIds },
+      }),
+      invalidatesTags: ['Pending'],
+    }),
+
     cancelCandidate: builder.mutation<void, string>({
       query: (candidateId) => ({
         url: `/${candidateId}`,
@@ -63,6 +81,8 @@ export const candidateApi = createApi({
 export const {
   useGetPendingCandidatesQuery,
   useActivateCandidateMutation,
+  useBulkActivateCandidatesMutation,
+  useBulkCancelCandidatesMutation,
   useCancelCandidateMutation,
   useRemoveCandidateMutation,
 } = candidateApi

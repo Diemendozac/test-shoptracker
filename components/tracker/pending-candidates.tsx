@@ -1,9 +1,16 @@
 'use client'
 
-import Link from 'next/link'
-import { FlaskConical, X, Eye } from 'lucide-react'
+import { useState } from 'react'
+import { FlaskConical, X, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useGetPendingCandidatesQuery, useActivateCandidateMutation, useCancelCandidateMutation } from '@/app/(dashboard)/services/candidateApi'
+import { Checkbox } from '@/components/ui/checkbox'
+import {
+  useGetPendingCandidatesQuery,
+  useActivateCandidateMutation,
+  useCancelCandidateMutation,
+  useBulkActivateCandidatesMutation,
+  useBulkCancelCandidatesMutation,
+} from '@/app/(dashboard)/services/candidateApi'
 import type { PendingCandidate } from '@/app/(dashboard)/services/candidateApi'
 import { useGetStoresQuery } from '@/app/(dashboard)/stores/services/storeApi'
 import { useCurrency } from '@/store/hooks'
@@ -13,9 +20,43 @@ export function PendingCandidatesSection() {
   const { data: candidates, isLoading } = useGetPendingCandidatesQuery()
   const [activate, { isLoading: activating }] = useActivateCandidateMutation()
   const [cancel] = useCancelCandidateMutation()
+  const [bulkActivate, { isLoading: bulkActivating }] = useBulkActivateCandidatesMutation()
+  const [bulkCancel, { isLoading: bulkCancelling }] = useBulkCancelCandidatesMutation()
   const { currency: preferredCurrency } = useCurrency()
   const { data: stores } = useGetStoresQuery()
   const storeBaseUrlMap = Object.fromEntries((stores ?? []).map(s => [s.storeId, s.baseUrl]))
+
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+
+  const allIds = candidates?.map(c => c.candidateId) ?? []
+  const allSelected = allIds.length > 0 && allIds.every(id => selected.has(id))
+  const someSelected = selected.size > 0
+
+  function toggleAll() {
+    if (allSelected) {
+      setSelected(new Set())
+    } else {
+      setSelected(new Set(allIds))
+    }
+  }
+
+  function toggleOne(id: string) {
+    setSelected(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  async function handleBulkActivate() {
+    await bulkActivate([...selected])
+    setSelected(new Set())
+  }
+
+  async function handleBulkCancel() {
+    await bulkCancel([...selected])
+    setSelected(new Set())
+  }
 
   if (isLoading) {
     return (
@@ -37,15 +78,47 @@ export function PendingCandidatesSection() {
 
   return (
     <div className="mb-6 w-full overflow-hidden rounded-2xl border border-amber-500/30 bg-amber-500/5 p-6">
-      <div className="mb-4 flex items-center justify-between">
+      {/* header */}
+      <div className="mb-4 flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
+          <Checkbox
+            checked={allSelected}
+            onCheckedChange={toggleAll}
+            className="border-amber-500/50 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
+          />
           <FlaskConical className="h-4 w-4 text-amber-500" />
           <h2 className="text-sm font-semibold text-foreground">Candidatos pendientes</h2>
           <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-medium text-amber-600">
             {candidates.length} nuevo{candidates.length !== 1 ? 's' : ''}
           </span>
         </div>
-        <span className="text-[10px] text-muted-foreground">Detectados en la última sincronización</span>
+
+        {someSelected ? (
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-muted-foreground">{selected.size} seleccionado{selected.size !== 1 ? 's' : ''}</span>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 gap-1.5 border-red-500/30 px-2.5 text-xs text-red-500 hover:bg-red-500/10 hover:text-red-500"
+              onClick={handleBulkCancel}
+              disabled={bulkCancelling || bulkActivating}
+            >
+              <Trash2 className="h-3 w-3" />
+              Descartar
+            </Button>
+            <Button
+              size="sm"
+              className="h-7 gap-1.5 bg-amber-500 px-2.5 text-xs text-white hover:bg-amber-600"
+              onClick={handleBulkActivate}
+              disabled={bulkActivating || bulkCancelling}
+            >
+              <FlaskConical className="h-3 w-3" />
+              Testear {selected.size}
+            </Button>
+          </div>
+        ) : (
+          <span className="text-[10px] text-muted-foreground">Detectados en la última sincronización</span>
+        )}
       </div>
 
       <div className="space-y-3">
@@ -55,6 +128,8 @@ export function PendingCandidatesSection() {
             candidate={c}
             storeBaseUrl={storeBaseUrlMap[c.storeId] ?? ''}
             preferredCurrency={preferredCurrency}
+            selected={selected.has(c.candidateId)}
+            onToggle={() => toggleOne(c.candidateId)}
             onActivate={() => activate(c.candidateId)}
             onCancel={() => cancel(c.candidateId)}
             isActivating={activating}
@@ -69,6 +144,8 @@ function PendingRow({
   candidate,
   storeBaseUrl,
   preferredCurrency,
+  selected,
+  onToggle,
   onActivate,
   onCancel,
   isActivating,
@@ -76,6 +153,8 @@ function PendingRow({
   candidate: PendingCandidate
   storeBaseUrl: string
   preferredCurrency: string
+  selected: boolean
+  onToggle: () => void
   onActivate: () => void
   onCancel: () => void
   isActivating: boolean
@@ -94,7 +173,18 @@ function PendingRow({
   })()
 
   return (
-    <div className="grid grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-4 rounded-xl border border-amber-500/20 bg-card px-4 py-3 transition-colors hover:bg-secondary/30">
+    <div className={`grid grid-cols-[20px_40px_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border px-4 py-3 transition-colors ${
+      selected
+        ? 'border-amber-500/40 bg-amber-500/10'
+        : 'border-amber-500/20 bg-card hover:bg-secondary/30'
+    }`}>
+      {/* checkbox */}
+      <Checkbox
+        checked={selected}
+        onCheckedChange={onToggle}
+        className="border-amber-500/40 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
+      />
+
       {/* image */}
       {candidate.productImage ? (
         <img
@@ -106,7 +196,7 @@ function PendingRow({
         <div className="h-10 w-10 rounded-lg bg-secondary" />
       )}
 
-      {/* info — minmax(0,1fr) ensures this column can't grow past available space */}
+      {/* info */}
       <div className="min-w-0 overflow-hidden">
         {productUrl ? (
           <a
