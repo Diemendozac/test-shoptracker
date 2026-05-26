@@ -1,13 +1,11 @@
 'use client'
 
 import { PageLayout } from '@/components/layout/page-layout'
-import { Plus, RefreshCw, CreditCard } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useStores } from './hooks/useStores'
 import { AddStoreModal } from './components/AddStoreModal'
 import { StoreRow } from './components/StoreRow'
-import { useRedetectPaymentsMutation } from './services/storeApi'
-import { useState } from 'react'
 
 export default function StoresPage() {
   const {
@@ -16,16 +14,6 @@ export default function StoresPage() {
     syncStore, syncingStoreId,
     openAddModal,
   } = useStores()
-
-  const [redetect, { isLoading: redetecting }] = useRedetectPaymentsMutation()
-  const [redetectResult, setRedetectResult] = useState<number | null>(null)
-
-  async function handleRedetect() {
-    setRedetectResult(null)
-    const res = await redetect().unwrap()
-    setRedetectResult(res.updated)
-    setTimeout(() => setRedetectResult(null), 4000)
-  }
 
   return (
     <PageLayout title="Tiendas" description="Administra tus tiendas Shopify rastreadas">
@@ -36,28 +24,10 @@ export default function StoresPage() {
         <p className="text-sm text-muted-foreground">
           <span className="font-medium text-foreground">{stores.length}</span> de 50 tiendas registradas
         </p>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5 text-xs"
-            onClick={handleRedetect}
-            disabled={redetecting}
-            title="Re-detecta moneda y pago anticipado para tiendas donde no se detectó automáticamente"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${redetecting ? 'animate-spin' : ''}`} />
-            <CreditCard className="h-3.5 w-3.5" />
-            {redetecting
-              ? 'Detectando...'
-              : redetectResult !== null
-              ? `${redetectResult} tienda${redetectResult !== 1 ? 's' : ''} actualizada${redetectResult !== 1 ? 's' : ''}`
-              : 'Re-detectar pagos'}
-          </Button>
-          <Button className="gap-2" onClick={openAddModal}>
-            <Plus className="h-4 w-4" />
-            Agregar tienda
-          </Button>
-        </div>
+        <Button className="gap-2" onClick={openAddModal}>
+          <Plus className="h-4 w-4" />
+          Agregar tienda
+        </Button>
       </div>
 
       {/* Table */}
