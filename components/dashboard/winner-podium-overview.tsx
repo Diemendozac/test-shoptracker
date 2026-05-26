@@ -42,7 +42,7 @@ function PodiumCard({ winner, position }: { winner: PodiumWinner; position: numb
     <Link
       href={`/tracker/${winner.candidateId}?storeId=${winner.storeId}&from=podium`}
       className={cn(
-        'group flex flex-col items-center rounded-xl border p-4 text-center transition-all hover:shadow-md hover:brightness-105',
+        'group flex flex-col items-center rounded-xl border p-4 text-center transition-all hover:shadow-md hover:bg-secondary/30',
         medal.border,
         PODIUM_MT[position],
       )}
