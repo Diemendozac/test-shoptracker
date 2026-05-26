@@ -20,18 +20,18 @@ const MEDALS = [
   },
   {
     circle: 'bg-slate-300 text-slate-800',
-    border: 'border-border/50 bg-secondary/10',
+    border: 'border-border bg-card',
     badge:  'bg-secondary text-muted-foreground',
   },
   {
     circle: 'bg-orange-400 text-orange-900',
-    border: 'border-border/50 bg-secondary/10',
+    border: 'border-border bg-card',
     badge:  'bg-orange-400/10 text-orange-600',
   },
 ]
 
-// Podium step: #1 at top (no offset), #2 one step down, #3 two steps down
-const PODIUM_MT = ['mt-0', 'mt-8', 'mt-14']
+// Podium step: #1 at top, #2 and #3 symmetric one step down
+const PODIUM_MT = ['mt-0', 'mt-10', 'mt-10'] as const
 
 function PodiumCard({ winner, position }: { winner: PodiumWinner; position: number }) {
   const medal = MEDALS[position] ?? MEDALS[2]
@@ -62,7 +62,7 @@ function PodiumCard({ winner, position }: { winner: PodiumWinner; position: numb
           src={winner.productImage}
           fallback={winner.productTitle.slice(0, 2).toUpperCase()}
           proxy
-          size={isFirst ? 80 : 64}
+          size={isFirst ? 120 : 90}
           previewSize={240}
         />
       </div>
@@ -122,7 +122,7 @@ export function WinnerPodiumOverview() {
 
   return (
     <div className={cn(
-      'mb-8 overflow-hidden rounded-xl border',
+      'mb-8 rounded-xl border',
       winners.length > 0 ? 'border-yellow-400/25' : 'border-border/50 bg-secondary/20',
     )}>
       {/* Header */}
@@ -165,13 +165,14 @@ export function WinnerPodiumOverview() {
 
       {/* Body */}
       {isLoading ? (
-        <div className="grid grid-cols-3 gap-3 px-5 pb-6 pt-2">
-          {[...Array(3)].map((_, i) => (
+        <div className="grid grid-cols-[1fr_1.3fr_1fr] gap-3 px-5 pb-6 pt-2">
+          {/* Skeleton order: left(#2) center(#1) right(#3) */}
+          {[1, 0, 2].map((pos, i) => (
             <div
               key={i}
               className={cn(
-                'h-64 animate-pulse rounded-xl bg-secondary/60',
-                i === 0 ? 'mt-8' : i === 2 ? 'mt-14' : '',
+                'animate-pulse rounded-xl bg-secondary/60',
+                pos === 0 ? 'h-72 mt-0' : 'h-64 mt-10',
               )}
             />
           ))}
@@ -189,7 +190,7 @@ export function WinnerPodiumOverview() {
         </div>
       ) : (
         /* Podium: [#2, #1, #3] left-center-right */
-        <div className="grid grid-cols-3 items-start gap-3 px-5 pb-6 pt-2">
+        <div className="grid grid-cols-[1fr_1.3fr_1fr] items-start gap-3 px-5 pb-6 pt-2">
           {/* Left: position #2 */}
           <div>
             {winners[1]
