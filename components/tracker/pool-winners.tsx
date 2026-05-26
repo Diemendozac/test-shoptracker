@@ -17,6 +17,35 @@ type PoolSortKey = 'productTitle' | 'productPrice' | 'performanceScore' | 'growt
 type SortDir = 'asc' | 'desc'
 interface SortState { key: PoolSortKey | null; dir: SortDir }
 
+/**
+ * "En alza" concrete definition — all 4 conditions must hold:
+ *  1. Rank improved at least 3 consecutive days in the last 7
+ *  2. Score improved vs yesterday
+ *  3. growthPct > 0
+ *  4. daysElapsed >= 3
+ * Lower rank number = better position (rank 1 = best seller).
+ */
+function isRising(w: PoolWinnerProduct): boolean {
+  if (w.daysElapsed < 3) return false
+  if (w.growthPct == null || w.growthPct <= 0) return false
+
+  // Score improved vs yesterday
+  const sh = w.scoreHistory
+  if (sh && sh.length >= 2 && sh[sh.length - 1] <= sh[sh.length - 2]) return false
+
+  // Rank improved at least 3 consecutive days (streak) in last 7
+  const rh = w.rankHistory
+  if (!rh || rh.length < 3) return false
+  const recent = rh.slice(-7)
+  let streak = 0
+  let maxStreak = 0
+  for (let i = 1; i < recent.length; i++) {
+    if (recent[i] < recent[i - 1]) { streak++; if (streak > maxStreak) maxStreak = streak }
+    else streak = 0
+  }
+  return maxStreak >= 3
+}
+
 function SortIcon({ column, sort }: { column: PoolSortKey; sort: SortState }) {
   if (sort.key !== column)
     return <ArrowUpDown className="h-3 w-3 opacity-50 transition-opacity group-hover/th:opacity-100" />
@@ -68,7 +97,7 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, pr
   const filtered = useMemo(() => {
     let r = winners
     // Tab preset filters
-    if (preset === 'rising')          r = r.filter((w) => w.performanceLabel === 'Rising')
+    if (preset === 'rising')          r = r.filter(isRising)
     if (preset === 'pago_anticipado') r = r.filter((w) => w.pagoAnticipado === true)
     if (preset === 'top_score')       r = [...r].sort((a, b) => b.performanceScore - a.performanceScore).slice(0, 20)
     if (preset === 'new')             r = r.filter((w) => w.daysElapsed <= 7)
