@@ -35,10 +35,16 @@ interface PoolWinnersSectionProps {
 
 export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, preset = 'all' }: PoolWinnersSectionProps) {
   const { currency: preferredCurrency } = useCurrency()
-  const [nicheFilter, setNicheFilter] = useState('all')
-  const [currencyFilter, setCurrencyFilter] = useState('all')
+  const [nicheFilter, setNicheFilter] = useState<Set<string>>(new Set())
+  const [currencyFilter, setCurrencyFilter] = useState<Set<string>>(new Set())
   const [dateFilter, setDateFilter] = useState<7 | 30 | 0>(0)
   const [sort, setSort] = useState<SortState>({ key: 'performanceScore', dir: 'desc' })
+
+  function toggleSet(prev: Set<string>, value: string): Set<string> {
+    const next = new Set(prev)
+    next.has(value) ? next.delete(value) : next.add(value)
+    return next
+  }
 
   function handleSort(key: PoolSortKey) {
     setSort(prev =>
@@ -68,8 +74,8 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, pr
     if (preset === 'new')             r = r.filter((w) => w.daysElapsed <= 7)
     // Chip filters
     if (dateFilter > 0)            r = r.filter((w) => w.daysElapsed <= dateFilter)
-    if (nicheFilter !== 'all')     r = r.filter((w) => w.niche === nicheFilter)
-    if (currencyFilter !== 'all')  r = r.filter((w) => w.currency === currencyFilter)
+    if (nicheFilter.size > 0)      r = r.filter((w) => w.niche != null && nicheFilter.has(w.niche))
+    if (currencyFilter.size > 0)   r = r.filter((w) => w.currency != null && currencyFilter.has(w.currency))
     // Sort
     if (sort.key) {
       const k = sort.key
@@ -86,7 +92,7 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, pr
     return r
   }, [winners, preset, dateFilter, nicheFilter, currencyFilter, sort])
 
-  const hasActiveFilters = nicheFilter !== 'all' || currencyFilter !== 'all' || dateFilter > 0
+  const hasActiveFilters = nicheFilter.size > 0 || currencyFilter.size > 0 || dateFilter > 0
 
   if (isLoading) {
     return (
@@ -146,43 +152,66 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, pr
           ))}
         </div>
 
-        {/* Categorías / nicho */}
+        {/* Categorías / nicho — multi-select */}
         {niches.length > 0 && (
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Categoría</span>
-            {['all', ...niches].map((n) => (
+            {/* "Todas" clears the selection */}
+            <button
+              onClick={() => setNicheFilter(new Set())}
+              className={cn(
+                'rounded-full border px-3 py-1 text-xs font-medium transition-all',
+                nicheFilter.size === 0
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
+              )}
+            >
+              Todas
+            </button>
+            {niches.map((n) => (
               <button
                 key={n}
-                onClick={() => setNicheFilter(n)}
+                onClick={() => setNicheFilter(prev => toggleSet(prev, n))}
                 className={cn(
                   'rounded-full border px-3 py-1 text-xs font-medium transition-all',
-                  nicheFilter === n
+                  nicheFilter.has(n)
                     ? 'border-primary bg-primary/10 text-primary'
                     : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
                 )}
               >
-                {n === 'all' ? 'Todas' : n}
+                {n}
               </button>
             ))}
           </div>
         )}
 
-        {/* Moneda */}
+        {/* Moneda — multi-select */}
         {currencies.length > 0 && (
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Moneda</span>
-            {['all', ...currencies].map((c) => (
+            <button
+              onClick={() => setCurrencyFilter(new Set())}
+              className={cn(
+                'rounded-full border px-3 py-1 text-xs font-medium transition-all',
+                currencyFilter.size === 0
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
+              )}
+            >
+              Todas
+            </button>
+            {currencies.map((c) => (
               <button
                 key={c}
-                onClick={() => setCurrencyFilter(c)}
+                onClick={() => setCurrencyFilter(prev => toggleSet(prev, c))}
                 className={cn(
                   'rounded-full border px-3 py-1 text-xs font-medium transition-all',
-                  currencyFilter === c
+                  currencyFilter.has(c)
                     ? 'border-primary bg-primary/10 text-primary'
                     : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
                 )}
               >
-                {c === 'all' ? 'Todas' : c}
+                {c}
               </button>
             ))}
           </div>
@@ -195,7 +224,7 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, pr
           </span>
           {hasActiveFilters && (
             <button
-              onClick={() => { setNicheFilter('all'); setCurrencyFilter('all'); setDateFilter(0) }}
+              onClick={() => { setNicheFilter(new Set()); setCurrencyFilter(new Set()); setDateFilter(0) }}
               className="text-[10px] text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
             >
               Limpiar
