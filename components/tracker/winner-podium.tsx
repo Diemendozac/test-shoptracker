@@ -14,10 +14,27 @@ const FILTERS = [
   { label: 'Todo', days: 0 },
 ]
 
+const MEDALS = ['🥇', '🥈', '🥉']
+
 const SLOT_STYLES = [
-  { border: 'border-yellow-400/50', bg: 'bg-yellow-400/5',  badge: 'bg-yellow-400 text-yellow-900' },
-  { border: 'border-slate-400/40',  bg: 'bg-slate-400/5',   badge: 'bg-slate-400  text-slate-900'  },
-  { border: 'border-orange-400/40', bg: 'bg-orange-400/5',  badge: 'bg-orange-400 text-orange-900' },
+  {
+    border: 'border-yellow-400/60',
+    bg: 'bg-gradient-to-br from-yellow-400/10 to-yellow-400/3',
+    badge: 'bg-yellow-400 text-yellow-900',
+    glow: 'shadow-[0_0_24px_rgba(251,191,36,0.12)]',
+  },
+  {
+    border: 'border-slate-400/40',
+    bg: 'bg-gradient-to-br from-slate-400/8 to-transparent',
+    badge: 'bg-slate-400 text-slate-900',
+    glow: '',
+  },
+  {
+    border: 'border-orange-400/40',
+    bg: 'bg-gradient-to-br from-orange-400/8 to-transparent',
+    badge: 'bg-orange-400 text-orange-900',
+    glow: '',
+  },
 ]
 
 function scoreColor(score: number) {
@@ -29,14 +46,14 @@ function scoreColor(score: number) {
 function ScoreRing({ score }: { score: number }) {
   const color = scoreColor(score)
   return (
-    <div className="flex flex-col items-center gap-0.5">
+    <div className="flex flex-col items-center gap-1">
       <div
-        className="flex h-11 w-11 items-center justify-center rounded-full border-2 text-sm font-bold"
+        className="flex h-14 w-14 items-center justify-center rounded-full border-[3px] text-lg font-bold"
         style={{ borderColor: color, color }}
       >
         {Math.round(score)}
       </div>
-      <span className="text-[9px] text-muted-foreground">score</span>
+      <span className="text-[10px] text-muted-foreground">score</span>
     </div>
   )
 }
@@ -47,28 +64,31 @@ function FilledSlot({ winner, position }: { winner: PodiumWinner; position: numb
 
   return (
     <div className={cn(
-      'flex items-center gap-3 rounded-xl border px-4 py-3 transition-colors hover:bg-secondary/10',
-      style.border, style.bg,
+      'relative flex items-center gap-4 rounded-2xl border px-5 py-4 transition-all hover:brightness-105',
+      style.border, style.bg, style.glow,
     )}>
-      {/* Position badge */}
-      <div className={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold', style.badge)}>
-        {position + 1}
+      {/* Product image with medal overlay */}
+      <div className="relative shrink-0">
+        <HoverImagePreview
+          src={winner.productImage}
+          fallback={winner.productTitle.slice(0, 2).toUpperCase()}
+          proxy
+          size={72}
+          previewSize={260}
+        />
+        {/* Medal badge — bottom-left corner of the image */}
+        <span className="absolute -bottom-2 -left-2 text-2xl drop-shadow-md select-none">
+          {MEDALS[position]}
+        </span>
       </div>
 
-      {/* Product image */}
-      <HoverImagePreview
-        src={winner.productImage}
-        fallback={winner.productTitle.slice(0, 2).toUpperCase()}
-        proxy
-        size={44}
-        previewSize={220}
-      />
-
       {/* Info */}
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-foreground">{winner.productTitle}</p>
-        <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
-          <span className="flex items-center gap-0.5">
+      <div className="min-w-0 flex-1 pl-1">
+        <p className="truncate text-base font-bold text-foreground leading-tight">
+          {winner.productTitle}
+        </p>
+        <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+          <span className="flex items-center gap-0.5 font-medium">
             <Store className="h-3 w-3" />
             {winner.storeName}
           </span>
@@ -77,23 +97,23 @@ function FilledSlot({ winner, position }: { winner: PodiumWinner; position: numb
               {winner.daysInTop}d en top 10%
             </span>
           )}
-          {winner.currentRank != null && (
-            <span className="text-muted-foreground/70">
-              Rank #{winner.currentRank}{total ? ` · ${total} prods.` : ''}
-            </span>
-          )}
         </div>
+        {winner.currentRank != null && (
+          <p className="mt-1 text-[11px] text-muted-foreground/60">
+            Rank #{winner.currentRank}{total ? ` · ${total} prods.` : ''}
+          </p>
+        )}
       </div>
 
       {/* Growth + Score */}
-      <div className="shrink-0 flex items-center gap-3">
+      <div className="shrink-0 flex items-center gap-4">
         {winner.growthPct != null && (
           <div className="text-right">
             <p className={cn(
-              'flex items-center justify-end gap-0.5 text-sm font-bold',
+              'flex items-center justify-end gap-1 text-base font-bold',
               winner.growthPct >= 0 ? 'text-emerald-500' : 'text-rose-500',
             )}>
-              <TrendingUp className="h-3.5 w-3.5" />
+              <TrendingUp className="h-4 w-4" />
               {winner.growthPct >= 0 ? '+' : ''}{Math.round(winner.growthPct)}%
             </p>
             <p className="text-[10px] text-muted-foreground">crecimiento</p>
@@ -109,16 +129,17 @@ function EmptySlot({ position }: { position: number }) {
   const style = SLOT_STYLES[position]
   return (
     <div className={cn(
-      'flex items-center gap-3 rounded-xl border border-dashed px-4 py-3',
+      'flex items-center gap-4 rounded-2xl border border-dashed px-5 py-4',
       style.border,
     )}>
-      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-dashed border-muted-foreground/30 text-xs font-bold text-muted-foreground/40">
-        {position + 1}
+      <div className="relative shrink-0">
+        <div className="h-[72px] w-[72px] rounded-xl border border-dashed border-muted-foreground/20 bg-secondary/30" />
+        <span className="absolute -bottom-2 -left-2 text-2xl opacity-25 select-none">{MEDALS[position]}</span>
       </div>
-      <div className="h-11 w-11 shrink-0 rounded-xl border border-dashed border-muted-foreground/20 bg-secondary/30" />
-      <div className="flex-1 space-y-1.5">
-        <div className="h-3 w-36 rounded bg-secondary/60" />
-        <div className="h-2.5 w-24 rounded bg-secondary/40" />
+      <div className="flex-1 space-y-2 pl-1">
+        <div className="h-4 w-48 rounded bg-secondary/60" />
+        <div className="h-3 w-28 rounded bg-secondary/40" />
+        <div className="h-2.5 w-20 rounded bg-secondary/30" />
       </div>
     </div>
   )
@@ -162,13 +183,13 @@ export function WinnerPodium() {
 
       {/* Slots */}
       {isLoading ? (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-[62px] animate-pulse rounded-xl bg-secondary/50" />
+            <div key={i} className="h-[88px] animate-pulse rounded-2xl bg-secondary/50" />
           ))}
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {slots.map((winner, i) =>
             winner
               ? <FilledSlot key={winner.candidateId} winner={winner} position={i} />
