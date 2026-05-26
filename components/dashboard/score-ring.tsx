@@ -68,13 +68,13 @@ export function ScoreRing({
         )}
       </svg>
 
-      {/* Inner text */}
-      <div className="flex flex-col items-center justify-center">
-        <span className={cn('font-bold tabular-nums', config.fontSize, textColor)}>
-          ~{Math.round(clamped)}
+      {/* Inner text — absolutely centered so the number sits in the middle of the ring */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className={cn('font-bold tabular-nums leading-none', config.fontSize, textColor)}>
+          {Math.round(clamped)}
         </span>
         {showLabel && label && (
-          <span className={cn('font-medium text-muted-foreground', config.labelSize)}>
+          <span className={cn('font-medium leading-none text-muted-foreground', config.labelSize)}>
             {label}
           </span>
         )}
