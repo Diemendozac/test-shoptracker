@@ -10,7 +10,7 @@ import { Sparkline } from '@/components/tracker/sparkline'
 import type { TrackerCandidate } from '@/lib/types'
 import {
   ExternalLink, ArrowUpDown, ArrowUp, ArrowDown,
-  Search, X, SlidersHorizontal, Trash2,
+  Search, X, SlidersHorizontal, Trash2, ChevronLeft, ChevronRight,
 } from 'lucide-react'
 import { useRemoveCandidateMutation } from '@/app/(dashboard)/services/candidateApi'
 import { dashboardApi } from '@/app/(dashboard)/services/dashboardApi'
@@ -76,6 +76,8 @@ function ContextBar({ rank, total }: { rank: number | null; total?: number | nul
   )
 }
 
+const PAGE_SIZE = 20
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) {
@@ -90,6 +92,9 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
   const [nicheFilter, setNicheFilter] = useState<string>('all')
   const [currencyFilter, setCurrencyFilter] = useState<string>('all')
   const [paFilter, setPaFilter] = useState<string>('all')
+  const [page, setPage] = useState(0)
+
+  function resetPage() { setPage(0) }
 
   const stores = useMemo(
     () => ['all', ...Array.from(new Set(candidates.map(c => c.storeName))).sort()],
@@ -106,6 +111,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
   )
 
   function handleSort(key: SortKey) {
+    resetPage()
     setSort(prev =>
       prev.key === key
         ? { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' }
@@ -142,13 +148,14 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
     currencyFilter !== 'all' || paFilter !== 'all' || sort.key === 'createdAt'
 
   function clearFilters() {
-    setSearch('')
-    setStoreFilter('all')
-    setNicheFilter('all')
-    setCurrencyFilter('all')
-    setPaFilter('all')
+    setSearch(''); setStoreFilter('all'); setNicheFilter('all')
+    setCurrencyFilter('all'); setPaFilter('all')
     setSort({ key: 'performanceScore', dir: 'desc' })
+    resetPage()
   }
+
+  const totalPages = Math.ceil(processed.length / PAGE_SIZE)
+  const pagedItems = processed.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
   // ─── Render ─────────────────────────────────────────────────────────────────
 
@@ -173,7 +180,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
         </div>
 
         <div className="relative">
-          <select value={storeFilter} onChange={e => setStoreFilter(e.target.value)}
+          <select value={storeFilter} onChange={e => { setStoreFilter(e.target.value); resetPage() }}
             className="h-9 appearance-none rounded-lg border border-border bg-secondary/40 px-3 pr-8 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer">
             {stores.map(s => <option key={s} value={s}>{s === 'all' ? 'All stores' : s}</option>)}
           </select>
@@ -181,7 +188,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
         </div>
 
         {niches.length > 1 && (
-          <select value={nicheFilter} onChange={e => setNicheFilter(e.target.value)}
+          <select value={nicheFilter} onChange={e => { setNicheFilter(e.target.value); resetPage() }}
             className="h-9 appearance-none rounded-lg border border-border bg-secondary/40 px-3 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer">
             <option value="all">Todos los nichos</option>
             {niches.filter(n => n !== 'all').map(n => <option key={n} value={n}>{n}</option>)}
@@ -189,14 +196,14 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
         )}
 
         {currencies.length > 1 && (
-          <select value={currencyFilter} onChange={e => setCurrencyFilter(e.target.value)}
+          <select value={currencyFilter} onChange={e => { setCurrencyFilter(e.target.value); resetPage() }}
             className="h-9 appearance-none rounded-lg border border-border bg-secondary/40 px-3 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer">
             <option value="all">Todas las monedas</option>
             {currencies.filter(c => c !== 'all').map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         )}
 
-        <select value={paFilter} onChange={e => setPaFilter(e.target.value)}
+        <select value={paFilter} onChange={e => { setPaFilter(e.target.value); resetPage() }}
           className="h-9 appearance-none rounded-lg border border-border bg-secondary/40 px-3 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer">
           <option value="all">Pago anticipado: Todos</option>
           <option value="yes">Solo pago anticipado</option>
@@ -267,7 +274,8 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
               </button>
             </div>
           ) : (
-            processed.map((candidate, idx) => {
+            pagedItems.map((candidate, idx) => {
+              const idx_abs = page * PAGE_SIZE + idx
               // Rank delta vs ayer: penúltimo valor del rankHistory
               const rh = candidate.rankHistory
               const prevRank = rh && rh.length >= 2 ? rh[rh.length - 2] : (candidate.previousRank ?? null)
@@ -312,12 +320,12 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                 >
                   {/* # */}
                   <div className="flex items-center justify-center">
-                    {idx < 3 ? (
+                    {idx_abs < 3 ? (
                       <span className={cn('text-sm leading-none',
-                        idx === 0 ? 'text-amber-500' : idx === 1 ? 'text-slate-400' : 'text-amber-700',
+                        idx_abs === 0 ? 'text-amber-500' : idx_abs === 1 ? 'text-slate-400' : 'text-amber-700',
                       )}>★</span>
                     ) : (
-                      <span className="text-xs font-bold text-muted-foreground">#{idx + 1}</span>
+                      <span className="text-xs font-bold text-muted-foreground">#{idx_abs + 1}</span>
                     )}
                   </div>
 
@@ -351,12 +359,12 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                   </div>
 
                   {/* Tienda */}
-                  <div className="min-w-0">
+                  <div className="min-w-0 text-center">
                     <span className="block truncate rounded-md bg-secondary px-2 py-1 text-[11px] font-medium text-muted-foreground">
                       {candidate.storeName}
                     </span>
                     {candidate.storeProductCount != null && candidate.storeProductCount > 0 && (
-                      <span className="mt-0.5 block pl-1 text-[10px] text-muted-foreground/50">
+                      <span className="mt-0.5 block text-[10px] text-muted-foreground/50">
                         {candidate.storeProductCount} productos
                       </span>
                     )}
@@ -442,6 +450,45 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
           )}
         </div>
       </div>
+
+      {/* ── Pagination ── */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between border-t border-border px-2 pt-3">
+          <span className="text-xs text-muted-foreground tabular-nums">
+            Mostrando {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, processed.length)} de {processed.length}
+          </span>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPage(p => p - 1)}
+              disabled={page === 0}
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i).map(i => (
+              <button
+                key={i}
+                onClick={() => setPage(i)}
+                className={cn(
+                  'flex h-7 w-7 items-center justify-center rounded-md border text-xs font-medium transition-colors',
+                  i === page
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-border text-muted-foreground hover:border-primary/40 hover:text-foreground',
+                )}
+              >
+                {i + 1}
+              </button>
+            ))}
+            <button
+              onClick={() => setPage(p => p + 1)}
+              disabled={page >= totalPages - 1}
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+            >
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
