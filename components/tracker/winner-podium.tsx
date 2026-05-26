@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Trophy, Crown, Medal, Store, Calendar, TrendingUp } from 'lucide-react'
+import { Trophy, Store, TrendingUp } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useGetPodiumQuery } from '@/app/(dashboard)/services/dashboardApi'
 import type { PodiumWinner } from '@/app/(dashboard)/types'
@@ -15,25 +15,39 @@ const FILTERS = [
 ]
 
 const SLOT_STYLES = [
-  { border: 'border-yellow-400/40', bg: 'bg-yellow-400/5', badge: 'bg-yellow-400 text-yellow-900', icon: Crown,  iconColor: 'text-yellow-400' },
-  { border: 'border-slate-400/40',  bg: 'bg-slate-400/5',  badge: 'bg-slate-400  text-slate-900',  icon: Medal,  iconColor: 'text-slate-400' },
-  { border: 'border-orange-400/40', bg: 'bg-orange-400/5', badge: 'bg-orange-400 text-orange-900', icon: Medal,  iconColor: 'text-orange-400' },
-  { border: 'border-border/50',     bg: 'bg-secondary/30', badge: 'bg-muted      text-muted-foreground', icon: Medal, iconColor: 'text-muted-foreground' },
-  { border: 'border-border/50',     bg: 'bg-secondary/30', badge: 'bg-muted      text-muted-foreground', icon: Medal, iconColor: 'text-muted-foreground' },
+  { border: 'border-yellow-400/50', bg: 'bg-yellow-400/5',  badge: 'bg-yellow-400 text-yellow-900' },
+  { border: 'border-slate-400/40',  bg: 'bg-slate-400/5',   badge: 'bg-slate-400  text-slate-900'  },
+  { border: 'border-orange-400/40', bg: 'bg-orange-400/5',  badge: 'bg-orange-400 text-orange-900' },
 ]
 
-function formatDate(dateStr: string | null) {
-  if (!dateStr) return null
-  return new Date(dateStr).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })
+function scoreColor(score: number) {
+  if (score >= 60) return '#10b981'
+  if (score >= 40) return '#f59e0b'
+  return '#ef4444'
+}
+
+function ScoreRing({ score }: { score: number }) {
+  const color = scoreColor(score)
+  return (
+    <div className="flex flex-col items-center gap-0.5">
+      <div
+        className="flex h-11 w-11 items-center justify-center rounded-full border-2 text-sm font-bold"
+        style={{ borderColor: color, color }}
+      >
+        {Math.round(score)}
+      </div>
+      <span className="text-[9px] text-muted-foreground">score</span>
+    </div>
+  )
 }
 
 function FilledSlot({ winner, position }: { winner: PodiumWinner; position: number }) {
   const style = SLOT_STYLES[position]
-  const Icon = style.icon
+  const total = winner.storeProductCount
 
   return (
     <div className={cn(
-      'flex items-center gap-3 rounded-xl border px-4 py-3 transition-colors hover:bg-secondary/20',
+      'flex items-center gap-3 rounded-xl border px-4 py-3 transition-colors hover:bg-secondary/10',
       style.border, style.bg,
     )}>
       {/* Position badge */}
@@ -41,7 +55,7 @@ function FilledSlot({ winner, position }: { winner: PodiumWinner; position: numb
         {position + 1}
       </div>
 
-      {/* Image */}
+      {/* Product image */}
       <HoverImagePreview
         src={winner.productImage}
         fallback={winner.productTitle.slice(0, 2).toUpperCase()}
@@ -52,36 +66,40 @@ function FilledSlot({ winner, position }: { winner: PodiumWinner; position: numb
 
       {/* Info */}
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-foreground">{winner.productTitle}</p>
+        <p className="truncate text-sm font-semibold text-foreground">{winner.productTitle}</p>
         <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
           <span className="flex items-center gap-0.5">
             <Store className="h-3 w-3" />
             {winner.storeName}
           </span>
-          {winner.dateReachedTop && (
-            <span className="flex items-center gap-0.5">
-              <Calendar className="h-3 w-3" />
-              {formatDate(winner.dateReachedTop)}
+          {winner.daysInTop > 0 && (
+            <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+              {winner.daysInTop}d en top 10%
             </span>
           )}
-          {winner.daysInTop > 0 && (
-            <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-              {winner.daysInTop}d en top 10%
+          {winner.currentRank != null && (
+            <span className="text-muted-foreground/70">
+              Rank #{winner.currentRank}{total ? ` · ${total} prods.` : ''}
             </span>
           )}
         </div>
       </div>
 
-      {/* Score + growth */}
-      <div className="shrink-0 text-right">
-        <p className="text-sm font-semibold text-foreground">~{Math.round(winner.performanceScore)}</p>
+      {/* Growth + Score */}
+      <div className="shrink-0 flex items-center gap-3">
         {winner.growthPct != null && (
-          <p className={cn('text-[11px] font-medium flex items-center justify-end gap-0.5',
-            winner.growthPct >= 0 ? 'text-emerald-600' : 'text-rose-500')}>
-            <TrendingUp className="h-3 w-3" />
-            {winner.growthPct >= 0 ? '+' : ''}{Math.round(winner.growthPct)}%
-          </p>
+          <div className="text-right">
+            <p className={cn(
+              'flex items-center justify-end gap-0.5 text-sm font-bold',
+              winner.growthPct >= 0 ? 'text-emerald-500' : 'text-rose-500',
+            )}>
+              <TrendingUp className="h-3.5 w-3.5" />
+              {winner.growthPct >= 0 ? '+' : ''}{Math.round(winner.growthPct)}%
+            </p>
+            <p className="text-[10px] text-muted-foreground">crecimiento</p>
+          </div>
         )}
+        <ScoreRing score={winner.performanceScore} />
       </div>
     </div>
   )
@@ -89,7 +107,6 @@ function FilledSlot({ winner, position }: { winner: PodiumWinner; position: numb
 
 function EmptySlot({ position }: { position: number }) {
   const style = SLOT_STYLES[position]
-
   return (
     <div className={cn(
       'flex items-center gap-3 rounded-xl border border-dashed px-4 py-3',
@@ -100,8 +117,8 @@ function EmptySlot({ position }: { position: number }) {
       </div>
       <div className="h-11 w-11 shrink-0 rounded-xl border border-dashed border-muted-foreground/20 bg-secondary/30" />
       <div className="flex-1 space-y-1.5">
-        <div className="h-3 w-32 rounded bg-secondary/60" />
-        <div className="h-2.5 w-20 rounded bg-secondary/40" />
+        <div className="h-3 w-36 rounded bg-secondary/60" />
+        <div className="h-2.5 w-24 rounded bg-secondary/40" />
       </div>
     </div>
   )
@@ -112,7 +129,7 @@ export function WinnerPodium() {
   const { data, isLoading } = useGetPodiumQuery({ days })
 
   const winners = data?.winners ?? []
-  const slots = Array.from({ length: 5 }, (_, i) => winners[i] ?? null)
+  const slots = Array.from({ length: 3 }, (_, i) => winners[i] ?? null)
 
   return (
     <div className="mb-6 rounded-2xl border border-yellow-400/20 bg-gradient-to-br from-yellow-400/5 to-transparent p-5">
@@ -125,8 +142,6 @@ export function WinnerPodium() {
             Top 10% del catálogo
           </span>
         </div>
-
-        {/* Filter chips */}
         <div className="flex rounded-lg border border-border bg-secondary/30 p-0.5">
           {FILTERS.map((f) => (
             <button
@@ -148,7 +163,7 @@ export function WinnerPodium() {
       {/* Slots */}
       {isLoading ? (
         <div className="space-y-2">
-          {Array.from({ length: 5 }).map((_, i) => (
+          {[0, 1, 2].map((i) => (
             <div key={i} className="h-[62px] animate-pulse rounded-xl bg-secondary/50" />
           ))}
         </div>
@@ -165,7 +180,7 @@ export function WinnerPodium() {
       {winners.length === 0 && !isLoading && (
         <p className="mt-3 text-center text-xs text-muted-foreground">
           {days === 0
-            ? 'Ningún producto ha superado el 90% del catálogo todavía — el podio se llena a medida que los productos suben'
+            ? 'Ningún producto ha superado el 90% del catálogo todavía'
             : `Ningún winner en los últimos ${days} días — prueba un período más amplio`}
         </p>
       )}

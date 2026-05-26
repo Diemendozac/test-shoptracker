@@ -80,7 +80,7 @@ export function WinnerPodiumOverview() {
         </span>
         {winners.length > 0 && (
           <span className="ml-1 rounded-full bg-yellow-400/20 px-1.5 py-0.5 text-[9px] font-bold text-yellow-600">
-            {winners.length}/5
+            {winners.length}/3
           </span>
         )}
         <span className="ml-auto text-[10px] text-muted-foreground/50">

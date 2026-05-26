@@ -107,6 +107,7 @@ export interface PodiumWinner {
   performanceLabel: string
   growthPct: number | null
   currentRank: number | null
+  storeProductCount: number | null
   dateReachedTop: string | null
   daysInTop: number
 }
