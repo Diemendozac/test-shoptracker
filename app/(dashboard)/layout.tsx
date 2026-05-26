@@ -44,7 +44,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           isHome ? 'pl-16' : 'pl-64',
         )}>
           <AppHeader />
-          <div ref={scrollRef} className="flex-1 overflow-auto">{children}</div>
+          <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden">{children}</div>
         </main>
       </div>
     </SidebarProvider>
