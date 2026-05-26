@@ -159,10 +159,10 @@ export default function HomePage() {
                       ? convertCurrency(product.productPrice, product.currency ?? 'USD', preferredCurrency)
                       : null
                     return (
-                      <div key={product.candidateId} className="flex items-center gap-4 px-4 py-3 transition-colors hover:bg-secondary/30">
-                        {/* Rank */}
+                      <div key={product.candidateId} className="flex h-[72px] items-center gap-3 overflow-hidden px-4 transition-colors hover:bg-secondary/30">
+                        {/* Rank — 32px */}
                         <span className={cn(
-                          'w-6 shrink-0 text-center text-xs font-bold tabular-nums',
+                          'w-8 shrink-0 text-center text-xs font-bold tabular-nums',
                           idx === 0 && 'text-yellow-500',
                           idx === 1 && 'text-slate-400',
                           idx === 2 && 'text-orange-500',
@@ -171,37 +171,37 @@ export default function HomePage() {
                           #{idx + 1}
                         </span>
 
-                        {/* Image */}
+                        {/* Image — 48px */}
                         {product.productImage ? (
-                          <img src={product.productImage} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover" />
+                          <img src={product.productImage} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" />
                         ) : (
-                          <div className="h-10 w-10 shrink-0 rounded-lg bg-secondary" />
+                          <div className="h-12 w-12 shrink-0 rounded-lg bg-secondary" />
                         )}
 
-                        {/* Info */}
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium text-foreground">{product.productTitle}</p>
+                        {/* Info — flex-1 */}
+                        <div className="min-w-0 flex-1 overflow-hidden">
+                          <p className="truncate whitespace-nowrap text-sm font-medium text-foreground">
+                            {product.productTitle}
+                          </p>
                           <div className="mt-0.5 flex items-center gap-2">
-                            <span className="rounded-md bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                            <span className="max-w-[120px] truncate rounded-md bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
                               {product.storeName}
                             </span>
                             {product.currentRank && (
-                              <span className="text-[10px] text-muted-foreground">#{product.currentRank}</span>
+                              <span className="shrink-0 text-[10px] text-muted-foreground">#{product.currentRank}</span>
                             )}
                           </div>
                         </div>
 
-                        {/* Score */}
-                        <div className="shrink-0">
+                        {/* Price — 100px */}
+                        <span className="w-[100px] shrink-0 text-right text-xs font-medium text-muted-foreground tabular-nums">
+                          {price != null ? `${sym}${price.toLocaleString('es-CO', { maximumFractionDigits: 0 })}` : ''}
+                        </span>
+
+                        {/* Score ring — 48px */}
+                        <div className="flex w-12 shrink-0 items-center justify-center">
                           <ScoreRing score={product.performanceScore} size="sm" showLabel={false} />
                         </div>
-
-                        {/* Price */}
-                        {price != null && (
-                          <span className="shrink-0 text-xs font-medium text-muted-foreground tabular-nums">
-                            {sym}{price.toLocaleString('es-CO', { maximumFractionDigits: 0 })}
-                          </span>
-                        )}
                       </div>
                     )
                   })}
@@ -228,11 +228,19 @@ export default function HomePage() {
                   <Link
                     key={i}
                     href={insight.ctaPath ?? '/dashboard'}
-                    className="flex items-start gap-3 rounded-xl border border-border bg-card px-4 py-3 transition-colors hover:bg-secondary/60"
+                    className="flex h-[72px] items-center gap-3 overflow-hidden rounded-xl border border-border bg-card px-4 transition-colors hover:bg-secondary/60"
                   >
-                    <span className="text-lg leading-none">{insight.emoji}</span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs text-foreground leading-relaxed">{insight.message}</p>
+                    <div className="min-w-0 flex-1 overflow-hidden">
+                      <p className="text-xs leading-snug text-foreground"
+                        style={{
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        {insight.message}
+                      </p>
                       <p className="mt-1 text-[10px] font-medium text-primary">{insight.cta} →</p>
                     </div>
                   </Link>
