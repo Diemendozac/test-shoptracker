@@ -107,7 +107,7 @@ function PendingRow({
       )}
 
       {/* info */}
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 overflow-hidden">
         {productUrl ? (
           <a
             href={productUrl}
