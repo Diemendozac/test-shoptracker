@@ -98,7 +98,7 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, pr
     let r = winners
     // Tab preset filters
     if (preset === 'rising')          r = r.filter(isRising)
-    if (preset === 'pago_anticipado') r = r.filter((w) => w.pagoAnticipado === true)
+    // pago_anticipado is filtered server-side via query param — no client filter needed
     if (preset === 'top_score')       r = [...r].sort((a, b) => b.performanceScore - a.performanceScore).slice(0, 20)
     if (preset === 'new')             r = r.filter((w) => w.daysElapsed <= 7)
     // Chip filters

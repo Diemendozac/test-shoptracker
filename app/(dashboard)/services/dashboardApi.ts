@@ -37,11 +37,11 @@ export const dashboardApi = createApi({
       providesTags: ['Winner'],
     }),
 
-    // GET /api/dashboard/pool/winners?page=&size=
-    getPoolWinners: builder.query<PoolWinnersResponse, { page?: number; size?: number }>({
-      query: ({ page = 0, size = 20 } = {}) => ({
+    // GET /api/dashboard/pool/winners?page=&size=&pagoAnticipado=
+    getPoolWinners: builder.query<PoolWinnersResponse, { page?: number; size?: number; pagoAnticipado?: boolean }>({
+      query: ({ page = 0, size = 20, pagoAnticipado } = {}) => ({
         url: '/pool/winners',
-        params: { page, size },
+        params: { page, size, ...(pagoAnticipado != null && { pagoAnticipado }) },
       }),
       providesTags: ['Pool'],
     }),

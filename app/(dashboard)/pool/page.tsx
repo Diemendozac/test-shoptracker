@@ -19,7 +19,11 @@ const TABS: { id: PoolPreset; label: string; icon: React.ElementType }[] = [
 export default function PoolPage() {
   const [page, setPage] = useState(0)
   const [preset, setPreset] = useState<PoolPreset>('all')
-  const { data, isLoading } = useGetPoolWinnersQuery({ page, size: 20 })
+  const { data, isLoading } = useGetPoolWinnersQuery({
+    page,
+    size: 20,
+    pagoAnticipado: preset === 'pago_anticipado' ? true : undefined,
+  })
 
   function handleTab(id: PoolPreset) {
     setPreset(id)
