@@ -28,6 +28,7 @@ export interface DashboardItem {
   storeName: string
   storeUrl?: string
   inactivityTier: 'ACTIVA' | 'MODERADA' | 'INACTIVA' | 'ZOMBIE' | null
+  lastScrapedAt?: string | null
   topCandidate: TopCandidate | null
 }
 

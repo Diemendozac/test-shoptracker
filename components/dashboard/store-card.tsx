@@ -61,14 +61,18 @@ function StoreFavicon({ url, name }: { url?: string; name: string }) {
   )
 }
 
-const TIER_STYLES = {
-  MODERADA: 'bg-orange-500/10 text-orange-600',
-  INACTIVA: 'bg-orange-500/10 text-orange-600',
-  ZOMBIE:   'bg-red-500/10 text-red-500',
-} as const
+function getDashboardStoreStatus(item: { lastScrapedAt?: string | null; inactivityTier: string | null }) {
+  const hoursAgo = item.lastScrapedAt
+    ? (Date.now() - new Date(item.lastScrapedAt).getTime()) / (1000 * 60 * 60)
+    : Infinity
+  if (hoursAgo < 24) return 'ACTIVA'
+  if (item.inactivityTier === 'ZOMBIE' || hoursAgo > 7 * 24) return 'ZOMBIE'
+  return 'INACTIVA'
+}
 
 export function StoreCard({ item }: StoreCardProps) {
-  const { storeId, storeName, storeUrl, topCandidate, inactivityTier } = item
+  const { storeId, storeName, storeUrl, topCandidate } = item
+  const status = getDashboardStoreStatus(item)
 
   return (
     <div className="group relative overflow-hidden rounded-xl border border-border bg-card transition-all duration-300 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5">
@@ -83,12 +87,12 @@ export function StoreCard({ item }: StoreCardProps) {
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-semibold text-foreground">{storeName}</h3>
-                {inactivityTier && inactivityTier !== 'ACTIVA' && (
+                {status !== 'ACTIVA' && (
                   <span className={cn(
                     'rounded-full px-1.5 py-0.5 text-[10px] font-medium',
-                    TIER_STYLES[inactivityTier],
+                    status === 'ZOMBIE' ? 'bg-red-500/10 text-red-500' : 'bg-orange-500/10 text-orange-600',
                   )}>
-                    {inactivityTier}
+                    {status}
                   </span>
                 )}
               </div>
