@@ -36,7 +36,7 @@ const features = [
   {
     icon: TrendingUp,
     title: 'Performance Scoring',
-    description: 'AI-calculated scores based on how products climb through best-seller rankings.',
+    description: 'AI-calculated scores based on how products climb through store rankings.',
   },
   {
     icon: Bell,
@@ -140,7 +140,7 @@ export default function LandingPage() {
             
             <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg text-muted-foreground md:text-xl">
               Automate competitive intelligence for Shopify stores. Detect new products, 
-              track their climb through best-seller rankings, and identify breakout winners 
+              track their climb through store rankings, and identify breakout winners
               before anyone else.
             </p>
 

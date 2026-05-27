@@ -22,7 +22,7 @@ import { ScoreRing } from '@/components/dashboard/score-ring'
 type SortKey =
   | 'productTitle' | 'storeName' | 'productPrice'
   | 'performanceScore' | 'growthPct'
-  | 'daysElapsed' | 'daysInBestseller' | 'createdAt'
+  | 'daysElapsed' | 'createdAt'
 type SortDir = 'asc' | 'desc'
 interface SortState { key: SortKey | null; dir: SortDir }
 interface TrackerTableProps { candidates: TrackerCandidate[]; windowDays?: number }

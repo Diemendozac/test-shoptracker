@@ -89,13 +89,13 @@ export function RaceTrack({ candidates, showTable, onToggleTable }: RaceTrackPro
               )}
               style={{ height: 52 }}
             >
-              {/* Left strip ── days in bestseller + store avatar + short title */}
+              {/* Left strip ── tracking days + store avatar + short title */}
               <div className="z-10 flex w-56 shrink-0 items-center gap-2 px-2">
                 <span
                   className="w-5 text-right text-xs font-bold tabular-nums text-muted-foreground"
-                  title={`${c.daysInBestseller ?? 0} días con mejora de rank`}
+                  title={`${c.daysElapsed ?? 0} días en seguimiento`}
                 >
-                  {String(c.daysInBestseller ?? 0).padStart(2, '0')}
+                  {String(c.daysElapsed ?? 0).padStart(2, '0')}
                 </span>
                 <div
                   className={cn(

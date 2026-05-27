@@ -97,7 +97,7 @@ export function StoreCard({ store, isSyncing, isDeleting, onSync, onDelete }: St
           )}
 
           <div className="flex items-center justify-between rounded-lg bg-secondary/50 px-3 py-2 text-sm">
-            <span className="text-muted-foreground">Bestseller path</span>
+            <span className="text-muted-foreground">URL de scraping</span>
             <span className="truncate pl-2 font-mono text-xs text-foreground">
               {store.bestsellerPath ? store.bestsellerPath.slice(0, 25) + '...' : '—'}
             </span>

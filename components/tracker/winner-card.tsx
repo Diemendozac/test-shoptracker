@@ -118,7 +118,7 @@ export function WinnerCard({ winner, runnersUp }: WinnerCardProps) {
               {winner.productTitle}
             </h3>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Rank #{winner.currentRank ?? '—'} · Día {winner.daysElapsed} · {winner.daysInBestseller}d en bestseller
+              Rank #{winner.currentRank ?? '—'} · Día {winner.daysElapsed}
             </p>
 
             <div className="mt-2 flex flex-wrap items-center gap-2">

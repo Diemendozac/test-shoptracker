@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { Crown, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { topTierLabel } from '@/lib/top-tier'
 import type { TrackerCandidate } from '@/app/(dashboard)/types'
 
 interface ShootingStarsProps {
@@ -115,11 +116,10 @@ export function ShootingStars({ candidates }: ShootingStarsProps) {
                   <GrowthChip value={c.growthPct} />
                 </div>
 
-                {c.daysInBestseller > 0 && (
-                  <p className="text-[10px] text-muted-foreground">
-                    {c.daysInBestseller}d en bestseller
-                  </p>
-                )}
+                {(() => {
+                  const tier = topTierLabel(c.rankHistory, c.storeProductCount, c.daysElapsed)
+                  return tier ? <p className="text-[10px] text-muted-foreground">{tier}</p> : null
+                })()}
               </div>
             </Link>
           )

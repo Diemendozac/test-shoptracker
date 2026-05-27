@@ -503,7 +503,7 @@ function CandidateDetailContent() {
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h3 className="font-semibold text-foreground">Rank Progression</h3>
-              <p className="text-sm text-muted-foreground">Position in bestseller list over time</p>
+              <p className="text-sm text-muted-foreground">Posición en el ranking a lo largo del tiempo</p>
             </div>
             <div className="flex items-center gap-2 text-sm">
               <span className="text-muted-foreground">Entry:</span>

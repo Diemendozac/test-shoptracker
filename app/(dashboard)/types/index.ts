@@ -42,6 +42,7 @@ export interface TrackerCandidate {
   performanceLabel: PerformanceLabel
   growthPct: number | null
   daysInBestseller: number
+  storeProductCount?: number | null
   signalConfidence: number
   cyclePhase: string | null
   scoreHistory?: number[]
