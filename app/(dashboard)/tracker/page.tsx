@@ -3,14 +3,11 @@
 import { useState } from 'react'
 import { PageLayout } from '@/components/layout/page-layout'
 import { TrackerTable } from '@/components/tracker/tracker-table'
-import { WinnerCard } from '@/components/tracker/winner-card'
+import { HeroSignalCard } from '@/components/tracker/hero-signal-card'
 import { ShootingStars } from '@/components/tracker/shooting-stars'
-import { useGetWeeklyWinnerQuery, useGetWindowCandidatesQuery } from '../services/dashboardApi'
-import type { PerformanceLabel } from '@/lib/types'
+import { useGetWindowCandidatesQuery } from '../services/dashboardApi'
 import type { TrackerCandidate } from '../types'
 import { cn } from '@/lib/utils'
-import { Filter, SortAsc, Search } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { useDashboard } from '../hooks/useDashboard'
 import { KpiCards } from '@/components/tracker/kpi-cards'
 
@@ -21,35 +18,14 @@ const WINDOW_OPTIONS = [
   { label: '30d',   days: 30 },
 ] as const
 
-const statusFilters: { label: string; value: PerformanceLabel | 'all' }[] = [
-  { label: 'All', value: 'all' },
-  { label: 'Rising', value: 'Rising' },
-  { label: 'Watching', value: 'Watching' },
-  { label: 'Stable', value: 'Stable' },
-  { label: 'Declining', value: 'Declining' },
-]
-
 export default function TrackerPage() {
   const [windowDays, setWindowDays] = useState(0)
 
   const {
-    trackerFilter,
-    searchQuery,
     allCandidates,
     filteredCandidates,
     isTrackerLoading,
-    setFilter,
-    setSearch,
-    selectedStoreId,
-    overviewItems,
   } = useDashboard()
-
-  const winnerStoreId = selectedStoreId ?? overviewItems[0]?.storeId ?? null
-
-  const { data: winnerData } = useGetWeeklyWinnerQuery(
-    { storeId: winnerStoreId! },
-    { skip: !winnerStoreId }
-  )
 
   const { data: windowData, isFetching: isWindowFetching } = useGetWindowCandidatesQuery(
     { days: windowDays },
@@ -75,10 +51,8 @@ export default function TrackerPage() {
 
   return (
     <PageLayout>
-      {/* Winner banner — per-store */}
-      {winnerData?.winner && (
-        <WinnerCard winner={winnerData.winner} runnersUp={winnerData.runnersUp} />
-      )}
+      {/* Hero signal — best candidate across all tracked products */}
+      {!isTrackerLoading && <HeroSignalCard candidates={allCandidates} />}
 
       {/* Window selector */}
       <div className="mb-4 flex items-center gap-2">
