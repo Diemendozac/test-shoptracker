@@ -53,14 +53,17 @@ export function KpiCards({ candidates }: KpiCardsProps) {
     .filter(({ delta }) => delta != null && delta > 0)
     .sort((a, b) => b.delta! - a.delta!)[0] ?? null
 
-  // ── Salud del pool ────────────────────────────────────────────────────────
+  // ── Salud del seguimiento ─────────────────────────────────────────────────
   const total = candidates.length
 
   const buckets = { Rocket: 0, Rising: 0, Steady: 0, Watching: 0 }
   for (const c of candidates) buckets[getBucket(c)]++
 
-  const winnersCount = buckets.Rocket + buckets.Rising
-  const healthPct = total > 0 ? Math.round((winnersCount / total) * 100) : 0
+  const signalCount   = buckets.Rocket + buckets.Rising
+  const signalPct     = total > 0 ? Math.round((signalCount   / total) * 100) : 0
+
+  const growingCount  = candidates.filter(c => (c.growthPct ?? 0) > 0).length
+  const growingPct    = total > 0 ? Math.round((growingCount  / total) * 100) : 0
 
   // ── Row 2 stats ───────────────────────────────────────────────────────────
   const newDespegando = candidates.filter(
@@ -123,38 +126,40 @@ export function KpiCards({ candidates }: KpiCardsProps) {
           )}
         </div>
 
-        {/* Salud del pool */}
+        {/* Salud del seguimiento */}
         <div className="rounded-xl border border-border bg-card px-4 py-4">
           <div className="mb-3 flex items-center justify-between">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Salud del pool
+              Salud del seguimiento
             </p>
-            <span className="text-sm font-bold tabular-nums text-foreground">
-              {winnersCount}
-              <span className="ml-1 text-[10px] font-normal text-muted-foreground">
-                / {total} ganadores ({healthPct}%)
-              </span>
-            </span>
+            <div className="space-y-0.5 text-right">
+              <p className={`text-xs tabular-nums font-medium ${signalPct > 0 ? 'text-emerald-500' : 'text-muted-foreground'}`}>
+                {signalCount} de {total} con señal positiva ({signalPct}%)
+              </p>
+              <p className="text-xs tabular-nums text-muted-foreground">
+                {growingCount} de {total} en crecimiento ({growingPct}%)
+              </p>
+            </div>
           </div>
 
           {total > 0 ? (
             <div className="space-y-2">
-              {(Object.entries(buckets) as [string, number][])
-                .filter(([, count]) => count > 0)
-                .map(([label, count]) => (
+              {(['Rocket', 'Rising', 'Steady', 'Watching'] as const)
+                .filter(label => buckets[label] > 0)
+                .map(label => (
                   <div key={label} className="flex items-center gap-2">
                     <span className="w-16 shrink-0 text-[10px] text-muted-foreground">{label}</span>
                     <div className="flex-1 overflow-hidden rounded-full bg-secondary">
                       <div
                         className="h-1.5 rounded-full transition-all duration-500"
                         style={{
-                          width: `${Math.max(2, Math.round((count / total) * 100))}%`,
+                          width: `${Math.round((buckets[label] / total) * 100)}%`,
                           backgroundColor: BUCKET_COLORS[label],
                         }}
                       />
                     </div>
                     <span className="w-5 shrink-0 text-right text-[10px] tabular-nums text-muted-foreground">
-                      {count}
+                      {buckets[label]}
                     </span>
                   </div>
                 ))
