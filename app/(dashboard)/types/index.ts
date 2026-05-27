@@ -46,6 +46,7 @@ export interface TrackerCandidate {
   cyclePhase: string | null
   scoreHistory?: number[]
   growthHistory?: number[]
+  rankHistory?: number[]
 }
 
 export interface WindowCandidate {
