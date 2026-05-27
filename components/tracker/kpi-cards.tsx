@@ -24,17 +24,22 @@ function getRankDelta(c: TrackerCandidate): number | null {
 
 // ── label buckets ─────────────────────────────────────────────────────────────
 
-const BUCKET_COLORS: Record<string, string> = {
+const BUCKET_ORDER = ['Rocket', 'Rising', 'Steady', 'Watching', 'Declining'] as const
+type Bucket = typeof BUCKET_ORDER[number]
+
+const BUCKET_COLORS: Record<Bucket, string> = {
   Rocket:   '#085041',
   Rising:   '#1D9E75',
   Steady:   '#BA7517',
-  Watching: '#8b8b8b',
+  Watching: '#D3D1C7',
+  Declining:'#E24B4A',
 }
 
-function getBucket(c: TrackerCandidate): 'Rocket' | 'Rising' | 'Steady' | 'Watching' {
-  if ((c.performanceScore ?? 0) >= 70) return 'Rocket'
-  if (c.performanceLabel === 'Rising')  return 'Rising'
-  if (c.performanceLabel === 'Stable')  return 'Steady'
+function getBucket(c: TrackerCandidate): Bucket {
+  if ((c.performanceScore ?? 0) >= 70)      return 'Rocket'
+  if (c.performanceLabel === 'Rising')       return 'Rising'
+  if (c.performanceLabel === 'Stable')       return 'Steady'
+  if (c.performanceLabel === 'Declining')    return 'Declining'
   return 'Watching'
 }
 
@@ -56,7 +61,7 @@ export function KpiCards({ candidates }: KpiCardsProps) {
   // ── Salud del seguimiento ─────────────────────────────────────────────────
   const total = candidates.length
 
-  const buckets = { Rocket: 0, Rising: 0, Steady: 0, Watching: 0 }
+  const buckets: Record<Bucket, number> = { Rocket: 0, Rising: 0, Steady: 0, Watching: 0, Declining: 0 }
   for (const c of candidates) buckets[getBucket(c)]++
 
   const signalCount   = buckets.Rocket + buckets.Rising
@@ -70,9 +75,7 @@ export function KpiCards({ candidates }: KpiCardsProps) {
     c => c.daysElapsed <= 7 && (c.growthPct ?? 0) > 20
   ).length
 
-  const avgDays = total > 0
-    ? Math.round(candidates.reduce((s, c) => s + c.daysElapsed, 0) / total)
-    : 0
+  const growingCardColor = growingPct >= 50 ? '#1D9E75' : growingPct >= 25 ? '#BA7517' : undefined
 
   const activeStores = stores.filter(s => getStoreStatus(s) === 'ACTIVA').length
 
@@ -143,27 +146,31 @@ export function KpiCards({ candidates }: KpiCardsProps) {
           </div>
 
           {total > 0 ? (
-            <div className="space-y-2">
-              {(['Rocket', 'Rising', 'Steady', 'Watching'] as const)
-                .filter(label => buckets[label] > 0)
-                .map(label => (
+            <div className="space-y-1.5">
+              {BUCKET_ORDER.map(label => {
+                const count = buckets[label]
+                const pct   = Math.round((count / total) * 100)
+                return (
                   <div key={label} className="flex items-center gap-2">
                     <span className="w-16 shrink-0 text-[10px] text-muted-foreground">{label}</span>
-                    <div className="flex-1 overflow-hidden rounded-full bg-secondary">
+                    <div className="flex-1 overflow-hidden rounded-full bg-secondary" style={{ height: 6 }}>
                       <div
-                        className="h-1.5 rounded-full transition-all duration-500"
+                        className="h-full rounded-full transition-all duration-500"
                         style={{
-                          width: `${Math.round((buckets[label] / total) * 100)}%`,
+                          width: count > 0 ? `${pct}%` : '0%',
                           backgroundColor: BUCKET_COLORS[label],
                         }}
                       />
                     </div>
-                    <span className="w-5 shrink-0 text-right text-[10px] tabular-nums text-muted-foreground">
-                      {buckets[label]}
+                    <span className="w-7 shrink-0 text-right text-[10px] tabular-nums text-muted-foreground">
+                      {count}
+                    </span>
+                    <span className="w-6 shrink-0 text-right text-[10px] tabular-nums text-muted-foreground/60">
+                      {pct}%
                     </span>
                   </div>
-                ))
-              }
+                )
+              })}
             </div>
           ) : (
             <p className="text-xs text-muted-foreground">Sin candidatos activos</p>
@@ -173,20 +180,38 @@ export function KpiCards({ candidates }: KpiCardsProps) {
 
       {/* ── Row 2 ───────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-4 gap-3">
-        {([
-          { label: 'Nuevos despegando',       value: newDespegando, sub: '≤7 días & >20% growth' },
-          { label: 'Días prom. seguimiento',  value: avgDays,       sub: 'promedio activos' },
-          { label: 'Tiendas activas',          value: activeStores,  sub: 'sync < 24 h' },
-          { label: 'Productos esta semana',    value: newThisWeek,   sub: 'detectados 7 días' },
-        ] as const).map(({ label, value, sub }) => (
-          <div key={label} className="rounded-xl border border-border bg-card px-4 py-4">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              {label}
-            </p>
-            <p className="mt-1 text-2xl font-black tabular-nums text-foreground">{value}</p>
-            <p className="mt-0.5 text-[10px] text-muted-foreground">{sub}</p>
-          </div>
-        ))}
+        {/* Nuevos despegando */}
+        <div className="rounded-xl border border-border bg-card px-4 py-4">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Nuevos despegando</p>
+          <p className="mt-1 text-2xl font-black tabular-nums text-foreground">{newDespegando}</p>
+          <p className="mt-0.5 text-[10px] text-muted-foreground">≤7 días &amp; &gt;20% growth</p>
+        </div>
+
+        {/* En crecimiento */}
+        <div className="rounded-xl border border-border bg-card px-4 py-4">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">En crecimiento</p>
+          <p
+            className="mt-1 text-2xl font-black tabular-nums"
+            style={{ color: growingCardColor ?? 'var(--foreground)' }}
+          >
+            {growingPct}%
+          </p>
+          <p className="mt-0.5 text-[10px] text-muted-foreground">con growthPct &gt; 0%</p>
+        </div>
+
+        {/* Tiendas activas */}
+        <div className="rounded-xl border border-border bg-card px-4 py-4">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Tiendas activas</p>
+          <p className="mt-1 text-2xl font-black tabular-nums text-foreground">{activeStores}</p>
+          <p className="mt-0.5 text-[10px] text-muted-foreground">sync &lt; 24 h</p>
+        </div>
+
+        {/* Productos esta semana */}
+        <div className="rounded-xl border border-border bg-card px-4 py-4">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Productos esta semana</p>
+          <p className="mt-1 text-2xl font-black tabular-nums text-foreground">{newThisWeek}</p>
+          <p className="mt-0.5 text-[10px] text-muted-foreground">detectados 7 días</p>
+        </div>
       </div>
 
     </div>
