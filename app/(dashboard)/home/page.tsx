@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -11,8 +11,14 @@ import { ScoreRing } from '@/components/dashboard/score-ring'
 import { PerformanceBadge } from '@/components/dashboard/performance-badge'
 import {
   Search, TrendingUp, Store, Target, Zap,
-  ArrowRight, Flame, BarChart3, Globe, FlaskConical, Clock,
+  ArrowRight, Flame, BarChart3, Globe, FlaskConical, Clock, Package,
 } from 'lucide-react'
+
+// ─── Search result types ──────────────────────────────────────────────────────
+
+type SearchResult =
+  | { type: 'store';   storeId: string; storeName: string; href: string }
+  | { type: 'product'; candidateId: string; productTitle: string; storeName: string; productImage: string | null; storeId: string; href: string }
 
 // ─── Quick actions ────────────────────────────────────────────────────────────
 
@@ -30,7 +36,10 @@ export default function HomePage() {
   const { currency: preferredCurrency } = useCurrency()
   const sym = currencySymbol(preferredCurrency)
 
-  const [query, setQuery] = useState('')
+  const [query, setQuery]       = useState('')
+  const [open, setOpen]         = useState(false)
+  const [activeIdx, setActiveIdx] = useState(-1)
+  const wrapperRef              = useRef<HTMLDivElement>(null)
 
   const { data: overview = [] } = useGetStoreOverviewQuery()
   const { data: tracker = [] } = useGetTrackerCandidatesQuery()
@@ -42,9 +51,68 @@ export default function HomePage() {
   const trackingCount = tracker.length
   const risingCount = tracker.filter(c => (c.growthPct ?? 0) > 10).length
 
+  // ── Autocomplete suggestions ────────────────────────────────────────────────
+  const suggestions = useMemo((): SearchResult[] => {
+    const q = query.toLowerCase().trim()
+    if (!q) return []
+
+    const storeResults: SearchResult[] = overview
+      .filter(s => s.storeName.toLowerCase().includes(q))
+      .slice(0, 3)
+      .map(s => ({ type: 'store', storeId: s.storeId, storeName: s.storeName, href: `/stores/${s.storeId}` }))
+
+    const productResults: SearchResult[] = tracker
+      .filter(c => c.productTitle.toLowerCase().includes(q) || c.storeName.toLowerCase().includes(q))
+      .slice(0, 5)
+      .map(c => ({
+        type: 'product',
+        candidateId: c.candidateId,
+        productTitle: c.productTitle,
+        storeName:    c.storeName,
+        productImage: c.productImage,
+        storeId:      c.storeId,
+        href:         `/tracker/${c.candidateId}?storeId=${c.storeId}&from=home`,
+      }))
+
+    return [...storeResults, ...productResults].slice(0, 7)
+  }, [query, overview, tracker])
+
+  // Close on outside click
+  useEffect(() => {
+    function onPointerDown(e: PointerEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setOpen(false)
+        setActiveIdx(-1)
+      }
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    return () => document.removeEventListener('pointerdown', onPointerDown)
+  }, [])
+
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()
-    if (query.trim()) router.push(`/stores?q=${encodeURIComponent(query.trim())}`)
+    if (activeIdx >= 0 && suggestions[activeIdx]) {
+      router.push(suggestions[activeIdx].href)
+      setOpen(false)
+    } else if (query.trim()) {
+      router.push(`/stores?q=${encodeURIComponent(query.trim())}`)
+      setOpen(false)
+    }
+    setActiveIdx(-1)
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (!open || suggestions.length === 0) return
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setActiveIdx(i => Math.min(i + 1, suggestions.length - 1))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setActiveIdx(i => Math.max(i - 1, -1))
+    } else if (e.key === 'Escape') {
+      setOpen(false)
+      setActiveIdx(-1)
+    }
   }
 
   return (
@@ -69,24 +137,85 @@ export default function HomePage() {
             Detecta productos en tendencia antes que tu competencia. <span className="text-primary font-medium">{activeStores} tiendas</span> monitoreadas en tiempo real.
           </p>
 
-          {/* Search bar */}
-          <form onSubmit={handleSearch} className="relative">
-            <div className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3.5 shadow-sm ring-1 ring-transparent transition-all focus-within:border-primary focus-within:ring-primary/20">
-              <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <input
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                placeholder="Busca una tienda o producto a rastrear…"
-                className="flex-1 bg-transparent text-sm text-foreground placeholder-muted-foreground outline-none"
-              />
-              <button
-                type="submit"
-                className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-opacity hover:opacity-90"
-              >
-                <ArrowRight className="h-4 w-4" />
-              </button>
-            </div>
-          </form>
+          {/* Search bar + autocomplete */}
+          <div ref={wrapperRef} className="relative">
+            <form onSubmit={handleSearch}>
+              <div className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3.5 shadow-sm ring-1 ring-transparent transition-all focus-within:border-primary focus-within:ring-primary/20">
+                <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <input
+                  value={query}
+                  onChange={e => { setQuery(e.target.value); setOpen(true); setActiveIdx(-1) }}
+                  onFocus={() => setOpen(true)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Busca una tienda o producto a rastrear…"
+                  className="flex-1 bg-transparent text-sm text-foreground placeholder-muted-foreground outline-none"
+                  autoComplete="off"
+                />
+                <button
+                  type="submit"
+                  className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-opacity hover:opacity-90"
+                >
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
+            </form>
+
+            {/* Dropdown */}
+            {open && suggestions.length > 0 && (
+              <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 overflow-hidden rounded-2xl border border-border bg-card shadow-xl">
+                {suggestions.map((r, i) => (
+                  <Link
+                    key={r.type === 'store' ? r.storeId : r.candidateId}
+                    href={r.href}
+                    onPointerDown={e => e.preventDefault()}
+                    onClick={() => { setOpen(false); setQuery(''); setActiveIdx(-1) }}
+                    className={cn(
+                      'flex items-center gap-3 px-4 py-3 text-left transition-colors',
+                      i < suggestions.length - 1 && 'border-b border-border/50',
+                      activeIdx === i ? 'bg-secondary' : 'hover:bg-secondary/60',
+                    )}
+                  >
+                    {/* Icon / thumbnail */}
+                    {r.type === 'store' ? (
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-500/10 text-violet-600">
+                        <Store className="h-4 w-4" />
+                      </div>
+                    ) : r.productImage ? (
+                      <img
+                        src={`/api/image-proxy?url=${encodeURIComponent(r.productImage)}`}
+                        alt=""
+                        className="h-9 w-9 shrink-0 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
+                        <Package className="h-4 w-4" />
+                      </div>
+                    )}
+
+                    {/* Text */}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-foreground">
+                        {r.type === 'store' ? r.storeName : r.productTitle}
+                      </p>
+                      <p className="truncate text-[11px] text-muted-foreground">
+                        {r.type === 'store' ? 'Tienda' : r.storeName}
+                      </p>
+                    </div>
+
+                    {/* Badge */}
+                    <span className={cn(
+                      'shrink-0 rounded-md px-2 py-0.5 text-[10px] font-medium',
+                      r.type === 'store'
+                        ? 'bg-violet-500/10 text-violet-600'
+                        : 'bg-emerald-500/10 text-emerald-600',
+                    )}>
+                      {r.type === 'store' ? 'Tienda' : 'Producto'}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
