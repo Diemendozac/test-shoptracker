@@ -42,7 +42,7 @@ export default function HomePage() {
   const wrapperRef              = useRef<HTMLDivElement>(null)
 
   const { data: overview = [] } = useGetStoreOverviewQuery()
-  const { data: tracker = [] } = useGetTrackerCandidatesQuery()
+  const { data: tracker = [] } = useGetTrackerCandidatesQuery({})
   const { data: poolData } = useGetPoolWinnersQuery({ page: 0, size: 10 })
   const { data: insights = [] } = useGetInsightsQuery()
 
