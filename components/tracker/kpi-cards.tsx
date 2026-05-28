@@ -139,18 +139,10 @@ export function KpiCards({ candidates }: KpiCardsProps) {
 
         {/* Salud del seguimiento */}
         <div className="rounded-xl border border-border bg-card px-4 py-4">
-          <div className="mb-3 flex items-center justify-between">
+          <div className="mb-3">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               Salud del seguimiento
             </p>
-            <div className="space-y-0.5 text-right">
-              <p className={`text-xs tabular-nums font-medium ${signalPct > 0 ? 'text-emerald-500' : 'text-muted-foreground'}`}>
-                {signalCount} de {total} con señal positiva ({signalPct}%)
-              </p>
-              <p className="text-xs tabular-nums text-muted-foreground">
-                {growingCount} de {total} en crecimiento ({growingPct}%)
-              </p>
-            </div>
           </div>
 
           {total > 0 ? (
