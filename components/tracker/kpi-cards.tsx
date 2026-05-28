@@ -36,10 +36,10 @@ const BUCKET_COLORS: Record<Bucket, string> = {
 }
 
 function getBucket(c: TrackerCandidate): Bucket {
-  if ((c.performanceScore ?? 0) >= 70)      return 'Rocket'
-  if (c.performanceLabel === 'Rising')       return 'Rising'
-  if (c.performanceLabel === 'Stable')       return 'Steady'
-  if (c.performanceLabel === 'Declining')    return 'Declining'
+  if ((c.performanceScore ?? 0) >= 70 || (c.performanceLabel as string) === 'Rocket') return 'Rocket'
+  if (c.performanceLabel === 'Rising')                                                  return 'Rising'
+  if (c.performanceLabel === 'Stable' || (c.performanceLabel as string) === 'Steady')  return 'Steady'
+  if (c.performanceLabel === 'Declining')                                               return 'Declining'
   return 'Watching'
 }
 
