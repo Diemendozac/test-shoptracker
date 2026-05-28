@@ -61,7 +61,28 @@ export default function HomePage() {
       .slice(0, 3)
       .map(s => ({ type: 'store', storeId: s.storeId, storeName: s.storeName, href: `/stores/${s.storeId}` }))
 
-    const productResults: SearchResult[] = tracker
+    const poolProducts = topProducts.map(p => ({
+      candidateId: p.candidateId,
+      productTitle: p.productTitle,
+      storeName:    p.storeName,
+      productImage: p.productImage,
+      storeId:      p.storeId,
+    }))
+    const trackerProducts = tracker.map(c => ({
+      candidateId: c.candidateId,
+      productTitle: c.productTitle,
+      storeName:    c.storeName,
+      productImage: c.productImage,
+      storeId:      c.storeId,
+    }))
+    const seen = new Set<string>()
+    const allProducts = [...trackerProducts, ...poolProducts].filter(p => {
+      if (seen.has(p.candidateId)) return false
+      seen.add(p.candidateId)
+      return true
+    })
+
+    const productResults: SearchResult[] = allProducts
       .filter(c => c.productTitle.toLowerCase().includes(q))
       .slice(0, 6)
       .map(c => ({
@@ -75,7 +96,7 @@ export default function HomePage() {
       }))
 
     return [...storeResults, ...productResults].slice(0, 8)
-  }, [query, overview, tracker])
+  }, [query, overview, tracker, topProducts])
 
   // Close on outside click
   useEffect(() => {
