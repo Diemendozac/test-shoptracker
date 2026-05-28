@@ -61,9 +61,31 @@ export default function HomePage() {
       .slice(0, 3)
       .map(s => ({ type: 'store', storeId: s.storeId, storeName: s.storeName, href: `/stores/${s.storeId}` }))
 
-    const productResults: SearchResult[] = tracker
-      .filter(c => c.productTitle.toLowerCase().includes(q) || c.storeName.toLowerCase().includes(q))
-      .slice(0, 5)
+    // Merge tracker + pool into one deduplicated product set
+    const poolProducts = topProducts.map(p => ({
+      candidateId: p.candidateId,
+      productTitle: p.productTitle,
+      storeName:    p.storeName,
+      productImage: p.productImage,
+      storeId:      p.storeId,
+    }))
+    const trackerProducts = tracker.map(c => ({
+      candidateId: c.candidateId,
+      productTitle: c.productTitle,
+      storeName:    c.storeName,
+      productImage: c.productImage,
+      storeId:      c.storeId,
+    }))
+    const seen = new Set<string>()
+    const allProducts = [...trackerProducts, ...poolProducts].filter(p => {
+      if (seen.has(p.candidateId)) return false
+      seen.add(p.candidateId)
+      return true
+    })
+
+    const productResults: SearchResult[] = allProducts
+      .filter(c => c.productTitle.toLowerCase().includes(q))
+      .slice(0, 6)
       .map(c => ({
         type: 'product',
         candidateId: c.candidateId,
@@ -74,8 +96,8 @@ export default function HomePage() {
         href:         `/tracker/${c.candidateId}?storeId=${c.storeId}&from=home`,
       }))
 
-    return [...storeResults, ...productResults].slice(0, 7)
-  }, [query, overview, tracker])
+    return [...storeResults, ...productResults].slice(0, 8)
+  }, [query, overview, tracker, topProducts])
 
   // Close on outside click
   useEffect(() => {
@@ -118,9 +140,11 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
       {/* ── Hero ────────────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden border-b border-border bg-gradient-to-br from-primary/5 via-background to-background px-6 pb-10 pt-14">
-        {/* background glow */}
-        <div className="pointer-events-none absolute -top-32 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
+      <div className="relative border-b border-border bg-gradient-to-br from-primary/5 via-background to-background px-6 pb-10 pt-14">
+        {/* background glow — clipped locally so dropdown isn't cut off */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute -top-32 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
+        </div>
 
         <div className="relative mx-auto max-w-2xl text-center">
           <div className="mb-3 flex items-center justify-center gap-2">
