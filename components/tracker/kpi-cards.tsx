@@ -36,10 +36,18 @@ const BUCKET_COLORS: Record<Bucket, string> = {
 }
 
 function getBucket(c: TrackerCandidate): Bucket {
-  if ((c.performanceScore ?? 0) >= 70 || (c.performanceLabel as string) === 'Rocket') return 'Rocket'
-  if (c.performanceLabel === 'Rising')                                                  return 'Rising'
-  if (c.performanceLabel === 'Stable' || (c.performanceLabel as string) === 'Steady')  return 'Steady'
-  if (c.performanceLabel === 'Declining')                                               return 'Declining'
+  const score = c.performanceScore ?? 0
+  const label = c.performanceLabel as string
+
+  if (score >= 70 || label === 'Rocket')                        return 'Rocket'
+  if (label === 'Rising')                                        return 'Rising'
+  if (label === 'Stable' || label === 'Steady')                 return 'Steady'
+  if (label === 'Declining')                                     return 'Declining'
+
+  // Fallback for stale ScoreSummary: use growthPct as early signal
+  const gp = c.growthPct ?? 0
+  if (gp >= 50 && c.daysElapsed >= 2) return 'Rising'
+  if (gp >= 10 && c.daysElapsed >= 2) return 'Steady'
   return 'Watching'
 }
 
