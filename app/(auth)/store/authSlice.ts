@@ -17,12 +17,19 @@ const getInitialToken = (): string | null => {
 
 const getInitialUser = (): AuthUser | null => {
   if (typeof window === 'undefined') return null
+  // Prefer persisted user object
   try {
     const raw = localStorage.getItem('auth_user')
-    return raw ? JSON.parse(raw) : null
-  } catch {
-    return null
-  }
+    if (raw) return JSON.parse(raw)
+  } catch { /* ignore */ }
+  // Fallback: decode JWT payload (email = sub, id = userId claim)
+  const token = localStorage.getItem('auth_token')
+  if (!token) return null
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    if (payload?.sub) return { id: payload.userId ?? '', email: payload.sub }
+  } catch { /* ignore */ }
+  return null
 }
 
 const initialState: AuthState = {
