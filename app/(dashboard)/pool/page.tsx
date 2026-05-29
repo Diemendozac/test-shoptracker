@@ -2,31 +2,40 @@
 
 import { useState } from 'react'
 import { PoolWinnersSection } from '@/components/tracker/pool-winners'
+import type { PagoFilter } from '@/components/tracker/pool-winners'
 import { useGetPoolWinnersQuery } from '@/app/(dashboard)/services/dashboardApi'
 import { cn } from '@/lib/utils'
-import { LayoutGrid, TrendingUp, CreditCard, Star, Flame } from 'lucide-react'
+import { LayoutGrid, TrendingUp, Star, Flame } from 'lucide-react'
 
-export type PoolPreset = 'all' | 'rising' | 'pago_anticipado' | 'top_score' | 'new'
+export type PoolPreset = 'all' | 'rising' | 'top_score' | 'new'
 
 const TABS: { id: PoolPreset; label: string; icon: React.ElementType }[] = [
-  { id: 'all',            label: 'Todos los productos',  icon: LayoutGrid  },
-  { id: 'rising',         label: 'En alza',              icon: Flame       },
-  { id: 'pago_anticipado',label: 'Pago anticipado',      icon: CreditCard  },
-  { id: 'top_score',      label: 'Top score',            icon: Star        },
-  { id: 'new',            label: 'Nuevos esta semana',   icon: TrendingUp  },
+  { id: 'all',       label: 'Todos los productos', icon: LayoutGrid },
+  { id: 'rising',    label: 'En alza',             icon: Flame      },
+  { id: 'top_score', label: 'Top score',           icon: Star       },
+  { id: 'new',       label: 'Nuevos esta semana',  icon: TrendingUp },
 ]
 
 export default function PoolPage() {
   const [page, setPage] = useState(0)
   const [preset, setPreset] = useState<PoolPreset>('all')
+  const [pagoFilter, setPagoFilter] = useState<PagoFilter>('all')
+
   const { data, isLoading } = useGetPoolWinnersQuery({
     page,
     size: 20,
-    pagoAnticipado: preset === 'pago_anticipado' ? true : undefined,
+    pagoAnticipado: pagoFilter === 'anticipado' ? true
+      : pagoFilter === 'contraentrega' ? false
+      : undefined,
   })
 
   function handleTab(id: PoolPreset) {
     setPreset(id)
+    setPage(0)
+  }
+
+  function handlePagoFilter(f: PagoFilter) {
+    setPagoFilter(f)
     setPage(0)
   }
 
@@ -61,6 +70,8 @@ export default function PoolPage() {
           page={page}
           onPageChange={setPage}
           preset={preset}
+          pagoFilter={pagoFilter}
+          onPagoFilterChange={handlePagoFilter}
         />
       </div>
     </div>

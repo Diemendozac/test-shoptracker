@@ -54,20 +54,26 @@ function SortIcon({ column, sort }: { column: PoolSortKey; sort: SortState }) {
     : <ArrowDown className="h-3 w-3 text-primary" />
 }
 
+export type PagoFilter = 'all' | 'anticipado' | 'contraentrega'
+
 interface PoolWinnersSectionProps {
   data: PoolWinnersResponse | undefined
   isLoading?: boolean
   page?: number
   onPageChange?: (page: number) => void
   preset?: PoolPreset
+  pagoFilter?: PagoFilter
+  onPagoFilterChange?: (f: PagoFilter) => void
 }
 
-export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, preset = 'all' }: PoolWinnersSectionProps) {
+export function PoolWinnersSection({
+  data, isLoading, page = 0, onPageChange, preset = 'all',
+  pagoFilter = 'all', onPagoFilterChange,
+}: PoolWinnersSectionProps) {
   const { currency: preferredCurrency } = useCurrency()
   const [nicheFilter, setNicheFilter] = useState<Set<string>>(new Set())
   const [currencyFilter, setCurrencyFilter] = useState<Set<string>>(new Set())
   const [dateFilter, setDateFilter] = useState<7 | 15 | 30 | 0>(0)
-  const [pagoFilter, setPagoFilter] = useState<'all' | 'anticipado' | 'contraentrega'>('all')
   const [sort, setSort] = useState<SortState>({ key: 'performanceScore', dir: 'desc' })
 
   function toggleSet(prev: Set<string>, value: string): Set<string> {
@@ -125,6 +131,8 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, pr
   }, [winners, preset, dateFilter, nicheFilter, currencyFilter, sort])
 
   const hasActiveFilters = nicheFilter.size > 0 || currencyFilter.size > 0 || dateFilter > 0 || pagoFilter !== 'all'
+
+  function setPagoFilter(f: PagoFilter) { onPagoFilterChange?.(f) }
 
   if (isLoading) {
     return (
@@ -275,7 +283,7 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, pr
           </span>
           {hasActiveFilters && (
             <button
-              onClick={() => { setNicheFilter(new Set()); setCurrencyFilter(new Set()); setDateFilter(0); setPagoFilter('all') }}
+              onClick={() => { setNicheFilter(new Set()); setCurrencyFilter(new Set()); setDateFilter(0); onPagoFilterChange?.('all') }}
               className="text-[10px] text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
             >
               Limpiar
