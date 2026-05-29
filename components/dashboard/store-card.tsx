@@ -73,7 +73,7 @@ function getDashboardStoreStatus(item: { lastScrapedAt?: string | null; inactivi
 }
 
 export function StoreCard({ item }: StoreCardProps) {
-  const { storeId, storeName, storeUrl, topCandidate } = item
+  const { storeId, storeName, storeUrl, topCandidate, pagoAnticipado } = item
   const status = getDashboardStoreStatus(item)
 
   return (
@@ -98,7 +98,14 @@ export function StoreCard({ item }: StoreCardProps) {
                   </span>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground">Top candidate</p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-xs text-muted-foreground">Top candidate</p>
+                {pagoAnticipado && (
+                  <span className="rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600">
+                    Pago anticipado
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>
