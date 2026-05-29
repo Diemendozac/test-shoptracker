@@ -75,7 +75,7 @@ export default function TrackerPage() {
         </div>
         {windowDays > 0 && (
           <span className="text-[10px] text-muted-foreground">
-            Score promedio últimos {windowDays} días
+            Testeados hace ≤{windowDays} días
           </span>
         )}
       </div>
