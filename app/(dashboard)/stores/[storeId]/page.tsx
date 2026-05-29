@@ -26,14 +26,18 @@ export default function StoreDetailPage() {
 
 function resolveLabel(label: string, growthPct: number | null, scoreHistory?: number[]): string {
   const raw = label as string
+  const gp = growthPct ?? 0
   if (raw === 'Stable') return 'Steady'
-  if (raw === 'Declining' && scoreHistory && scoreHistory.length >= 3) {
-    const [a, b, c] = scoreHistory.slice(-3)
-    if (c > b && b > a) return 'Rising'
+  if (raw === 'Declining') {
+    if (gp >= 0) return 'Watching'
+    if (scoreHistory && scoreHistory.length >= 3) {
+      const [a, b, c] = scoreHistory.slice(-3)
+      if (c > b && b > a) return 'Rising'
+    }
   }
   if (raw === 'Watching') {
-    if ((growthPct ?? 0) >= 50) return 'Rising'
-    if ((growthPct ?? 0) >= 10) return 'Steady'
+    if (gp >= 50) return 'Rising'
+    if (gp >= 10) return 'Steady'
   }
   return raw
 }

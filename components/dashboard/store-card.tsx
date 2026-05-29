@@ -67,14 +67,17 @@ function resolveLabel(
   scoreHistory?: number[],
 ): string {
   const raw = label as string
-  // Normalise backend "Stable" → "Steady"
   if (raw === 'Stable') return 'Steady'
-  // Promote Declining → Rising if last 3 scores are strictly increasing
-  if (raw === 'Declining' && scoreHistory && scoreHistory.length >= 3) {
-    const [a, b, c] = scoreHistory.slice(-3)
-    if (c > b && b > a) return 'Rising'
+  if (raw === 'Declining') {
+    // Only truly Declining when rank AND score both worsened.
+    // Positive growthPct means rank improved → label is misleading → Watching.
+    if (growthPct >= 0) return 'Watching'
+    // 3-day score uptrend → Rising
+    if (scoreHistory && scoreHistory.length >= 3) {
+      const [a, b, c] = scoreHistory.slice(-3)
+      if (c > b && b > a) return 'Rising'
+    }
   }
-  // Fallback for Watching: use growthPct as early signal
   if (raw === 'Watching') {
     if (growthPct >= 50) return 'Rising'
     if (growthPct >= 10) return 'Steady'
