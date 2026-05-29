@@ -66,7 +66,7 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, pr
   const { currency: preferredCurrency } = useCurrency()
   const [nicheFilter, setNicheFilter] = useState<Set<string>>(new Set())
   const [currencyFilter, setCurrencyFilter] = useState<Set<string>>(new Set())
-  const [dateFilter, setDateFilter] = useState<7 | 30 | 0>(0)
+  const [dateFilter, setDateFilter] = useState<7 | 15 | 30 | 0>(0)
   const [sort, setSort] = useState<SortState>({ key: 'performanceScore', dir: 'desc' })
 
   function toggleSet(prev: Set<string>, value: string): Set<string> {
@@ -165,7 +165,7 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, pr
         {/* Fechas */}
         <div className="flex items-center gap-1.5">
           <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Fechas</span>
-          {([0, 7, 30] as const).map((d) => (
+          {([0, 7, 15, 30] as const).map((d) => (
             <button
               key={d}
               onClick={() => setDateFilter(d)}
@@ -176,7 +176,7 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, pr
                   : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
               )}
             >
-              {d === 0 ? 'Todos' : d === 7 ? 'Últimos 7d' : 'Últimos 30d'}
+              {d === 0 ? 'Todos' : `Últimos ${d}d`}
             </button>
           ))}
         </div>
