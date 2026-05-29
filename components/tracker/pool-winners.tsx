@@ -67,6 +67,7 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, pr
   const [nicheFilter, setNicheFilter] = useState<Set<string>>(new Set())
   const [currencyFilter, setCurrencyFilter] = useState<Set<string>>(new Set())
   const [dateFilter, setDateFilter] = useState<7 | 15 | 30 | 0>(0)
+  const [pagoFilter, setPagoFilter] = useState<'all' | 'anticipado' | 'contraentrega'>('all')
   const [sort, setSort] = useState<SortState>({ key: 'performanceScore', dir: 'desc' })
 
   function toggleSet(prev: Set<string>, value: string): Set<string> {
@@ -102,9 +103,11 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, pr
     if (preset === 'top_score')       r = [...r].sort((a, b) => b.performanceScore - a.performanceScore).slice(0, 20)
     if (preset === 'new')             r = r.filter((w) => w.daysElapsed <= 7)
     // Chip filters
-    if (dateFilter > 0)            r = r.filter((w) => w.daysElapsed <= dateFilter)
-    if (nicheFilter.size > 0)      r = r.filter((w) => w.niche != null && nicheFilter.has(w.niche))
-    if (currencyFilter.size > 0)   r = r.filter((w) => w.currency != null && currencyFilter.has(w.currency))
+    if (dateFilter > 0)              r = r.filter((w) => w.daysElapsed <= dateFilter)
+    if (nicheFilter.size > 0)        r = r.filter((w) => w.niche != null && nicheFilter.has(w.niche))
+    if (currencyFilter.size > 0)     r = r.filter((w) => w.currency != null && currencyFilter.has(w.currency))
+    if (pagoFilter === 'anticipado') r = r.filter((w) => !!w.pagoAnticipado)
+    if (pagoFilter === 'contraentrega') r = r.filter((w) => !w.pagoAnticipado)
     // Sort
     if (sort.key) {
       const k = sort.key
@@ -121,7 +124,7 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, pr
     return r
   }, [winners, preset, dateFilter, nicheFilter, currencyFilter, sort])
 
-  const hasActiveFilters = nicheFilter.size > 0 || currencyFilter.size > 0 || dateFilter > 0
+  const hasActiveFilters = nicheFilter.size > 0 || currencyFilter.size > 0 || dateFilter > 0 || pagoFilter !== 'all'
 
   if (isLoading) {
     return (
@@ -246,6 +249,25 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, pr
           </div>
         )}
 
+        {/* Pago */}
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Pago</span>
+          {(['all', 'anticipado', 'contraentrega'] as const).map((opt) => (
+            <button
+              key={opt}
+              onClick={() => setPagoFilter(opt)}
+              className={cn(
+                'rounded-full border px-3 py-1 text-xs font-medium transition-all',
+                pagoFilter === opt
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
+              )}
+            >
+              {opt === 'all' ? 'Todos' : opt === 'anticipado' ? 'Pago anticipado' : 'Contraentrega'}
+            </button>
+          ))}
+        </div>
+
         {/* Count + clear */}
         <div className="ml-auto flex items-center gap-3">
           <span className="text-xs text-muted-foreground tabular-nums">
@@ -253,7 +275,7 @@ export function PoolWinnersSection({ data, isLoading, page = 0, onPageChange, pr
           </span>
           {hasActiveFilters && (
             <button
-              onClick={() => { setNicheFilter(new Set()); setCurrencyFilter(new Set()); setDateFilter(0) }}
+              onClick={() => { setNicheFilter(new Set()); setCurrencyFilter(new Set()); setDateFilter(0); setPagoFilter('all') }}
               className="text-[10px] text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
             >
               Limpiar

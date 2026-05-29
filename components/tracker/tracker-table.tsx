@@ -129,7 +129,8 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
     if (storeFilter !== 'all') result = result.filter(c => c.storeName === storeFilter)
     if (nicheFilter !== 'all') result = result.filter(c => c.niche === nicheFilter)
     if (currencyFilter !== 'all') result = result.filter(c => c.currency === currencyFilter)
-    if (paFilter !== 'all') result = result.filter(c => (paFilter === 'yes') === !!c.pagoAnticipado)
+    if (paFilter === 'yes') result = result.filter(c => !!c.pagoAnticipado)
+    if (paFilter === 'no')  result = result.filter(c => !c.pagoAnticipado)
     if (sort.key) {
       const k = sort.key
       result.sort((a, b) => {
@@ -206,8 +207,9 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
 
         <select value={paFilter} onChange={e => { setPaFilter(e.target.value); resetPage() }}
           className="h-9 appearance-none rounded-lg border border-border bg-secondary/40 px-3 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer">
-          <option value="all">Pago anticipado: Todos</option>
-          <option value="yes">Solo pago anticipado</option>
+          <option value="all">Pago: Todos</option>
+          <option value="yes">Pago anticipado</option>
+          <option value="no">Contraentrega</option>
         </select>
 
         <select
