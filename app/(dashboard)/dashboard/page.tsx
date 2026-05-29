@@ -1,11 +1,11 @@
 'use client'
 
+import { useState } from 'react'
 import { PageLayout } from '@/components/layout/page-layout'
 import { StatsCard } from '@/components/dashboard/stats-card'
 import { StoreCard } from '@/components/dashboard/store-card'
-import { Store, Target, TrendingUp, Activity, ArrowRight } from 'lucide-react'
+import { Store, Target, TrendingUp, Activity, ChevronDown, ChevronUp } from 'lucide-react'
 import { useDashboard } from '../hooks/useDashboard'
-import Link from 'next/link'
 import type { DashboardItem } from '@/lib/types'
 import { WinnerPodiumOverview } from '@/components/dashboard/winner-podium-overview'
 
@@ -27,9 +27,10 @@ function sortByScore(items: DashboardItem[]): DashboardItem[] {
 
 export default function DashboardPage() {
   const { overviewItems, stats, isOverviewLoading } = useDashboard()
+  const [expanded, setExpanded] = useState(false)
 
   const sorted = sortByScore(overviewItems)
-  const visible = sorted.slice(0, 3)
+  const visible = expanded ? sorted : sorted.slice(0, 3)
   const hasMore = sorted.length > 3
 
   return (
@@ -86,13 +87,16 @@ export default function DashboardPage() {
 
           {hasMore && (
             <div className="mt-4 flex justify-center">
-              <Link
-                href="/stores"
+              <button
+                onClick={() => setExpanded(e => !e)}
                 className="flex items-center gap-1.5 rounded-lg border border-border bg-secondary/50 px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
               >
-                Ver {sorted.length - 3} tiendas más
-                <ArrowRight className="h-4 w-4" />
-              </Link>
+                {expanded ? (
+                  <><ChevronUp className="h-4 w-4" /> Ver menos</>
+                ) : (
+                  <><ChevronDown className="h-4 w-4" /> Ver {sorted.length - 3} tiendas más</>
+                )}
+              </button>
             </div>
           )}
         </>
