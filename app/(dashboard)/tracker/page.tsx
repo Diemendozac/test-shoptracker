@@ -49,6 +49,10 @@ export default function TrackerPage() {
 
   const raceTrackCandidates = windowDays > 0 ? windowAsTracker : allCandidates
 
+  const tableCandidates = windowDays > 0
+    ? filteredCandidates.filter(c => c.daysElapsed <= windowDays)
+    : filteredCandidates
+
   return (
     <PageLayout>
       {/* Hero signal — best candidate across all tracked products */}
@@ -102,10 +106,10 @@ export default function TrackerPage() {
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-sm font-semibold text-foreground">Product Leaderboard</h2>
         <span className="text-xs text-muted-foreground">
-          {filteredCandidates.length} candidatos
+          {tableCandidates.length} candidatos
         </span>
       </div>
-      <TrackerTable candidates={filteredCandidates} windowDays={windowDays} />
+      <TrackerTable candidates={tableCandidates} windowDays={windowDays} />
     </PageLayout>
   )
 }
