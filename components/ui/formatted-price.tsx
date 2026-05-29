@@ -48,19 +48,9 @@ export function FormattedPrice({
     : converted.toLocaleString('es-CO', { maximumFractionDigits: 0 })
 
   return (
-    <div className={cn('flex flex-col items-end leading-none gap-0.5', className)}>
-      <span className="text-xs font-semibold text-primary tabular-nums">
-        {!currencyKnown && '~'}{sym}{convertedStr}
-      </span>
-      {needsConversion && from && (
-        <span className="text-[10px] text-muted-foreground tabular-nums">
-          {currencySymbol(from)}{amount.toLocaleString('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })} {from}
-        </span>
-      )}
-    </div>
+    <span className={cn('text-xs font-semibold text-primary tabular-nums', className)}>
+      {!currencyKnown && '~'}{sym}{convertedStr}
+    </span>
   )
 }
 
