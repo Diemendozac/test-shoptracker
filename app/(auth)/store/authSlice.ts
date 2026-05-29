@@ -15,8 +15,18 @@ const getInitialToken = (): string | null => {
   return localStorage.getItem('auth_token')
 }
 
+const getInitialUser = (): AuthUser | null => {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = localStorage.getItem('auth_user')
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
 const initialState: AuthState = {
-  user: null,
+  user: getInitialUser(),
   token: getInitialToken(),
   isAuthenticated: !!getInitialToken(),
 }
@@ -30,12 +40,14 @@ const authSlice = createSlice({
       state.token = action.payload.token
       state.isAuthenticated = true
       localStorage.setItem('auth_token', action.payload.token)
+      localStorage.setItem('auth_user', JSON.stringify(action.payload.user))
     },
     logout: (state) => {
       state.user = null
       state.token = null
       state.isAuthenticated = false
       localStorage.removeItem('auth_token')
+      localStorage.removeItem('auth_user')
     },
   },
 })
