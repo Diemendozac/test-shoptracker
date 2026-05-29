@@ -13,9 +13,9 @@ import { KpiCards } from '@/components/tracker/kpi-cards'
 
 const WINDOW_OPTIONS = [
   { label: 'Todos', days: 0 },
-  { label: '3d',    days: 3 },
-  { label: '5d',    days: 5 },
-  { label: '30d',   days: 30 },
+  { label: '7d',    days: 7 },
+  { label: '15d',   days: 15 },
+  { label: '20d',   days: 20 },
 ] as const
 
 export default function TrackerPage() {
