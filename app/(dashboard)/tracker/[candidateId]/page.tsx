@@ -26,6 +26,7 @@ import { Button } from '@/components/ui/button'
 // the raw backend label lags one cycle behind the visible rank improvement.
 
 import type { CandidateHistory } from '@/app/(dashboard)/types'
+import { resolveDisplayLabel } from '@/lib/label-utils'
 
 function computeSmartLabel(
   entry: CandidateHistory,
@@ -363,14 +364,22 @@ function CandidateDetailContent() {
     : superadoPct <= 75 ? 'text-green-700'
     : 'text-emerald-600'
 
-  // Derive the current label from the latest history entries using smart logic,
-  // so the header badge always agrees with the last row of the tracking table.
-  const lastEntry    = history.length > 0 ? history[history.length - 1] : null
-  const prevEntry    = history.length > 1 ? history[history.length - 2] : null
+  const lastEntry     = history.length > 0 ? history[history.length - 1] : null
+  const prevEntry     = history.length > 1 ? history[history.length - 2] : null
   const prevPrevEntry = history.length > 2 ? history[history.length - 3] : null
-  const currentLabel = lastEntry
-    ? computeSmartLabel(lastEntry, prevEntry, prevPrevEntry)
-    : (summary?.performanceLabel ?? 'Watching')
+
+  // Header badge: use resolveDisplayLabel (same function used in every other view)
+  // so it always matches what the tracker table and store cards show.
+  const scoreHistory3 = history.slice(-3).map(e => e.performanceScore)
+  const growthHistory2 = history.slice(-2).map(e => e.growthPct)
+  const currentLabel = resolveDisplayLabel(
+    summary?.performanceLabel ?? 'Watching',
+    summary?.performanceScore,
+    summary?.growthPct,
+    candidate.daysElapsed,
+    scoreHistory3,
+    growthHistory2,
+  )
 
   return (
     <PageLayout title="Product Details" description="Deep dive into candidate performance">
