@@ -61,11 +61,25 @@ function StoreFavicon({ url, name }: { url?: string; name: string }) {
   )
 }
 
-function resolveLabel(label: string, scoreHistory?: number[]): string {
-  if (label !== 'Declining') return label
-  if (!scoreHistory || scoreHistory.length < 3) return label
-  const [a, b, c] = scoreHistory.slice(-3)
-  return (c > b && b > a) ? 'Rising' : label
+function resolveLabel(
+  label: string,
+  growthPct: number,
+  scoreHistory?: number[],
+): string {
+  const raw = label as string
+  // Normalise backend "Stable" → "Steady"
+  if (raw === 'Stable') return 'Steady'
+  // Promote Declining → Rising if last 3 scores are strictly increasing
+  if (raw === 'Declining' && scoreHistory && scoreHistory.length >= 3) {
+    const [a, b, c] = scoreHistory.slice(-3)
+    if (c > b && b > a) return 'Rising'
+  }
+  // Fallback for Watching: use growthPct as early signal
+  if (raw === 'Watching') {
+    if (growthPct >= 50) return 'Rising'
+    if (growthPct >= 10) return 'Steady'
+  }
+  return raw
 }
 
 function getDashboardStoreStatus(item: { lastScrapedAt?: string | null; inactivityTier: string | null }) {
@@ -118,7 +132,7 @@ export function StoreCard({ item }: StoreCardProps) {
                   {topCandidate.productTitle}
                 </h4>
                 <div className="flex flex-wrap items-center gap-2">
-                  <PerformanceBadge label={resolveLabel(topCandidate.performanceLabel, topCandidate.scoreHistory)} size="sm" />
+                  <PerformanceBadge label={resolveLabel(topCandidate.performanceLabel, topCandidate.growthPct, topCandidate.scoreHistory)} size="sm" />
                   {(() => {
                     const gp = topCandidate.growthPct ?? 0
                     const capped = gp > 500

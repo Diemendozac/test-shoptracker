@@ -24,6 +24,20 @@ export default function StoreDetailPage() {
   )
 }
 
+function resolveLabel(label: string, growthPct: number | null, scoreHistory?: number[]): string {
+  const raw = label as string
+  if (raw === 'Stable') return 'Steady'
+  if (raw === 'Declining' && scoreHistory && scoreHistory.length >= 3) {
+    const [a, b, c] = scoreHistory.slice(-3)
+    if (c > b && b > a) return 'Rising'
+  }
+  if (raw === 'Watching') {
+    if ((growthPct ?? 0) >= 50) return 'Rising'
+    if ((growthPct ?? 0) >= 10) return 'Steady'
+  }
+  return raw
+}
+
 function StoreDetailContent() {
   const { storeId } = useParams<{ storeId: string }>()
   const router = useRouter()
@@ -233,7 +247,7 @@ function StoreDetailContent() {
                   </div>
 
                   {/* Performance badge */}
-                  <div><PerformanceBadge label={c.performanceLabel} size="sm" /></div>
+                  <div><PerformanceBadge label={resolveLabel(c.performanceLabel, c.growthPct, c.scoreHistory)} size="sm" /></div>
 
                   {/* Sparkline */}
                   <div className="flex justify-center">
@@ -288,7 +302,7 @@ function StoreDetailContent() {
                     <p className="truncate text-sm font-medium text-foreground">{c.productTitle}</p>
                     <div className="flex items-center gap-2">
                       {c.currentRank && <span className="text-[10px] text-muted-foreground">Rank #{c.currentRank}</span>}
-                      <PerformanceBadge label={c.performanceLabel} size="sm" />
+                      <PerformanceBadge label={resolveLabel(c.performanceLabel, c.growthPct, c.scoreHistory)} size="sm" />
                     </div>
                   </div>
                   {price != null && (
