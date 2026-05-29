@@ -15,7 +15,7 @@ const WINDOW_OPTIONS = [
   { label: 'Todos', days: 0 },
   { label: '7d',    days: 7 },
   { label: '15d',   days: 15 },
-  { label: '20d',   days: 20 },
+  { label: '30d',   days: 30 },
 ] as const
 
 export default function TrackerPage() {
