@@ -353,6 +353,16 @@ function CandidateDetailContent() {
 
   const { candidate, summary, history } = data
 
+  const totalProducts = store?.productCount ?? 0
+  const superadoPct = totalProducts > 0 && summary?.currentRank != null
+    ? Math.max(0, Math.round(((totalProducts - summary.currentRank) / totalProducts) * 100))
+    : null
+  const superadoColor = superadoPct == null ? ''
+    : superadoPct <= 25 ? 'text-rose-500'
+    : superadoPct <= 50 ? 'text-amber-600'
+    : superadoPct <= 75 ? 'text-green-700'
+    : 'text-emerald-600'
+
   // Derive the current label from the latest history entries using smart logic,
   // so the header badge always agrees with the last row of the tracking table.
   const lastEntry    = history.length > 0 ? history[history.length - 1] : null
@@ -477,9 +487,16 @@ function CandidateDetailContent() {
               <span className="text-xs font-medium uppercase">Growth</span>
             </div>
             {summary != null ? (
-              <p className={`text-2xl font-bold ${summary.growthPct >= 0 ? 'text-rising' : 'text-declining'}`}>
-                {summary.growthPct >= 0 ? '+' : ''}{Math.round(summary.growthPct)}%
-              </p>
+              <>
+                <p className={`text-2xl font-bold ${summary.growthPct >= 0 ? 'text-rising' : 'text-declining'}`}>
+                  {summary.growthPct >= 0 ? '+' : ''}{Math.round(summary.growthPct)}%
+                </p>
+                {superadoPct != null && summary.growthPct > 1 && (
+                  <p className={`mt-0.5 text-[11px] leading-tight ${superadoColor}`}>
+                    ↑ superó al {superadoPct}% del catálogo
+                  </p>
+                )}
+              </>
             ) : (
               <p className="text-2xl font-bold text-muted-foreground">—</p>
             )}
@@ -542,7 +559,6 @@ function CandidateDetailContent() {
       {summary && (() => {
         const gained = summary.entryRank != null && summary.currentRank != null
           ? summary.entryRank - summary.currentRank : null
-        const totalProducts = store?.productCount ?? 0
         const topPct = totalProducts > 0 && summary.currentRank != null
           ? Math.round((summary.currentRank / totalProducts) * 100) : null
         const zone = topPct == null ? null : topPct <= 25 ? 'alta' : topPct <= 60 ? 'media' : 'baja'
