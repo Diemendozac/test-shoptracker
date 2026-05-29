@@ -16,6 +16,7 @@ import { useRemoveCandidateMutation } from '@/app/(dashboard)/services/candidate
 import { dashboardApi } from '@/app/(dashboard)/services/dashboardApi'
 import { HoverImagePreview } from '@/components/ui/image-preview'
 import { ScoreRing } from '@/components/dashboard/score-ring'
+import { resolveDisplayLabel } from '@/lib/label-utils'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -385,7 +386,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                     {score > 0 ? (
                       <ScoreRing
                         score={score}
-                        label={candidate.performanceLabel}
+                        label={resolveDisplayLabel(candidate.performanceLabel, candidate.performanceScore, candidate.growthPct, candidate.daysElapsed, candidate.scoreHistory, candidate.growthHistory)}
                         size="sm"
                         showLabel={false}
                       />

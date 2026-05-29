@@ -7,6 +7,7 @@ import { PerformanceBadge } from './performance-badge'
 import type { DashboardItem } from '@/lib/types'
 import { ExternalLink, Package, TrendingUp } from 'lucide-react'
 import { fmtCompact } from '@/lib/utils'
+import { resolveDisplayLabel } from '@/lib/label-utils'
 
 function ProductImage({ src, title }: { src: string | null; title: string }) {
   const [failed, setFailed] = useState(false)
@@ -61,29 +62,6 @@ function StoreFavicon({ url, name }: { url?: string; name: string }) {
   )
 }
 
-function resolveLabel(
-  label: string,
-  growthPct: number,
-  scoreHistory?: number[],
-): string {
-  const raw = label as string
-  if (raw === 'Stable') return 'Steady'
-  if (raw === 'Declining') {
-    // Only truly Declining when rank AND score both worsened.
-    // Positive growthPct means rank improved → label is misleading → Watching.
-    if (growthPct >= 0) return 'Watching'
-    // 3-day score uptrend → Rising
-    if (scoreHistory && scoreHistory.length >= 3) {
-      const [a, b, c] = scoreHistory.slice(-3)
-      if (c > b && b > a) return 'Rising'
-    }
-  }
-  if (raw === 'Watching') {
-    if (growthPct >= 50) return 'Rising'
-    if (growthPct >= 10) return 'Steady'
-  }
-  return raw
-}
 
 function getDashboardStoreStatus(item: { lastScrapedAt?: string | null; inactivityTier: string | null }) {
   const hoursAgo = item.lastScrapedAt
@@ -135,7 +113,7 @@ export function StoreCard({ item }: StoreCardProps) {
                   {topCandidate.productTitle}
                 </h4>
                 <div className="flex flex-wrap items-center gap-2">
-                  <PerformanceBadge label={resolveLabel(topCandidate.performanceLabel, topCandidate.growthPct, topCandidate.scoreHistory)} size="sm" />
+                  <PerformanceBadge label={resolveDisplayLabel(topCandidate.performanceLabel, topCandidate.performanceScore, topCandidate.growthPct, topCandidate.daysElapsed, topCandidate.scoreHistory, topCandidate.growthHistory)} size="sm" />
                   {(() => {
                     const gp = topCandidate.growthPct ?? 0
                     const capped = gp > 500

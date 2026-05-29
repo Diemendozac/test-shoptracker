@@ -15,6 +15,7 @@ import {
   ArrowLeft, ExternalLink, CheckCircle, XCircle,
   Clock, Target, Zap, TrendingUp, BarChart3, Store,
 } from 'lucide-react'
+import { resolveDisplayLabel } from '@/lib/label-utils'
 
 export default function StoreDetailPage() {
   return (
@@ -24,23 +25,6 @@ export default function StoreDetailPage() {
   )
 }
 
-function resolveLabel(label: string, growthPct: number | null, scoreHistory?: number[]): string {
-  const raw = label as string
-  const gp = growthPct ?? 0
-  if (raw === 'Stable') return 'Steady'
-  if (raw === 'Declining') {
-    if (gp >= 0) return 'Watching'
-    if (scoreHistory && scoreHistory.length >= 3) {
-      const [a, b, c] = scoreHistory.slice(-3)
-      if (c > b && b > a) return 'Rising'
-    }
-  }
-  if (raw === 'Watching') {
-    if (gp >= 50) return 'Rising'
-    if (gp >= 10) return 'Steady'
-  }
-  return raw
-}
 
 function StoreDetailContent() {
   const { storeId } = useParams<{ storeId: string }>()
@@ -251,7 +235,7 @@ function StoreDetailContent() {
                   </div>
 
                   {/* Performance badge */}
-                  <div><PerformanceBadge label={resolveLabel(c.performanceLabel, c.growthPct, c.scoreHistory)} size="sm" /></div>
+                  <div><PerformanceBadge label={resolveDisplayLabel(c.performanceLabel, c.performanceScore, c.growthPct, c.daysElapsed, c.scoreHistory, c.growthHistory)} size="sm" /></div>
 
                   {/* Sparkline */}
                   <div className="flex justify-center">
@@ -306,7 +290,7 @@ function StoreDetailContent() {
                     <p className="truncate text-sm font-medium text-foreground">{c.productTitle}</p>
                     <div className="flex items-center gap-2">
                       {c.currentRank && <span className="text-[10px] text-muted-foreground">Rank #{c.currentRank}</span>}
-                      <PerformanceBadge label={resolveLabel(c.performanceLabel, c.growthPct, c.scoreHistory)} size="sm" />
+                      <PerformanceBadge label={resolveDisplayLabel(c.performanceLabel, c.performanceScore, c.growthPct, c.daysElapsed, c.scoreHistory, c.growthHistory)} size="sm" />
                     </div>
                   </div>
                   {price != null && (
