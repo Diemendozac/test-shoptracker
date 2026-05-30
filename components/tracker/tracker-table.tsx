@@ -17,6 +17,7 @@ import { dashboardApi } from '@/app/(dashboard)/services/dashboardApi'
 import { HoverImagePreview } from '@/components/ui/image-preview'
 import { ScoreRing } from '@/components/dashboard/score-ring'
 import { resolveDisplayLabel, isScalable } from '@/lib/label-utils'
+import { applyScoreDecay } from '@/lib/score-decay'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -328,7 +329,11 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                   ? { text: '↓ bajando en tienda', color: 'text-rose-500' }
                 : null
 
-              const score = Math.round(candidate.performanceScore ?? 0)
+              const score = applyScoreDecay(
+                candidate.performanceScore,
+                candidate.rankHistory ?? [],
+                candidate.daysElapsed,
+              )
 
               return (
                 <div

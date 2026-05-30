@@ -27,6 +27,7 @@ import { Button } from '@/components/ui/button'
 
 import type { CandidateHistory } from '@/app/(dashboard)/types'
 import { resolveDisplayLabel, isScalable } from '@/lib/label-utils'
+import { applyScoreDecay, computeDecayFactor, daysSinceLastImprovement } from '@/lib/score-decay'
 
 function computeSmartLabel(
   entry: CandidateHistory,
@@ -354,6 +355,16 @@ function CandidateDetailContent() {
 
   const { candidate, summary, history } = data
 
+  // Temporal decay: penalise score when rank hasn't improved recently
+  const rankHistoryFromEntries = history.map(h => h.bestsellerRank)
+  const adjustedScore = applyScoreDecay(
+    summary?.performanceScore,
+    rankHistoryFromEntries,
+    candidate?.daysElapsed ?? 0,
+  )
+  const decayFactor = computeDecayFactor(rankHistoryFromEntries, candidate?.daysElapsed ?? 0)
+  const daysStagnant = daysSinceLastImprovement(rankHistoryFromEntries)
+
   // entryRank: use summary value if valid, otherwise fall back to first rank > 0 in history
   const entryRankDisplay: number | null =
     (summary?.entryRank != null && summary.entryRank > 0)
@@ -460,10 +471,15 @@ function CandidateDetailContent() {
             <div className="flex items-center gap-6">
               {summary && (
                 <div className="flex flex-col items-center gap-2">
-                  <ScoreRing score={summary.performanceScore} label={currentLabel} size="lg" />
-                  {isScalable(summary.performanceScore, summary.signalConfidence) && (
+                  <ScoreRing score={adjustedScore} label={currentLabel} size="lg" />
+                  {isScalable(adjustedScore, summary.signalConfidence) && (
                     <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-600">
                       ↑ Listo para escalar
+                    </span>
+                  )}
+                  {decayFactor < 1 && (
+                    <span className="text-[10px] text-muted-foreground/70 tabular-nums">
+                      decay ×{decayFactor.toFixed(2)} · {daysStagnant}d sin mejora
                     </span>
                   )}
                 </div>
