@@ -7,7 +7,7 @@ import { cn, fmtCompact } from '@/lib/utils'
 import { FormattedPrice } from '@/components/ui/formatted-price'
 import { useCurrency } from '@/store/hooks'
 import { Sparkline } from '@/components/tracker/sparkline'
-import type { TrackerCandidate } from '@/lib/types'
+import type { TrackerCandidate } from '@/app/(dashboard)/types'
 import {
   ExternalLink, ArrowUpDown, ArrowUp, ArrowDown,
   Search, X, SlidersHorizontal, Trash2, ChevronLeft, ChevronRight,
@@ -23,7 +23,7 @@ import { resolveDisplayLabel, isScalable } from '@/lib/label-utils'
 type SortKey =
   | 'productTitle' | 'storeName' | 'productPrice'
   | 'performanceScore' | 'growthPct'
-  | 'daysElapsed' | 'createdAt'
+  | 'daysElapsed'
 type SortDir = 'asc' | 'desc'
 interface SortState { key: SortKey | null; dir: SortDir }
 interface TrackerTableProps { candidates: TrackerCandidate[]; windowDays?: number }
@@ -93,6 +93,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
   const [nicheFilter, setNicheFilter] = useState<string>('all')
   const [currencyFilter, setCurrencyFilter] = useState<string>('all')
   const [paFilter, setPaFilter] = useState<string>('all')
+  const [escalarFilter, setEscalarFilter] = useState(false)
   const [page, setPage] = useState(0)
 
   function resetPage() { setPage(0) }
@@ -131,6 +132,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
     if (currencyFilter !== 'all') result = result.filter(c => c.currency === currencyFilter)
     if (paFilter === 'yes') result = result.filter(c => !!c.pagoAnticipado)
     if (paFilter === 'no')  result = result.filter(c => !c.pagoAnticipado)
+    if (escalarFilter)      result = result.filter(c => isScalable(c.performanceScore, c.signalConfidence))
     if (sort.key) {
       const k = sort.key
       result.sort((a, b) => {
@@ -143,15 +145,15 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
       })
     }
     return result
-  }, [candidates, search, storeFilter, nicheFilter, currencyFilter, paFilter, sort])
+  }, [candidates, search, storeFilter, nicheFilter, currencyFilter, paFilter, escalarFilter, sort])
 
   const hasActiveFilters =
     !!search || storeFilter !== 'all' || nicheFilter !== 'all' ||
-    currencyFilter !== 'all' || paFilter !== 'all' || sort.key === 'createdAt'
+    currencyFilter !== 'all' || paFilter !== 'all' || escalarFilter
 
   function clearFilters() {
     setSearch(''); setStoreFilter('all'); setNicheFilter('all')
-    setCurrencyFilter('all'); setPaFilter('all')
+    setCurrencyFilter('all'); setPaFilter('all'); setEscalarFilter(false)
     setSort({ key: 'performanceScore', dir: 'desc' })
     resetPage()
   }
@@ -212,15 +214,27 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
           <option value="no">Contraentrega</option>
         </select>
 
+        <button
+          onClick={() => { setEscalarFilter(f => !f); resetPage() }}
+          className={cn(
+            'h-9 rounded-lg border px-3 text-xs font-medium transition-all',
+            escalarFilter
+              ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600'
+              : 'border-border bg-secondary/40 text-muted-foreground hover:border-emerald-500/50 hover:text-emerald-600',
+          )}
+        >
+          ↑ Escalar
+        </button>
+
         <select
           value={
-            sort.key === 'createdAt' && sort.dir === 'desc' ? 'recent'
-            : sort.key === 'createdAt' && sort.dir === 'asc' ? 'oldest'
+            sort.key === 'daysElapsed' && sort.dir === 'asc' ? 'recent'
+            : sort.key === 'daysElapsed' && sort.dir === 'desc' ? 'oldest'
             : 'relevance'
           }
           onChange={e => {
-            if (e.target.value === 'recent')      setSort({ key: 'createdAt', dir: 'desc' })
-            else if (e.target.value === 'oldest') setSort({ key: 'createdAt', dir: 'asc' })
+            if (e.target.value === 'recent')      setSort({ key: 'daysElapsed', dir: 'asc' })
+            else if (e.target.value === 'oldest') setSort({ key: 'daysElapsed', dir: 'desc' })
             else                                  setSort({ key: 'performanceScore', dir: 'desc' })
           }}
           className="h-9 appearance-none rounded-lg border border-border bg-secondary/40 px-3 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer">
@@ -281,7 +295,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
               const idx_abs = page * PAGE_SIZE + idx
               // Rank delta vs ayer: penúltimo valor del rankHistory
               const rh = candidate.rankHistory
-              const prevRank = rh && rh.length >= 2 ? rh[rh.length - 2] : (candidate.previousRank ?? null)
+              const prevRank = rh && rh.length >= 2 ? rh[rh.length - 2] : null
               const rankDelta = prevRank != null && candidate.currentRank != null
                 ? prevRank - candidate.currentRank
                 : null

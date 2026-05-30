@@ -12,6 +12,7 @@ import { useCurrency } from '@/store/hooks'
 import { HoverImagePreview } from '@/components/ui/image-preview'
 import type { PoolWinnersResponse, PoolWinnerProduct } from '@/app/(dashboard)/types'
 import type { PoolPreset } from '@/app/(dashboard)/pool/page'
+import { isScalable } from '@/lib/label-utils'
 
 type PoolSortKey = 'productTitle' | 'productPrice' | 'performanceScore' | 'growthPct' | 'currentRank'
 type SortDir = 'asc' | 'desc'
@@ -75,6 +76,7 @@ export function PoolWinnersSection({
   const [currencyFilter, setCurrencyFilter] = useState<Set<string>>(new Set())
   const [dateFilter, setDateFilter] = useState<7 | 15 | 30 | 0>(0)
   const [sort, setSort] = useState<SortState>({ key: 'performanceScore', dir: 'desc' })
+  const [escalarFilter, setEscalarFilter] = useState(false)
 
   function toggleSet(prev: Set<string>, value: string): Set<string> {
     const next = new Set(prev)
@@ -114,6 +116,7 @@ export function PoolWinnersSection({
     if (currencyFilter.size > 0)     r = r.filter((w) => w.currency != null && currencyFilter.has(w.currency))
     if (pagoFilter === 'anticipado') r = r.filter((w) => !!w.pagoAnticipado)
     if (pagoFilter === 'contraentrega') r = r.filter((w) => !w.pagoAnticipado)
+    if (escalarFilter) r = r.filter((w) => isScalable(w.performanceScore, w.signalConfidence))
     // Sort
     if (sort.key) {
       const k = sort.key
@@ -130,7 +133,7 @@ export function PoolWinnersSection({
     return r
   }, [winners, preset, dateFilter, nicheFilter, currencyFilter, sort])
 
-  const hasActiveFilters = nicheFilter.size > 0 || currencyFilter.size > 0 || dateFilter > 0 || pagoFilter !== 'all'
+  const hasActiveFilters = nicheFilter.size > 0 || currencyFilter.size > 0 || dateFilter > 0 || pagoFilter !== 'all' || escalarFilter
 
   function setPagoFilter(f: PagoFilter) { onPagoFilterChange?.(f) }
 
@@ -276,6 +279,19 @@ export function PoolWinnersSection({
           ))}
         </div>
 
+        {/* Escalar */}
+        <button
+          onClick={() => setEscalarFilter(f => !f)}
+          className={cn(
+            'rounded-full border px-3 py-1 text-xs font-medium transition-all',
+            escalarFilter
+              ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600'
+              : 'border-border bg-background text-muted-foreground hover:border-emerald-500/50 hover:text-emerald-600',
+          )}
+        >
+          ↑ Escalar
+        </button>
+
         {/* Count + clear */}
         <div className="ml-auto flex items-center gap-3">
           <span className="text-xs text-muted-foreground tabular-nums">
@@ -283,7 +299,7 @@ export function PoolWinnersSection({
           </span>
           {hasActiveFilters && (
             <button
-              onClick={() => { setNicheFilter(new Set()); setCurrencyFilter(new Set()); setDateFilter(0); onPagoFilterChange?.('all') }}
+              onClick={() => { setNicheFilter(new Set()); setCurrencyFilter(new Set()); setDateFilter(0); onPagoFilterChange?.('all'); setEscalarFilter(false) }}
               className="text-[10px] text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
             >
               Limpiar
@@ -515,12 +531,19 @@ function PoolWinnerRow({ winner, position, preferredCurrency }: {
 
       {/* Producto + rank */}
       <div className="min-w-0 pl-2">
-        <Link
-          href={`/tracker/${winner.candidateId}?storeId=${winner.storeId}&from=pool`}
-          className="line-clamp-2 text-sm font-semibold leading-snug text-foreground hover:text-primary hover:underline transition-colors"
-        >
-          {winner.productTitle}
-        </Link>
+        <div className="flex items-start gap-1.5">
+          <Link
+            href={`/tracker/${winner.candidateId}?storeId=${winner.storeId}&from=pool`}
+            className="line-clamp-2 text-sm font-semibold leading-snug text-foreground hover:text-primary hover:underline transition-colors"
+          >
+            {winner.productTitle}
+          </Link>
+          {isScalable(winner.performanceScore, winner.signalConfidence) && (
+            <span className="mt-0.5 shrink-0 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-600">
+              Escalar
+            </span>
+          )}
+        </div>
         {winner.currentRank != null && (
           <div className="mt-1 flex items-center gap-1.5">
             <span className="text-[11px] text-muted-foreground tabular-nums">
