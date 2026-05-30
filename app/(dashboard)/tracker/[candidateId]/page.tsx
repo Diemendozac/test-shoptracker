@@ -354,6 +354,12 @@ function CandidateDetailContent() {
 
   const { candidate, summary, history } = data
 
+  // entryRank: use summary value if valid, otherwise fall back to first rank > 0 in history
+  const entryRankDisplay: number | null =
+    (summary?.entryRank != null && summary.entryRank > 0)
+      ? summary.entryRank
+      : (history.find(h => (h.bestsellerRank ?? 0) > 0)?.bestsellerRank ?? null)
+
   const totalProducts = store?.productCount ?? 0
   const superadoPct = totalProducts > 0 && summary?.currentRank != null
     ? Math.max(0, Math.round(((totalProducts - summary.currentRank) / totalProducts) * 100))
@@ -541,7 +547,7 @@ function CandidateDetailContent() {
             <div className="flex items-center gap-2 text-sm">
               <span className="text-muted-foreground">Entry:</span>
               <span className="font-medium text-foreground">
-                {summary?.entryRank != null ? `#${summary.entryRank}` : '—'}
+                {entryRankDisplay != null ? `#${entryRankDisplay}` : '—'}
               </span>
               <span className="text-muted-foreground mx-2">→</span>
               <span className="text-muted-foreground">Now:</span>
@@ -573,8 +579,8 @@ function CandidateDetailContent() {
 
       {/* Narrative summary */}
       {summary && (() => {
-        const gained = summary.entryRank != null && summary.currentRank != null
-          ? summary.entryRank - summary.currentRank : null
+        const gained = entryRankDisplay != null && summary.currentRank != null
+          ? entryRankDisplay - summary.currentRank : null
         const topPct = totalProducts > 0 && summary.currentRank != null
           ? Math.round((summary.currentRank / totalProducts) * 100) : null
         const zone = topPct == null ? null : topPct <= 25 ? 'alta' : topPct <= 60 ? 'media' : 'baja'

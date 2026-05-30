@@ -8,16 +8,19 @@ interface RankChartProps {
 }
 
 export function RankChart({ history }: RankChartProps) {
-  const data = history.map((h) => ({
-    day: `Day ${h.trackingDay}`,
-    rank: h.bestsellerRank ?? 0,
-    score: Math.round(h.performanceScore),
-    date: new Date(h.snapshotDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-  }))
-  // oldest entry on the left, newest on the right — no .reverse()
+  // Only plot days with a real rank — never rank 0 or null
+  const data = history
+    .map((h) => ({
+      day: `Day ${h.trackingDay}`,
+      rank: h.bestsellerRank ?? 0,
+      score: Math.round(h.performanceScore),
+      date: new Date(h.snapshotDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    }))
+    .filter((d) => d.rank > 0)
 
-  const validRanks = data.filter(d => d.rank > 0).map(d => d.rank)
+  const validRanks = data.map(d => d.rank)
   const bestRank = validRanks.length > 0 ? Math.min(...validRanks) : null
+  const worstRank = validRanks.length > 0 ? Math.max(...validRanks) : 1
 
   return (
     <div className="h-64 w-full">
@@ -37,7 +40,7 @@ export function RankChart({ history }: RankChartProps) {
           />
           <YAxis
             reversed
-            domain={[1, 'dataMax']}
+            domain={[1, worstRank]}
             axisLine={false}
             tickLine={false}
             tick={{ fill: 'oklch(0.6 0 0)', fontSize: 11 }}
@@ -47,6 +50,14 @@ export function RankChart({ history }: RankChartProps) {
             content={({ active, payload }) => {
               if (active && payload && payload.length) {
                 const d = payload[0].payload
+                if (!d.rank || d.rank === 0) {
+                  return (
+                    <div className="rounded-lg border border-border bg-popover px-3 py-2 shadow-lg">
+                      <p className="text-xs text-muted-foreground">{d.date}</p>
+                      <p className="text-sm font-semibold text-muted-foreground">Sin datos</p>
+                    </div>
+                  )
+                }
                 return (
                   <div className="rounded-lg border border-border bg-popover px-3 py-2 shadow-lg">
                     <p className="text-xs text-muted-foreground">{d.date}</p>
@@ -54,7 +65,7 @@ export function RankChart({ history }: RankChartProps) {
                     {bestRank !== null && d.rank === bestRank && (
                       <p className="text-xs font-medium text-emerald-500">★ Mejor posición alcanzada</p>
                     )}
-                    <p className="text-xs text-primary">Score: {d.score}%</p>
+                    <p className="text-xs text-primary">Score: {d.score}</p>
                   </div>
                 )
               }
