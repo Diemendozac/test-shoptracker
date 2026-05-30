@@ -3,6 +3,19 @@
 import { useGetStoresQuery } from '@/app/(dashboard)/stores/services/storeApi'
 import { getStoreStatus } from '@/app/(dashboard)/stores/utils/storeStatus'
 import type { TrackerCandidate } from '@/app/(dashboard)/types'
+import { Info } from 'lucide-react'
+import { cn } from '@/lib/utils'
+
+function InfoTip({ tip, className }: { tip: string; className?: string }) {
+  return (
+    <div className={cn('group relative inline-flex items-center', className)}>
+      <Info className="h-3 w-3 text-muted-foreground/50 hover:text-muted-foreground cursor-default transition-colors" />
+      <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-md bg-popover px-2 py-1 text-[10px] text-popover-foreground shadow-md opacity-0 transition-opacity group-hover:opacity-100 border border-border">
+        {tip}
+      </div>
+    </div>
+  )
+}
 
 interface KpiCardsProps {
   candidates: TrackerCandidate[]
@@ -184,7 +197,7 @@ export function KpiCards({ candidates }: KpiCardsProps) {
         <div className="rounded-xl border border-border bg-card px-4 py-4">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Nuevos despegando</p>
           <p className="mt-1 text-2xl font-black tabular-nums text-foreground">{newDespegando}</p>
-          <p className="mt-0.5 text-[10px] text-muted-foreground">≤7 días &amp; &gt;20% growth</p>
+          <InfoTip tip="≤7 días en testeo y crecimiento >20%" className="mt-1" />
         </div>
 
         {/* En crecimiento */}
@@ -196,21 +209,21 @@ export function KpiCards({ candidates }: KpiCardsProps) {
           >
             {growingPct}%
           </p>
-          <p className="mt-0.5 text-[10px] text-muted-foreground">con growthPct &gt; 0%</p>
+          <InfoTip tip="Productos con crecimiento positivo vs. entrada" className="mt-1" />
         </div>
 
         {/* Tiendas activas */}
         <div className="rounded-xl border border-border bg-card px-4 py-4">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Tiendas activas</p>
           <p className="mt-1 text-2xl font-black tabular-nums text-foreground">{activeStores}</p>
-          <p className="mt-0.5 text-[10px] text-muted-foreground">sync &lt; 24 h</p>
+          <InfoTip tip="Tiendas sincronizadas en las últimas 24h" className="mt-1" />
         </div>
 
         {/* Productos esta semana */}
         <div className="rounded-xl border border-border bg-card px-4 py-4">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Productos esta semana</p>
           <p className="mt-1 text-2xl font-black tabular-nums text-foreground">{newThisWeek}</p>
-          <p className="mt-0.5 text-[10px] text-muted-foreground">detectados 7 días</p>
+          <InfoTip tip="Productos detectados en los últimos 7 días" className="mt-1" />
         </div>
       </div>
 
