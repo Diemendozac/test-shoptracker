@@ -6,12 +6,26 @@ import type { TrackerCandidate } from '@/app/(dashboard)/types'
 import { Info } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-function InfoTip({ tip, className }: { tip: string; className?: string }) {
+interface InfoTipProps {
+  title: string
+  description: string
+  condition: string
+  className?: string
+}
+
+function InfoTip({ title, description, condition, className }: InfoTipProps) {
   return (
     <div className={cn('group relative inline-flex items-center', className)}>
-      <Info className="h-3 w-3 text-muted-foreground/50 hover:text-muted-foreground cursor-default transition-colors" />
-      <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-md bg-popover px-2 py-1 text-[10px] text-popover-foreground shadow-md opacity-0 transition-opacity group-hover:opacity-100 border border-border">
-        {tip}
+      <Info className="h-3.5 w-3.5 cursor-default text-muted-foreground/40 transition-colors group-hover:text-muted-foreground" />
+      <div className="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-64 rounded-xl border border-border bg-popover shadow-xl opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="px-4 py-3">
+          <p className="mb-1.5 text-xs font-bold text-popover-foreground">Definición de la métrica</p>
+          <p className="text-[11px] leading-relaxed text-muted-foreground">{description}</p>
+        </div>
+        <div className="border-t border-border px-4 py-3">
+          <p className="mb-1 text-xs font-bold text-popover-foreground">Calculado bajo la condición</p>
+          <p className="text-[11px] text-muted-foreground">• {condition}</p>
+        </div>
       </div>
     </div>
   )
@@ -197,7 +211,12 @@ export function KpiCards({ candidates }: KpiCardsProps) {
         <div className="rounded-xl border border-border bg-card px-4 py-4">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Nuevos despegando</p>
           <p className="mt-1 text-2xl font-black tabular-nums text-foreground">{newDespegando}</p>
-          <InfoTip tip="≤7 días en testeo y crecimiento >20%" className="mt-1" />
+          <InfoTip
+            title="Nuevos despegando"
+            description="Productos recién detectados que ya muestran tracción real: llevan pocos días en seguimiento y su crecimiento ya supera el 20% respecto a su posición de entrada."
+            condition="≤7 días en testeo y crecimiento >20%"
+            className="mt-1"
+          />
         </div>
 
         {/* En crecimiento */}
@@ -209,21 +228,36 @@ export function KpiCards({ candidates }: KpiCardsProps) {
           >
             {growingPct}%
           </p>
-          <InfoTip tip="Productos con crecimiento positivo vs. entrada" className="mt-1" />
+          <InfoTip
+            title="En crecimiento"
+            description="Porcentaje de candidatos activos cuyo rank actual es mejor que su rank de entrada. Indica qué tan saludable es el portafolio en términos de tracción general."
+            condition="Candidatos con growthPct positivo sobre el total activo"
+            className="mt-1"
+          />
         </div>
 
         {/* Tiendas activas */}
         <div className="rounded-xl border border-border bg-card px-4 py-4">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Tiendas activas</p>
           <p className="mt-1 text-2xl font-black tabular-nums text-foreground">{activeStores}</p>
-          <InfoTip tip="Tiendas sincronizadas en las últimas 24h" className="mt-1" />
+          <InfoTip
+            title="Tiendas activas"
+            description="Tiendas que han sido escaneadas recientemente. Si una tienda no se sincroniza en más de 24h puede indicar un problema de scraping o que fue pausada."
+            condition="Última sincronización hace menos de 24 horas"
+            className="mt-1"
+          />
         </div>
 
         {/* Productos esta semana */}
         <div className="rounded-xl border border-border bg-card px-4 py-4">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Productos esta semana</p>
           <p className="mt-1 text-2xl font-black tabular-nums text-foreground">{newThisWeek}</p>
-          <InfoTip tip="Productos detectados en los últimos 7 días" className="mt-1" />
+          <InfoTip
+            title="Productos esta semana"
+            description="Total de productos que entraron al bestseller por primera vez en los últimos 7 días. Es un indicador de qué tan activo está el mercado que estás monitoreando."
+            condition="firstSeenDate dentro de los últimos 7 días"
+            className="mt-1"
+          />
         </div>
       </div>
 
