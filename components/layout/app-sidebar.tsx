@@ -78,9 +78,7 @@ export function AppSidebar({ pinned }: AppSidebarProps) {
           expanded ? 'gap-3 px-6' : 'justify-center',
         )}
       >
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-foreground">
-          <DropspyIcon size={22} className="text-background" />
-        </div>
+        <DropspyIcon size={30} className="shrink-0 text-foreground" />
         <span className={cn(
           'overflow-hidden whitespace-nowrap transition-all duration-300',
           'text-xl font-bold tracking-tight leading-none',
@@ -88,7 +86,7 @@ export function AppSidebar({ pinned }: AppSidebarProps) {
         )}
           style={{ fontFamily: 'var(--font-outfit, var(--font-inter, sans-serif))' }}
         >
-          Dropspy
+          dropspy
         </span>
       </Link>
 

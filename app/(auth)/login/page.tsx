@@ -286,12 +286,10 @@ export default function LoginPage() {
 
       <header className="relative z-10 flex h-16 items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-foreground">
-            <DropspyIcon size={20} className="text-background" />
-          </div>
+          <DropspyIcon size={28} className="text-foreground" />
           <span className="text-xl font-bold tracking-tight leading-none"
             style={{ fontFamily: 'var(--font-outfit, var(--font-inter, sans-serif))' }}>
-            Dropspy
+            dropspy
           </span>
         </Link>
 

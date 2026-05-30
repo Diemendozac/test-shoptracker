@@ -89,12 +89,10 @@ export default function LandingPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-foreground">
-              <DropspyIcon size={20} className="text-background" />
-            </div>
+            <DropspyIcon size={28} className="text-foreground" />
             <span className="text-xl font-bold tracking-tight leading-none"
               style={{ fontFamily: 'var(--font-outfit, var(--font-inter, sans-serif))' }}>
-              Dropspy
+              dropspy
             </span>
           </Link>
           
@@ -331,12 +329,10 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-6">
           <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-foreground">
-                <DropspyIcon size={20} className="text-background" />
-              </div>
+              <DropspyIcon size={28} className="text-foreground" />
               <span className="text-xl font-bold tracking-tight leading-none"
                 style={{ fontFamily: 'var(--font-outfit, var(--font-inter, sans-serif))' }}>
-                Dropspy
+                dropspy
               </span>
             </div>
             

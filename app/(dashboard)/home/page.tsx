@@ -1,19 +1,20 @@
 'use client'
 
-import { useState, useMemo, useRef, useEffect } from 'react'
+import React, { useState, useMemo, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { convertCurrency, currencySymbol } from '@/lib/currency'
 import { useCurrency } from '@/store/hooks'
-import { useGetStoreOverviewQuery, useGetTrackerCandidatesQuery, useGetPoolWinnersQuery, useGetInsightsQuery } from '../services/dashboardApi'
+import { useGetStoreOverviewQuery, useGetTrackerCandidatesQuery, useGetPoolWinnersQuery } from '../services/dashboardApi'
 import { ScoreRing } from '@/components/dashboard/score-ring'
 import { PerformanceBadge } from '@/components/dashboard/performance-badge'
 import {
   Search, Store, Target, Zap,
-  ArrowRight, Flame, BarChart3, Globe, FlaskConical, Clock, Package, TrendingUp,
+  ArrowRight, Flame, BarChart3, Globe, FlaskConical, Clock, Package, TrendingUp, TrendingDown,
 } from 'lucide-react'
 import { DropspyIcon } from '@/components/ui/dropspy-logo'
+import { resolveDisplayLabel } from '@/lib/label-utils'
 
 // ─── Search result types ──────────────────────────────────────────────────────
 
@@ -45,12 +46,69 @@ export default function HomePage() {
   const { data: overview = [] } = useGetStoreOverviewQuery()
   const { data: tracker = [] } = useGetTrackerCandidatesQuery({})
   const { data: poolData } = useGetPoolWinnersQuery({ page: 0, size: 10 })
-  const { data: insights = [] } = useGetInsightsQuery()
 
   const topProducts = poolData?.locked ? [] : (poolData?.winners ?? [])
   const activeStores = overview.length
   const trackingCount = tracker.length
   const risingCount = tracker.filter(c => (c.growthPct ?? 0) > 10).length
+
+  // ── Insights calculados desde Mis testeos ───────────────────────────────────
+  const trackerInsights = useMemo(() => {
+    type InsightItem = { message: string; cta: string; ctaPath: string; icon: React.ElementType; variant: 'default' | 'success' | 'warning' | 'danger' }
+    const items: InsightItem[] = []
+
+    const scalable = tracker.filter(c => (c.performanceScore ?? 0) >= 60 && c.signalConfidence >= 0.5)
+    const rising   = tracker.filter(c =>
+      resolveDisplayLabel(c.performanceLabel, c.performanceScore, c.growthPct, c.daysElapsed, c.scoreHistory, c.growthHistory) === 'Rising'
+    )
+    const declining = tracker.filter(c =>
+      resolveDisplayLabel(c.performanceLabel, c.performanceScore, c.growthPct, c.daysElapsed, c.scoreHistory, c.growthHistory) === 'Declining'
+    )
+    const newProducts = tracker.filter(c => c.daysElapsed <= 3)
+    const withPago    = tracker.filter(c => c.pagoAnticipado === true)
+
+    if (scalable.length > 0) items.push({
+      message: scalable.length === 1
+        ? `Tienes 1 producto listo para escalar`
+        : `Tienes ${scalable.length} productos listos para escalar`,
+      cta: 'Ver productos', ctaPath: '/tracker', icon: Zap, variant: 'success',
+    })
+
+    if (rising.length > 0) items.push({
+      message: rising.length === 1
+        ? `1 de tus productos está en ascenso`
+        : `${rising.length} de tus productos están en ascenso`,
+      cta: 'Ver análisis', ctaPath: '/tracker', icon: TrendingUp, variant: 'success',
+    })
+
+    if (declining.length > 0) items.push({
+      message: declining.length === 1
+        ? `1 producto tuyo está bajando — considera pausar el testeo`
+        : `${declining.length} productos tuyos están bajando`,
+      cta: 'Ver tendencia', ctaPath: '/tracker', icon: TrendingDown, variant: 'danger',
+    })
+
+    if (newProducts.length > 0) items.push({
+      message: newProducts.length === 1
+        ? `1 producto nuevo detectado esta semana`
+        : `${newProducts.length} productos nuevos detectados esta semana`,
+      cta: 'Ver nuevos', ctaPath: '/tracker', icon: Package, variant: 'default',
+    })
+
+    if (withPago.length > 0) items.push({
+      message: withPago.length === 1
+        ? `1 producto con pago anticipado confirmado`
+        : `${withPago.length} productos con pago anticipado confirmado`,
+      cta: 'Ver productos', ctaPath: '/tracker', icon: Target, variant: 'default',
+    })
+
+    if (tracker.length > 0) items.push({
+      message: `${tracker.length} productos en seguimiento activo`,
+      cta: 'Ver todos', ctaPath: '/tracker', icon: BarChart3, variant: 'default',
+    })
+
+    return items
+  }, [tracker])
 
   // ── Autocomplete suggestions ────────────────────────────────────────────────
   const suggestions = useMemo((): SearchResult[] => {
@@ -148,12 +206,10 @@ export default function HomePage() {
 
         <div className="relative mx-auto max-w-2xl text-center">
           <div className="mb-3 flex items-center justify-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-foreground shadow-lg">
-              <DropspyIcon size={22} className="text-background" />
-            </div>
+            <DropspyIcon size={32} className="text-foreground" />
             <span className="text-xl font-bold leading-none tracking-tight text-foreground"
               style={{ fontFamily: 'var(--font-outfit, var(--font-inter, sans-serif))' }}>
-              Dropspy
+              dropspy
             </span>
           </div>
 
@@ -374,33 +430,40 @@ export default function HomePage() {
             </div>
 
             <div className="space-y-2">
-              {insights.length === 0 ? (
+              {trackerInsights.length === 0 ? (
                 <div className="rounded-2xl border border-border bg-card px-4 py-6 text-center">
                   <Clock className="mx-auto mb-2 h-6 w-6 text-muted-foreground/30" />
                   <p className="text-xs text-muted-foreground">Los insights aparecen después de algunos días de tracking</p>
                 </div>
               ) : (
-                insights.slice(0, 6).map((insight, i) => (
-                  <Link
-                    key={i}
-                    href={insight.ctaPath ?? '/dashboard'}
-                    className="flex h-[72px] items-center gap-3 overflow-hidden rounded-xl border border-border bg-card px-4 transition-colors hover:bg-secondary/60"
-                  >
-                    <div className="min-w-0 flex-1 overflow-hidden">
-                      <p className="text-xs leading-snug text-foreground"
-                        style={{
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden',
-                        }}
-                      >
-                        {insight.message}
-                      </p>
-                      <p className="mt-1 text-[10px] font-medium text-primary">{insight.cta} →</p>
-                    </div>
-                  </Link>
-                ))
+                trackerInsights.slice(0, 6).map((insight, i) => {
+                  const iconColor =
+                    insight.variant === 'success' ? 'text-emerald-500' :
+                    insight.variant === 'danger'  ? 'text-red-500' :
+                    'text-primary'
+                  return (
+                    <Link
+                      key={i}
+                      href={insight.ctaPath}
+                      className="flex h-[72px] items-center gap-3 overflow-hidden rounded-xl border border-border bg-card px-4 transition-colors hover:bg-secondary/60"
+                    >
+                      <insight.icon className={`h-4 w-4 shrink-0 ${iconColor}`} />
+                      <div className="min-w-0 flex-1 overflow-hidden">
+                        <p className="text-xs leading-snug text-foreground"
+                          style={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          {insight.message}
+                        </p>
+                        <p className="mt-1 text-[10px] font-medium text-primary">{insight.cta} →</p>
+                      </div>
+                    </Link>
+                  )
+                })
               )}
             </div>
           </div>
