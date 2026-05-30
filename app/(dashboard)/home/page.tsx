@@ -10,7 +10,7 @@ import { useGetStoreOverviewQuery, useGetTrackerCandidatesQuery, useGetPoolWinne
 import { ScoreRing } from '@/components/dashboard/score-ring'
 import { PerformanceBadge } from '@/components/dashboard/performance-badge'
 import {
-  Search, Store, Target, Zap,
+  Search, Store, Target, Zap, Info,
   ArrowRight, Flame, BarChart3, Globe, FlaskConical, Clock, Package, TrendingUp, TrendingDown,
 } from 'lucide-react'
 import { DropspyIcon } from '@/components/ui/dropspy-logo'
@@ -307,17 +307,27 @@ export default function HomePage() {
         {/* ── KPI strip ───────────────────────────────────────────────── */}
         <div className="grid grid-cols-3 gap-4">
           {[
-            { icon: Store,   label: 'Tiendas activas',    value: activeStores,   color: 'text-blue-600 bg-blue-500/10' },
-            { icon: Target,  label: 'En testeo',          value: trackingCount,  color: 'text-violet-600 bg-violet-500/10' },
-            { icon: Zap,     label: 'En alza (>+10%)',    value: risingCount,    color: 'text-emerald-600 bg-emerald-500/10' },
-          ].map(({ icon: Icon, label, value, color }) => (
+            { icon: Store,   label: 'Tiendas activas', value: activeStores,  color: 'text-blue-600 bg-blue-500/10',   tooltip: null },
+            { icon: Target,  label: 'En testeo',       value: trackingCount, color: 'text-violet-600 bg-violet-500/10', tooltip: null },
+            { icon: Zap,     label: 'En alza',         value: risingCount,   color: 'text-emerald-600 bg-emerald-500/10', tooltip: 'Productos de tus testeos cuyo rank mejoró más de un 10% en los últimos días' },
+          ].map(({ icon: Icon, label, value, color, tooltip }) => (
             <div key={label} className="flex items-center gap-4 rounded-2xl border border-border bg-card px-5 py-4">
               <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl', color)}>
                 <Icon className="h-5 w-5" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground tabular-nums">{value}</p>
-                <p className="text-xs text-muted-foreground">{label}</p>
+                <div className="flex items-center gap-1">
+                  <p className="text-xs text-muted-foreground">{label}</p>
+                  {tooltip && (
+                    <div className="group relative">
+                      <Info className="h-3 w-3 cursor-default text-muted-foreground/50 hover:text-muted-foreground" />
+                      <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 w-52 -translate-x-1/2 rounded-lg border border-border bg-popover px-2.5 py-1.5 text-[11px] leading-snug text-muted-foreground opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                        {tooltip}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           ))}
