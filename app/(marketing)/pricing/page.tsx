@@ -149,7 +149,7 @@ export default function PricingPage() {
               className="text-xl font-bold tracking-tight leading-none"
               style={{ fontFamily: 'var(--font-outfit, var(--font-inter, sans-serif))' }}
             >
-              Dropspy
+              dropspy
             </span>
           </Link>
 
