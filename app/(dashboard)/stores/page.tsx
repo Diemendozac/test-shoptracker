@@ -155,7 +155,7 @@ export default function StoresPage() {
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-2xl border border-border bg-card">
+      <div className="rounded-2xl border border-border bg-card">
         {/* Column headers */}
         <div className="grid grid-cols-[40px_1fr_80px_60px_96px_96px_96px_80px] items-center gap-3 border-b border-border px-4 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           <div />

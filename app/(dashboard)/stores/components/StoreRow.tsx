@@ -60,7 +60,7 @@ function QualityStars({ quality }: { quality: StoreQuality | null }) {
       </div>
 
       {/* Tooltip */}
-      <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 w-52 -translate-x-1/2 rounded-xl border border-border bg-popover shadow-xl opacity-0 transition-opacity group-hover:opacity-100">
+      <div className="pointer-events-none absolute right-0 top-full z-50 mt-1.5 w-52 rounded-xl border border-border bg-popover shadow-xl opacity-0 transition-opacity group-hover:opacity-100">
         <div className="px-3 py-2.5">
           <p className="mb-2.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
             Calidad · {quality.stars}★ ({Math.round(quality.finalScore)}/100)
