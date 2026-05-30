@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { PageLayout } from '@/components/layout/page-layout'
 import { StatsCard } from '@/components/dashboard/stats-card'
 import { StoreCard } from '@/components/dashboard/store-card'
-import { Store, Target, TrendingUp, Activity, ChevronDown, ChevronUp } from 'lucide-react'
+import { Store, Target, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react'
 import { useDashboard } from '../hooks/useDashboard'
 import type { DashboardItem } from '@/lib/types'
 import { WinnerPodiumOverview } from '@/components/dashboard/winner-podium-overview'
@@ -35,7 +35,7 @@ export default function DashboardPage() {
 
   return (
     <PageLayout title="Overview" description="Your competitive intelligence at a glance">
-      <div className="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-8 grid gap-4 md:grid-cols-3">
         <StatsCard
           title="Active Stores"
           value={overviewItems.length}
@@ -53,12 +53,6 @@ export default function DashboardPage() {
           value={stats.risingCandidates}
           icon={TrendingUp}
           variant="success"
-        />
-        <StatsCard
-          title="Avg. Performance"
-          value={`${Math.round(stats.avgScore)}%`}
-          icon={Activity}
-          variant="warning"
         />
       </div>
 

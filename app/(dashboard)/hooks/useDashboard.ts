@@ -8,6 +8,7 @@ import {
   useGetTrackerCandidatesQuery,
 } from '../services/dashboardApi'
 import type { PerformanceLabel } from '@/lib/types'
+import { resolveDisplayLabel } from '@/lib/label-utils'
 
 export function useDashboard() {
   const dispatch = useAppDispatch()
@@ -24,7 +25,9 @@ export function useDashboard() {
   const candidates = tracker.data ?? []
   const stats = {
     totalCandidates: candidates.length,
-    risingCandidates: candidates.filter((c) => c.performanceLabel === 'Rising').length,
+    risingCandidates: candidates.filter((c) =>
+      resolveDisplayLabel(c.performanceLabel, c.performanceScore, c.growthPct, c.daysElapsed, c.scoreHistory, c.growthHistory) === 'Rising'
+    ).length,
     avgScore:
       candidates.length > 0
         ? candidates.reduce((acc, c) => acc + (c.performanceScore ?? 0), 0) / candidates.length
