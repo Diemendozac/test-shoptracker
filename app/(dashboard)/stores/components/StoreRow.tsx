@@ -129,6 +129,14 @@ export function StoreRow({ store, quality, qualityLoading, isSyncing, isDeleting
         )}
       </div>
 
+      {/* Calidad */}
+      <div className="flex items-center justify-center">
+        {qualityLoading
+          ? <div className="flex gap-0.5">{[...Array(5)].map((_, i) => <span key={i} className="h-2.5 w-2.5 animate-pulse rounded-full bg-secondary" />)}</div>
+          : <QualityStars quality={quality} />
+        }
+      </div>
+
       {/* Pago anticipado */}
       <div className="text-center">
         {store.pagoAnticipado === true ? (
@@ -162,14 +170,6 @@ export function StoreRow({ store, quality, qualityLoading, isSyncing, isDeleting
           <Clock className="h-2.5 w-2.5" />
           {store.lastScrapedAt ? formatLastScraped(store.lastScrapedAt) : 'Nunca'}
         </p>
-      </div>
-
-      {/* Calidad */}
-      <div className="flex items-center justify-center">
-        {qualityLoading
-          ? <div className="flex gap-0.5">{[...Array(5)].map((_, i) => <span key={i} className="h-2.5 w-2.5 animate-pulse rounded-full bg-secondary" />)}</div>
-          : <QualityStars quality={quality} />
-        }
       </div>
 
       {/* Actions */}

@@ -37,7 +37,7 @@ export default function StoresPage() {
   const { data: allCandidates = [], isLoading: isCandidatesLoading } = useGetTrackerCandidatesQuery({})
 
   const [query, setQuery] = useState('')
-  const [sortField, setSortField] = useState<SortField>(null)
+  const [sortField, setSortField] = useState<SortField>('calidad')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [payFilter, setPayFilter] = useState<PayFilter>('all')
 
@@ -183,9 +183,9 @@ export default function StoresPage() {
         <div className="grid grid-cols-[40px_1fr_96px_96px_96px_80px] items-center gap-3 border-b border-border px-4 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           <div />
           <SortHeader field="name" label="Tienda" />
+          <SortHeader field="calidad" label="Calidad" className="justify-center" />
           <div className="text-center">Pago</div>
           <SortHeader field="status" label="Estado" className="justify-center" />
-          <SortHeader field="calidad" label="Calidad" className="justify-center" />
           <div />
         </div>
 
