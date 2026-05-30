@@ -49,3 +49,13 @@ export function resolveDisplayLabel(
 
   return raw as PerformanceLabel
 }
+
+// A product is ready to scale when its signal is both strong and backed by
+// enough history. daysInBestseller is excluded — it accumulates regardless
+// of whether the product is still moving.
+export function isScalable(
+  performanceScore: number | null | undefined,
+  signalConfidence: number | null | undefined,
+): boolean {
+  return (performanceScore ?? 0) >= 60 && (signalConfidence ?? 0) >= 0.5
+}

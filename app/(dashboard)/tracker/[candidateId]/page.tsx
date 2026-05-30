@@ -26,7 +26,7 @@ import { Button } from '@/components/ui/button'
 // the raw backend label lags one cycle behind the visible rank improvement.
 
 import type { CandidateHistory } from '@/app/(dashboard)/types'
-import { resolveDisplayLabel } from '@/lib/label-utils'
+import { resolveDisplayLabel, isScalable } from '@/lib/label-utils'
 
 function computeSmartLabel(
   entry: CandidateHistory,
@@ -453,7 +453,14 @@ function CandidateDetailContent() {
             {/* Score Ring */}
             <div className="flex items-center gap-6">
               {summary && (
-                <ScoreRing score={summary.performanceScore} label={currentLabel} size="lg" />
+                <div className="flex flex-col items-center gap-2">
+                  <ScoreRing score={summary.performanceScore} label={currentLabel} size="lg" />
+                  {isScalable(summary.performanceScore, summary.signalConfidence) && (
+                    <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-600">
+                      ↑ Listo para escalar
+                    </span>
+                  )}
+                </div>
               )}
               {fromTracker && (() => {
                 const url = buildProductUrl(candidate.productUrl, candidate.productHandle)

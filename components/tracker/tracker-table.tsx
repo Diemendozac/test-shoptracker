@@ -16,7 +16,7 @@ import { useRemoveCandidateMutation } from '@/app/(dashboard)/services/candidate
 import { dashboardApi } from '@/app/(dashboard)/services/dashboardApi'
 import { HoverImagePreview } from '@/components/ui/image-preview'
 import { ScoreRing } from '@/components/dashboard/score-ring'
-import { resolveDisplayLabel } from '@/lib/label-utils'
+import { resolveDisplayLabel, isScalable } from '@/lib/label-utils'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -337,12 +337,19 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
 
                   {/* Producto */}
                   <div className="min-w-0 pl-2">
-                    <Link
-                      href={`/tracker/${candidate.candidateId}?storeId=${candidate.storeId}&from=tracker`}
-                      className="line-clamp-2 text-sm font-semibold leading-snug text-foreground hover:text-primary hover:underline transition-colors"
-                    >
-                      {candidate.productTitle}
-                    </Link>
+                    <div className="flex items-start gap-1.5">
+                      <Link
+                        href={`/tracker/${candidate.candidateId}?storeId=${candidate.storeId}&from=tracker`}
+                        className="line-clamp-2 text-sm font-semibold leading-snug text-foreground hover:text-primary hover:underline transition-colors"
+                      >
+                        {candidate.productTitle}
+                      </Link>
+                      {isScalable(candidate.performanceScore, candidate.signalConfidence) && (
+                        <span className="mt-0.5 shrink-0 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-600">
+                          Escalar
+                        </span>
+                      )}
+                    </div>
                     <div className="mt-1 flex items-center gap-1.5">
                       <span className="text-[11px] text-muted-foreground tabular-nums">
                         {candidate.currentRank != null ? `Rank #${candidate.currentRank}` : 'Sin rank'}
