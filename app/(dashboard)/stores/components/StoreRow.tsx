@@ -99,7 +99,7 @@ interface StoreRowProps {
 export function StoreRow({ store, quality, qualityLoading, isSyncing, isDeleting, onSync, onDelete }: StoreRowProps) {
   return (
     <div className={cn(
-      'grid grid-cols-[40px_1fr_80px_60px_96px_96px_96px_80px] items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/30',
+      'grid grid-cols-[40px_1fr_96px_96px_96px_80px] items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/30',
       !store.isActive && 'opacity-50',
     )}>
       {/* Logo */}
@@ -126,28 +126,6 @@ export function StoreRow({ store, quality, qualityLoading, isSyncing, isDeleting
           <p className="text-[10px] text-muted-foreground/50 tabular-nums">
             {store.productCount} productos
           </p>
-        )}
-      </div>
-
-      {/* Niche */}
-      <div className="min-w-0">
-        {store.niche ? (
-          <span className="block truncate rounded-md bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
-            {store.niche}
-          </span>
-        ) : (
-          <span className="text-[10px] text-muted-foreground/40">—</span>
-        )}
-      </div>
-
-      {/* Currency */}
-      <div className="text-center">
-        {store.currency ? (
-          <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-            {store.currency}
-          </span>
-        ) : (
-          <span className="text-[10px] text-muted-foreground/40">—</span>
         )}
       </div>
 

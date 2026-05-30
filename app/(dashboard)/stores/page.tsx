@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils'
 
 type SortField = 'name' | 'status' | 'calidad' | null
 type SortDir = 'asc' | 'desc'
+type PayFilter = 'all' | 'anticipado' | 'contraentrega'
 
 function getStatusOrder(store: StoreResponse): number {
   const hours = store.lastScrapedAt
@@ -38,6 +39,7 @@ export default function StoresPage() {
   const [query, setQuery] = useState('')
   const [sortField, setSortField] = useState<SortField>(null)
   const [sortDir, setSortDir] = useState<SortDir>('desc')
+  const [payFilter, setPayFilter] = useState<PayFilter>('all')
 
   // Compute quality per store from all tracker candidates
   const qualityMap = useMemo(() => {
@@ -70,6 +72,9 @@ export default function StoresPage() {
           s.baseUrl.toLowerCase().includes(query.toLowerCase())
         )
       : [...stores]
+
+    if (payFilter === 'anticipado') result = result.filter(s => s.pagoAnticipado === true)
+    if (payFilter === 'contraentrega') result = result.filter(s => s.pagoAnticipado !== true)
 
     if (sortField === 'calidad') {
       result.sort((a, b) => {
@@ -148,6 +153,24 @@ export default function StoresPage() {
           )}
         </p>
 
+        {/* Pago filter chips */}
+        <div className="flex items-center gap-1 rounded-lg border border-border bg-secondary/30 p-1">
+          {([['all', 'Todos'], ['anticipado', 'Anticipado'], ['contraentrega', 'Contraentrega']] as [PayFilter, string][]).map(([val, label]) => (
+            <button
+              key={val}
+              onClick={() => setPayFilter(val)}
+              className={cn(
+                'rounded-md px-2.5 py-1 text-xs font-medium transition-all',
+                payFilter === val
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
         <Button className="gap-2 shrink-0" onClick={openAddModal}>
           <Plus className="h-4 w-4" />
           Agregar tienda
@@ -157,11 +180,9 @@ export default function StoresPage() {
       {/* Table */}
       <div className="rounded-2xl border border-border bg-card">
         {/* Column headers */}
-        <div className="grid grid-cols-[40px_1fr_80px_60px_96px_96px_96px_80px] items-center gap-3 border-b border-border px-4 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        <div className="grid grid-cols-[40px_1fr_96px_96px_96px_80px] items-center gap-3 border-b border-border px-4 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           <div />
           <SortHeader field="name" label="Tienda" />
-          <div>Nicho</div>
-          <div className="text-center">Moneda</div>
           <div className="text-center">Pago</div>
           <SortHeader field="status" label="Estado" className="justify-center" />
           <SortHeader field="calidad" label="Calidad" className="justify-center" />
