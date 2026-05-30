@@ -137,14 +137,16 @@ export function StoreRow({ store, quality, qualityLoading, isSyncing, isDeleting
         }
       </div>
 
-      {/* Pago anticipado */}
+      {/* Pago */}
       <div className="text-center">
         {store.pagoAnticipado === true ? (
           <span className="rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600">
             Anticipado
           </span>
         ) : (
-          <span className="text-[10px] text-muted-foreground/40">—</span>
+          <span className="rounded-md bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+            Contraentrega
+          </span>
         )}
       </div>
 
