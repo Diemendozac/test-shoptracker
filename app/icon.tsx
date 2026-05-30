@@ -13,7 +13,8 @@ export default function Icon() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'transparent',
+          background: '#ffffff',
+          borderRadius: '50%',
         }}
       >
         <svg
