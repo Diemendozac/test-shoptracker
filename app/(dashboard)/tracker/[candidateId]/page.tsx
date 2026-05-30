@@ -471,7 +471,7 @@ function CandidateDetailContent() {
             <div className="flex items-center gap-6">
               {summary && (
                 <div className="flex flex-col items-center gap-2">
-                  <ScoreRing score={adjustedScore} label={currentLabel} size="lg" />
+                  <ScoreRing score={adjustedScore} label={currentLabel} size="lg" showLabel={false} />
                   {isScalable(adjustedScore, summary.signalConfidence) && (
                     <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-600">
                       ↑ Listo para escalar
