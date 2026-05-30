@@ -291,7 +291,7 @@ export default function LoginPage() {
           </div>
           <span className="text-xl font-bold tracking-tight leading-none"
             style={{ fontFamily: 'var(--font-outfit, var(--font-inter, sans-serif))' }}>
-            dropspy
+            Dropspy
           </span>
         </Link>
 

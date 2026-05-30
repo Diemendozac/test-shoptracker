@@ -153,7 +153,7 @@ export default function HomePage() {
             </div>
             <span className="text-xl font-bold leading-none tracking-tight text-foreground"
               style={{ fontFamily: 'var(--font-outfit, var(--font-inter, sans-serif))' }}>
-              dropspy
+              Dropspy
             </span>
           </div>
 

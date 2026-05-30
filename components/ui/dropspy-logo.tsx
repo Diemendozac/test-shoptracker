@@ -3,45 +3,49 @@ interface DropspyIconProps {
   size?: number
 }
 
-/** The Dropspy teardrop+eye icon. Inherits `currentColor`. */
+/**
+ * Dropspy teardrop+eye icon using a single even-odd compound path.
+ * Cutouts are transparent, so the icon works on any background color.
+ * Set `color` via className (e.g. `text-white` or `text-foreground`).
+ */
 export function DropspyIcon({ className, size = 32 }: DropspyIconProps) {
   return (
     <svg
       width={size}
       height={size}
-      viewBox="0 0 100 120"
+      viewBox="0 0 100 115"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
     >
-      {/* Teardrop body */}
       <path
-        d="M50 5 C68 20 90 50 90 76 C90 99 72 116 50 116 C28 116 10 99 10 76 C10 50 32 20 50 5 Z"
+        fillRule="evenodd"
         fill="currentColor"
+        d={[
+          // 1. Outer teardrop — tip at (50,3), circle center (50,74) radius 40
+          'M50 3 C65 15 90 50 90 74 A40 40 0 1 1 10 74 C10 50 35 15 50 3Z',
+          // 2. Eye lens cutout — center (50,77), tips at x=15 and x=85
+          'M15 77 Q50 51 85 77 Q50 103 15 77Z',
+          // 3. Iris ring fill — circle (50,77) r=13
+          'M37 77 A13 13 0 1 0 63 77 A13 13 0 1 0 37 77Z',
+          // 4. Pupil cutout — circle (50,77) r=6
+          'M44 77 A6 6 0 1 0 56 77 A6 6 0 1 0 44 77Z',
+        ].join(' ')}
       />
-      {/* Eye white (lens shape with pointed ends) */}
-      <path
-        d="M14 80 Q50 55 86 80 Q50 105 14 80 Z"
-        fill="white"
-      />
-      {/* Iris ring */}
-      <circle cx="50" cy="80" r="19" fill="currentColor" />
-      {/* Pupil */}
-      <circle cx="50" cy="80" r="9" fill="white" />
     </svg>
   )
 }
 
-/** Full horizontal lockup: icon + "dropspy" wordmark. */
+/** Full horizontal lockup: icon + "Dropspy" wordmark. */
 export function DropspyWordmark({ className }: { className?: string }) {
   return (
     <span className={`inline-flex items-center gap-2 ${className ?? ''}`}>
       <DropspyIcon size={28} />
       <span
-        className="font-brand text-xl font-bold tracking-tight leading-none"
+        className="text-xl font-bold tracking-tight leading-none"
         style={{ fontFamily: 'var(--font-outfit, var(--font-inter, sans-serif))' }}
       >
-        dropspy
+        Dropspy
       </span>
     </span>
   )
