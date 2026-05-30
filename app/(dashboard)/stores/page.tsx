@@ -96,7 +96,7 @@ export default function StoresPage() {
     }
 
     return result
-  }, [stores, query, sortField, sortDir, qualityMap])
+  }, [stores, query, sortField, sortDir, qualityMap, payFilter])
 
   function SortHeader({ field, label, className }: { field: SortField; label: string; className?: string }) {
     const active = sortField === field
