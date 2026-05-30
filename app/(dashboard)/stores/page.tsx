@@ -13,7 +13,7 @@ import type { StoreQuality } from '@/lib/store-quality'
 import type { StoreResponse } from './types'
 import { cn } from '@/lib/utils'
 
-type SortField = 'name' | 'status' | 'calidad' | null
+type SortField = 'name' | 'status' | 'calidad' | 'testeados' | null
 type SortDir = 'asc' | 'desc'
 type PayFilter = 'all' | 'anticipado' | 'contraentrega'
 
@@ -87,6 +87,12 @@ export default function StoresPage() {
         const sa = getStatusOrder(a)
         const sb = getStatusOrder(b)
         return sortDir === 'asc' ? sa - sb : sb - sa
+      })
+    } else if (sortField === 'testeados') {
+      result.sort((a, b) => {
+        const ca = qualityMap[a.storeId]?.candidateCount ?? 0
+        const cb = qualityMap[b.storeId]?.candidateCount ?? 0
+        return sortDir === 'asc' ? ca - cb : cb - ca
       })
     } else if (sortField === 'name') {
       result.sort((a, b) => {
@@ -180,10 +186,11 @@ export default function StoresPage() {
       {/* Table */}
       <div className="rounded-2xl border border-border bg-card">
         {/* Column headers */}
-        <div className="grid grid-cols-[40px_1fr_96px_96px_96px_80px] items-center gap-3 border-b border-border px-4 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        <div className="grid grid-cols-[40px_1fr_96px_72px_96px_96px_80px] items-center gap-3 border-b border-border px-4 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           <div />
           <SortHeader field="name" label="Tienda" />
           <SortHeader field="calidad" label="Calidad" className="justify-center" />
+          <SortHeader field="testeados" label="Testeos" className="justify-center" />
           <div className="text-center">Pago</div>
           <SortHeader field="status" label="Estado" className="justify-center" />
           <div />

@@ -99,7 +99,7 @@ interface StoreRowProps {
 export function StoreRow({ store, quality, qualityLoading, isSyncing, isDeleting, onSync, onDelete }: StoreRowProps) {
   return (
     <div className={cn(
-      'grid grid-cols-[40px_1fr_96px_96px_96px_80px] items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/30',
+      'grid grid-cols-[40px_1fr_96px_72px_96px_96px_80px] items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/30',
       !store.isActive && 'opacity-50',
     )}>
       {/* Logo */}
@@ -135,6 +135,19 @@ export function StoreRow({ store, quality, qualityLoading, isSyncing, isDeleting
           ? <div className="flex gap-0.5">{[...Array(5)].map((_, i) => <span key={i} className="h-2.5 w-2.5 animate-pulse rounded-full bg-secondary" />)}</div>
           : <QualityStars quality={quality} />
         }
+      </div>
+
+      {/* Testeados */}
+      <div className="flex flex-col items-center justify-center gap-0.5">
+        {qualityLoading ? (
+          <div className="h-3 w-6 animate-pulse rounded bg-secondary" />
+        ) : quality ? (
+          <span className="text-sm font-semibold tabular-nums text-foreground">
+            {quality.candidateCount}
+          </span>
+        ) : (
+          <span className="text-xs text-muted-foreground/40">—</span>
+        )}
       </div>
 
       {/* Pago */}
