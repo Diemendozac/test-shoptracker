@@ -131,7 +131,7 @@ export function PoolWinnersSection({
       })
     }
     return r
-  }, [winners, preset, dateFilter, nicheFilter, currencyFilter, sort])
+  }, [winners, preset, dateFilter, nicheFilter, currencyFilter, pagoFilter, escalarFilter, sort])
 
   const hasActiveFilters = nicheFilter.size > 0 || currencyFilter.size > 0 || dateFilter > 0 || pagoFilter !== 'all' || escalarFilter
 
