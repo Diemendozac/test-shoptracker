@@ -1,4 +1,4 @@
-// ShopTracker Types
+// Dropspy Types
 
 export interface Store {
   storeId: string

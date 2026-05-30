@@ -2,18 +2,18 @@
 
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { 
-  ArrowRight, 
-  Zap, 
-  Target, 
-  TrendingUp, 
-  BarChart3, 
-  Store,
+import {
+  ArrowRight,
+  Zap,
+  Target,
+  TrendingUp,
+  BarChart3,
   Eye,
   Bell,
   Shield,
   Check
 } from 'lucide-react'
+import { DropspyIcon } from '@/components/ui/dropspy-logo'
 
 const stats = [
   { value: '10x', label: 'faster product discovery' },
@@ -89,10 +89,13 @@ export default function LandingPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <Store className="h-4 w-4 text-primary-foreground" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-foreground">
+              <DropspyIcon size={20} className="text-background" />
             </div>
-            <span className="text-lg font-semibold tracking-tight">ShopTracker</span>
+            <span className="text-xl font-bold tracking-tight leading-none"
+              style={{ fontFamily: 'var(--font-outfit, var(--font-inter, sans-serif))' }}>
+              dropspy
+            </span>
           </Link>
           
           <div className="hidden items-center gap-8 md:flex">
@@ -207,7 +210,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-6">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
-              How ShopTracker works
+              How Dropspy works
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
               Three simple steps to competitive intelligence automation.
@@ -309,7 +312,7 @@ export default function LandingPage() {
               Ready to outsmart your competition?
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Join thousands of e-commerce teams using ShopTracker to stay ahead.
+              Join thousands of e-commerce teams using Dropspy to stay ahead.
             </p>
             <div className="mt-8">
               <Link href="/login?tab=signup">
@@ -328,10 +331,13 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-6">
           <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                <Store className="h-4 w-4 text-primary-foreground" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-foreground">
+                <DropspyIcon size={20} className="text-background" />
               </div>
-              <span className="text-lg font-semibold">ShopTracker</span>
+              <span className="text-xl font-bold tracking-tight leading-none"
+                style={{ fontFamily: 'var(--font-outfit, var(--font-inter, sans-serif))' }}>
+                dropspy
+              </span>
             </div>
             
             <div className="flex items-center gap-6 text-sm text-muted-foreground">
@@ -341,7 +347,7 @@ export default function LandingPage() {
             </div>
 
             <div className="text-sm text-muted-foreground">
-              2026 ShopTracker. All rights reserved.
+              2026 Dropspy. All rights reserved.
             </div>
           </div>
         </div>

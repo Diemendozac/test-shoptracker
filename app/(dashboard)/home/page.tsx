@@ -10,9 +10,10 @@ import { useGetStoreOverviewQuery, useGetTrackerCandidatesQuery, useGetPoolWinne
 import { ScoreRing } from '@/components/dashboard/score-ring'
 import { PerformanceBadge } from '@/components/dashboard/performance-badge'
 import {
-  Search, TrendingUp, Store, Target, Zap,
-  ArrowRight, Flame, BarChart3, Globe, FlaskConical, Clock, Package,
+  Search, Store, Target, Zap,
+  ArrowRight, Flame, BarChart3, Globe, FlaskConical, Clock, Package, TrendingUp,
 } from 'lucide-react'
+import { DropspyIcon } from '@/components/ui/dropspy-logo'
 
 // ─── Search result types ──────────────────────────────────────────────────────
 
@@ -147,10 +148,13 @@ export default function HomePage() {
 
         <div className="relative mx-auto max-w-2xl text-center">
           <div className="mb-3 flex items-center justify-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/20">
-              <TrendingUp className="h-5 w-5 text-primary-foreground" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-foreground shadow-lg">
+              <DropspyIcon size={22} className="text-background" />
             </div>
-            <span className="text-lg font-bold text-foreground">ShopTracker</span>
+            <span className="text-xl font-bold leading-none tracking-tight text-foreground"
+              style={{ fontFamily: 'var(--font-outfit, var(--font-inter, sans-serif))' }}>
+              dropspy
+            </span>
           </div>
 
           <h1 className="mb-2 text-3xl font-bold tracking-tight text-foreground">

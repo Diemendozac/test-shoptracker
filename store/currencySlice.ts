@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 
-const STORAGE_KEY = 'shoptracker_currency'
+const STORAGE_KEY = 'dropspy_currency'
 
 function loadFromStorage(): string {
   if (typeof window === 'undefined') return 'USD'

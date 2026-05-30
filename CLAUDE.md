@@ -1,8 +1,8 @@
-# CLAUDE.md — SCOUT Frontend
+# CLAUDE.md — Dropspy Frontend
 
 ## Contexto del proyecto
 
-SCOUT es un SaaS de inteligencia competitiva para dropshippers avanzados. Este es el frontend Next.js que consume la API del backend (`Diemendozac/ShopTracker`).
+**Dropspy** es un SaaS de inteligencia competitiva para dropshippers avanzados. Este es el frontend Next.js que consume la API del backend (`Diemendozac/ShopTracker`).
 
 **Stack:** Next.js 15 · TypeScript · Tailwind CSS · shadcn/ui · Redux Toolkit · pnpm
 

@@ -6,8 +6,9 @@ import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Store, Mail, Lock, User, ArrowRight, Eye, EyeOff } from 'lucide-react'
+import { Mail, Lock, User, ArrowRight, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
+import { DropspyIcon } from '@/components/ui/dropspy-logo'
 
 // ─── Subcomponents ────────────────────────────────────────────────────────────
 
@@ -285,11 +286,12 @@ export default function LoginPage() {
 
       <header className="relative z-10 flex h-16 items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <Store className="h-4 w-4 text-primary-foreground" />
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-foreground">
+            <DropspyIcon size={20} className="text-background" />
           </div>
-          <span className="text-lg font-semibold tracking-tight">
-            ShopTracker
+          <span className="text-xl font-bold tracking-tight leading-none"
+            style={{ fontFamily: 'var(--font-outfit, var(--font-inter, sans-serif))' }}>
+            dropspy
           </span>
         </Link>
 

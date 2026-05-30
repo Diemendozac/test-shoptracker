@@ -1,8 +1,30 @@
-# CHANGES — SCOUT Frontend
+# CHANGES — Dropspy Frontend
 
 Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por qué, y archivos afectados.
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
+
+---
+
+### CHANGE-018 — Rebrand: ShopTracker → Dropspy
+**Fecha:** 2026-05-30
+**Tipo:** ui
+
+**Qué cambió:** Renombramiento completo de la plataforma de "ShopTracker" a **Dropspy**. Se creó el componente `DropspyIcon` (SVG teardrop+eye) y `DropspyWordmark`. Se agregó la fuente Outfit (Google Fonts) para el wordmark. Todos los textos "ShopTracker" en sidebar, login, home, marketing y metadata fueron reemplazados. Las claves de localStorage también se actualizaron (`dropspy_currency`, `dropspy_fx_v1`).
+
+**Archivos modificados:**
+- `components/ui/dropspy-logo.tsx` — nuevo componente SVG del logo (teardrop + ojo)
+- `app/layout.tsx` — metadata actualizada, fuente Outfit añadida
+- `components/layout/app-sidebar.tsx` — logo reemplazado
+- `app/(auth)/login/page.tsx` — logo reemplazado
+- `app/(dashboard)/home/page.tsx` — logo reemplazado
+- `app/(marketing)/page.tsx` — todas las menciones de ShopTracker
+- `lib/types.ts`, `app/globals.css` — comentarios actualizados
+- `store/currencySlice.ts`, `lib/exchange-rates.ts` — claves localStorage actualizadas
+- `CLAUDE.md`, `docs/CHANGES.md` — documentación actualizada
+
+**Relacionado con backend:** No aplica (solo frontend)
+**Wiki actualizado:** Sí — este archivo
 
 ---
 

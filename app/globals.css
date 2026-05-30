@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* ShopTracker Light Theme — white base, blue accents */
+  /* Dropspy Light Theme — white base, blue accents */
   --background: oklch(0.975 0.004 240);
   --foreground: oklch(0.18 0.02 240);
   --card: oklch(1.0 0 0);

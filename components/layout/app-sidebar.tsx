@@ -11,12 +11,12 @@ import {
   FlaskConical,
   Store,
   Settings,
-  TrendingUp,
   ChevronDown,
   Building2,
   Globe,
   Clock,
 } from 'lucide-react'
+import { DropspyIcon } from '@/components/ui/dropspy-logo'
 
 const TOP_NAV = [
   { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
@@ -78,16 +78,18 @@ export function AppSidebar({ pinned }: AppSidebarProps) {
           expanded ? 'gap-3 px-6' : 'justify-center',
         )}
       >
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary">
-          <TrendingUp className="h-5 w-5 text-primary-foreground" />
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-foreground">
+          <DropspyIcon size={22} className="text-background" />
         </div>
-        <div className={cn(
-          'flex flex-col overflow-hidden transition-all duration-300',
+        <span className={cn(
+          'overflow-hidden whitespace-nowrap transition-all duration-300',
+          'text-xl font-bold tracking-tight leading-none',
           expanded ? 'max-w-[160px] opacity-100' : 'max-w-0 opacity-0',
-        )}>
-          <span className="whitespace-nowrap text-sm font-semibold text-foreground">ShopTracker</span>
-          <span className="whitespace-nowrap text-xs text-muted-foreground">Intelligence Platform</span>
-        </div>
+        )}
+          style={{ fontFamily: 'var(--font-outfit, var(--font-inter, sans-serif))' }}
+        >
+          dropspy
+        </span>
       </Link>
 
       {/* Navigation */}

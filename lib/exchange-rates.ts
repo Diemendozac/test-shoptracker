@@ -11,7 +11,7 @@ export const FALLBACK_RATES: RatesMap = {
   CLP: 900, CAD: 1.36, AUD: 1.52,
 }
 
-const CACHE_KEY = 'shoptracker_fx_v3' // bumped: v2 lacked COP in merged rates
+const CACHE_KEY = 'dropspy_fx_v1' // bumped: v2 lacked COP in merged rates
 const TTL = 24 * 60 * 60 * 1000 // 24 hours
 
 // Module-level cache: shared across all hook instances in the same page session,
