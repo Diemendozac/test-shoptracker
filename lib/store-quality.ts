@@ -56,7 +56,8 @@ export function computeStoreQuality(candidates: CandidateForQuality[], maxCandid
 
   const growths = candidates.map(c => c.growthPct ?? 0)
   const avgGrowthPct = growths.reduce((a, b) => a + b, 0) / growths.length
-  const normalizedGrowth = Math.min(Math.max((avgGrowthPct + 100) / 300 * 100, 0), 100)
+  // Only positive growth contributes; 200% avg growth = 100 pts. Zero or negative = 0.
+  const normalizedGrowth = Math.min(Math.max(avgGrowthPct, 0) / 200 * 100, 100)
 
   const qualityScore =
     avgPerformanceScore * 0.5 +
@@ -64,7 +65,7 @@ export function computeStoreQuality(candidates: CandidateForQuality[], maxCandid
     normalizedGrowth * 0.2
 
   // ── Final ────────────────────────────────────────────────────────────────
-  const finalScore = activityScore * 0.4 + qualityScore * 0.6
+  const finalScore = activityScore * 0.2 + qualityScore * 0.8
 
   const stars: 1 | 2 | 3 | 4 | 5 =
     finalScore >= 80 ? 5 :
