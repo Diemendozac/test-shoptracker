@@ -89,13 +89,14 @@ function QualityStars({ quality }: { quality: StoreQuality | null }) {
 interface StoreRowProps {
   store: StoreResponse
   quality: StoreQuality | null
+  qualityLoading?: boolean
   isSyncing: boolean
   isDeleting: boolean
   onSync: () => void
   onDelete: () => void
 }
 
-export function StoreRow({ store, quality, isSyncing, isDeleting, onSync, onDelete }: StoreRowProps) {
+export function StoreRow({ store, quality, qualityLoading, isSyncing, isDeleting, onSync, onDelete }: StoreRowProps) {
   return (
     <div className={cn(
       'grid grid-cols-[40px_1fr_80px_60px_96px_96px_96px_80px] items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/30',
@@ -187,7 +188,10 @@ export function StoreRow({ store, quality, isSyncing, isDeleting, onSync, onDele
 
       {/* Calidad */}
       <div className="flex items-center justify-center">
-        <QualityStars quality={quality} />
+        {qualityLoading
+          ? <div className="flex gap-0.5">{[...Array(5)].map((_, i) => <span key={i} className="h-2.5 w-2.5 animate-pulse rounded-full bg-secondary" />)}</div>
+          : <QualityStars quality={quality} />
+        }
       </div>
 
       {/* Actions */}

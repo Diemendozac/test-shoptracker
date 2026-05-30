@@ -33,7 +33,7 @@ export default function StoresPage() {
     openAddModal,
   } = useStores()
 
-  const { data: allCandidates = [] } = useGetTrackerCandidatesQuery({})
+  const { data: allCandidates = [], isLoading: isCandidatesLoading } = useGetTrackerCandidatesQuery({})
 
   const [query, setQuery] = useState('')
   const [sortField, setSortField] = useState<SortField>(null)
@@ -206,6 +206,7 @@ export default function StoresPage() {
                 key={store.storeId}
                 store={store}
                 quality={qualityMap[store.storeId] ?? null}
+                qualityLoading={isCandidatesLoading}
                 isSyncing={syncingStoreId === store.storeId}
                 isDeleting={deletingStoreId === store.storeId}
                 onSync={() => syncStore(store.storeId, store.storeName)}
