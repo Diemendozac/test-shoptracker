@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import type { StoreResponse } from '../types'
 import { getStoreStatus } from '../utils/storeStatus'
+import type { StoreQuality } from '@/lib/store-quality'
 
 function formatLastScraped(dateStr: string) {
   const diffHours = Math.round(
@@ -24,18 +25,80 @@ function formatLastScraped(dateStr: string) {
   return `Hace ${Math.floor(diffHours / 24)}d`
 }
 
+// ── Quality stars ─────────────────────────────────────────────────────────────
+
+const STAR_COLORS: Record<1 | 2 | 3 | 4 | 5, string> = {
+  5: '#1D9E75',
+  4: '#085041',
+  3: '#BA7517',
+  2: '#D97706',
+  1: '#9CA3AF',
+}
+
+function QualityStars({ quality }: { quality: StoreQuality | null }) {
+  if (!quality) {
+    return <span className="text-[10px] text-muted-foreground/40">Sin datos</span>
+  }
+
+  const color = STAR_COLORS[quality.stars]
+  const filled = quality.stars
+  const risingPctDisplay = Math.round(quality.risingPct * 100)
+
+  return (
+    <div className="group relative inline-flex flex-col items-center">
+      {/* Stars row */}
+      <div className="flex gap-0.5">
+        {[1, 2, 3, 4, 5].map(n => (
+          <span
+            key={n}
+            className="text-[13px] leading-none"
+            style={{ color: n <= filled ? color : 'var(--muted-foreground)', opacity: n <= filled ? 1 : 0.2 }}
+          >
+            ★
+          </span>
+        ))}
+      </div>
+
+      {/* Tooltip */}
+      <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 w-52 -translate-x-1/2 rounded-xl border border-border bg-popover shadow-xl opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="px-3 py-2.5">
+          <p className="mb-2.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+            Calidad · {quality.stars}★ ({Math.round(quality.finalScore)}/100)
+          </p>
+          <div className="space-y-1.5">
+            <p className="text-[11px] text-foreground">
+              <span className="font-semibold">{quality.candidateCount}</span>
+              <span className="text-muted-foreground"> productos testeados</span>
+            </p>
+            <p className="text-[11px] text-foreground">
+              <span className="font-semibold">{risingPctDisplay}%</span>
+              <span className="text-muted-foreground"> llegaron a Rising o superior</span>
+            </p>
+            <p className="text-[11px] text-foreground">
+              <span className="text-muted-foreground">Score promedio: </span>
+              <span className="font-semibold">{Math.round(quality.avgPerformanceScore)}</span>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
 interface StoreRowProps {
   store: StoreResponse
+  quality: StoreQuality | null
   isSyncing: boolean
   isDeleting: boolean
   onSync: () => void
   onDelete: () => void
 }
 
-export function StoreRow({ store, isSyncing, isDeleting, onSync, onDelete }: StoreRowProps) {
+export function StoreRow({ store, quality, isSyncing, isDeleting, onSync, onDelete }: StoreRowProps) {
   return (
     <div className={cn(
-      'grid grid-cols-[40px_1fr_80px_60px_96px_96px_80px] items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/30',
+      'grid grid-cols-[40px_1fr_80px_60px_96px_96px_96px_80px] items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/30',
       !store.isActive && 'opacity-50',
     )}>
       {/* Logo */}
@@ -120,6 +183,11 @@ export function StoreRow({ store, isSyncing, isDeleting, onSync, onDelete }: Sto
           <Clock className="h-2.5 w-2.5" />
           {store.lastScrapedAt ? formatLastScraped(store.lastScrapedAt) : 'Nunca'}
         </p>
+      </div>
+
+      {/* Calidad */}
+      <div className="flex items-center justify-center">
+        <QualityStars quality={quality} />
       </div>
 
       {/* Actions */}
