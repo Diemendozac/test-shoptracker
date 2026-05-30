@@ -209,7 +209,7 @@ export default function HomePage() {
             <DropspyIcon size={32} className="text-foreground" />
             <span className="text-xl font-bold leading-none tracking-tight text-foreground"
               style={{ fontFamily: 'var(--font-outfit, var(--font-inter, sans-serif))' }}>
-              dropspy
+              Dropspy
             </span>
           </div>
 

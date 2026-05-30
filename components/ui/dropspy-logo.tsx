@@ -8,7 +8,7 @@ export function DropspyIcon({ className, size = 32 }: DropspyIconProps) {
     <svg
       width={size}
       height={size}
-      viewBox="0 0 100 108"
+      viewBox="0 0 500 500"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
@@ -17,14 +17,14 @@ export function DropspyIcon({ className, size = 32 }: DropspyIconProps) {
         fillRule="evenodd"
         fill="currentColor"
         d={[
-          // Teardrop: sharp tip (50,2) → circle centre (50,71) r=37
-          'M50 2 C61 19 87 46 87 71 A37 37 0 1 1 13 71 C13 46 39 19 50 2Z',
-          // Eye lens cutout: wide almond centred at (50,70)
-          'M17 70 Q50 47 83 70 Q50 93 17 70Z',
-          // Iris ring fill: centre (50,70) r=16
-          'M34 70 A16 16 0 1 0 66 70 A16 16 0 1 0 34 70Z',
-          // Pupil cutout: centre (50,70) r=7
-          'M43 70 A7 7 0 1 0 57 70 A7 7 0 1 0 43 70Z',
+          // Outer teardrop — proportions from Freepik file (tip ~251,26 · circle centre ~250,343 · r166)
+          'M251 26 C268 53 416 174 416 343 A166 166 0 1 1 84 343 C84 174 234 53 251 26Z',
+          // Eye lens cutout — wide almond centred ~y318
+          'M104 318 Q251 248 397 318 Q251 388 104 318Z',
+          // Iris ring fill — centre ~251,325 r55
+          'M196 325 A55 55 0 1 0 306 325 A55 55 0 1 0 196 325Z',
+          // Pupil cutout — exact path from Freepik SVG (centre ~251,333 r25)
+          'M253.332092 310.525055 C270.707703 314.979462 277.872986 331.082886 269.445374 345.916260 C264.338806 354.904297 250.112244 359.274414 240.927567 354.676361 C229.458847 348.934875 223.865494 335.355530 228.672607 324.924347 C233.556625 314.326355 241.480804 309.591980 253.332092 310.525055Z',
         ].join(' ')}
       />
     </svg>
@@ -39,7 +39,7 @@ export function DropspyWordmark({ className }: { className?: string }) {
         className="text-xl font-bold tracking-tight leading-none"
         style={{ fontFamily: 'var(--font-outfit, var(--font-inter, sans-serif))' }}
       >
-        dropspy
+        Dropspy
       </span>
     </span>
   )

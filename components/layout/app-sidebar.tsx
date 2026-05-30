@@ -86,7 +86,7 @@ export function AppSidebar({ pinned }: AppSidebarProps) {
         )}
           style={{ fontFamily: 'var(--font-outfit, var(--font-inter, sans-serif))' }}
         >
-          dropspy
+          Dropspy
         </span>
       </Link>
 
