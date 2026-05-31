@@ -104,7 +104,16 @@ export function PoolWinnersSection({
   )
 
   const filtered = useMemo(() => {
-    let r = winners
+    // Deduplicate: same product title + same store → keep the one with higher score
+    const seen = new Map<string, PoolWinnerProduct>()
+    for (const w of winners) {
+      const key = `${w.productTitle.trim().toLowerCase()}|${w.storeId}`
+      const existing = seen.get(key)
+      if (!existing || w.performanceScore > existing.performanceScore) {
+        seen.set(key, w)
+      }
+    }
+    let r = Array.from(seen.values())
     // Tab preset filters
     if (preset === 'rising')          r = r.filter(isRising)
     // pago_anticipado is filtered server-side via query param — no client filter needed
