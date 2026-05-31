@@ -25,7 +25,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Reset scroll position on route change
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = 0
-  }, [pathname])
+  }, [])
 
   // Render nothing until client-side hydration — avoids server/client mismatch
   if (!mounted) return null

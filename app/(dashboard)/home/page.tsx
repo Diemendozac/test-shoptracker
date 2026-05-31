@@ -356,7 +356,7 @@ export default function HomePage() {
         <div className="grid grid-cols-[1fr_320px] gap-6">
 
           {/* Top productos del pool */}
-          <div>
+          <div className="min-w-0">
             <div className="mb-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Flame className="h-4 w-4 text-orange-500" />
@@ -403,7 +403,7 @@ export default function HomePage() {
                         {/* Info — flex-1 */}
                         <div className="min-w-0 flex-1 overflow-hidden">
                           <p className="truncate whitespace-nowrap text-sm font-medium text-foreground">
-                            {product.productTitle}
+                            {product.productTitle.length > 55 ? product.productTitle.slice(0, 55) + '…' : product.productTitle}
                           </p>
                           <div className="mt-0.5 flex items-center gap-2">
                             <span className="max-w-[120px] truncate rounded-md bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
