@@ -52,6 +52,13 @@ export default function HomePage() {
   const trackingCount = tracker.length
   const risingCount = tracker.filter(c => (c.growthPct ?? 0) > 10).length
 
+  // Tracker price is more current than pool snapshot — prefer it when available
+  const trackerPriceMap = useMemo(() => {
+    const m = new Map<string, { price: number | null; currency: string | null }>()
+    for (const c of tracker) m.set(c.candidateId, { price: c.productPrice, currency: c.currency })
+    return m
+  }, [tracker])
+
   // ── Insights calculados desde Mis testeos ───────────────────────────────────
   const trackerInsights = useMemo(() => {
     type InsightItem = { message: string; cta: string; ctaPath: string; icon: React.ElementType; variant: 'default' | 'success' | 'warning' | 'danger' }
@@ -376,12 +383,12 @@ export default function HomePage() {
                 </div>
               ) : (
                 <div className="divide-y divide-border/50">
-                  {topProducts.slice(0, 8).map((product, idx) => {
-                    const price = product.productPrice != null
-                      ? convertCurrency(product.productPrice, product.currency ?? 'USD', preferredCurrency)
-                      : null
-                    return (
-                      <div key={product.candidateId} className="flex h-[72px] items-center gap-3 overflow-hidden px-4 transition-colors hover:bg-secondary/30">
+                  {topProducts.slice(0, 8).map((product, idx) => (
+                      <Link
+                        key={product.candidateId}
+                        href={`/tracker/${product.candidateId}?storeId=${product.storeId}&from=home`}
+                        className="flex h-[72px] items-center gap-3 overflow-hidden px-4 transition-colors hover:bg-secondary/30"
+                      >
                         {/* Rank — 32px */}
                         <span className={cn(
                           'w-8 shrink-0 text-center text-xs font-bold tabular-nums',
@@ -415,18 +422,27 @@ export default function HomePage() {
                           </div>
                         </div>
 
-                        {/* Price — 100px */}
-                        <span className="w-[100px] shrink-0 text-right text-xs font-medium text-muted-foreground tabular-nums">
-                          {price != null ? `${sym}${price.toLocaleString('es-CO', { maximumFractionDigits: 0 })}` : ''}
-                        </span>
+                        {/* Price — use tracker price if available (more current than pool snapshot) */}
+                        {(() => {
+                          const tracked = trackerPriceMap.get(product.candidateId)
+                          const rawPrice = tracked?.price ?? product.productPrice
+                          const rawCurrency = tracked?.currency ?? product.currency ?? 'USD'
+                          const displayPrice = rawPrice != null
+                            ? convertCurrency(rawPrice, rawCurrency, preferredCurrency)
+                            : null
+                          return (
+                            <span className="w-[100px] shrink-0 text-right text-xs font-medium text-muted-foreground tabular-nums">
+                              {displayPrice != null ? `${sym}${displayPrice.toLocaleString('es-CO', { maximumFractionDigits: 0 })}` : ''}
+                            </span>
+                          )
+                        })()}
 
                         {/* Score ring — 48px */}
                         <div className="flex w-12 shrink-0 items-center justify-center">
                           <ScoreRing score={product.performanceScore} size="sm" showLabel={false} />
                         </div>
-                      </div>
-                    )
-                  })}
+                      </Link>
+                  ))}
                 </div>
               )}
             </div>
