@@ -27,7 +27,12 @@ type SortKey =
   | 'daysElapsed'
 type SortDir = 'asc' | 'desc'
 interface SortState { key: SortKey | null; dir: SortDir }
-interface TrackerTableProps { candidates: TrackerCandidate[]; windowDays?: number }
+interface TrackerTableProps {
+  candidates: TrackerCandidate[]
+  windowDays?: number
+  favorites: Set<string>
+  onToggleFavorite: (id: string) => void
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -82,7 +87,7 @@ const PAGE_SIZE = 20
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) {
+export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFavorite }: TrackerTableProps) {
   const { currency: preferredCurrency } = useCurrency()
   const dispatch = useDispatch()
   const [removeCandidate] = useRemoveCandidateMutation()
@@ -91,23 +96,6 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
   const [sort, setSort] = useState<SortState>({ key: 'performanceScore', dir: 'desc' })
   const [search, setSearch] = useState('')
   const [storeFilter, setStoreFilter] = useState<string>('all')
-  const [favorites, setFavorites] = useState<Set<string>>(() => {
-    if (typeof window === 'undefined') return new Set()
-    try {
-      const stored = localStorage.getItem('dropspy_favorites')
-      return new Set(stored ? JSON.parse(stored) as string[] : [])
-    } catch { return new Set() }
-  })
-
-  function toggleFavorite(id: string) {
-    setFavorites(prev => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      localStorage.setItem('dropspy_favorites', JSON.stringify([...next]))
-      return next
-    })
-  }
   const [nicheFilter, setNicheFilter] = useState<string>('all')
   const [currencyFilter, setCurrencyFilter] = useState<string>('all')
   const [paFilter, setPaFilter] = useState<string>('all')
@@ -359,7 +347,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                 >
                   {/* # */}
                   <button
-                    onClick={() => toggleFavorite(candidate.candidateId)}
+                    onClick={() => onToggleFavorite(candidate.candidateId)}
                     title={favorites.has(candidate.candidateId) ? 'Quitar favorito' : 'Marcar favorito'}
                     className="flex w-full items-center justify-center"
                   >
