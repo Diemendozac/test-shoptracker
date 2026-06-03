@@ -65,11 +65,14 @@ interface PoolWinnersSectionProps {
   preset?: PoolPreset
   pagoFilter?: PagoFilter
   onPagoFilterChange?: (f: PagoFilter) => void
+  favorites: Set<string>
+  onToggleFavorite: (id: string) => void
 }
 
 export function PoolWinnersSection({
   data, isLoading, page = 0, onPageChange, preset = 'all',
   pagoFilter = 'all', onPagoFilterChange,
+  favorites, onToggleFavorite,
 }: PoolWinnersSectionProps) {
   const { currency: preferredCurrency } = useCurrency()
   const [search, setSearch] = useState('')
@@ -78,23 +81,6 @@ export function PoolWinnersSection({
   const [dateFilter, setDateFilter] = useState<7 | 15 | 30 | 0>(0)
   const [sort, setSort] = useState<SortState>({ key: 'performanceScore', dir: 'desc' })
   const [escalarFilter, setEscalarFilter] = useState(false)
-  const [favorites, setFavorites] = useState<Set<string>>(() => {
-    if (typeof window === 'undefined') return new Set()
-    try {
-      const stored = localStorage.getItem('dropspy_favorites')
-      return new Set(stored ? JSON.parse(stored) as string[] : [])
-    } catch { return new Set() }
-  })
-
-  function toggleFavorite(id: string) {
-    setFavorites(prev => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      localStorage.setItem('dropspy_favorites', JSON.stringify([...next]))
-      return next
-    })
-  }
 
   function toggleSet(prev: Set<string>, value: string): Set<string> {
     const next = new Set(prev)
@@ -138,6 +124,7 @@ export function PoolWinnersSection({
       r = r.filter(w => w.productTitle.toLowerCase().includes(q))
     }
     // Tab preset filters
+    if (preset === 'favorites')       r = r.filter(w => favorites.has(w.candidateId))
     if (preset === 'rising')          r = r.filter(isRising)
     // pago_anticipado is filtered server-side via query param — no client filter needed
     if (preset === 'top_score')       r = [...r].sort((a, b) => b.performanceScore - a.performanceScore).slice(0, 20)
@@ -163,7 +150,7 @@ export function PoolWinnersSection({
       })
     }
     return r
-  }, [winners, preset, search, dateFilter, nicheFilter, currencyFilter, pagoFilter, escalarFilter, sort])
+  }, [winners, preset, favorites, search, dateFilter, nicheFilter, currencyFilter, pagoFilter, escalarFilter, sort])
 
   const hasActiveFilters = !!search || nicheFilter.size > 0 || currencyFilter.size > 0 || dateFilter > 0 || pagoFilter !== 'all' || escalarFilter
 
@@ -396,9 +383,19 @@ export function PoolWinnersSection({
       </div>
       <div className="divide-y divide-border/50">
         {filtered.length === 0 ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            No hay productos que coincidan con los filtros.
-          </p>
+          preset === 'favorites' ? (
+            <div className="flex flex-col items-center justify-center gap-3 py-16 text-muted-foreground">
+              <Star className="h-9 w-9 opacity-20" />
+              <div className="text-center">
+                <p className="text-sm font-medium text-foreground">Aún no tienes favoritos</p>
+                <p className="mt-0.5 text-xs">Marca productos con ★ para guardarlos aquí.</p>
+              </div>
+            </div>
+          ) : (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              No hay productos que coincidan con los filtros.
+            </p>
+          )
         ) : (
           filtered.map((winner, i) => (
             <PoolWinnerRow
@@ -407,7 +404,7 @@ export function PoolWinnersSection({
               position={page * 20 + i + 1}
               preferredCurrency={preferredCurrency}
               isFavorite={favorites.has(winner.candidateId)}
-              onToggleFavorite={toggleFavorite}
+              onToggleFavorite={onToggleFavorite}
             />
           ))
         )}

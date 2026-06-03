@@ -7,19 +7,37 @@ import { useGetPoolWinnersQuery } from '@/app/(dashboard)/services/dashboardApi'
 import { cn } from '@/lib/utils'
 import { LayoutGrid, TrendingUp, Star, Flame } from 'lucide-react'
 
-export type PoolPreset = 'all' | 'rising' | 'top_score' | 'new'
+export type PoolPreset = 'all' | 'rising' | 'top_score' | 'new' | 'favorites'
 
 const TABS: { id: PoolPreset; label: string; icon: React.ElementType }[] = [
   { id: 'all',       label: 'Todos los productos', icon: LayoutGrid },
   { id: 'rising',    label: 'En alza',             icon: Flame      },
   { id: 'top_score', label: 'Top score',           icon: Star       },
   { id: 'new',       label: 'Nuevos esta semana',  icon: TrendingUp },
+  { id: 'favorites', label: 'Favoritos',           icon: Star       },
 ]
 
 export default function PoolPage() {
   const [page, setPage] = useState(0)
   const [preset, setPreset] = useState<PoolPreset>('all')
   const [pagoFilter, setPagoFilter] = useState<PagoFilter>('all')
+  const [favorites, setFavorites] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set()
+    try {
+      const stored = localStorage.getItem('dropspy_favorites')
+      return new Set(stored ? JSON.parse(stored) as string[] : [])
+    } catch { return new Set() }
+  })
+
+  function toggleFavorite(id: string) {
+    setFavorites(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      localStorage.setItem('dropspy_favorites', JSON.stringify([...next]))
+      return next
+    })
+  }
 
   const { data, isLoading, error } = useGetPoolWinnersQuery({
     page,
@@ -57,6 +75,11 @@ export default function PoolPage() {
             >
               <Icon className="h-4 w-4" />
               {label}
+              {id === 'favorites' && favorites.size > 0 && (
+                <span className="rounded-full bg-amber-400/20 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-amber-500">
+                  {favorites.size}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -80,6 +103,8 @@ export default function PoolPage() {
           preset={preset}
           pagoFilter={pagoFilter}
           onPagoFilterChange={handlePagoFilter}
+          favorites={favorites}
+          onToggleFavorite={toggleFavorite}
         />
       </div>
     </>
