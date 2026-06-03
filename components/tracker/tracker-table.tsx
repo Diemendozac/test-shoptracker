@@ -275,7 +275,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
       {/* ── Table ── */}
       <div className="overflow-hidden rounded-xl border border-border bg-card">
         {/* Header */}
-        <div className="grid grid-cols-[32px_44px_1fr_110px_70px_48px_72px_110px_90px_72px] items-center gap-3 border-b border-border bg-secondary/30 px-4 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        <div className="grid grid-cols-[32px_44px_minmax(0,1fr)_110px_70px_48px_72px_110px_90px_72px] items-center gap-3 border-b border-border bg-secondary/30 px-4 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           <div>#</div>
           <div />
           <button onClick={() => handleSort('productTitle')} className="group/th flex items-center gap-1.5 text-left hover:text-foreground transition-colors">
@@ -355,7 +355,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
               return (
                 <div
                   key={candidate.candidateId}
-                  className="grid grid-cols-[32px_44px_1fr_110px_70px_48px_72px_110px_90px_72px] items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/30"
+                  className="grid grid-cols-[32px_44px_minmax(0,1fr)_110px_70px_48px_72px_110px_90px_72px] items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/30"
                 >
                   {/* # */}
                   <button
