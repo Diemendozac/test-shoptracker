@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
-import { Lock, TrendingUp, Crown, ChevronLeft, ChevronRight, Globe, ExternalLink, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { Lock, TrendingUp, Crown, ChevronLeft, ChevronRight, Globe, ExternalLink, ArrowUpDown, ArrowUp, ArrowDown, Search, X, Star } from 'lucide-react'
 import { ScoreRing } from '@/components/dashboard/score-ring'
 import { Sparkline } from '@/components/tracker/sparkline'
 import { Button } from '@/components/ui/button'
@@ -72,11 +72,29 @@ export function PoolWinnersSection({
   pagoFilter = 'all', onPagoFilterChange,
 }: PoolWinnersSectionProps) {
   const { currency: preferredCurrency } = useCurrency()
+  const [search, setSearch] = useState('')
   const [nicheFilter, setNicheFilter] = useState<Set<string>>(new Set())
   const [currencyFilter, setCurrencyFilter] = useState<Set<string>>(new Set())
   const [dateFilter, setDateFilter] = useState<7 | 15 | 30 | 0>(0)
   const [sort, setSort] = useState<SortState>({ key: 'performanceScore', dir: 'desc' })
   const [escalarFilter, setEscalarFilter] = useState(false)
+  const [favorites, setFavorites] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set()
+    try {
+      const stored = localStorage.getItem('dropspy_favorites')
+      return new Set(stored ? JSON.parse(stored) as string[] : [])
+    } catch { return new Set() }
+  })
+
+  function toggleFavorite(id: string) {
+    setFavorites(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      localStorage.setItem('dropspy_favorites', JSON.stringify([...next]))
+      return next
+    })
+  }
 
   function toggleSet(prev: Set<string>, value: string): Set<string> {
     const next = new Set(prev)
@@ -114,6 +132,11 @@ export function PoolWinnersSection({
       }
     }
     let r = Array.from(seen.values())
+    // Search filter
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      r = r.filter(w => w.productTitle.toLowerCase().includes(q))
+    }
     // Tab preset filters
     if (preset === 'rising')          r = r.filter(isRising)
     // pago_anticipado is filtered server-side via query param — no client filter needed
@@ -140,9 +163,9 @@ export function PoolWinnersSection({
       })
     }
     return r
-  }, [winners, preset, dateFilter, nicheFilter, currencyFilter, pagoFilter, escalarFilter, sort])
+  }, [winners, preset, search, dateFilter, nicheFilter, currencyFilter, pagoFilter, escalarFilter, sort])
 
-  const hasActiveFilters = nicheFilter.size > 0 || currencyFilter.size > 0 || dateFilter > 0 || pagoFilter !== 'all' || escalarFilter
+  const hasActiveFilters = !!search || nicheFilter.size > 0 || currencyFilter.size > 0 || dateFilter > 0 || pagoFilter !== 'all' || escalarFilter
 
   function setPagoFilter(f: PagoFilter) { onPagoFilterChange?.(f) }
 
@@ -184,6 +207,23 @@ export function PoolWinnersSection({
 
       {/* ── Filter bar ── */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3 border-b border-border">
+
+        {/* Búsqueda */}
+        <div className="relative w-full sm:w-56">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Buscar producto…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="h-8 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+          />
+          {search && (
+            <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
 
         {/* Fechas */}
         <div className="flex items-center gap-1.5">
@@ -308,7 +348,7 @@ export function PoolWinnersSection({
           </span>
           {hasActiveFilters && (
             <button
-              onClick={() => { setNicheFilter(new Set()); setCurrencyFilter(new Set()); setDateFilter(0); onPagoFilterChange?.('all'); setEscalarFilter(false) }}
+              onClick={() => { setSearch(''); setNicheFilter(new Set()); setCurrencyFilter(new Set()); setDateFilter(0); onPagoFilterChange?.('all'); setEscalarFilter(false) }}
               className="text-[10px] text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
             >
               Limpiar
@@ -318,7 +358,7 @@ export function PoolWinnersSection({
       </div>
 
       {/* Column headers */}
-      <div className="grid grid-cols-[40px_56px_1fr_72px_56px_80px_130px_100px_72px] items-center gap-6 border-b border-border bg-secondary/30 px-6 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+      <div className="grid grid-cols-[32px_44px_1fr_70px_48px_72px_110px_90px_72px] items-center gap-3 border-b border-border bg-secondary/30 px-4 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
         <div>#</div>
         <div />
         <button
@@ -366,6 +406,8 @@ export function PoolWinnersSection({
               winner={winner}
               position={page * 20 + i + 1}
               preferredCurrency={preferredCurrency}
+              isFavorite={favorites.has(winner.candidateId)}
+              onToggleFavorite={toggleFavorite}
             />
           ))
         )}
@@ -472,10 +514,12 @@ function LockedState() {
   )
 }
 
-function PoolWinnerRow({ winner, position, preferredCurrency }: {
+function PoolWinnerRow({ winner, position, preferredCurrency, isFavorite, onToggleFavorite }: {
   winner: PoolWinnerProduct
   position: number
   preferredCurrency: string | null
+  isFavorite: boolean
+  onToggleFavorite: (id: string) => void
 }) {
   const isFirst = position === 1
 
@@ -500,7 +544,7 @@ function PoolWinnerRow({ winner, position, preferredCurrency }: {
     : 'text-emerald-600'
   const subText = gp == null ? null
     : gp > 1 && superadoPct != null
-      ? { text: `↑ superó al ${superadoPct}% del catálogo`, color: subColor }
+      ? { text: `↑ superó al ${superadoPct}% de ${winner.storeName}`, color: subColor }
     : gp < -1
       ? { text: '↓ bajando en tienda', color: 'text-rose-500' }
     : null
@@ -519,17 +563,22 @@ function PoolWinnerRow({ winner, position, preferredCurrency }: {
 
   return (
     <div className={cn(
-      'grid grid-cols-[40px_56px_1fr_72px_56px_80px_130px_100px_72px] items-center gap-6 px-6 py-3 transition-colors hover:bg-secondary/30',
+      'grid grid-cols-[32px_44px_1fr_70px_48px_72px_110px_90px_72px] items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/30',
       isFirst && 'bg-amber-500/5',
     )}>
       {/* # */}
-      <div className="flex items-center justify-center">
-        {isFirst
-          ? <Crown className="h-4 w-4 text-amber-500" />
-          : position <= 3
-          ? <span className={cn('text-sm leading-none', position === 2 ? 'text-slate-400' : 'text-amber-700')}>★</span>
-          : <span className="text-xs font-bold text-muted-foreground">#{position}</span>}
-      </div>
+      <button
+        onClick={() => onToggleFavorite(winner.candidateId)}
+        title={isFavorite ? 'Quitar favorito' : 'Marcar favorito'}
+        className="flex w-full items-center justify-center"
+      >
+        <Star className={cn(
+          'h-3.5 w-3.5 transition-colors',
+          isFavorite
+            ? 'fill-amber-400 text-amber-400'
+            : 'text-muted-foreground/25 hover:text-amber-400/70',
+        )} />
+      </button>
 
       {/* Image */}
       <HoverImagePreview
@@ -543,7 +592,7 @@ function PoolWinnerRow({ winner, position, preferredCurrency }: {
         <div className="flex items-start gap-1.5">
           <Link
             href={`/tracker/${winner.candidateId}?storeId=${winner.storeId}&from=pool`}
-            className="line-clamp-2 text-sm font-semibold leading-snug text-foreground hover:text-primary hover:underline transition-colors"
+            className="truncate text-sm font-semibold text-foreground hover:text-primary hover:underline transition-colors"
           >
             {winner.productTitle}
           </Link>

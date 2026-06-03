@@ -6,6 +6,26 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-021 — Pool (Explorar testeos): fix overflow + búsqueda + favoritos + storeName
+**Fecha:** 2026-06-03
+**Tipo:** fix + feature
+
+**Qué cambió:** Mismas mejoras del CHANGE-020 aplicadas a `pool-winners.tsx`:
+- Grid de `[40px_56px_1fr_72px_56px_80px_130px_100px_72px]` a `[32px_44px_1fr_70px_48px_72px_110px_90px_72px]`, gap `gap-3`, padding `px-4`. Elimina overflow horizontal.
+- "superó al X% del catálogo" → "superó al X% de [storeName]" con `winner.storeName`.
+- Búsqueda client-side por nombre de producto (input con lupa arriba del filter bar), combinado con todos los filtros activos.
+- Columna `#` reemplazada por estrella interactiva de favoritos. Estado compartido en `localStorage["dropspy_favorites"]` — mismo key que tracker.
+- Título del producto truncado a 1 línea (`truncate`).
+
+**Archivos modificados:**
+- `components/tracker/pool-winners.tsx` — todos los cambios anteriores
+- `app/(dashboard)/pool/page.tsx` — expone `error` del hook para mostrar mensaje cuando la request falla
+
+**Relacionado con backend:** No aplica.
+**Wiki actualizado:** No aplica.
+
+---
+
 ### CHANGE-020 — Tabla tracker: fix overflow + texto tienda + favoritos localStorage
 **Fecha:** 2026-06-03
 **Tipo:** fix + feature

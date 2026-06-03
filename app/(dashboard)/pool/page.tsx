@@ -21,7 +21,7 @@ export default function PoolPage() {
   const [preset, setPreset] = useState<PoolPreset>('all')
   const [pagoFilter, setPagoFilter] = useState<PagoFilter>('all')
 
-  const { data, isLoading } = useGetPoolWinnersQuery({
+  const { data, isLoading, error } = useGetPoolWinnersQuery({
     page,
     size: 20,
     pagoAnticipado: pagoFilter === 'anticipado' ? true
@@ -64,6 +64,14 @@ export default function PoolPage() {
 
       {/* ── Content ── */}
       <div className="p-6">
+        {error && !data && (
+          <div className="rounded-xl border border-border bg-card px-6 py-8 text-center">
+            <p className="text-sm font-medium text-foreground">No se pudo cargar el pool</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {'status' in error ? `Error ${(error as { status: number }).status}` : 'Error de red'} — intenta recargar la página
+            </p>
+          </div>
+        )}
         <PoolWinnersSection
           data={data}
           isLoading={isLoading}
