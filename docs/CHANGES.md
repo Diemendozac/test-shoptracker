@@ -6,6 +6,26 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-020 — Tabla tracker: fix overflow + texto tienda + favoritos localStorage
+**Fecha:** 2026-06-03
+**Tipo:** fix + feature
+
+**Qué cambió:**
+
+**Fix 1 — Scroll horizontal eliminado:** Grid pasó de `[40px_56px_1fr_140px_72px_56px_80px_130px_100px_72px]` a `[32px_44px_1fr_110px_70px_48px_72px_110px_90px_72px]`. Gap de `gap-6` a `gap-3`, padding de `px-6` a `px-4`. Reducción total de ~220px de ancho mínimo (1010px → ~790px), entra sin overflow en pantallas de 1280px+. Título del producto truncado a 1 línea (`truncate` en vez de `line-clamp-2`).
+
+**Fix 2 — Texto contextual corregido:** "superó al X% del catálogo" → "superó al X% de [nombre tienda]". El nombre proviene del campo `candidate.storeName` del schema.
+
+**Feature — Favoritos con localStorage:** Columna `#` reemplazada por estrella interactiva en cada fila. Click alterna favorito (★ amber llena / ☆ outline muted). Estado persiste en `localStorage["dropspy_favorites"]` como array de candidateIds. Compatible con futura tab "Favoritos" que filtre por `isFavorite`. Búsqueda ya estaba implementada — solo se actualizó el placeholder a "Buscar producto…".
+
+**Archivos modificados:**
+- `components/tracker/tracker-table.tsx` — todos los cambios anteriores
+
+**Relacionado con backend:** No aplica (cambios puramente de UI y localStorage).
+**Wiki actualizado:** No aplica (mejoras de UX sin impacto en lógica de producto).
+
+---
+
 ### CHANGE-019 — Integración Lemon Squeezy: base de planes pagos
 **Fecha:** 2026-06-02
 **Tipo:** feature

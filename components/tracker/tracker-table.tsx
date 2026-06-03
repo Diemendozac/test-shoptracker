@@ -10,7 +10,7 @@ import { Sparkline } from '@/components/tracker/sparkline'
 import type { TrackerCandidate } from '@/app/(dashboard)/types'
 import {
   ExternalLink, ArrowUpDown, ArrowUp, ArrowDown,
-  Search, X, SlidersHorizontal, Trash2, ChevronLeft, ChevronRight,
+  Search, X, SlidersHorizontal, Trash2, ChevronLeft, ChevronRight, Star,
 } from 'lucide-react'
 import { useRemoveCandidateMutation } from '@/app/(dashboard)/services/candidateApi'
 import { dashboardApi } from '@/app/(dashboard)/services/dashboardApi'
@@ -91,6 +91,23 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
   const [sort, setSort] = useState<SortState>({ key: 'performanceScore', dir: 'desc' })
   const [search, setSearch] = useState('')
   const [storeFilter, setStoreFilter] = useState<string>('all')
+  const [favorites, setFavorites] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set()
+    try {
+      const stored = localStorage.getItem('dropspy_favorites')
+      return new Set(stored ? JSON.parse(stored) as string[] : [])
+    } catch { return new Set() }
+  })
+
+  function toggleFavorite(id: string) {
+    setFavorites(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      localStorage.setItem('dropspy_favorites', JSON.stringify([...next]))
+      return next
+    })
+  }
   const [nicheFilter, setNicheFilter] = useState<string>('all')
   const [currencyFilter, setCurrencyFilter] = useState<string>('all')
   const [paFilter, setPaFilter] = useState<string>('all')
@@ -172,7 +189,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
           <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Search products…"
+            placeholder="Buscar producto…"
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="h-9 w-full rounded-lg border border-border bg-secondary/40 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
@@ -258,7 +275,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
       {/* ── Table ── */}
       <div className="overflow-hidden rounded-xl border border-border bg-card">
         {/* Header */}
-        <div className="grid grid-cols-[40px_56px_1fr_140px_72px_56px_80px_130px_100px_72px] items-center gap-6 border-b border-border bg-secondary/30 px-6 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        <div className="grid grid-cols-[32px_44px_1fr_110px_70px_48px_72px_110px_90px_72px] items-center gap-3 border-b border-border bg-secondary/30 px-4 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           <div>#</div>
           <div />
           <button onClick={() => handleSort('productTitle')} className="group/th flex items-center gap-1.5 text-left hover:text-foreground transition-colors">
@@ -324,7 +341,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
 
               const subText: { text: string; color: string } | null = gp == null ? null
                 : gp > 1 && superadoPct != null
-                  ? { text: `↑ superó al ${superadoPct}% del catálogo`, color: subColor }
+                  ? { text: `↑ superó al ${superadoPct}% de ${candidate.storeName}`, color: subColor }
                 : gp < -1
                   ? { text: '↓ bajando en tienda', color: 'text-rose-500' }
                 : null
@@ -338,18 +355,21 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
               return (
                 <div
                   key={candidate.candidateId}
-                  className="grid grid-cols-[40px_56px_1fr_140px_72px_56px_80px_130px_100px_72px] items-center gap-6 px-6 py-3 transition-colors hover:bg-secondary/30"
+                  className="grid grid-cols-[32px_44px_1fr_110px_70px_48px_72px_110px_90px_72px] items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/30"
                 >
                   {/* # */}
-                  <div className="flex items-center justify-center">
-                    {idx_abs < 3 ? (
-                      <span className={cn('text-sm leading-none',
-                        idx_abs === 0 ? 'text-amber-500' : idx_abs === 1 ? 'text-slate-400' : 'text-amber-700',
-                      )}>★</span>
-                    ) : (
-                      <span className="text-xs font-bold text-muted-foreground">#{idx_abs + 1}</span>
-                    )}
-                  </div>
+                  <button
+                    onClick={() => toggleFavorite(candidate.candidateId)}
+                    title={favorites.has(candidate.candidateId) ? 'Quitar favorito' : 'Marcar favorito'}
+                    className="flex w-full items-center justify-center"
+                  >
+                    <Star className={cn(
+                      'h-3.5 w-3.5 transition-colors',
+                      favorites.has(candidate.candidateId)
+                        ? 'fill-amber-400 text-amber-400'
+                        : 'text-muted-foreground/25 hover:text-amber-400/70',
+                    )} />
+                  </button>
 
                   {/* Image */}
                   <HoverImagePreview src={candidate.productImage} fallback={candidate.productTitle.charAt(0)} proxy />
@@ -359,7 +379,7 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                     <div className="flex items-start gap-1.5">
                       <Link
                         href={`/tracker/${candidate.candidateId}?storeId=${candidate.storeId}&from=tracker`}
-                        className="line-clamp-2 text-sm font-semibold leading-snug text-foreground hover:text-primary hover:underline transition-colors"
+                        className="truncate text-sm font-semibold text-foreground hover:text-primary hover:underline transition-colors"
                       >
                         {candidate.productTitle}
                       </Link>
