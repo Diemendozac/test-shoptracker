@@ -24,7 +24,7 @@ export default function PoolPage() {
   const [favorites, setFavorites] = useState<Set<string>>(() => {
     if (typeof window === 'undefined') return new Set()
     try {
-      const stored = localStorage.getItem('dropspy_favorites')
+      const stored = localStorage.getItem('dropspy_favorites_pool')
       return new Set(stored ? JSON.parse(stored) as string[] : [])
     } catch { return new Set() }
   })
@@ -34,7 +34,7 @@ export default function PoolPage() {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
       else next.add(id)
-      localStorage.setItem('dropspy_favorites', JSON.stringify([...next]))
+      localStorage.setItem('dropspy_favorites_pool', JSON.stringify([...next]))
       return next
     })
   }

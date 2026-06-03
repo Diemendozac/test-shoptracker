@@ -25,7 +25,7 @@ export default function TrackerPage() {
   const [favorites, setFavorites] = useState<Set<string>>(() => {
     if (typeof window === 'undefined') return new Set()
     try {
-      const stored = localStorage.getItem('dropspy_favorites')
+      const stored = localStorage.getItem('dropspy_favorites_tracker')
       return new Set(stored ? JSON.parse(stored) as string[] : [])
     } catch { return new Set() }
   })
@@ -35,7 +35,7 @@ export default function TrackerPage() {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
       else next.add(id)
-      localStorage.setItem('dropspy_favorites', JSON.stringify([...next]))
+      localStorage.setItem('dropspy_favorites_tracker', JSON.stringify([...next]))
       return next
     })
   }
