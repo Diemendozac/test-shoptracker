@@ -206,7 +206,7 @@ export function PoolWinnersSection({
     <div className="mb-6 overflow-hidden rounded-2xl border border-border bg-card">
 
       {/* ── Filter bar ── */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3 border-b border-border">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 border-b border-border">
 
         {/* Búsqueda */}
         <div className="relative w-full sm:w-56">
@@ -394,7 +394,7 @@ export function PoolWinnersSection({
         </button>
         <div className="text-center">Acción</div>
       </div>
-      <div className="divide-y divide-border/50 px-2">
+      <div className="divide-y divide-border/50">
         {filtered.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
             No hay productos que coincidan con los filtros.
@@ -584,11 +584,12 @@ function PoolWinnerRow({ winner, position, preferredCurrency, isFavorite, onTogg
       <HoverImagePreview
         src={winner.productImage}
         fallback={winner.productTitle.charAt(0)}
+        size={44}
         proxy
       />
 
       {/* Producto + rank */}
-      <div className="min-w-0 pl-2">
+      <div className="min-w-0 pl-3">
         <div className="flex items-start gap-1.5">
           <Link
             href={`/tracker/${winner.candidateId}?storeId=${winner.storeId}&from=pool`}

@@ -372,10 +372,10 @@ export function TrackerTable({ candidates, windowDays = 0 }: TrackerTableProps) 
                   </button>
 
                   {/* Image */}
-                  <HoverImagePreview src={candidate.productImage} fallback={candidate.productTitle.charAt(0)} proxy />
+                  <HoverImagePreview src={candidate.productImage} fallback={candidate.productTitle.charAt(0)} size={44} proxy />
 
                   {/* Producto */}
-                  <div className="min-w-0 pl-2">
+                  <div className="min-w-0 pl-3">
                     <div className="flex items-start gap-1.5">
                       <Link
                         href={`/tracker/${candidate.candidateId}?storeId=${candidate.storeId}&from=tracker`}

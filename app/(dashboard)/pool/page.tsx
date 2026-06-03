@@ -40,7 +40,7 @@ export default function PoolPage() {
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col min-w-0 w-full">
       {/* ── Tab header ── */}
       <div className="border-b border-border bg-card px-6">
         <div className="flex items-center gap-1 overflow-x-auto py-0">
