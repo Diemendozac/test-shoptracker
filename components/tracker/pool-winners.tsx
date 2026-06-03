@@ -345,7 +345,7 @@ export function PoolWinnersSection({
       </div>
 
       {/* Column headers */}
-      <div className="grid grid-cols-[32px_44px_minmax(0,1fr)_70px_48px_72px_110px_90px_72px] items-center gap-3 border-b border-border bg-secondary/30 px-4 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+      <div className="grid grid-cols-[32px_64px_minmax(0,1fr)_60px_48px_72px_110px_90px_60px] items-center gap-3 border-b border-border bg-secondary/30 px-4 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
         <div>#</div>
         <div />
         <button
@@ -560,7 +560,7 @@ function PoolWinnerRow({ winner, position, preferredCurrency, isFavorite, onTogg
 
   return (
     <div className={cn(
-      'grid grid-cols-[32px_44px_minmax(0,1fr)_70px_48px_72px_110px_90px_72px] items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/30',
+      'grid grid-cols-[32px_64px_minmax(0,1fr)_60px_48px_72px_110px_90px_60px] items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/30',
       isFirst && 'bg-amber-500/5',
     )}>
       {/* # */}
@@ -581,7 +581,7 @@ function PoolWinnerRow({ winner, position, preferredCurrency, isFavorite, onTogg
       <HoverImagePreview
         src={winner.productImage}
         fallback={winner.productTitle.charAt(0)}
-        size={44}
+        size={64}
         proxy
       />
 
