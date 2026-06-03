@@ -2,20 +2,24 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { PageLayout } from '@/components/layout/page-layout'
 import { Button } from '@/components/ui/button'
 import { useAppDispatch } from '@/store/hooks'
 import { logout } from '@/app/(auth)/store/authSlice'
 import { useGetMeQuery, useChangePasswordMutation, useUpdatePreferencesMutation } from '@/app/(dashboard)/services/userApi'
-import { User, Mail, Bell, Shield, CreditCard, LogOut, Eye, EyeOff, Check, X, Zap } from 'lucide-react'
+import { User, Mail, Bell, Shield, CreditCard, LogOut, Eye, EyeOff, Check, X, Zap, ArrowUpRight, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { lsCheckoutUrl, lsVariantId } from '@/lib/lemonsqueezy'
 
 // ─── Plan badge ───────────────────────────────────────────────────────────────
 
 const PLAN_LABELS: Record<string, { label: string; color: string }> = {
   free:    { label: 'Free',    color: 'bg-secondary text-muted-foreground' },
-  basic:   { label: 'Básico',  color: 'bg-blue-500/20 text-blue-400' },
+  starter: { label: 'Starter', color: 'bg-blue-500/20 text-blue-400' },
+  basic:   { label: 'Starter', color: 'bg-blue-500/20 text-blue-400' }, // alias legacy
   pro:     { label: 'Pro',     color: 'bg-primary/20 text-primary' },
+  agency:  { label: 'Agency',  color: 'bg-violet-500/20 text-violet-400' },
   admin:   { label: 'Admin',   color: 'bg-amber-500/20 text-amber-400' },
 }
 
@@ -159,6 +163,64 @@ function PasswordSection() {
             </Button>
           </div>
         </form>
+      )}
+    </div>
+  )
+}
+
+// ─── Billing section ─────────────────────────────────────────────────────────
+
+const UPGRADE_OPTIONS: Record<string, { nextPlan: string; label: string; desc: string } | null> = {
+  free:    { nextPlan: 'starter', label: 'Empieza con Starter', desc: '15 tiendas · Pool global · Alertas por email' },
+  starter: { nextPlan: 'pro',     label: 'Actualizar a Pro',    desc: '40 tiendas · Datos privados · Exportar CSV' },
+  basic:   { nextPlan: 'pro',     label: 'Actualizar a Pro',    desc: '40 tiendas · Datos privados · Exportar CSV' },
+  pro:     { nextPlan: 'agency',  label: 'Actualizar a Agency', desc: '100 tiendas · Seats múltiples · API access' },
+  agency:  null,
+}
+
+function BillingSection({ plan, email, userId }: { plan: string; email?: string; userId?: string }) {
+  const upgrade = UPGRADE_OPTIONS[plan] ?? null
+
+  const checkoutHref = upgrade
+    ? lsCheckoutUrl(lsVariantId(upgrade.nextPlan as 'starter' | 'pro' | 'agency', 'monthly'), email, userId)
+    : '#'
+
+  return (
+    <div className="space-y-3">
+      {/* Plan actual */}
+      <div className="flex items-center justify-between rounded-xl bg-secondary/40 px-4 py-3">
+        <div>
+          <p className="text-xs text-muted-foreground">Plan actual</p>
+          <p className="font-semibold text-foreground capitalize">{PLAN_LABELS[plan]?.label ?? plan}</p>
+        </div>
+        <Link href="/pricing" className="text-xs text-primary underline-offset-4 hover:underline flex items-center gap-1">
+          Ver todos los planes <ArrowUpRight className="h-3 w-3" />
+        </Link>
+      </div>
+
+      {/* Upgrade CTA */}
+      {upgrade && (
+        <div className="flex items-center justify-between rounded-xl bg-gradient-to-r from-primary/20 via-primary/10 to-transparent p-4">
+          <div>
+            <p className="font-semibold text-foreground">{upgrade.label}</p>
+            <p className="text-sm text-muted-foreground">{upgrade.desc}</p>
+          </div>
+          <a href={checkoutHref} target="_blank" rel="noopener noreferrer">
+            <Button size="sm" className="shrink-0">
+              Actualizar <ExternalLink className="ml-1.5 h-3 w-3" />
+            </Button>
+          </a>
+        </div>
+      )}
+
+      {/* Manage subscription — visible para planes pagos */}
+      {plan !== 'free' && (
+        <p className="text-xs text-muted-foreground text-center">
+          Para cancelar o cambiar método de pago, escríbenos a{' '}
+          <a href="mailto:hola@dropspy.io" className="text-primary underline-offset-4 hover:underline">
+            hola@dropspy.io
+          </a>
+        </p>
       )}
     </div>
   )
@@ -321,17 +383,11 @@ export default function SettingsPage() {
             <div className="border-b border-border p-4">
               <h2 className="flex items-center gap-2 font-semibold text-foreground">
                 <CreditCard className="h-4 w-4" />
-                Plan
+                Plan y facturación
               </h2>
             </div>
-            <div className="p-6">
-              <div className="flex items-center justify-between rounded-xl bg-gradient-to-r from-primary/20 via-primary/10 to-transparent p-4">
-                <div>
-                  <p className="font-semibold text-foreground">Actualizar a Pro</p>
-                  <p className="text-sm text-muted-foreground">Más tiendas, historial ilimitado y señales del pool</p>
-                </div>
-                <Button>Ver planes</Button>
-              </div>
+            <div className="p-6 space-y-4">
+              <BillingSection plan={plan} email={me?.email} userId={me?.userId} />
             </div>
           </div>
         )}

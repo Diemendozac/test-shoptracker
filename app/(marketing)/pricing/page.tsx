@@ -7,6 +7,10 @@ import { cn } from '@/lib/utils'
 import { Check, X, Users, Globe, Lock } from 'lucide-react'
 import { DropspyIcon } from '@/components/ui/dropspy-logo'
 
+function cop(n: number) {
+  return n.toLocaleString('es-CO')
+}
+
 const PLANS = [
   {
     id: 'free',
@@ -38,9 +42,9 @@ const PLANS = [
   {
     id: 'starter',
     name: 'Starter',
-    monthly: 49,
-    annual: 39,
-    annualTotal: 468,
+    monthly: 99900,
+    annual: 79900,
+    annualTotal: 959000,
     description: 'Para marcas en crecimiento',
     limits: {
       stores: '15 tiendas',
@@ -56,18 +60,18 @@ const PLANS = [
       { label: 'Seats múltiples', included: false },
     ],
     privacy: 'community',
-    cta: 'Probar 7 días gratis',
+    cta: 'Suscribirse',
     ctaHref: '/login?tab=signup&plan=starter',
     ctaVariant: 'outline' as const,
-    trial: 'Incluye Pro desbloqueado durante el trial · Con tarjeta',
+    trial: null,
     highlighted: false,
   },
   {
     id: 'pro',
     name: 'Pro',
-    monthly: 99,
-    annual: 79,
-    annualTotal: 948,
+    monthly: 199900,
+    annual: 159900,
+    annualTotal: 1919000,
     description: 'Para equipos que escalan',
     limits: {
       stores: '40 tiendas',
@@ -92,9 +96,9 @@ const PLANS = [
   {
     id: 'agency',
     name: 'Agency',
-    monthly: 199,
-    annual: 159,
-    annualTotal: 1908,
+    monthly: 399900,
+    annual: 319900,
+    annualTotal: 3839000,
     description: 'Para agencias y operaciones grandes',
     limits: {
       stores: '100 tiendas',
@@ -255,12 +259,13 @@ export default function PricingPage() {
                     ) : (
                       <>
                         <div className="flex items-baseline gap-1">
-                          <span className="text-4xl font-bold">${price}</span>
+                          <span className="text-sm font-semibold text-muted-foreground">COP</span>
+                          <span className="text-4xl font-bold">${cop(price)}</span>
                           <span className="text-sm text-muted-foreground">/mes</span>
                         </div>
                         {annual && (
                           <p className="mt-1 text-xs text-muted-foreground tabular-nums">
-                            ${plan.annualTotal}/año · ahorras ${monthlySavings}
+                            ${cop(plan.annualTotal)}/año · ahorras ${cop(monthlySavings)}
                           </p>
                         )}
                       </>

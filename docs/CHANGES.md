@@ -6,6 +6,25 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-019 — Integración Lemon Squeezy: base de planes pagos
+**Fecha:** 2026-06-02
+**Tipo:** feature
+
+**Qué cambió:** Preparación de la arquitectura de cobro con Lemon Squeezy. Aún sin variant IDs reales (pendiente creación de productos en LS dashboard).
+- Nuevo `lib/lemonsqueezy.ts`: constantes de variant IDs (placeholders), helper `lsCheckoutUrl()` que genera URLs de checkout con email y userId pre-cargados.
+- Fix `PLAN_LABELS` en settings: se agrega `starter` y `agency`, se elimina `basic` como plan principal (queda como alias legacy para usuarios existentes). Alineado con los planes de la página de pricing.
+- Billing section en settings reescrita como `BillingSection`: muestra plan actual, CTA de upgrade directo a checkout de LS (con email pre-cargado), y link a `/pricing` para ver todos los planes. Lógica por plan: Free → upgrade a Starter, Starter → Pro, Pro → Agency, Agency → solo gestión.
+
+**Archivos modificados:**
+- `lib/lemonsqueezy.ts` — nuevo. Variant IDs + helper de checkout URL
+- `app/(dashboard)/settings/page.tsx` — PLAN_LABELS corregido, billing section reescrita
+
+**Relacionado con backend:** Ver `/tmp/scout-backend-ls/` para el código del webhook (LemonSqueezyWebhookController + LemonSqueezyService). Pendiente que Diego integre al repo del backend. También requiere agregar campo `ls_customer_id` a la tabla `users` y variable de entorno `LEMONSQUEEZY_WEBHOOK_SECRET` en Easypanel.
+
+**Wiki actualizado:** No aplica (cambio de infraestructura de cobro, sin impacto en lógica de producto documentada).
+
+---
+
 ### CHANGE-018 — Rebrand: ShopTracker → Dropspy
 **Fecha:** 2026-05-30
 **Tipo:** ui
