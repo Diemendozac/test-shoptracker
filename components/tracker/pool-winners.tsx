@@ -111,7 +111,7 @@ export function PoolWinnersSection({
     // Deduplicate: same product title + same store → keep the one with higher score
     const seen = new Map<string, PoolWinnerProduct>()
     for (const w of winners) {
-      const key = `${w.productTitle.trim().toLowerCase()}|${w.storeId}`
+      const key = `${w.productTitle.trim().toLowerCase()}|${w.baseUrl ?? w.storeId}`
       const existing = seen.get(key)
       if (!existing || w.performanceScore > existing.performanceScore) {
         seen.set(key, w)

@@ -89,6 +89,7 @@ export interface WeeklyWinnerResponse {
 export interface PoolWinnerProduct extends WinnerProduct {
   storeId: string
   storeName: string
+  baseUrl?: string
   niche: string | null
   currency: string | null
   pagoAnticipado: boolean | null
