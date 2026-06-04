@@ -137,16 +137,18 @@ export function KpiCards({ candidates }: KpiCardsProps) {
                 <img
                   src={`/api/image-proxy?url=${encodeURIComponent(topJumper.c.productImage)}`}
                   alt=""
-                  className="h-12 w-12 shrink-0 rounded-lg object-cover"
+                  className="h-16 w-16 shrink-0 rounded-lg object-cover"
                 />
               ) : (
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-secondary text-xs font-bold text-muted-foreground">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-secondary text-xs font-bold text-muted-foreground">
                   {topJumper.c.productTitle.slice(0, 2).toUpperCase()}
                 </div>
               )}
-              <div className="min-w-0 flex-1">
+              <div className="min-w-0 flex-1 overflow-hidden">
                 <p className="truncate text-sm font-medium text-foreground">
-                  {topJumper.c.productTitle}
+                  {topJumper.c.productTitle.length > 48
+                    ? topJumper.c.productTitle.slice(0, 48) + '…'
+                    : topJumper.c.productTitle}
                 </p>
                 <p className="truncate text-[10px] text-muted-foreground">
                   {topJumper.c.storeName}
