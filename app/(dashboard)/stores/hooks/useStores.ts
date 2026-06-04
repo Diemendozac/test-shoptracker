@@ -25,8 +25,9 @@ export function useStores() {
   const [syncStoreMutation] = useSyncStoreMutation()
 
   const addStore = async (req: CreateStoreRequest) => {
-    await createStoreMutation(req).unwrap()
-    dispatch(closeAddModal())
+    const result = await createStoreMutation(req).unwrap()
+    if (!result.subscribedToExisting) dispatch(closeAddModal())
+    return result
   }
 
   const deleteStore = async (storeId: string) => {

@@ -12,6 +12,7 @@ export interface StoreResponse {
   inactivityScore: number | null
   inactivityTier: 'ACTIVA' | 'MODERADA' | 'INACTIVA' | 'ZOMBIE' | null
   productCount: number | null
+  subscribedToExisting?: boolean
 }
 
 export interface CreateStoreRequest {

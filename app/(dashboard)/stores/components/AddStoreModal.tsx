@@ -63,6 +63,7 @@ export function AddStoreModal() {
   const [baseUrl, setBaseUrl]               = useState<FieldState>(makeField())
   const [pagoAnticipado, setPagoAnticipado] = useState(false)
   const [submitError, setSubmitError]       = useState<string | null>(null)
+  const [subscribedInfo, setSubscribedInfo] = useState(false)
 
   // reset everything when modal closes
   useEffect(() => {
@@ -71,6 +72,7 @@ export function AddStoreModal() {
       setBaseUrl(makeField())
       setPagoAnticipado(false)
       setSubmitError(null)
+      setSubscribedInfo(false)
     }
   }, [isAddModalOpen])
 
@@ -87,12 +89,16 @@ export function AddStoreModal() {
 
     try {
       const parsed = new URL(baseUrl.value.trim())
-      await addStore({
+      const result = await addStore({
         storeName:      storeName.value.trim(),
         baseUrl:        parsed.origin,
         bestsellerUrl:  parsed.origin + DEFAULT_BESTSELLER_PATH,
         pagoAnticipado: pagoAnticipado || undefined,
       })
+      if (result?.subscribedToExisting) {
+        setSubscribedInfo(true)
+        setTimeout(() => closeAddModal(), 2500)
+      }
     } catch (err) {
       setSubmitError(extractApiError(err))
     }
@@ -191,6 +197,14 @@ export function AddStoreModal() {
               />
             </button>
           </label>
+
+          {/* subscribed to existing store */}
+          {subscribedInfo && (
+            <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-xs text-emerald-600">
+              <Store className="h-3.5 w-3.5 shrink-0" />
+              Esta tienda ya está siendo trackeada. Conectándote a los datos existentes…
+            </div>
+          )}
 
           {/* server error */}
           {submitError && (
