@@ -44,14 +44,23 @@ function validateUrl(v: string, label: string): string {
 function extractApiError(err: unknown): string {
   if (err && typeof err === 'object') {
     const e = err as Record<string, unknown>
-    // RTK Query error shape: { status, data: { message } }
     if (e.data && typeof e.data === 'object') {
-      const msg = (e.data as Record<string, unknown>).message
-      if (typeof msg === 'string') return msg
+      const d = e.data as Record<string, unknown>
+      // Our GlobalExceptionHandler / Spring Boot default: { message: "..." }
+      if (typeof d.message === 'string' && d.message.trim()) return d.message.trim()
+      // RFC 7807 Problem Details: { detail: "..." }
+      if (typeof d.detail === 'string' && d.detail.trim()) return d.detail.trim()
+      // Spring default fallback: { error: "Bad Request" }
+      if (typeof d.error === 'string' && d.error.trim()) return d.error.trim()
     }
-    if (typeof e.error === 'string') return e.error
+    if (typeof e.error === 'string' && e.error.trim()) return e.error.trim()
+    // HTTP status hints
+    if (e.status === 409) return 'Ya tienes esta tienda registrada. Puedes reactivarla desde tu panel.'
+    if (e.status === 400) return 'No se pudo agregar la tienda. Verifica la URL e intenta de nuevo.'
+    if (e.status === 403) return 'No tienes permiso para realizar esta acción.'
+    if (e.status === 429) return 'Demasiados intentos. Espera un momento e intenta de nuevo.'
   }
-  return 'Something went wrong. Please try again.'
+  return 'Algo salió mal. Por favor intenta de nuevo.'
 }
 
 // ─── component ───────────────────────────────────────────────────────────────
