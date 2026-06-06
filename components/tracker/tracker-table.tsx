@@ -19,6 +19,13 @@ import { ScoreRing } from '@/components/dashboard/score-ring'
 import { resolveDisplayLabel, isScalable } from '@/lib/label-utils'
 import { applyScoreDecay } from '@/lib/score-decay'
 
+function getPageRange(current: number, total: number): (number | 'ellipsis')[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i)
+  if (current <= 3) return [0, 1, 2, 3, 4, 'ellipsis', total - 1]
+  if (current >= total - 4) return [0, 'ellipsis', total - 5, total - 4, total - 3, total - 2, total - 1]
+  return [0, 'ellipsis', current - 1, current, current + 1, 'ellipsis', total - 1]
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type SortKey =
@@ -502,20 +509,24 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
             >
               <ChevronLeft className="h-3.5 w-3.5" />
             </button>
-            {Array.from({ length: totalPages }, (_, i) => i).map(i => (
-              <button
-                key={i}
-                onClick={() => setPage(i)}
-                className={cn(
-                  'flex h-7 w-7 items-center justify-center rounded-md border text-xs font-medium transition-colors',
-                  i === page
-                    ? 'border-primary bg-primary text-primary-foreground'
-                    : 'border-border text-muted-foreground hover:border-primary/40 hover:text-foreground',
-                )}
-              >
-                {i + 1}
-              </button>
-            ))}
+            {getPageRange(page, totalPages).map((p, idx) =>
+              p === 'ellipsis' ? (
+                <span key={`e${idx}`} className="flex h-7 w-5 items-center justify-center text-xs text-muted-foreground select-none">…</span>
+              ) : (
+                <button
+                  key={p}
+                  onClick={() => setPage(p)}
+                  className={cn(
+                    'flex h-7 w-7 items-center justify-center rounded-md border text-xs font-medium transition-colors',
+                    p === page
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-border text-muted-foreground hover:border-primary/40 hover:text-foreground',
+                  )}
+                >
+                  {p + 1}
+                </button>
+              )
+            )}
             <button
               onClick={() => setPage(p => p + 1)}
               disabled={page >= totalPages - 1}

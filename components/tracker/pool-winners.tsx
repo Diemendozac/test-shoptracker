@@ -18,6 +18,13 @@ type PoolSortKey = 'productTitle' | 'productPrice' | 'performanceScore' | 'growt
 type SortDir = 'asc' | 'desc'
 interface SortState { key: PoolSortKey | null; dir: SortDir }
 
+function getPageRange(current: number, total: number): (number | 'ellipsis')[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i)
+  if (current <= 3) return [0, 1, 2, 3, 4, 'ellipsis', total - 1]
+  if (current >= total - 4) return [0, 'ellipsis', total - 5, total - 4, total - 3, total - 2, total - 1]
+  return [0, 'ellipsis', current - 1, current, current + 1, 'ellipsis', total - 1]
+}
+
 /**
  * "En alza" concrete definition — all 4 conditions must hold:
  *  1. Rank improved at least 3 consecutive days in the last 7
@@ -424,20 +431,24 @@ export function PoolWinnersSection({
             >
               <ChevronLeft className="h-3.5 w-3.5" />
             </button>
-            {Array.from({ length: data.totalPages ?? 1 }, (_, i) => i).map((p) => (
-              <button
-                key={p}
-                onClick={() => onPageChange(p)}
-                className={cn(
-                  'flex h-7 w-7 items-center justify-center rounded-lg text-xs font-medium transition-colors',
-                  p === page
-                    ? 'bg-primary text-primary-foreground'
-                    : 'border border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'
-                )}
-              >
-                {p + 1}
-              </button>
-            ))}
+            {getPageRange(page, data.totalPages ?? 1).map((p, idx) =>
+              p === 'ellipsis' ? (
+                <span key={`e${idx}`} className="flex h-7 w-5 items-center justify-center text-xs text-muted-foreground select-none">…</span>
+              ) : (
+                <button
+                  key={p}
+                  onClick={() => onPageChange(p)}
+                  className={cn(
+                    'flex h-7 w-7 items-center justify-center rounded-lg text-xs font-medium transition-colors',
+                    p === page
+                      ? 'bg-primary text-primary-foreground'
+                      : 'border border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'
+                  )}
+                >
+                  {p + 1}
+                </button>
+              )
+            )}
             <button
               onClick={() => onPageChange(page + 1)}
               disabled={page >= (data.totalPages ?? 1) - 1}
