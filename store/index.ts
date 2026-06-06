@@ -7,6 +7,7 @@ import { dashboardApi } from '@/app/(dashboard)/services/dashboardApi';
 import { storesApi } from '@/app/(dashboard)/stores/services/storeApi';
 import { candidateApi } from '@/app/(dashboard)/services/candidateApi';
 import { userApi } from '@/app/(dashboard)/services/userApi';
+import { adminApi } from '@/app/(dashboard)/services/adminApi';
 import dashboardReducer from '@/app/(dashboard)/store/dashboardSlice';
 import storeReducer from '@/app/(dashboard)/stores/store/storesSlice';
 
@@ -21,6 +22,7 @@ export const store = configureStore({
     [storesApi.reducerPath]: storesApi.reducer,
     [candidateApi.reducerPath]: candidateApi.reducer,
     [userApi.reducerPath]: userApi.reducer,
+    [adminApi.reducerPath]: adminApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -29,6 +31,7 @@ export const store = configureStore({
       storesApi.middleware,
       candidateApi.middleware,
       userApi.middleware,
+      adminApi.middleware,
     ),
 });
 

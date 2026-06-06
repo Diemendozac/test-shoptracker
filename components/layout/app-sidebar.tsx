@@ -15,8 +15,10 @@ import {
   Building2,
   Globe,
   Clock,
+  ShieldCheck,
 } from 'lucide-react'
 import { DropspyIcon } from '@/components/ui/dropspy-logo'
+import { useGetMeQuery } from '@/app/(dashboard)/services/userApi'
 
 const TOP_NAV = [
   { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
@@ -44,6 +46,8 @@ export function AppSidebar({ pinned }: AppSidebarProps) {
   const avatarLetter = displayName[0]?.toUpperCase() ?? '?'
 
   const { data: pending } = useGetPendingCandidatesQuery()
+  const { data: me } = useGetMeQuery()
+  const isAdmin = me?.plan === 'admin'
   const pendingCount = pending?.length ?? 0
 
   const inTesteos = pathname.startsWith('/tracker') || pathname.startsWith('/pool') || pathname.startsWith('/pendientes')
@@ -210,6 +214,30 @@ export function AppSidebar({ pinned }: AppSidebarProps) {
           )
         })}
       </nav>
+
+      {/* Admin link */}
+      {isAdmin && (() => {
+        const isActive = pathname.startsWith('/admin')
+        return (
+          <Link href="/admin"
+            className={cn(
+              'group flex items-center rounded-lg py-2.5 text-sm font-medium transition-all duration-200 mx-2',
+              expanded ? 'gap-3 px-3' : 'justify-center',
+              isActive
+                ? 'bg-violet-500/15 text-violet-600'
+                : 'text-muted-foreground hover:bg-violet-500/10 hover:text-violet-600',
+            )}
+          >
+            <ShieldCheck className="h-4 w-4 shrink-0" />
+            <span className={cn(
+              'overflow-hidden whitespace-nowrap transition-all duration-300',
+              expanded ? 'max-w-[160px] opacity-100' : 'max-w-0 opacity-0',
+            )}>
+              Admin
+            </span>
+          </Link>
+        )
+      })()}
 
       {/* User Section */}
       <div className="border-t border-border p-3">
