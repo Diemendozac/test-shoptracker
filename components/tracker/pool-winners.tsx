@@ -18,6 +18,14 @@ type PoolSortKey = 'productTitle' | 'productPrice' | 'performanceScore' | 'growt
 type SortDir = 'asc' | 'desc'
 interface SortState { key: PoolSortKey | null; dir: SortDir }
 
+// Fixed category and currency lists — these are SCOUT's defined sets
+const NICHES = [
+  'Belleza & Cuidado', 'Herramientas & Auto', 'Hogar & Cocina',
+  'Jardín & Exterior', 'Joyería & Relojes', 'Juguetes & Entretenimiento',
+  'Mascotas', 'Moda & Accesorios', 'Salud & Bienestar',
+]
+const CURRENCIES = ['COP', 'EUR', 'GBP', 'USD']
+
 function getPageRange(current: number, total: number): (number | 'ellipsis')[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i)
   if (current <= 3) return [0, 1, 2, 3, 4, 'ellipsis', total - 1]
@@ -70,24 +78,36 @@ interface PoolWinnersSectionProps {
   page?: number
   onPageChange?: (page: number) => void
   preset?: PoolPreset
+  // Pago — server-side via query param
   pagoFilter?: PagoFilter
   onPagoFilterChange?: (f: PagoFilter) => void
   favorites: Set<string>
   onToggleFavorite: (id: string) => void
+  // Server-side filter props — state lives in pool/page.tsx
+  search: string
+  onSearchChange: (v: string) => void
+  dateFilter: 7 | 15 | 30 | 0
+  onDateFilterChange: (v: 7 | 15 | 30 | 0) => void
+  nicheFilter: Set<string>
+  onNicheFilterChange: (v: Set<string>) => void
+  currencyFilter: Set<string>
+  onCurrencyFilterChange: (v: Set<string>) => void
+  escalarFilter: boolean
+  onEscalarFilterChange: (v: boolean) => void
 }
 
 export function PoolWinnersSection({
   data, isLoading, page = 0, onPageChange, preset = 'all',
   pagoFilter = 'all', onPagoFilterChange,
   favorites, onToggleFavorite,
+  search, onSearchChange,
+  dateFilter, onDateFilterChange,
+  nicheFilter, onNicheFilterChange,
+  currencyFilter, onCurrencyFilterChange,
+  escalarFilter, onEscalarFilterChange,
 }: PoolWinnersSectionProps) {
   const { currency: preferredCurrency } = useCurrency()
-  const [search, setSearch] = useState('')
-  const [nicheFilter, setNicheFilter] = useState<Set<string>>(new Set())
-  const [currencyFilter, setCurrencyFilter] = useState<Set<string>>(new Set())
-  const [dateFilter, setDateFilter] = useState<7 | 15 | 30 | 0>(0)
   const [sort, setSort] = useState<SortState>({ key: 'performanceScore', dir: 'desc' })
-  const [escalarFilter, setEscalarFilter] = useState(false)
 
   function toggleSet(prev: Set<string>, value: string): Set<string> {
     const next = new Set(prev)
@@ -105,15 +125,9 @@ export function PoolWinnersSection({
 
   const winners = data?.winners ?? []
 
-  const niches = useMemo(
-    () => Array.from(new Set(winners.map((w) => w.niche).filter(Boolean) as string[])).sort(),
-    [winners]
-  )
-  const currencies = useMemo(
-    () => Array.from(new Set(winners.map((w) => w.currency).filter(Boolean) as string[])).sort(),
-    [winners]
-  )
-
+  // Client-side: deduplication + tab presets + sort only.
+  // All other filters (search, dates, niche, currency, pago, escalar) are server-side
+  // query params — never filter() on a partial page.
   const filtered = useMemo(() => {
     // Deduplicate: same product title + same store → keep the one with higher score
     const seen = new Map<string, PoolWinnerProduct>()
@@ -125,24 +139,11 @@ export function PoolWinnersSection({
       }
     }
     let r = Array.from(seen.values())
-    // Search filter
-    if (search.trim()) {
-      const q = search.toLowerCase()
-      r = r.filter(w => w.productTitle.toLowerCase().includes(q))
-    }
-    // Tab preset filters
-    if (preset === 'favorites')       r = r.filter(w => favorites.has(w.candidateId))
-    if (preset === 'rising')          r = r.filter(isRising)
-    // pago_anticipado is filtered server-side via query param — no client filter needed
-    if (preset === 'top_score')       r = [...r].sort((a, b) => b.performanceScore - a.performanceScore).slice(0, 20)
-    if (preset === 'new')             r = r.filter((w) => w.daysElapsed <= 7)
-    // Chip filters
-    if (dateFilter > 0)              r = r.filter((w) => w.daysElapsed <= dateFilter)
-    if (nicheFilter.size > 0)        r = r.filter((w) => w.niche != null && nicheFilter.has(w.niche))
-    if (currencyFilter.size > 0)     r = r.filter((w) => w.currency != null && currencyFilter.has(w.currency))
-    if (pagoFilter === 'anticipado') r = r.filter((w) => !!w.pagoAnticipado)
-    if (pagoFilter === 'contraentrega') r = r.filter((w) => !w.pagoAnticipado)
-    if (escalarFilter) r = r.filter((w) => isScalable(w.performanceScore, w.signalConfidence))
+    // Tab preset filters (client-side valid: favorites uses localStorage, rising/new are display hints)
+    if (preset === 'favorites')  r = r.filter(w => favorites.has(w.candidateId))
+    if (preset === 'rising')     r = r.filter(isRising)
+    if (preset === 'top_score')  r = [...r].sort((a, b) => b.performanceScore - a.performanceScore).slice(0, 20)
+    if (preset === 'new')        r = r.filter(w => w.daysElapsed <= 7)
     // Sort
     if (sort.key) {
       const k = sort.key
@@ -157,11 +158,9 @@ export function PoolWinnersSection({
       })
     }
     return r
-  }, [winners, preset, favorites, search, dateFilter, nicheFilter, currencyFilter, pagoFilter, escalarFilter, sort])
+  }, [winners, preset, favorites, sort])
 
   const hasActiveFilters = !!search || nicheFilter.size > 0 || currencyFilter.size > 0 || dateFilter > 0 || pagoFilter !== 'all' || escalarFilter
-
-  function setPagoFilter(f: PagoFilter) { onPagoFilterChange?.(f) }
 
   if (isLoading) {
     return (
@@ -209,11 +208,11 @@ export function PoolWinnersSection({
             type="text"
             placeholder="Buscar producto…"
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={e => onSearchChange(e.target.value)}
             className="h-8 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
           />
           {search && (
-            <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+            <button onClick={() => onSearchChange('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
               <X className="h-3.5 w-3.5" />
             </button>
           )}
@@ -225,7 +224,7 @@ export function PoolWinnersSection({
           {([0, 7, 15, 30] as const).map((d) => (
             <button
               key={d}
-              onClick={() => setDateFilter(d)}
+              onClick={() => onDateFilterChange(d)}
               className={cn(
                 'rounded-full border px-3 py-1 text-xs font-medium transition-all',
                 dateFilter === d
@@ -239,69 +238,64 @@ export function PoolWinnersSection({
         </div>
 
         {/* Categorías / nicho — multi-select */}
-        {niches.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Categoría</span>
-            {/* "Todas" clears the selection */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Categoría</span>
+          <button
+            onClick={() => onNicheFilterChange(new Set())}
+            className={cn(
+              'rounded-full border px-3 py-1 text-xs font-medium transition-all',
+              nicheFilter.size === 0
+                ? 'border-primary bg-primary/10 text-primary'
+                : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
+            )}
+          >
+            Todas
+          </button>
+          {NICHES.map((n) => (
             <button
-              onClick={() => setNicheFilter(new Set())}
+              key={n}
+              onClick={() => onNicheFilterChange(toggleSet(nicheFilter, n))}
               className={cn(
                 'rounded-full border px-3 py-1 text-xs font-medium transition-all',
-                nicheFilter.size === 0
+                nicheFilter.has(n)
                   ? 'border-primary bg-primary/10 text-primary'
                   : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
               )}
             >
-              Todas
+              {n}
             </button>
-            {niches.map((n) => (
-              <button
-                key={n}
-                onClick={() => setNicheFilter(prev => toggleSet(prev, n))}
-                className={cn(
-                  'rounded-full border px-3 py-1 text-xs font-medium transition-all',
-                  nicheFilter.has(n)
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
-                )}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
-        )}
+          ))}
+        </div>
 
         {/* Moneda — multi-select */}
-        {currencies.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Moneda</span>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Moneda</span>
+          <button
+            onClick={() => onCurrencyFilterChange(new Set())}
+            className={cn(
+              'rounded-full border px-3 py-1 text-xs font-medium transition-all',
+              currencyFilter.size === 0
+                ? 'border-primary bg-primary/10 text-primary'
+                : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
+            )}
+          >
+            Todas
+          </button>
+          {CURRENCIES.map((c) => (
             <button
-              onClick={() => setCurrencyFilter(new Set())}
+              key={c}
+              onClick={() => onCurrencyFilterChange(toggleSet(currencyFilter, c))}
               className={cn(
                 'rounded-full border px-3 py-1 text-xs font-medium transition-all',
-                currencyFilter.size === 0
+                currencyFilter.has(c)
                   ? 'border-primary bg-primary/10 text-primary'
                   : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
               )}
             >
-              Todas
+              {c}
             </button>
-            {currencies.map((c) => (
-              <button
-                key={c}
-                onClick={() => setCurrencyFilter(prev => toggleSet(prev, c))}
-                className={cn(
-                  'rounded-full border px-3 py-1 text-xs font-medium transition-all',
-                  currencyFilter.has(c)
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
-                )}
-              >
-                {c}
-              </button>
-            ))}
-          </div>
-        )}
+          ))}
+        </div>
 
         {/* Pago */}
         <div className="flex items-center gap-1.5">
@@ -309,7 +303,7 @@ export function PoolWinnersSection({
           {(['all', 'anticipado', 'contraentrega'] as const).map((opt) => (
             <button
               key={opt}
-              onClick={() => setPagoFilter(opt)}
+              onClick={() => onPagoFilterChange?.(opt)}
               className={cn(
                 'rounded-full border px-3 py-1 text-xs font-medium transition-all',
                 pagoFilter === opt
@@ -324,7 +318,7 @@ export function PoolWinnersSection({
 
         {/* Escalar */}
         <button
-          onClick={() => setEscalarFilter(f => !f)}
+          onClick={() => onEscalarFilterChange(!escalarFilter)}
           className={cn(
             'rounded-full border px-3 py-1 text-xs font-medium transition-all',
             escalarFilter
@@ -342,7 +336,14 @@ export function PoolWinnersSection({
           </span>
           {hasActiveFilters && (
             <button
-              onClick={() => { setSearch(''); setNicheFilter(new Set()); setCurrencyFilter(new Set()); setDateFilter(0); onPagoFilterChange?.('all'); setEscalarFilter(false) }}
+              onClick={() => {
+                onSearchChange('')
+                onNicheFilterChange(new Set())
+                onCurrencyFilterChange(new Set())
+                onDateFilterChange(0)
+                onPagoFilterChange?.('all')
+                onEscalarFilterChange(false)
+              }}
               className="text-[10px] text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
             >
               Limpiar

@@ -37,11 +37,22 @@ export const dashboardApi = createApi({
       providesTags: ['Winner'],
     }),
 
-    // GET /api/dashboard/pool/winners?page=&size=&pagoAnticipado=
-    getPoolWinners: builder.query<PoolWinnersResponse, { page?: number; size?: number; pagoAnticipado?: boolean }>({
-      query: ({ page = 0, size = 20, pagoAnticipado } = {}) => ({
+    // GET /api/dashboard/pool/winners?page=&size=&pagoAnticipado=&q=&niche=&currency=&days=&scalable=
+    getPoolWinners: builder.query<PoolWinnersResponse, {
+      page?: number; size?: number; pagoAnticipado?: boolean
+      q?: string; niche?: string[]; currency?: string[]; days?: number; scalable?: boolean
+    }>({
+      query: ({ page = 0, size = 20, pagoAnticipado, q, niche, currency, days, scalable } = {}) => ({
         url: '/pool/winners',
-        params: { page, size, ...(pagoAnticipado != null && { pagoAnticipado }) },
+        params: {
+          page, size,
+          ...(pagoAnticipado != null && { pagoAnticipado }),
+          ...(q                && { q }),        // TODO: backend pendiente
+          ...(niche?.length    && { niche }),    // TODO: backend pendiente
+          ...(currency?.length && { currency }), // TODO: backend pendiente
+          ...(days             && { days }),      // TODO: backend pendiente
+          ...(scalable         && { scalable }),  // TODO: backend pendiente
+        },
       }),
       providesTags: ['Pool'],
     }),

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { PoolWinnersSection } from '@/components/tracker/pool-winners'
 import type { PagoFilter } from '@/components/tracker/pool-winners'
 import { useGetPoolWinnersQuery } from '@/app/(dashboard)/services/dashboardApi'
@@ -20,7 +20,16 @@ const TABS: { id: PoolPreset; label: string; icon: React.ElementType }[] = [
 export default function PoolPage() {
   const [page, setPage] = useState(0)
   const [preset, setPreset] = useState<PoolPreset>('all')
+
+  // All filter state lives here so every change triggers a fresh server fetch
   const [pagoFilter, setPagoFilter] = useState<PagoFilter>('all')
+  const [searchInput, setSearchInput] = useState('')
+  const [searchDebounced, setSearchDebounced] = useState('')
+  const [dateFilter, setDateFilter] = useState<7 | 15 | 30 | 0>(0)
+  const [nicheFilter, setNicheFilter] = useState<Set<string>>(new Set())
+  const [currencyFilter, setCurrencyFilter] = useState<Set<string>>(new Set())
+  const [escalarFilter, setEscalarFilter] = useState(false)
+
   const [favorites, setFavorites] = useState<Set<string>>(() => {
     if (typeof window === 'undefined') return new Set()
     try {
@@ -28,6 +37,21 @@ export default function PoolPage() {
       return new Set(stored ? JSON.parse(stored) as string[] : [])
     } catch { return new Set() }
   })
+
+  // Debounce search — waits 300 ms after the user stops typing before fetching
+  useEffect(() => {
+    const t = setTimeout(() => setSearchDebounced(searchInput), 300)
+    return () => clearTimeout(t)
+  }, [searchInput])
+
+  // Every filter handler resets to page 1 before the new fetch
+  function handleTab(id: PoolPreset) { setPreset(id); setPage(0) }
+  function handlePagoFilter(f: PagoFilter) { setPagoFilter(f); setPage(0) }
+  function handleSearchChange(v: string) { setSearchInput(v); setPage(0) }
+  function handleDateFilterChange(v: 7 | 15 | 30 | 0) { setDateFilter(v); setPage(0) }
+  function handleNicheFilterChange(v: Set<string>) { setNicheFilter(v); setPage(0) }
+  function handleCurrencyFilterChange(v: Set<string>) { setCurrencyFilter(v); setPage(0) }
+  function handleEscalarFilterChange(v: boolean) { setEscalarFilter(v); setPage(0) }
 
   function toggleFavorite(id: string) {
     setFavorites(prev => {
@@ -45,17 +69,13 @@ export default function PoolPage() {
     pagoAnticipado: pagoFilter === 'anticipado' ? true
       : pagoFilter === 'contraentrega' ? false
       : undefined,
+    // TODO: backend pendiente — implementar en GET /dashboard/pool/winners
+    q:        searchDebounced || undefined,
+    niche:    nicheFilter.size > 0    ? Array.from(nicheFilter)    : undefined,
+    currency: currencyFilter.size > 0 ? Array.from(currencyFilter) : undefined,
+    days:     dateFilter > 0          ? dateFilter                  : undefined,
+    scalable: escalarFilter            ? true                        : undefined,
   })
-
-  function handleTab(id: PoolPreset) {
-    setPreset(id)
-    setPage(0)
-  }
-
-  function handlePagoFilter(f: PagoFilter) {
-    setPagoFilter(f)
-    setPage(0)
-  }
 
   return (
     <>
@@ -105,6 +125,16 @@ export default function PoolPage() {
           onPagoFilterChange={handlePagoFilter}
           favorites={favorites}
           onToggleFavorite={toggleFavorite}
+          search={searchInput}
+          onSearchChange={handleSearchChange}
+          dateFilter={dateFilter}
+          onDateFilterChange={handleDateFilterChange}
+          nicheFilter={nicheFilter}
+          onNicheFilterChange={handleNicheFilterChange}
+          currencyFilter={currencyFilter}
+          onCurrencyFilterChange={handleCurrencyFilterChange}
+          escalarFilter={escalarFilter}
+          onEscalarFilterChange={handleEscalarFilterChange}
         />
       </div>
     </>
