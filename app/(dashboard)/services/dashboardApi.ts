@@ -47,7 +47,7 @@ export const dashboardApi = createApi({
         params: {
           page, size,
           ...(pagoAnticipado != null && { pagoAnticipado }),
-          ...(q                && { q }),        // TODO: backend pendiente
+          ...(q                && { q }),
           ...(niche?.length    && { niche }),    // TODO: backend pendiente
           ...(currency?.length && { currency }), // TODO: backend pendiente
           ...(days             && { days }),      // TODO: backend pendiente
