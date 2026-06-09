@@ -97,7 +97,30 @@ async function extractMatchingAds(page: Page, targetDomain: string): Promise<Scr
     }> = []
     const seenSnapshots = new Set<string>()
 
-    const cards = document.querySelectorAll('[role="article"]')
+    // Meta Ad Library has changed its DOM structure over time.
+    // [role="article"] was the old selector (still used in some locales/views).
+    // [class*="_7jyh"] is the current card creative container as of 2026-06.
+    //   BUT: the ad metadata (library ID, date) lives in a sibling/parent container,
+    //   not inside _7jyh itself. We use _7jyh to detect the ad, then walk up to a
+    //   wider container that includes the metadata.
+    const articleCards = [...document.querySelectorAll('[role="article"]')]
+    const jyhCards     = [...document.querySelectorAll('[class*="_7jyh"]')]
+      .filter(el =>
+        [...el.querySelectorAll('a[href]')].some(a =>
+          decodeURIComponent((a as HTMLAnchorElement).href).includes(domain)
+        )
+      )
+      .map(jyh => {
+        // Walk up to find a container that also has the ad metadata
+        let container: Element = jyh
+        for (let i = 0; i < 6; i++) {
+          if (!container.parentElement) break
+          container = container.parentElement
+          if (/Identificador|Library ID|\d{15}/.test(container.textContent || '')) break
+        }
+        return container
+      })
+    const cards = articleCards.length > 0 ? articleCards : jyhCards
 
     for (const card of cards) {
       const anchors = card.querySelectorAll('a[href]')
@@ -116,7 +139,10 @@ async function extractMatchingAds(page: Page, targetDomain: string): Promise<Scr
       }
       if (!productUrl) continue
 
-      // Ad snapshot URL (the direct Meta Ad Library link for this ad)
+      // Ad snapshot URL:
+      // Old layout: direct <a href="facebook.com/ads/library/?id=..."> inside the card.
+      // New layout (_7jyh): the ID appears as text "Identificador de la biblioteca: 979701074796507"
+      //   (or "Library ID: ...") — we parse it and construct the URL.
       let adSnapshotUrl = ''
       for (const a of anchors) {
         const href = (a as HTMLAnchorElement).href || ''
@@ -125,18 +151,48 @@ async function extractMatchingAds(page: Page, targetDomain: string): Promise<Scr
           break
         }
       }
-      if (!adSnapshotUrl || seenSnapshots.has(adSnapshotUrl)) continue
+      if (!adSnapshotUrl) {
+        // "Identificador de la biblioteca: 979701074796507" or "Library ID: ..."
+        // Also try: any 15-digit number block (Meta ad IDs are typically 15 digits)
+        const cardText2 = card.textContent || ''
+        const idMatch = cardText2.match(/(?:Identificador de la biblioteca|Library ID|Ad ID)[^0-9]*(\d{10,})/i)
+          ?? cardText2.match(/\b(\d{15,16})\b/)
+        if (idMatch) adSnapshotUrl = `https://www.facebook.com/ads/library/?id=${idMatch[1]}`
+      }
+      // Fallback: use productUrl as dedup key (avoids losing the ad entirely)
+      if (!adSnapshotUrl) adSnapshotUrl = `fb-ad://${productUrl}`
+      if (seenSnapshots.has(adSnapshotUrl)) continue
       seenSnapshots.add(adSnapshotUrl)
 
       // Thumbnail: first img inside the card
       const img = card.querySelector('img')
       const thumbnailUrl = img ? img.src : null
 
-      // Days running from the ad text (e.g., "Started running 14 days ago")
+      // Days running — Meta shows "En circulación desde el DD mmm YYYY" (es)
+      // or "Started running on Month DD, YYYY" (en).
+      // We parse the start date and compute the diff to today.
       const cardText = card.textContent || ''
       let daysRunning = 0
-      const daysMatch = cardText.match(/(\d+)\s+days?\s+ago/i)
-      if (daysMatch) daysRunning = parseInt(daysMatch[1], 10)
+      const today = new Date()
+      // Spanish: "En circulación desde el 1 jun 2026"
+      const esMatch = cardText.match(/En circulaci[oó]n desde el\s+(\d+)\s+(\w+)\s+(\d{4})/i)
+      // English: "Started running on June 1, 2026" or "Active since June 1, 2026"
+      const enMatch = cardText.match(/(?:Started running on|Active since)\s+(\w+\s+\d+,\s+\d{4})/i)
+      if (esMatch) {
+        const esMonths: Record<string, number> = {
+          ene:0, feb:1, mar:2, abr:3, may:4, jun:5,
+          jul:6, ago:7, sep:8, oct:9, nov:10, dic:11,
+        }
+        const m = esMonths[esMatch[2].toLowerCase().slice(0,3)]
+        if (m !== undefined) {
+          const start = new Date(parseInt(esMatch[3]), m, parseInt(esMatch[1]))
+          daysRunning = Math.max(0, Math.floor((today.getTime() - start.getTime()) / 86_400_000))
+        }
+      } else if (enMatch) {
+        const start = new Date(enMatch[1])
+        if (!isNaN(start.getTime()))
+          daysRunning = Math.max(0, Math.floor((today.getTime() - start.getTime()) / 86_400_000))
+      }
 
       // Advertiser info
       let advertiserName: string | null = null
@@ -181,14 +237,21 @@ export async function scrapeAdsForStore(
   storeDomain: string,
   country: string,
   browser?: Browser,
+  options: { headless?: boolean } = {},
 ): Promise<ScrapedAd[]> {
   // Keyword: strip TLD, use domain name as search term
   const keyword = storeDomain.replace(/\.[^.]+$/, '').replace(/-/g, ' ')
 
+  // headless: false works better against Meta's bot detection.
+  // On Linux servers without a display, set headless: true and accept
+  // that Meta may return 0 results more often.
+  const headless = options.headless ?? false
+
   const ownBrowser = !browser
   if (!browser) {
     browser = await chromium.launch({
-      headless: true,
+      headless,
+      slowMo: headless ? 0 : 30,
       args: ['--disable-blink-features=AutomationControlled', '--no-sandbox'],
     })
   }
@@ -207,7 +270,11 @@ export async function scrapeAdsForStore(
     await dismissCookies(page)
     await fixAdTypeFilter(page)
 
-    await page.waitForSelector('[role="article"]', { timeout: 15_000 }).catch(() => null)
+    // Wait for either the old or new card selector — whichever Meta renders
+    await Promise.race([
+      page.waitForSelector('[role="article"]', { timeout: 15_000 }),
+      page.waitForSelector('[class*="_7jyh"]',  { timeout: 15_000 }),
+    ]).catch(() => null)
     await page.waitForTimeout(2000)
     await scrollAndWait(page, 4)
 
