@@ -6,6 +6,21 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-024 — Admin ve anuncios desbloqueados igual que Pro
+**Fecha:** 2026-06-09
+**Tipo:** feature
+
+**Qué cambió:**
+Usuarios con `plan === 'admin'` ahora ven los anuncios sin blur, igual que Pro y Agency.
+
+**Por qué:** El backend ya tenía `admin` en el gate (`List.of("pro","agency","admin")`). El frontend solo evaluaba `pro` y `agency`, dejando a admin bloqueado.
+
+**Archivos:**
+- `app/(dashboard)/tracker/[candidateId]/page.tsx` — línea `isPro`: agregado `|| me?.plan === 'admin'`
+- `components/tracker/tracker-table.tsx` — línea `isPro`: mismo cambio para `AdStripPreview`
+
+---
+
 ### CHANGE-023 — Fix: lastSeen Date→string en meta-ads scraper
 **Fecha:** 2026-06-09
 **Tipo:** bugfix

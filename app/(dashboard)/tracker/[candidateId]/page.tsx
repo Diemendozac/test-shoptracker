@@ -278,7 +278,7 @@ function CandidateDetailContent() {
   const storeName = store?.storeName ?? null
 
   const { data: me } = useGetMeQuery()
-  const isPro = me?.plan === 'pro' || me?.plan === 'agency'
+  const isPro = me?.plan === 'pro' || me?.plan === 'agency' || me?.plan === 'admin'
 
   const { data, isLoading, isError } = useGetCandidateDetailQuery(
     { storeId: storeId!, candidateId },

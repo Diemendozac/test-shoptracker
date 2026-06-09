@@ -14,6 +14,8 @@ import {
 } from 'lucide-react'
 import { useRemoveCandidateMutation } from '@/app/(dashboard)/services/candidateApi'
 import { dashboardApi } from '@/app/(dashboard)/services/dashboardApi'
+import { useGetMeQuery } from '@/app/(dashboard)/services/userApi'
+import { AdStripPreview, mockAds } from '@/components/tracker/product-ads'
 import { HoverImagePreview } from '@/components/ui/image-preview'
 import { ScoreRing } from '@/components/dashboard/score-ring'
 import { resolveDisplayLabel, isScalable } from '@/lib/label-utils'
@@ -98,6 +100,8 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
   const { currency: preferredCurrency } = useCurrency()
   const dispatch = useDispatch()
   const [removeCandidate] = useRemoveCandidateMutation()
+  const { data: me } = useGetMeQuery()
+  const isPro = me?.plan === 'pro' || me?.plan === 'agency' || me?.plan === 'admin'
   const displayDays = windowDays === 30 ? 30 : 7
 
   const [sort, setSort] = useState<SortState>({ key: 'performanceScore', dir: 'desc' })
@@ -350,8 +354,9 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
               return (
                 <div
                   key={candidate.candidateId}
-                  className="grid grid-cols-[32px_64px_minmax(0,1fr)_110px_60px_48px_72px_110px_90px_60px] items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/30"
+                  className="transition-colors hover:bg-secondary/30"
                 >
+                <div className="grid grid-cols-[32px_64px_minmax(0,1fr)_110px_60px_48px_72px_110px_90px_60px] items-center gap-3 px-4 py-3">
                   {/* # */}
                   <button
                     onClick={() => onToggleFavorite(candidate.candidateId)}
@@ -488,6 +493,14 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
+                </div>
+                {/* Ad strip — blurred thumbnails for Free, sharp for Pro */}
+                <AdStripPreview
+                  ads={mockAds}
+                  isPro={isPro}
+                  candidateId={candidate.candidateId}
+                  storeId={candidate.storeId}
+                />
                 </div>
               )
             })
