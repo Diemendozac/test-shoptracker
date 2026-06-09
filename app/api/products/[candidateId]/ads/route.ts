@@ -2,12 +2,13 @@ import { type NextRequest, NextResponse } from 'next/server'
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { candidateId: string } },
+  { params }: { params: Promise<{ candidateId: string }> },
 ) {
   const auth = req.headers.get('Authorization')
   if (!auth) return NextResponse.json({ ads: [], isPro: false }, { status: 401 })
 
-  const backendUrl = `${process.env.NEXT_PUBLIC_API_URL}/dashboard/candidates/${params.candidateId}/ads`
+  const { candidateId } = await params
+  const backendUrl = `${process.env.NEXT_PUBLIC_API_URL}/dashboard/candidates/${candidateId}/ads`
 
   try {
     const res = await fetch(backendUrl, {
