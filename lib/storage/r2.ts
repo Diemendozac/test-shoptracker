@@ -28,7 +28,18 @@ export async function mirrorUrlToR2(
 ): Promise<string | null> {
   if (!r2Client || !r2Configured) return null
   try {
-    const response = await fetch(sourceUrl, { signal: AbortSignal.timeout(15_000) })
+    // Facebook CDN (fbcdn.net) requires Referer to serve media cross-origin.
+    const headers: Record<string, string> = {
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    }
+    if (sourceUrl.includes('fbcdn.net') || sourceUrl.includes('facebook.com')) {
+      headers['Referer'] = 'https://www.facebook.com/'
+      headers['Origin']  = 'https://www.facebook.com'
+    }
+    const response = await fetch(sourceUrl, {
+      headers,
+      signal: AbortSignal.timeout(15_000),
+    })
     if (!response.ok) return null
     const buffer = Buffer.from(await response.arrayBuffer())
     await r2Client.send(new PutObjectCommand({

@@ -305,22 +305,26 @@ async function extractAllAds(page: Page, advertiser: AdvertiserInfo): Promise<Sc
           ? (videoEl.getAttribute('src') || videoEl.querySelector('source')?.getAttribute('src') || null)
           : null
 
-        // Find ad creative — skip small/circular avatars (profile pics ~32-48px),
-        // pick the largest image by area.
+        // Find ad creative — skip small/circular avatars (profile pics ~32-48px).
+        // Key insight: in headless browser naturalWidth=0 (lazy loading), but
+        // clientWidth reflects the CSS-rendered size and works for all elements.
+        // Avatar: ~40px CSS. Creative: ~200-400px CSS.
         let thumbnailUrl: string | null = null
         let bestArea = 0
         for (const imgEl of card.querySelectorAll('img')) {
           const imgNode = imgEl as HTMLImageElement
-          const w = imgNode.naturalWidth  || parseInt(imgEl.getAttribute('width')  || '0', 10)
-          const h = imgNode.naturalHeight || parseInt(imgEl.getAttribute('height') || '0', 10)
-          if (w > 0 && w < 80) continue  // skip known-small avatars
+          // clientWidth/clientHeight: CSS rendered size, available even when lazy-loaded
+          const w = imgNode.clientWidth  || parseInt(imgEl.getAttribute('width')  || '0', 10)
+          const h = imgNode.clientHeight || parseInt(imgEl.getAttribute('height') || '0', 10)
+          if (w > 0 && w < 80) continue  // skip known-small avatars (~40px)
           if (h > 0 && h < 80) continue
+          // Skip circular containers (avatar wrappers use border-radius: 50%)
           const cs = window.getComputedStyle(imgEl)
           const br = parseFloat(cs.borderRadius || '0')
-          if (br > 0 && w > 0 && br >= w * 0.4) continue  // circular (border-radius ≥ 40% = avatar)
+          if (br > 0 && w > 0 && br >= w * 0.4) continue
           if (imgEl.parentElement) {
             const pcs = window.getComputedStyle(imgEl.parentElement)
-            if (pcs.borderRadius === '50%') continue  // parent is a circle container
+            if (pcs.borderRadius === '50%') continue
           }
           const area = (w || 1) * (h || 1)
           if (area > bestArea) { bestArea = area; thumbnailUrl = imgNode.src || null }
