@@ -175,3 +175,20 @@ export interface CandidateDetail {
   } | null
   history: CandidateHistory[]
 }
+
+export interface Ad {
+  id: string
+  ad_snapshot_url: string
+  thumbnail_url: string
+  status: 'active' | 'inactive'
+  days_running: number
+  first_seen: string
+  last_seen: string
+  product_url: string
+}
+
+export interface ProductAdsResponse {
+  ads: Ad[]
+  isPro: boolean
+  lastUpdated: string
+}

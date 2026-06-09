@@ -11,7 +11,9 @@ import { RankChart } from '@/components/tracker/rank-chart'
 import { ScoreChart } from '@/components/tracker/score-chart'
 import { useGetCandidateDetailQuery } from '@/app/(dashboard)/services/dashboardApi'
 import { useGetStoresQuery } from '@/app/(dashboard)/stores/services/storeApi'
+import { useGetMeQuery } from '@/app/(dashboard)/services/userApi'
 import { useCurrency } from '@/store/hooks'
+import { ProductAdsSection } from '@/components/tracker/product-ads'
 import { FormattedPrice } from '@/components/ui/formatted-price'
 import {
   ArrowLeft, ExternalLink, Calendar, TrendingUp, Target,
@@ -274,6 +276,9 @@ function CandidateDetailContent() {
   const store = stores?.find(s => s.storeId === storeId)
   const storeBaseUrl = store?.baseUrl ?? ''
   const storeName = store?.storeName ?? null
+
+  const { data: me } = useGetMeQuery()
+  const isPro = me?.plan === 'pro' || me?.plan === 'agency'
 
   const { data, isLoading, isError } = useGetCandidateDetailQuery(
     { storeId: storeId!, candidateId },
@@ -674,6 +679,10 @@ function CandidateDetailContent() {
           </table>
         </div>
       </div>
+
+      {/* Active Ads */}
+      <ProductAdsSection candidateId={candidateId} isPro={isPro} />
+
     </PageLayout>
   )
 }

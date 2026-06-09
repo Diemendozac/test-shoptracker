@@ -1,7 +1,7 @@
 
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import type { RootState } from '@/store'
-import type { StoreOverviewItem, TrackerCandidate, WindowCandidate, CandidateDetail, WeeklyWinnerResponse, PoolWinnersResponse, DashboardInsight, PodiumResponse } from '../types'
+import type { StoreOverviewItem, TrackerCandidate, WindowCandidate, CandidateDetail, WeeklyWinnerResponse, PoolWinnersResponse, DashboardInsight, PodiumResponse, ProductAdsResponse } from '../types'
 
 export const dashboardApi = createApi({
   reducerPath: 'dashboardApi',
@@ -13,7 +13,7 @@ export const dashboardApi = createApi({
       return headers
     },
   }),
-  tagTypes: ['Overview', 'Tracker', 'Candidate', 'Winner', 'Pool'],
+  tagTypes: ['Overview', 'Tracker', 'Candidate', 'Winner', 'Pool', 'Ads'],
   endpoints: (builder) => ({
 
     // GET /api/dashboard
@@ -82,6 +82,12 @@ export const dashboardApi = createApi({
       providesTags: ['Winner'],
     }),
 
+    // GET /api/dashboard/candidates/{candidateId}/ads
+    getProductAds: builder.query<ProductAdsResponse, string>({
+      query: (candidateId) => `/candidates/${candidateId}/ads`,
+      providesTags: (_r, _e, candidateId) => [{ type: 'Ads', id: candidateId }],
+    }),
+
   }),
 })
 
@@ -94,4 +100,5 @@ export const {
   useGetPoolWinnersQuery,
   useGetInsightsQuery,
   useGetPodiumQuery,
+  useGetProductAdsQuery,
 } = dashboardApi

@@ -6,6 +6,36 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-022 — Sección "Anuncios Activos" conectada a datos reales de Meta Ad Library
+**Fecha:** 2026-06-08
+**Tipo:** feature
+
+**Qué cambió:**
+
+**UI (completado en sesión anterior):**
+- `components/tracker/product-ads.tsx` — sección `ProductAdsSection` en la página de detalle: grid de ad cards con badge "Activo", contador de días corriendo (verde si ≥30), hover overlay "Ver anuncio →". Blur + lock overlay para plan Free/Starter. Toggle dev `[dev] Pro ✓ / Free 🔒`.
+- `AdStripPreview` — strip de 3 thumbnails en cada fila de la tracker table. Link directo a `#ads` en la página de detalle.
+
+**Backend pipeline (esta sesión):**
+- `lib/scrapers/meta-ads.ts` — Playwright headless. Busca en Meta Ad Library por dominio de tienda (keyword = dominio sin TLD), detecta ads cuyos links CTA apuntan al dominio objetivo, extrae snapshot URL, thumbnail, días corriendo, URL del producto.
+- `lib/jobs/sync-ads.ts` — Job de sincronización. Obtiene tiendas Pro/Agency del backend, corre el scraper por cada una, hace POST a `/api/internal/webhook/ads`. Debe correr en Node.js (Easypanel o local) — Playwright no puede correr en Vercel (límite 50MB de función).
+- `app/api/products/[candidateId]/ads/route.ts` — Proxy Vercel → backend Java para el endpoint de ads. Propaga el JWT del usuario.
+- `app/(dashboard)/services/dashboardApi.ts` — nuevo endpoint `useGetProductAdsQuery(candidateId)` en RTK Query.
+- `app/(dashboard)/types/index.ts` — tipos `Ad` y `ProductAdsResponse`.
+- `components/tracker/product-ads.tsx` — `ProductAdsSection` usa `useGetProductAdsQuery`. Loading skeleton + fallback a mockAds en desarrollo cuando no hay datos reales.
+- `app/(dashboard)/tracker/[candidateId]/page.tsx` — props de `ProductAdsSection` actualizadas a `{ candidateId, isPro }`.
+
+**Relacionado con backend:** FIX-015 (tabla `product_ads`, `POST /api/internal/webhook/ads`, `GET /api/dashboard/candidates/{candidateId}/ads`). Pendiente redeploy del backend desde rama `feature/ads-pipeline` en Easypanel.
+
+**Para activar el job de scraping:**
+1. Redeploy del backend (rama `feature/ads-pipeline`) en Easypanel.
+2. Correr `npx tsx lib/jobs/sync-ads.ts` con `NEXT_PUBLIC_API_URL` y `WEBHOOK_SECRET`.
+3. O agregar como Schedule Trigger diario en n8n.
+
+**Wiki actualizado:** No aplica.
+
+---
+
 ### CHANGE-021 — Pool (Explorar testeos): fix overflow + búsqueda + favoritos + storeName
 **Fecha:** 2026-06-03
 **Tipo:** fix + feature
