@@ -6,6 +6,30 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-025 — Scraper Meta Ads: flujo dos fases (anunciante → todos sus anuncios)
+**Fecha:** 2026-06-09
+**Tipo:** feature
+
+**Qué cambió:**
+Reescritura completa de `lib/scrapers/meta-ads.ts` con flujo de cuatro fases:
+
+- **F1 — `findAdvertiser`**: busca por keyword derivada del dominio, voto por mayoría en primeros 8 cards para detectar nombre de anunciante y extrae `view_all_page_id` del HTML.
+- **F2 — `extractAllAds`**: navega directo al perfil del anunciante (`?view_all_page_id=ID`), parsea `~N resultados`, hace scroll progresivo hasta cargar todos (tope 200), extrae todos los anuncios sin filtro de dominio.
+- **F3 — `matchAdToCandidate`**: compara `destinationUrl` de cada anuncio con el `productUrl` de cada candidato extrayendo el handle de `/products/{handle}`.
+- **R2**: sin cambios, se ejecuta igual que antes sobre el resultado de F2.
+
+Nuevos tipos exportados: `AdvertiserInfo`, `CandidateForMatch`, `ScrapeResult`.
+`scrapeAdsForStore` ahora retorna `ScrapeResult` (antes `ScrapedAd[]`).
+
+**Por qué:** El flujo anterior buscaba por keyword y filtraba solo los anuncios que enlazaban al dominio de la tienda. Muchos anuncios usan tracking URLs o rutas distintas y se perdían. El nuevo flujo extrae el universo completo de anuncios del anunciante.
+
+**Archivos:**
+- `lib/scrapers/meta-ads.ts` — reescritura completa
+- `lib/jobs/sync-ads.ts` — tipos actualizados (`Store.metaPageId/Name`, `Candidate.productUrl`), `getCandidatesForStore` movido antes del scrape, `updateStoreAdvertiser` nueva función, flujo F1→F5
+- `lib/scrapers/test-scraper.ts` — output actualizado para mostrar `advertiser`, `totalAdsOnMeta`, `matchedCandidateId`
+
+---
+
 ### CHANGE-024 — Admin ve anuncios desbloqueados igual que Pro
 **Fecha:** 2026-06-09
 **Tipo:** feature

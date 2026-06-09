@@ -9,7 +9,7 @@
 //   WEBHOOK_SECRET        — shared secret for internal API endpoints
 //   ANTHROPIC_API_KEY     — optional, used by scraper for keyword normalization
 
-import { scrapeAdsForStore } from '../scrapers/meta-ads'
+import { scrapeAdsForStore, type ScrapedAd } from '../scrapers/meta-ads'
 
 const API_URL        = process.env.NEXT_PUBLIC_API_URL || 'http://shoptracker-api:8080/api'
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || ''
@@ -24,6 +24,8 @@ interface Store {
   baseUrl: string
   userPlan: string
   country?: string
+  metaPageId?: string | null
+  metaPageName?: string | null
 }
 
 // ── Domain health helpers ──────────────────────────────────────────────────────
@@ -82,6 +84,7 @@ interface Candidate {
   candidateId: string
   storeDomain: string
   country: string
+  productUrl?: string | null
 }
 
 async function getCandidatesForStore(storeId: string): Promise<Candidate[]> {
@@ -92,7 +95,24 @@ async function getCandidatesForStore(storeId: string): Promise<Candidate[]> {
   return res.json()
 }
 
-async function pushAds(candidateId: string, storeDomain: string, ads: ReturnType<typeof scrapeAdsForStore> extends Promise<infer T> ? T : never): Promise<void> {
+async function updateStoreAdvertiser(
+  storeId: string,
+  pageName: string,
+  pageId: string | null | undefined,
+  totalAds: number,
+): Promise<void> {
+  const res = await fetch(`${API_URL}/internal/stores/${storeId}/advertiser`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Webhook-Secret': WEBHOOK_SECRET,
+    },
+    body: JSON.stringify({ metaPageName: pageName, metaPageId: pageId || null, metaTotalAds: totalAds }),
+  })
+  if (!res.ok) throw new Error(`advertiser update failed: ${res.status}`)
+}
+
+async function pushAds(candidateId: string, storeDomain: string, ads: ScrapedAd[]): Promise<void> {
   const res = await fetch(`${API_URL}/internal/webhook/ads`, {
     method: 'POST',
     headers: {
@@ -142,30 +162,44 @@ async function syncStore(store: Store): Promise<void> {
     console.log(`  ✓ ${domain} — dominio OK`)
   }
 
-  // ── 2. Scrape ─────────────────────────────────────────────────────────────
-  console.log(`\n📦 Syncing ${domain} (country: ${country})`)
-  let ads: Awaited<ReturnType<typeof scrapeAdsForStore>> = []
+  // ── 2. Get candidates (needed for Phase 3 matching) ──────────────────────
+  const candidates = await getCandidatesForStore(store.storeId)
+  if (candidates.length === 0) {
+    console.log(`  → No candidates for ${domain} — skipping`)
+    return
+  }
+
+  // ── 3. Scrape (F1 → F2 → F3 → R2) ───────────────────────────────────────
+  console.log(`\n📦 Syncing ${domain}`)
+  let scrapeResult: Awaited<ReturnType<typeof scrapeAdsForStore>>
   try {
-    ads = await scrapeAdsForStore(domain, country)
-    console.log(`  → ${ads.length} ads found`)
+    scrapeResult = await scrapeAdsForStore(domain, country, candidates, undefined, {
+      knownPageId:   store.metaPageId   ?? undefined,
+      knownPageName: store.metaPageName ?? undefined,
+    })
   } catch (e) {
     console.error(`  ❌ Scrape failed: ${(e as Error).message}`)
     return
   }
 
+  const { ads, advertiser, totalAdsOnMeta } = scrapeResult
+
+  // ── 4. Persist advertiser if newly discovered ─────────────────────────────
+  if (advertiser && !store.metaPageId) {
+    try {
+      await updateStoreAdvertiser(store.storeId, advertiser.pageName, advertiser.pageId, totalAdsOnMeta)
+      console.log(`  [F4] ✓ Guardado: "${advertiser.pageName}" (pageId: ${advertiser.pageId || 'n/a'}, total: ${totalAdsOnMeta})`)
+    } catch (e) {
+      console.warn(`  [F4] ⚠ No se pudo guardar advertiser: ${(e as Error).message}`)
+    }
+  }
+
   if (ads.length === 0) {
-    console.log('  → No ads — skipping ingest')
+    console.log('  → 0 ads — skipping ingest')
     return
   }
 
-  // ── 3. Push to each active candidate ─────────────────────────────────────
-  const candidates = await getCandidatesForStore(store.storeId)
-  if (candidates.length === 0) {
-    console.log('  → No candidates — skipping ingest')
-    return
-  }
-
-  // Backend deduplicates by ad_snapshot_url.
+  // ── 5. Push to each active candidate — backend deduplicates by snapshot URL
   for (const candidate of candidates) {
     await pushAds(candidate.candidateId, domain, ads)
     console.log(`  ✅ Pushed ${ads.length} ads to candidate ${candidate.candidateId}`)
