@@ -211,24 +211,29 @@ async function syncStore(store: Store): Promise<void> {
       console.log(`    ${handle} → ${matched.length} ads matched`)
     }
     if (totalMatched === 0) {
-      console.log(`  [F3] Sample CTA URLs (primeros 3 ads):`)
+      console.log(`  [F3] 0 matches — estos ads se descartarán (no hay fallback):`)
       for (const ad of ads.slice(0, 3)) {
         console.log(`    ${ad.productUrl || '(sin URL)'}`)
       }
     }
   }
 
-  // ── 5. Push matched ads per candidate; fall back to all ads if no matches ─
-  // When F3 found matches: each candidate receives only its matched ads.
-  // When F3 found no matches (0 total): all candidates receive all ads
-  // (store has no product-specific ad targeting, show full catalog).
+  // ── 5. Push only ads with a real F3 match — no fallback ──────────────────
+  let pushed = 0
+  let skipped = 0
   for (const candidate of candidates) {
     const matched = ads.filter(a => a.matchedCandidateId === candidate.candidateId)
-    const toSend  = totalMatched > 0 ? matched : ads
-    if (toSend.length === 0) continue
-    await pushAds(candidate.candidateId, domain, toSend)
-    console.log(`  ✅ Pushed ${toSend.length} ads to ${candidate.candidateId.slice(0,8)} (${totalMatched > 0 ? 'F3 matched' : 'fallback'})`)
+    const handle  = candidate.productUrl?.match(/\/products\/([^/?#]+)/)?.[1] ?? candidate.candidateId.slice(0, 8)
+    if (matched.length === 0) {
+      console.log(`  - ${handle} → sin ads con match`)
+      skipped++
+      continue
+    }
+    await pushAds(candidate.candidateId, domain, matched)
+    console.log(`  ✅ ${handle} → ${matched.length} ads`)
+    pushed++
   }
+  console.log(`  [F3] Resultado: ${pushed} candidatos con ads / ${skipped} sin match / ${ads.length - totalMatched} ads descartados`)
 }
 
 async function main(): Promise<void> {
