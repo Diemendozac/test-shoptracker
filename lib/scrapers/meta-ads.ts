@@ -46,8 +46,10 @@ export interface ScrapeResult {
 function buildSearchUrl(keyword: string): string {
   const p = new URLSearchParams({
     active_status: 'active',
-    ad_type: 'ALL',
+    ad_type: 'all',
     country: 'ALL',
+    is_targeted_country: 'false',
+    media_type: 'all',
     q: keyword,
     search_type: 'keyword_unordered',
   })
@@ -86,24 +88,55 @@ async function dismissCookies(page: Page): Promise<void> {
   }
 }
 
-// Meta sometimes defaults ad_type to "Issues/Politics" — correct it via UI.
+// Meta ignores ad_type=ALL in the URL and restores the last session filter.
+// Strategy: detect the filter button, open it, click the first element that contains
+// "Todos los anuncios" — uses broad text matching to survive DOM changes.
 async function fixAdTypeFilter(page: Page): Promise<void> {
   try {
-    const wrongBtn = page.locator('button:has-text("Issues, elections or politics"), button:has-text("Issues")').first()
-    if (await wrongBtn.isVisible({ timeout: 3000 })) {
-      await wrongBtn.click()
-      await page.waitForTimeout(800)
-      const allOption = page.locator(
-        '[role="option"]:has-text("All"), [role="menuitem"]:has-text("All"), li:has-text("All ads"), div:has-text("All ads")'
-      ).first()
-      if (await allOption.isVisible({ timeout: 2000 })) {
-        await allOption.click()
+    // Find the ad-type button regardless of its current value
+    const filterBtn = page.locator([
+      'button:has-text("Temas sociales")',
+      'button:has-text("Issues")',
+      'button:has-text("Todos los anuncios")',
+      'button:has-text("All ads")',
+    ].join(', ')).first()
+
+    if (!await filterBtn.isVisible({ timeout: 5000 })) return
+
+    // Always click — the button DOM may contain hidden text of all options,
+    // so checking textContent() is unreliable for detecting the current selection.
+    await filterBtn.click()
+    await page.waitForTimeout(1200)
+    await page.screenshot({ path: '/tmp/scout-frontend/debug-filter-open.png', fullPage: false }).catch(() => null)
+
+    // Use broad text selector — matches any visible element containing this text
+    // (works regardless of role= attribute Meta uses in the dropdown)
+    const allOption = page.getByText('Todos los anuncios', { exact: true }).first()
+
+    if (await allOption.isVisible({ timeout: 4000 })) {
+      await allOption.click()
+      console.log('  → Filtro forzado a "Todos los anuncios" ✓')
+      await page.waitForTimeout(2500)
+    } else {
+      // Fallback: try clicking via evaluate (bypasses selector issues)
+      const clicked = await page.evaluate(() => {
+        const els = [...document.querySelectorAll('*')]
+        const target = els.find(el =>
+          el.children.length === 0 &&
+          (el.textContent || '').trim() === 'Todos los anuncios'
+        )
+        if (target) { (target as HTMLElement).click(); return true }
+        return false
+      })
+      if (clicked) {
+        console.log('  → Filtro forzado via evaluate ✓')
         await page.waitForTimeout(2500)
       } else {
+        console.log('  ⚠ No se encontró opción "Todos los anuncios" — screenshot en debug-filter-open.png')
         await page.keyboard.press('Escape')
       }
     }
-  } catch { /* filter already correct */ }
+  } catch { /* filter not present or already correct */ }
 }
 
 function extractAdId(adSnapshotUrl: string): string {
@@ -115,17 +148,22 @@ function extractAdId(adSnapshotUrl: string): string {
 // ── Phase 1 — Identify the advertiser ────────────────────────────────────────
 
 export async function findAdvertiser(domain: string, page: Page): Promise<AdvertiserInfo | null> {
-  const keyword = domain.replace(/\.[^.]+$/, '').replace(/-/g, ' ')
+  // Use the full domain as keyword — Meta searches ad landing page URLs, not ad text
+  const keyword = domain.replace(/^www\./, '')
 
   await page.goto(buildSearchUrl(keyword), { waitUntil: 'domcontentloaded', timeout: 40_000 })
   await page.waitForTimeout(3000)
   await dismissCookies(page)
   await fixAdTypeFilter(page)
 
-  await Promise.race([
+  const cardFound = await Promise.race([
     page.waitForSelector('[role="article"]', { timeout: 15_000 }).then(() => true),
     page.waitForSelector('[class*="_7jyh"]',  { timeout: 15_000 }).then(() => true),
   ]).catch(() => false)
+
+  // Screenshot to diagnose what Meta is rendering (saved next to test-results.json)
+  await page.screenshot({ path: '/tmp/scout-frontend/debug-f1.png', fullPage: false }).catch(() => null)
+  console.log(`  → cards detectadas: ${cardFound} | screenshot: debug-f1.png`)
   await page.waitForTimeout(1500)
 
   const result = await page.evaluate(() => {
