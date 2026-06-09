@@ -8,10 +8,12 @@
 // Requires: ANTHROPIC_API_KEY (optional, improves keyword normalization)
 
 import { chromium, type Browser, type Page } from 'playwright'
+import { mirrorUrlToR2, adMediaKey, r2Configured } from '../storage/r2'
 
 export interface ScrapedAd {
   adSnapshotUrl: string
   thumbnailUrl: string | null
+  videoUrl?: string | null
   status: 'active' | 'inactive'
   daysRunning: number
   firstSeen: string   // YYYY-MM-DD
@@ -168,6 +170,12 @@ async function extractMatchingAds(page: Page, targetDomain: string): Promise<Scr
       const img = card.querySelector('img')
       const thumbnailUrl = img ? img.src : null
 
+      // Video: <video src> or <video><source src></video> — Meta uses both
+      const videoEl = card.querySelector('video')
+      const videoUrl = videoEl
+        ? (videoEl.getAttribute('src') || videoEl.querySelector('source')?.getAttribute('src') || null)
+        : null
+
       // Days running — Meta shows "En circulación desde el DD mmm YYYY" (es)
       // or "Started running on Month DD, YYYY" (en).
       // We parse the start date and compute the diff to today.
@@ -217,6 +225,7 @@ async function extractMatchingAds(page: Page, targetDomain: string): Promise<Scr
       results.push({
         adSnapshotUrl,
         thumbnailUrl,
+        videoUrl,
         status: 'active',
         daysRunning,
         firstSeen,
@@ -279,9 +288,37 @@ export async function scrapeAdsForStore(
     await scrollAndWait(page, 4)
 
     const ads = await extractMatchingAds(page, storeDomain)
+
+    // Mirror media to R2 if configured. Falls back to original Meta URLs silently.
+    if (r2Configured && ads.length > 0) {
+      await Promise.all(ads.map(async ad => {
+        const adId = extractAdId(ad.adSnapshotUrl)
+
+        if (ad.thumbnailUrl) {
+          const key = adMediaKey(storeDomain, adId, 'thumbnail')
+          const r2Url = await mirrorUrlToR2(ad.thumbnailUrl, key, 'image/jpeg')
+          if (r2Url) ad.thumbnailUrl = r2Url
+        }
+
+        if (ad.videoUrl) {
+          const key = adMediaKey(storeDomain, adId, 'video')
+          const r2Url = await mirrorUrlToR2(ad.videoUrl, key, 'video/mp4')
+          if (r2Url) ad.videoUrl = r2Url
+        }
+      }))
+    }
+
     return ads
   } finally {
     await context.close()
     if (ownBrowser) await browser.close()
   }
+}
+
+// Extracts the numeric Meta ad ID from the snapshot URL.
+// Falls back to a url-safe base64 slice for non-standard URLs (fb-ad:// fallback).
+function extractAdId(adSnapshotUrl: string): string {
+  const match = adSnapshotUrl.match(/[?&]id=(\d+)/)
+  if (match) return match[1]
+  return Buffer.from(adSnapshotUrl).toString('base64url').slice(0, 20)
 }
