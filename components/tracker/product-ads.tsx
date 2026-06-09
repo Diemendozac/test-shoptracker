@@ -59,40 +59,71 @@ export const mockAds: Ad[] = [
 // ─── AdCard ───────────────────────────────────────────────────────────────────
 
 function AdCard({ ad }: { ad: Ad }) {
+  const [playing, setPlaying] = useState(false)
+  const hasVideo = !!ad.video_url_r2
+
+  const handleClick = () => {
+    if (hasVideo) {
+      setPlaying(true)
+    } else {
+      window.open(ad.ad_snapshot_url, '_blank', 'noopener,noreferrer')
+    }
+  }
+
   return (
-    <a
-      href={ad.ad_snapshot_url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="group relative block h-52 overflow-hidden rounded-lg border border-border bg-secondary transition-colors hover:border-foreground/25"
+    <div
+      className="group relative block h-52 overflow-hidden rounded-lg border border-border bg-secondary transition-colors hover:border-foreground/25 cursor-pointer"
+      onClick={!playing ? handleClick : undefined}
     >
-      <img
-        src={ad.thumbnail_url || 'https://picsum.photos/seed/placeholder/400/700'}
-        alt=""
-        className="h-full w-full object-cover"
-      />
+      {playing && ad.video_url_r2 ? (
+        <video
+          src={ad.video_url_r2}
+          autoPlay
+          controls
+          className="h-full w-full object-cover"
+          onEnded={() => setPlaying(false)}
+          onClick={e => e.stopPropagation()}
+        />
+      ) : (
+        <>
+          <img
+            src={ad.thumbnail_url || 'https://picsum.photos/seed/placeholder/400/700'}
+            alt=""
+            className="h-full w-full object-cover"
+          />
 
-      <span className="absolute right-2 top-2 rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-600">
-        Activo
-      </span>
+          <span className="absolute right-2 top-2 rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-600">
+            Activo
+          </span>
 
-      <div className="absolute inset-x-0 bottom-0 bg-black/50 px-2.5 py-1.5">
-        <span
-          className={cn(
-            'text-[11px] font-medium',
-            ad.days_running >= 30 ? 'text-emerald-400' : 'text-white/80',
-          )}
-        >
-          Corriendo {ad.days_running} días
-        </span>
-      </div>
+          <div className="absolute inset-x-0 bottom-0 bg-black/50 px-2.5 py-1.5">
+            <span
+              className={cn(
+                'text-[11px] font-medium',
+                ad.days_running >= 30 ? 'text-emerald-400' : 'text-white/80',
+              )}
+            >
+              Corriendo {ad.days_running} días
+            </span>
+          </div>
 
-      <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-        <span className="rounded-md bg-white px-3 py-1.5 text-xs font-semibold text-foreground">
-          Ver anuncio →
-        </span>
-      </div>
-    </a>
+          {/* Play button — visible on hover */}
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-black/50 backdrop-blur-sm">
+              {hasVideo ? (
+                <svg className="h-5 w-5 translate-x-0.5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              ) : (
+                <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
   )
 }
 
