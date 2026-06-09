@@ -41,11 +41,8 @@ export const mockAds: Ad[] = [
 
 // ─── AdRow — fila de anuncio estilo Kalodata ───────────────────────────────────
 
-function AdRow({
-  ad, index, isExpanded, onToggle,
-}: {
-  ad: Ad; index: number; isExpanded: boolean; onToggle: () => void
-}) {
+function AdRow({ ad, index }: { ad: Ad; index: number }) {
+  const [hovered, setHovered] = useState(false)
   const hasVideo = !!ad.video_url_r2
   const label = ad.advertiser_name && ad.advertiser_name.length > 0
     ? ad.advertiser_name
@@ -54,78 +51,73 @@ function AdRow({
       : `Anuncio ${index}`
 
   return (
-    <div>
-      <div className="grid grid-cols-[28px_68px_1fr_56px_88px] items-center gap-3 px-4 py-3">
+    <div className="grid grid-cols-[28px_68px_1fr_56px_88px] items-center gap-3 px-4 py-3">
 
-        {/* # */}
-        <span className="text-xs font-medium text-muted-foreground tabular-nums">{index}</span>
+      {/* # */}
+      <span className="text-xs font-medium text-muted-foreground tabular-nums">{index}</span>
 
-        {/* Thumbnail 9:16 con play siempre visible */}
-        <button
-          onClick={() => hasVideo ? onToggle() : window.open(ad.ad_snapshot_url, '_blank', 'noopener,noreferrer')}
-          className="relative h-[100px] w-[56px] shrink-0 overflow-hidden rounded-md bg-secondary"
-        >
-          <img
-            src={ad.thumbnail_url || 'https://picsum.photos/seed/placeholder/400/700'}
-            alt=""
-            className="h-full w-full object-cover"
-          />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-black/50 backdrop-blur-sm">
-              {isExpanded ? (
-                <svg className="h-3 w-3 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-                </svg>
-              ) : (
-                <svg className="h-3 w-3 translate-x-0.5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              )}
-            </div>
-          </div>
-        </button>
-
-        {/* Metadata */}
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium text-foreground">{label}</p>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">
-            Desde {formatDate(ad.first_seen)}
-          </p>
-        </div>
-
-        {/* Días */}
-        <span className={cn(
-          'text-sm font-bold tabular-nums',
-          ad.days_running >= 30 ? 'text-emerald-600' : 'text-foreground/80',
-        )}>
-          {ad.days_running}d
-        </span>
-
-        {/* Ver en Meta */}
-        <a
-          href={ad.ad_snapshot_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={e => e.stopPropagation()}
-          className="flex items-center justify-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground whitespace-nowrap"
-        >
-          Meta →
-        </a>
-      </div>
-
-      {/* Video expandido */}
-      {isExpanded && hasVideo && (
-        <div className="flex justify-center px-4 pb-4">
+      {/* Thumbnail 9:16 — hover reproduce, click abre Meta */}
+      <div
+        role="button"
+        tabIndex={0}
+        className="relative h-[100px] w-[56px] shrink-0 cursor-pointer overflow-hidden rounded-md bg-secondary"
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        onClick={() => window.open(ad.ad_snapshot_url, '_blank', 'noopener,noreferrer')}
+        onKeyDown={e => { if (e.key === 'Enter') window.open(ad.ad_snapshot_url, '_blank', 'noopener,noreferrer') }}
+      >
+        {hovered && hasVideo ? (
           <video
             src={ad.video_url_r2!}
             autoPlay
-            controls
-            className="rounded-lg"
-            style={{ maxWidth: 280, aspectRatio: '9 / 16' }}
-            onEnded={onToggle}
+            muted
+            loop
+            playsInline
+            className="h-full w-full object-cover"
           />
-        </div>
-      )}
+        ) : (
+          <>
+            <img
+              src={ad.thumbnail_url || 'https://picsum.photos/seed/placeholder/400/700'}
+              alt=""
+              className="h-full w-full object-cover"
+            />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-black/50 backdrop-blur-sm">
+                <svg className="h-3 w-3 translate-x-0.5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Metadata */}
+      <div className="min-w-0">
+        <p className="truncate text-sm font-medium text-foreground">{label}</p>
+        <p className="mt-0.5 text-[11px] text-muted-foreground">
+          Desde {formatDate(ad.first_seen)}
+        </p>
+      </div>
+
+      {/* Días */}
+      <span className={cn(
+        'text-sm font-bold tabular-nums',
+        ad.days_running >= 30 ? 'text-emerald-600' : 'text-foreground/80',
+      )}>
+        {ad.days_running}d
+      </span>
+
+      {/* Ver en Meta */}
+      <a
+        href={ad.ad_snapshot_url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center justify-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground whitespace-nowrap"
+      >
+        Meta →
+      </a>
     </div>
   )
 }
@@ -161,7 +153,6 @@ interface ProductAdsSectionProps {
 export function ProductAdsSection({ candidateId, isPro }: ProductAdsSectionProps) {
   const { data, isLoading, isError } = useGetProductAdsQuery(candidateId)
   const [devOverride, setDevOverride] = useState<boolean | null>(null)
-  const [expandedId, setExpandedId] = useState<string | null>(null)
   const effectiveIsPro = devOverride !== null ? devOverride : isPro
 
   if (isLoading) {
@@ -223,13 +214,7 @@ export function ProductAdsSection({ candidateId, isPro }: ProductAdsSectionProps
       <div className="relative">
         <div className={cn('divide-y divide-border/50', !effectiveIsPro && 'pointer-events-none select-none blur-sm')}>
           {activeAds.map((ad, i) => (
-            <AdRow
-              key={ad.id}
-              ad={ad}
-              index={i + 1}
-              isExpanded={expandedId === ad.id}
-              onToggle={() => setExpandedId(prev => prev === ad.id ? null : ad.id)}
-            />
+            <AdRow key={ad.id} ad={ad} index={i + 1} />
           ))}
         </div>
 
