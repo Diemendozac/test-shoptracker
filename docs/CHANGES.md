@@ -6,6 +6,19 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-023 — Fix: lastSeen Date→string en meta-ads scraper
+**Fecha:** 2026-06-09
+**Tipo:** bugfix
+
+**Qué cambió:**
+`lib/scrapers/meta-ads.ts` — dentro de `page.evaluate()`, la variable `today` del for-loop interno era un `Date` object que sobreescribía el `today` string del scope externo. El campo `lastSeen` se enviaba como Date en lugar de string YYYY-MM-DD. Java rechazaría el payload con error de deserialización en `LocalDate`.
+
+**Fix:** Renombrar la variable interna a `nowDate` para evitar el shadowing. `lastSeen` usa el `today` string del scope externo.
+
+**Archivos:** `lib/scrapers/meta-ads.ts`
+
+---
+
 ### CHANGE-022 — Sección "Anuncios Activos" conectada a datos reales de Meta Ad Library
 **Fecha:** 2026-06-08
 **Tipo:** feature

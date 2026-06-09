@@ -173,7 +173,7 @@ async function extractMatchingAds(page: Page, targetDomain: string): Promise<Scr
       // We parse the start date and compute the diff to today.
       const cardText = card.textContent || ''
       let daysRunning = 0
-      const today = new Date()
+      const nowDate = new Date()
       // Spanish: "En circulación desde el 1 jun 2026"
       const esMatch = cardText.match(/En circulaci[oó]n desde el\s+(\d+)\s+(\w+)\s+(\d{4})/i)
       // English: "Started running on June 1, 2026" or "Active since June 1, 2026"
@@ -186,12 +186,12 @@ async function extractMatchingAds(page: Page, targetDomain: string): Promise<Scr
         const m = esMonths[esMatch[2].toLowerCase().slice(0,3)]
         if (m !== undefined) {
           const start = new Date(parseInt(esMatch[3]), m, parseInt(esMatch[1]))
-          daysRunning = Math.max(0, Math.floor((today.getTime() - start.getTime()) / 86_400_000))
+          daysRunning = Math.max(0, Math.floor((nowDate.getTime() - start.getTime()) / 86_400_000))
         }
       } else if (enMatch) {
         const start = new Date(enMatch[1])
         if (!isNaN(start.getTime()))
-          daysRunning = Math.max(0, Math.floor((today.getTime() - start.getTime()) / 86_400_000))
+          daysRunning = Math.max(0, Math.floor((nowDate.getTime() - start.getTime()) / 86_400_000))
       }
 
       // Advertiser info
@@ -220,7 +220,7 @@ async function extractMatchingAds(page: Page, targetDomain: string): Promise<Scr
         status: 'active',
         daysRunning,
         firstSeen,
-        lastSeen: today,
+        lastSeen: today,  // outer today — string YYYY-MM-DD
         productUrl,
         advertiserName,
         advertiserUrl,
