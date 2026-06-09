@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { Lock } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -39,10 +39,51 @@ export const mockAds: Ad[] = [
   },
 ]
 
+// ─── FloatingVideoPanel ────────────────────────────────────────────────────────
+
+function FloatingVideoPanel({ ad, top, left }: { ad: Ad; top: number; left: number }) {
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top,
+        left,
+        width: 200,
+        height: 356,
+        zIndex: 50,
+        borderRadius: 8,
+        overflow: 'hidden',
+        pointerEvents: 'none',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+      }}
+      className="animate-in fade-in duration-150"
+    >
+      <video
+        src={ad.video_url_r2!}
+        autoPlay
+        muted
+        loop
+        playsInline
+        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+      />
+    </div>
+  )
+}
+
 // ─── AdRow — fila de anuncio estilo Kalodata ───────────────────────────────────
 
-function AdRow({ ad, index }: { ad: Ad; index: number }) {
-  const [hovered, setHovered] = useState(false)
+function AdRow({
+  ad,
+  index,
+  onHover,
+  onLeave,
+}: {
+  ad: Ad
+  index: number
+  onHover: (ad: Ad, rect: DOMRect) => void
+  onLeave: () => void
+}) {
+  const thumbRef = useRef<HTMLDivElement>(null)
   const hasVideo = !!ad.video_url_r2
   const label = ad.advertiser_name && ad.advertiser_name.length > 0
     ? ad.advertiser_name
@@ -56,40 +97,34 @@ function AdRow({ ad, index }: { ad: Ad; index: number }) {
       {/* # */}
       <span className="text-xs font-medium text-muted-foreground tabular-nums">{index}</span>
 
-      {/* Thumbnail 9:16 — hover reproduce, click abre Meta */}
+      {/* Thumbnail 9:16 — hover triggers floating panel, click abre Meta */}
       <div
+        ref={thumbRef}
         role="button"
         tabIndex={0}
         className="relative h-[100px] w-[56px] shrink-0 cursor-pointer overflow-hidden rounded-md bg-secondary"
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
+        onMouseEnter={() => {
+          if (hasVideo && thumbRef.current) {
+            onHover(ad, thumbRef.current.getBoundingClientRect())
+          }
+        }}
+        onMouseLeave={onLeave}
         onClick={() => window.open(ad.ad_snapshot_url, '_blank', 'noopener,noreferrer')}
         onKeyDown={e => { if (e.key === 'Enter') window.open(ad.ad_snapshot_url, '_blank', 'noopener,noreferrer') }}
       >
-        {hovered && hasVideo ? (
-          <video
-            src={ad.video_url_r2!}
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <>
-            <img
-              src={ad.thumbnail_url || 'https://picsum.photos/seed/placeholder/400/700'}
-              alt=""
-              className="h-full w-full object-cover"
-            />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-black/50 backdrop-blur-sm">
-                <svg className="h-3 w-3 translate-x-0.5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              </div>
+        <img
+          src={ad.thumbnail_url || 'https://picsum.photos/seed/placeholder/400/700'}
+          alt=""
+          className="h-full w-full object-cover"
+        />
+        {hasVideo && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-black/50 backdrop-blur-sm">
+              <svg className="h-3 w-3 translate-x-0.5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z" />
+              </svg>
             </div>
-          </>
+          </div>
         )}
       </div>
 
@@ -155,6 +190,21 @@ export function ProductAdsSection({ candidateId, isPro }: ProductAdsSectionProps
   const [devOverride, setDevOverride] = useState<boolean | null>(null)
   const effectiveIsPro = devOverride !== null ? devOverride : isPro
 
+  const [hoveredAd, setHoveredAd] = useState<Ad | null>(null)
+  const [hoverPosition, setHoverPosition] = useState({ top: 0, left: 0 })
+
+  const handleHover = useCallback((ad: Ad, rect: DOMRect) => {
+    const panelH = 356
+    const top = Math.max(8, Math.min(
+      rect.top + rect.height / 2 - panelH / 2,
+      window.innerHeight - panelH - 8,
+    ))
+    setHoverPosition({ top, left: rect.right + 12 })
+    setHoveredAd(ad)
+  }, [])
+
+  const handleLeave = useCallback(() => setHoveredAd(null), [])
+
   if (isLoading) {
     return (
       <div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
@@ -214,7 +264,13 @@ export function ProductAdsSection({ candidateId, isPro }: ProductAdsSectionProps
       <div className="relative">
         <div className={cn('divide-y divide-border/50', !effectiveIsPro && 'pointer-events-none select-none blur-sm')}>
           {activeAds.map((ad, i) => (
-            <AdRow key={ad.id} ad={ad} index={i + 1} />
+            <AdRow
+              key={ad.id}
+              ad={ad}
+              index={i + 1}
+              onHover={handleHover}
+              onLeave={handleLeave}
+            />
           ))}
         </div>
 
@@ -235,49 +291,58 @@ export function ProductAdsSection({ candidateId, isPro }: ProductAdsSectionProps
           </div>
         )}
       </div>
+
+      {/* Floating video panel — outside blur wrapper, position:fixed escapes stacking context */}
+      {hoveredAd && hoveredAd.video_url_r2 && (
+        <FloatingVideoPanel ad={hoveredAd} top={hoverPosition.top} left={hoverPosition.left} />
+      )}
     </div>
   )
 }
 
-// ─── AdThumbnailHover — miniatura 56×56 con hover-to-play ─────────────────────
+// ─── AdThumbnailHover — miniatura 56×56 con hover → floating panel ────────────
 
-function AdThumbnailHover({ ad, isPro }: { ad: Ad; isPro: boolean }) {
-  const [hovered, setHovered] = useState(false)
+function AdThumbnailHover({
+  ad,
+  isPro,
+  onHover,
+  onLeave,
+}: {
+  ad: Ad
+  isPro: boolean
+  onHover: (ad: Ad, rect: DOMRect) => void
+  onLeave: () => void
+}) {
+  const thumbRef = useRef<HTMLDivElement>(null)
   const hasVideo = !!ad.video_url_r2
 
   return (
     <div
+      ref={thumbRef}
       className={cn(
         'relative h-[56px] w-[56px] shrink-0 overflow-hidden rounded-md bg-secondary',
         !isPro && 'pointer-events-none',
       )}
-      onMouseEnter={() => { if (isPro && hasVideo) setHovered(true) }}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={() => {
+        if (isPro && hasVideo && thumbRef.current) {
+          onHover(ad, thumbRef.current.getBoundingClientRect())
+        }
+      }}
+      onMouseLeave={onLeave}
     >
-      {hovered && hasVideo ? (
-        <video
-          src={ad.video_url_r2!}
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="h-full w-full object-cover"
-        />
-      ) : (
-        <>
-          <img
-            src={ad.thumbnail_url || 'https://picsum.photos/seed/placeholder/400/700'}
-            alt=""
-            className={cn('h-full w-full object-cover', !isPro && 'scale-110 blur-sm')}
-          />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-black/50">
-              <svg className="h-2.5 w-2.5 translate-x-px text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            </div>
+      <img
+        src={ad.thumbnail_url || 'https://picsum.photos/seed/placeholder/400/700'}
+        alt=""
+        className={cn('h-full w-full object-cover', !isPro && 'scale-110 blur-sm')}
+      />
+      {hasVideo && isPro && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-black/50">
+            <svg className="h-2.5 w-2.5 translate-x-px text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
           </div>
-        </>
+        </div>
       )}
     </div>
   )
@@ -298,6 +363,21 @@ export function AdStripPreview({
   candidateId,
   storeId,
 }: AdStripPreviewProps) {
+  const [hoveredAd, setHoveredAd] = useState<Ad | null>(null)
+  const [hoverPosition, setHoverPosition] = useState({ top: 0, left: 0 })
+
+  const handleHover = useCallback((ad: Ad, rect: DOMRect) => {
+    const panelH = 356
+    const top = Math.max(8, Math.min(
+      rect.top + rect.height / 2 - panelH / 2,
+      window.innerHeight - panelH - 8,
+    ))
+    setHoverPosition({ top, left: rect.right + 12 })
+    setHoveredAd(ad)
+  }, [])
+
+  const handleLeave = useCallback(() => setHoveredAd(null), [])
+
   const activeAds = ads.filter(a => a.status === 'active')
   if (activeAds.length === 0) return null
 
@@ -305,24 +385,37 @@ export function AdStripPreview({
   const remaining = activeAds.length - previews.length
 
   return (
-    <Link
-      href={`/tracker/${candidateId}?storeId=${storeId}#ads`}
-      className="flex items-center gap-3 border-t border-border/40 px-4 py-2"
-    >
-      <div className="flex items-center gap-1.5">
-        {previews.map(ad => (
-          <AdThumbnailHover key={ad.id} ad={ad} isPro={isPro} />
-        ))}
-        {remaining > 0 && (
-          <div className="flex h-[56px] w-[56px] shrink-0 items-center justify-center rounded-md bg-secondary text-xs font-semibold text-muted-foreground">
-            +{remaining}
-          </div>
-        )}
-      </div>
-      <span className="text-[11px] text-muted-foreground">
-        {activeAds.length} anuncios activos →
-      </span>
-    </Link>
+    <>
+      <Link
+        href={`/tracker/${candidateId}?storeId=${storeId}#ads`}
+        className="flex items-center gap-3 border-t border-border/40 px-4 py-2"
+      >
+        <div className="flex items-center gap-1.5">
+          {previews.map(ad => (
+            <AdThumbnailHover
+              key={ad.id}
+              ad={ad}
+              isPro={isPro}
+              onHover={handleHover}
+              onLeave={handleLeave}
+            />
+          ))}
+          {remaining > 0 && (
+            <div className="flex h-[56px] w-[56px] shrink-0 items-center justify-center rounded-md bg-secondary text-xs font-semibold text-muted-foreground">
+              +{remaining}
+            </div>
+          )}
+        </div>
+        <span className="text-[11px] text-muted-foreground">
+          {activeAds.length} anuncios activos →
+        </span>
+      </Link>
+
+      {/* Floating video panel — position:fixed renders at viewport level, outside Link DOM */}
+      {hoveredAd && hoveredAd.video_url_r2 && isPro && (
+        <FloatingVideoPanel ad={hoveredAd} top={hoverPosition.top} left={hoverPosition.left} />
+      )}
+    </>
   )
 }
 
