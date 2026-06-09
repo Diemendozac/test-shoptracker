@@ -74,7 +74,7 @@ async function pushAds(candidateId: string, storeDomain: string, ads: ReturnType
 
 async function syncStore(store: Store): Promise<void> {
   const domain = new URL(store.baseUrl).hostname.replace(/^www\./, '')
-  const country = store.country || 'CO'
+  const country = store.country || 'ALL'
   console.log(`\n📦 Syncing ${domain} (country: ${country})`)
 
   let ads: Awaited<ReturnType<typeof scrapeAdsForStore>> = []
