@@ -41,7 +41,7 @@ export const mockAds: Ad[] = [
 
 // ─── FloatingVideoPanel ────────────────────────────────────────────────────────
 
-function FloatingVideoPanel({ ad, top, left }: { ad: Ad; top: number; left: number }) {
+export function FloatingVideoPanel({ ad, top, left }: { ad: Ad; top: number; left: number }) {
   return (
     <div
       style={{

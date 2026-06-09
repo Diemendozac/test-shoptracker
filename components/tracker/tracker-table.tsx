@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useCallback } from 'react'
 import { useDispatch } from 'react-redux'
 import Link from 'next/link'
 import { cn, fmtCompact } from '@/lib/utils'
@@ -8,18 +8,113 @@ import { FormattedPrice } from '@/components/ui/formatted-price'
 import { useCurrency } from '@/store/hooks'
 import { Sparkline } from '@/components/tracker/sparkline'
 import type { TrackerCandidate } from '@/app/(dashboard)/types'
+import type { Ad } from '@/components/tracker/product-ads'
 import {
   ExternalLink, ArrowUpDown, ArrowUp, ArrowDown,
   Search, X, SlidersHorizontal, Trash2, ChevronLeft, ChevronRight, Star,
 } from 'lucide-react'
 import { useRemoveCandidateMutation } from '@/app/(dashboard)/services/candidateApi'
-import { dashboardApi } from '@/app/(dashboard)/services/dashboardApi'
+import { dashboardApi, useGetProductAdsQuery } from '@/app/(dashboard)/services/dashboardApi'
 import { useGetMeQuery } from '@/app/(dashboard)/services/userApi'
-import { AdStripPreview, mockAds } from '@/components/tracker/product-ads'
+import { FloatingVideoPanel } from '@/components/tracker/product-ads'
 import { HoverImagePreview } from '@/components/ui/image-preview'
 import { ScoreRing } from '@/components/dashboard/score-ring'
 import { resolveDisplayLabel, isScalable } from '@/lib/label-utils'
 import { applyScoreDecay } from '@/lib/score-decay'
+
+// ─── AdsCell — columna inline de anuncios con floating panel ─────────────────
+
+const PLACEHOLDER = 'https://picsum.photos/seed/placeholder/400/700'
+
+function AdThumb({
+  ad, isPro, onHover, onLeave,
+}: {
+  ad: Ad
+  isPro: boolean
+  onHover: (ad: Ad, rect: DOMRect) => void
+  onLeave: () => void
+}) {
+  const thumbRef = useRef<HTMLDivElement>(null)
+  const hasVideo = !!ad.video_url_r2
+  return (
+    <div
+      ref={thumbRef}
+      className={cn(
+        'relative h-[52px] w-[52px] shrink-0 cursor-pointer overflow-hidden rounded-md bg-secondary',
+        !isPro && 'pointer-events-none blur-sm',
+      )}
+      onMouseEnter={() => {
+        if (isPro && hasVideo && thumbRef.current)
+          onHover(ad, thumbRef.current.getBoundingClientRect())
+      }}
+      onMouseLeave={onLeave}
+      onClick={() => isPro && window.open(ad.ad_snapshot_url, '_blank', 'noopener,noreferrer')}
+    >
+      <img
+        src={ad.thumbnail_url || PLACEHOLDER}
+        alt=""
+        className="h-full w-full object-cover"
+      />
+      {hasVideo && isPro && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-black/50">
+            <svg className="h-2.5 w-2.5 translate-x-px text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function AdsCell({ candidateId, isPro }: { candidateId: string; isPro: boolean }) {
+  const { data } = useGetProductAdsQuery(candidateId)
+  const [hoveredAd, setHoveredAd] = useState<Ad | null>(null)
+  const [hoverPos, setHoverPos]   = useState({ top: 0, left: 0 })
+
+  const handleHover = useCallback((ad: Ad, rect: DOMRect) => {
+    const panelH = 356
+    const top = Math.max(8, Math.min(
+      rect.top + rect.height / 2 - panelH / 2,
+      window.innerHeight - panelH - 8,
+    ))
+    setHoverPos({ top, left: rect.right + 12 })
+    setHoveredAd(ad)
+  }, [])
+
+  const handleLeave = useCallback(() => setHoveredAd(null), [])
+
+  const active = data?.ads.filter(a => a.status === 'active') ?? []
+  if (active.length === 0) return <div />
+
+  const previews  = active.slice(0, 3)
+  const remaining = active.length - 3
+
+  return (
+    <div className="flex items-center gap-1.5">
+      {previews.map(ad => (
+        <AdThumb
+          key={ad.id}
+          ad={ad}
+          isPro={isPro}
+          onHover={handleHover}
+          onLeave={handleLeave}
+        />
+      ))}
+      {remaining > 0 && (
+        <span className="text-[10px] font-semibold tabular-nums text-muted-foreground">
+          +{remaining}
+        </span>
+      )}
+      {hoveredAd?.video_url_r2 && isPro && (
+        <FloatingVideoPanel ad={hoveredAd} top={hoverPos.top} left={hoverPos.left} />
+      )}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 function getPageRange(current: number, total: number): (number | 'ellipsis')[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i)
@@ -274,7 +369,7 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
       {/* ── Table ── */}
       <div className="overflow-hidden rounded-xl border border-border bg-card">
         {/* Header */}
-        <div className="grid grid-cols-[32px_64px_minmax(0,1fr)_110px_60px_48px_72px_110px_90px_60px] items-center gap-3 border-b border-border bg-secondary/30 px-4 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        <div className="grid grid-cols-[32px_64px_minmax(0,1fr)_110px_60px_48px_72px_110px_90px_160px_60px] items-center gap-3 border-b border-border bg-secondary/30 px-4 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           <div>#</div>
           <div />
           <button onClick={() => handleSort('productTitle')} className="group/th flex items-center gap-1.5 text-left hover:text-foreground transition-colors">
@@ -294,6 +389,7 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
             Crecimiento <SortIcon column="growthPct" sort={sort} />
           </button>
           <div>Contexto</div>
+          <div>Ads</div>
           <div className="text-center">Acción</div>
         </div>
 
@@ -356,7 +452,7 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
                   key={candidate.candidateId}
                   className="transition-colors hover:bg-secondary/30"
                 >
-                <div className="grid grid-cols-[32px_64px_minmax(0,1fr)_110px_60px_48px_72px_110px_90px_60px] items-center gap-3 px-4 py-3">
+                <div className="grid grid-cols-[32px_64px_minmax(0,1fr)_110px_60px_48px_72px_110px_90px_160px_60px] items-center gap-3 px-4 py-3">
                   {/* # */}
                   <button
                     onClick={() => onToggleFavorite(candidate.candidateId)}
@@ -471,6 +567,9 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
                   {/* Contexto */}
                   <ContextBar rank={candidate.currentRank} total={candidate.storeProductCount} />
 
+                  {/* Ads */}
+                  <AdsCell candidateId={candidate.candidateId} isPro={isPro} />
+
                   {/* Acción */}
                   <div className="flex items-center justify-center gap-1.5">
                     <Link
@@ -494,13 +593,6 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
                     </button>
                   </div>
                 </div>
-                {/* Ad strip — blurred thumbnails for Free, sharp for Pro */}
-                <AdStripPreview
-                  ads={mockAds}
-                  isPro={isPro}
-                  candidateId={candidate.candidateId}
-                  storeId={candidate.storeId}
-                />
                 </div>
               )
             })
