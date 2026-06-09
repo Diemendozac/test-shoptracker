@@ -201,10 +201,33 @@ async function syncStore(store: Store): Promise<void> {
     return
   }
 
-  // ── 5. Push to each active candidate — backend deduplicates by snapshot URL
+  // ── F3 verbose report ─────────────────────────────────────────────────────
+  const totalMatched = ads.filter(a => a.matchedCandidateId).length
+  if (candidates.length > 0) {
+    console.log(`  [F3] Detalle por candidato (${totalMatched}/${ads.length} ads con match):`)
+    for (const c of candidates) {
+      const handle = c.productUrl?.match(/\/products\/([^/?#]+)/)?.[1] ?? '(sin handle)'
+      const matched = ads.filter(a => a.matchedCandidateId === c.candidateId)
+      console.log(`    ${handle} → ${matched.length} ads matched`)
+    }
+    if (totalMatched === 0) {
+      console.log(`  [F3] Sample CTA URLs (primeros 3 ads):`)
+      for (const ad of ads.slice(0, 3)) {
+        console.log(`    ${ad.productUrl || '(sin URL)'}`)
+      }
+    }
+  }
+
+  // ── 5. Push matched ads per candidate; fall back to all ads if no matches ─
+  // When F3 found matches: each candidate receives only its matched ads.
+  // When F3 found no matches (0 total): all candidates receive all ads
+  // (store has no product-specific ad targeting, show full catalog).
   for (const candidate of candidates) {
-    await pushAds(candidate.candidateId, domain, ads)
-    console.log(`  ✅ Pushed ${ads.length} ads to candidate ${candidate.candidateId}`)
+    const matched = ads.filter(a => a.matchedCandidateId === candidate.candidateId)
+    const toSend  = totalMatched > 0 ? matched : ads
+    if (toSend.length === 0) continue
+    await pushAds(candidate.candidateId, domain, toSend)
+    console.log(`  ✅ Pushed ${toSend.length} ads to ${candidate.candidateId.slice(0,8)} (${totalMatched > 0 ? 'F3 matched' : 'fallback'})`)
   }
 }
 
