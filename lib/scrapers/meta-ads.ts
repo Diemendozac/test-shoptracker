@@ -300,13 +300,35 @@ async function extractAllAds(page: Page, advertiser: AdvertiserInfo): Promise<Sc
           }
         }
 
-        const img = card.querySelector('img')
-        const thumbnailUrl = img ? img.src : null
-
         const videoEl = card.querySelector('video')
         const videoUrl = videoEl
           ? (videoEl.getAttribute('src') || videoEl.querySelector('source')?.getAttribute('src') || null)
           : null
+
+        // Find ad creative — skip small/circular avatars (profile pics ~32-48px),
+        // pick the largest image by area.
+        let thumbnailUrl: string | null = null
+        let bestArea = 0
+        for (const imgEl of card.querySelectorAll('img')) {
+          const imgNode = imgEl as HTMLImageElement
+          const w = imgNode.naturalWidth  || parseInt(imgEl.getAttribute('width')  || '0', 10)
+          const h = imgNode.naturalHeight || parseInt(imgEl.getAttribute('height') || '0', 10)
+          if (w > 0 && w < 80) continue  // skip known-small avatars
+          if (h > 0 && h < 80) continue
+          const cs = window.getComputedStyle(imgEl)
+          const br = parseFloat(cs.borderRadius || '0')
+          if (br > 0 && w > 0 && br >= w * 0.4) continue  // circular (border-radius ≥ 40% = avatar)
+          if (imgEl.parentElement) {
+            const pcs = window.getComputedStyle(imgEl.parentElement)
+            if (pcs.borderRadius === '50%') continue  // parent is a circle container
+          }
+          const area = (w || 1) * (h || 1)
+          if (area > bestArea) { bestArea = area; thumbnailUrl = imgNode.src || null }
+        }
+        // Fallback: video poster attr (often the ad frame) or video src
+        if (!thumbnailUrl && videoEl) {
+          thumbnailUrl = videoEl.getAttribute('poster') || videoEl.getAttribute('src') || null
+        }
 
         const cardText = card.textContent || ''
         let daysRunning = 0

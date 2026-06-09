@@ -131,6 +131,7 @@ async function pushAds(candidateId: string, storeDomain: string, ads: ScrapedAd[
         lastSeen: ad.lastSeen,
         productUrl: ad.productUrl,
         videoUrlR2: ad.videoUrl ?? null,
+        advertiserName: ad.advertiserName ?? null,
       })),
     }),
   })

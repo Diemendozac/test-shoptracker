@@ -186,6 +186,7 @@ export interface Ad {
   last_seen: string
   product_url: string
   video_url_r2?: string | null
+  advertiser_name?: string | null
 }
 
 export interface ProductAdsResponse {
