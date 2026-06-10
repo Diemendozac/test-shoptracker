@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { Lock, TrendingUp, Crown, ChevronLeft, ChevronRight, Globe, ExternalLink, ArrowUpDown, ArrowUp, ArrowDown, Search, X, Star } from 'lucide-react'
 import { ScoreRing } from '@/components/dashboard/score-ring'
@@ -11,8 +11,12 @@ import { FormattedPrice } from '@/components/ui/formatted-price'
 import { useCurrency } from '@/store/hooks'
 import { HoverImagePreview } from '@/components/ui/image-preview'
 import type { PoolWinnersResponse, PoolWinnerProduct } from '@/app/(dashboard)/types'
+import type { Ad } from '@/components/tracker/product-ads'
 import type { PoolPreset } from '@/app/(dashboard)/pool/page'
 import { isScalable } from '@/lib/label-utils'
+import { useGetProductAdsQuery } from '@/app/(dashboard)/services/dashboardApi'
+import { useGetMeQuery } from '@/app/(dashboard)/services/userApi'
+import { FloatingVideoPanel } from '@/components/tracker/product-ads'
 
 type PoolSortKey = 'productTitle' | 'productPrice' | 'performanceScore' | 'growthPct' | 'currentRank'
 type SortDir = 'asc' | 'desc'
@@ -25,6 +29,94 @@ const NICHES = [
   'Mascotas', 'Moda & Accesorios', 'Salud & Bienestar',
 ]
 const CURRENCIES = ['COP', 'EUR', 'GBP', 'USD']
+
+// ─── AdsCell ─────────────────────────────────────────────────────────────────
+
+const PLACEHOLDER = 'https://picsum.photos/seed/placeholder/400/700'
+
+function AdThumb({
+  ad, isPro, onHover, onLeave,
+}: {
+  ad: Ad
+  isPro: boolean
+  onHover: (ad: Ad, rect: DOMRect) => void
+  onLeave: () => void
+}) {
+  const thumbRef = useRef<HTMLDivElement>(null)
+  const hasVideo = !!ad.video_url_r2
+  return (
+    <div
+      ref={thumbRef}
+      className={cn(
+        'relative h-[56px] w-[40px] shrink-0 cursor-pointer overflow-hidden rounded-md bg-secondary',
+        !isPro && 'pointer-events-none blur-sm',
+      )}
+      onMouseEnter={() => {
+        if (isPro && hasVideo && thumbRef.current)
+          onHover(ad, thumbRef.current.getBoundingClientRect())
+      }}
+      onMouseLeave={onLeave}
+      onClick={() => isPro && window.open(ad.ad_snapshot_url, '_blank', 'noopener,noreferrer')}
+    >
+      <img src={ad.thumbnail_url || PLACEHOLDER} alt="" className="h-full w-full object-cover" />
+      {hasVideo && isPro && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-black/50">
+            <svg className="h-2.5 w-2.5 translate-x-px text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function AdsCell({ candidateId, isPro }: { candidateId: string; isPro: boolean }) {
+  const { data } = useGetProductAdsQuery(candidateId)
+  const [hoveredAd, setHoveredAd] = useState<Ad | null>(null)
+  const [hoverPos, setHoverPos]   = useState({ top: 0, left: 0 })
+
+  const handleHover = useCallback((ad: Ad, rect: DOMRect) => {
+    const panelH = 356
+    const panelW = 200
+    const top = Math.max(8, Math.min(
+      rect.top + rect.height / 2 - panelH / 2,
+      window.innerHeight - panelH - 8,
+    ))
+    const left = rect.right + 12 + panelW > window.innerWidth
+      ? rect.left - panelW - 12
+      : rect.right + 12
+    setHoverPos({ top, left })
+    setHoveredAd(ad)
+  }, [])
+
+  const handleLeave = useCallback(() => setHoveredAd(null), [])
+
+  const active = data?.ads.filter(a => a.status === 'active') ?? []
+  if (active.length === 0) return <div />
+
+  const previews  = active.slice(0, 3)
+  const remaining = active.length - 3
+
+  return (
+    <div className="flex items-center gap-1">
+      {previews.map(ad => (
+        <AdThumb key={ad.id} ad={ad} isPro={isPro} onHover={handleHover} onLeave={handleLeave} />
+      ))}
+      {remaining > 0 && (
+        <span className="text-[10px] font-semibold tabular-nums text-muted-foreground">
+          +{remaining}
+        </span>
+      )}
+      {hoveredAd?.video_url_r2 && isPro && (
+        <FloatingVideoPanel ad={hoveredAd} top={hoverPos.top} left={hoverPos.left} />
+      )}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 function getPageRange(current: number, total: number): (number | 'ellipsis')[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i)
@@ -107,6 +199,8 @@ export function PoolWinnersSection({
   escalarFilter, onEscalarFilterChange,
 }: PoolWinnersSectionProps) {
   const { currency: preferredCurrency } = useCurrency()
+  const { data: me } = useGetMeQuery()
+  const isPro = me?.plan === 'pro' || me?.plan === 'agency' || me?.plan === 'admin'
   const [sort, setSort] = useState<SortState>({ key: 'performanceScore', dir: 'desc' })
 
   function toggleSet(prev: Set<string>, value: string): Set<string> {
@@ -353,7 +447,7 @@ export function PoolWinnersSection({
       </div>
 
       {/* Column headers */}
-      <div className="grid grid-cols-[32px_64px_minmax(0,1fr)_60px_48px_72px_110px_90px_60px] items-center gap-3 border-b border-border bg-secondary/30 px-4 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+      <div className="grid grid-cols-[32px_64px_minmax(0,1fr)_60px_48px_72px_110px_90px_140px_60px] items-center gap-3 border-b border-border bg-secondary/30 px-4 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
         <div>#</div>
         <div />
         <button
@@ -387,6 +481,7 @@ export function PoolWinnersSection({
         >
           Contexto <SortIcon column="currentRank" sort={sort} />
         </button>
+        <div>Ads</div>
         <div className="text-center">Acción</div>
       </div>
       <div className="divide-y divide-border/50">
@@ -413,6 +508,7 @@ export function PoolWinnersSection({
               preferredCurrency={preferredCurrency}
               isFavorite={favorites.has(winner.candidateId)}
               onToggleFavorite={onToggleFavorite}
+              isPro={isPro}
             />
           ))
         )}
@@ -523,12 +619,13 @@ function LockedState() {
   )
 }
 
-function PoolWinnerRow({ winner, position, preferredCurrency, isFavorite, onToggleFavorite }: {
+function PoolWinnerRow({ winner, position, preferredCurrency, isFavorite, onToggleFavorite, isPro }: {
   winner: PoolWinnerProduct
   position: number
   preferredCurrency: string | null
   isFavorite: boolean
   onToggleFavorite: (id: string) => void
+  isPro: boolean
 }) {
   const isFirst = position === 1
 
@@ -572,7 +669,7 @@ function PoolWinnerRow({ winner, position, preferredCurrency, isFavorite, onTogg
 
   return (
     <div className={cn(
-      'grid grid-cols-[32px_64px_minmax(0,1fr)_60px_48px_72px_110px_90px_60px] items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/30',
+      'grid grid-cols-[32px_64px_minmax(0,1fr)_60px_48px_72px_110px_90px_140px_60px] items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/30',
       isFirst && 'bg-amber-500/5',
     )}>
       {/* # */}
@@ -692,6 +789,9 @@ function PoolWinnerRow({ winner, position, preferredCurrency, isFavorite, onTogg
           </span>
         )}
       </div>
+
+      {/* Ads */}
+      <AdsCell candidateId={winner.candidateId} isPro={isPro} />
 
       {/* Acción */}
       <div className="flex items-center justify-center">
