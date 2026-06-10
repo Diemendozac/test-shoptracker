@@ -58,14 +58,19 @@ export function FloatingVideoPanel({ ad, top, left }: { ad: Ad; top: number; lef
       }}
       className="animate-in fade-in duration-150"
     >
-      <video
-        src={ad.video_url_r2!}
-        autoPlay
-        muted
-        loop
-        playsInline
-        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-      />
+      {ad.video_url_r2 ? (
+        <video
+          src={ad.video_url_r2}
+          autoPlay muted loop playsInline
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+      ) : (
+        <img
+          src={ad.thumbnail_url}
+          alt=""
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+      )}
     </div>
   )
 }
@@ -104,9 +109,7 @@ function AdRow({
         tabIndex={0}
         className="relative h-[100px] w-[56px] shrink-0 cursor-pointer overflow-hidden rounded-md bg-secondary"
         onMouseEnter={() => {
-          if (hasVideo && thumbRef.current) {
-            onHover(ad, thumbRef.current.getBoundingClientRect())
-          }
+          if (thumbRef.current) onHover(ad, thumbRef.current.getBoundingClientRect())
         }}
         onMouseLeave={onLeave}
         onClick={() => window.open(ad.ad_snapshot_url, '_blank', 'noopener,noreferrer')}
@@ -313,7 +316,7 @@ export function ProductAdsSection({ candidateId, isPro }: ProductAdsSectionProps
       </div>
 
       {/* Floating video panel — outside blur wrapper, position:fixed escapes stacking context */}
-      {hoveredAd && hoveredAd.video_url_r2 && (
+      {hoveredAd && (
         <FloatingVideoPanel ad={hoveredAd} top={hoverPosition.top} left={hoverPosition.left} />
       )}
     </div>
@@ -344,9 +347,7 @@ function AdThumbnailHover({
         !isPro && 'pointer-events-none',
       )}
       onMouseEnter={() => {
-        if (isPro && hasVideo && thumbRef.current) {
-          onHover(ad, thumbRef.current.getBoundingClientRect())
-        }
+        if (isPro && thumbRef.current) onHover(ad, thumbRef.current.getBoundingClientRect())
       }}
       onMouseLeave={onLeave}
     >
@@ -436,7 +437,7 @@ export function AdStripPreview({
       </Link>
 
       {/* Floating video panel — position:fixed renders at viewport level, outside Link DOM */}
-      {hoveredAd && hoveredAd.video_url_r2 && isPro && (
+      {hoveredAd && isPro && (
         <FloatingVideoPanel ad={hoveredAd} top={hoverPosition.top} left={hoverPosition.left} />
       )}
     </>
