@@ -234,7 +234,7 @@ export function ProductAdsSection({ candidateId, isPro }: ProductAdsSectionProps
 
   const sorted = [...activeAds]
   if (sortBy === 'recent') sorted.sort((a, b) => new Date(b.first_seen).getTime() - new Date(a.first_seen).getTime())
-  else if (sortBy === 'oldest') sorted.sort((a, b) => a.days_running - b.days_running)
+  else if (sortBy === 'oldest') sorted.sort((a, b) => b.days_running - a.days_running)
 
   return (
     <div id="ads" className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
@@ -255,7 +255,7 @@ export function ProductAdsSection({ candidateId, isPro }: ProductAdsSectionProps
           >
             <option value="impressions">Impresiones</option>
             <option value="recent">Más recientes</option>
-            <option value="oldest">Más antiguos</option>
+            <option value="oldest">Más duraderos</option>
           </select>
           {lastUpdated && (
             <span className="text-xs text-muted-foreground">actualizado {lastUpdated}</span>
