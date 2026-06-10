@@ -180,6 +180,8 @@ function AdsSkeleton() {
 
 // ─── ProductAdsSection ────────────────────────────────────────────────────────
 
+type SortOption = 'impressions' | 'recent' | 'oldest' | 'days_asc'
+
 interface ProductAdsSectionProps {
   candidateId: string
   isPro: boolean
@@ -190,6 +192,7 @@ export function ProductAdsSection({ candidateId, isPro }: ProductAdsSectionProps
   const [devOverride, setDevOverride] = useState<boolean | null>(null)
   const effectiveIsPro = devOverride !== null ? devOverride : isPro
 
+  const [sortBy, setSortBy] = useState<SortOption>('impressions')
   const [hoveredAd, setHoveredAd] = useState<Ad | null>(null)
   const [hoverPosition, setHoverPosition] = useState({ top: 0, left: 0 })
 
@@ -229,6 +232,11 @@ export function ProductAdsSection({ candidateId, isPro }: ProductAdsSectionProps
 
   const lastUpdated = data?.lastUpdated ? formatRelative(data.lastUpdated) : ''
 
+  const sorted = [...activeAds]
+  if (sortBy === 'recent')   sorted.sort((a, b) => new Date(b.first_seen).getTime() - new Date(a.first_seen).getTime())
+  else if (sortBy === 'oldest')   sorted.sort((a, b) => b.days_running - a.days_running)
+  else if (sortBy === 'days_asc') sorted.sort((a, b) => a.days_running - b.days_running)
+
   return (
     <div id="ads" className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
 
@@ -241,6 +249,15 @@ export function ProductAdsSection({ candidateId, isPro }: ProductAdsSectionProps
           </span>
         </div>
         <div className="flex items-center gap-3">
+          <select
+            value={sortBy}
+            onChange={e => setSortBy(e.target.value as SortOption)}
+            className="rounded-md border border-border bg-secondary/50 px-2 py-1 text-xs text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+          >
+            <option value="impressions">Impresiones</option>
+            <option value="recent">Más recientes</option>
+            <option value="oldest">Más tiempo activo</option>
+          </select>
           {lastUpdated && (
             <span className="text-xs text-muted-foreground">actualizado {lastUpdated}</span>
           )}
@@ -267,7 +284,7 @@ export function ProductAdsSection({ candidateId, isPro }: ProductAdsSectionProps
       {/* Rows */}
       <div className="relative">
         <div className={cn('divide-y divide-border/50', !effectiveIsPro && 'pointer-events-none select-none blur-sm')}>
-          {activeAds.map((ad, i) => (
+          {sorted.map((ad, i) => (
             <AdRow
               key={ad.id}
               ad={ad}
