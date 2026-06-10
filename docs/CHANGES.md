@@ -6,6 +6,19 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-007 — Ocultar origen de tienda en vista "Explorar testeos"
+**Fecha:** 2026-06-10
+**Tipo:** privacidad / fix
+
+**Qué cambió:** En la sección de anuncios activos, cuando el contexto es `?from=pool` (Explorar testeos), se oculta la columna "Origen" — el nombre del anunciante y el dominio de la tienda. Solo queda visible la fecha de inicio del anuncio, que es información neutral. En vista propia (Mis testeos) sigue mostrando todo.
+
+**Por qué:** Los datos de "Explorar testeos" pertenecen a otras cuentas de usuario. Mostrar el nombre del anunciante o el dominio de la tienda en ese contexto expone información privada de terceros.
+
+**Archivos modificados:**
+- `components/tracker/product-ads.tsx` — `showOrigin` prop en `AdRow`; `isFromPool` derivado de `useSearchParams`; header "Origen" condicional
+
+---
+
 ### CHANGE-006 — Editor de tiendas: cambio de dominio, nombre y pago anticipado
 **Fecha:** 2026-06-10
 **Tipo:** feature

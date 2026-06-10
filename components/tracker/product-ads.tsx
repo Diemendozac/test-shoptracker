@@ -141,12 +141,14 @@ function AdRow({
   ad,
   index,
   allowMetaLink,
+  showOrigin,
   onHover,
   onLeave,
 }: {
   ad: Ad
   index: number
   allowMetaLink: boolean
+  showOrigin: boolean
   onHover: (ad: Ad, rect: DOMRect) => void
   onLeave: () => void
 }) {
@@ -198,7 +200,9 @@ function AdRow({
 
       {/* Metadata */}
       <div className="min-w-0">
-        <p className="truncate text-sm font-medium text-foreground">{label}</p>
+        {showOrigin && (
+          <p className="truncate text-sm font-medium text-foreground">{label}</p>
+        )}
         <p className="mt-0.5 text-[11px] text-muted-foreground">
           Desde {formatDate(ad.first_seen)}
         </p>
@@ -267,7 +271,9 @@ export function ProductAdsSection({ candidateId, isPro }: ProductAdsSectionProps
   const effectiveIsPro = devOverride !== null ? devOverride : isPro
 
   const searchParams = useSearchParams()
-  const allowMetaLink = effectiveIsPro && searchParams.get('from') !== 'pool'
+  const isFromPool = searchParams.get('from') === 'pool'
+  const allowMetaLink = effectiveIsPro && !isFromPool
+  const showOrigin = !isFromPool
 
   const [sortBy, setSortBy] = useState<SortOption>('impressions')
   const { hoveredAd, hoverPos, handleHover, handleLeave, handlePanelEnter, handlePanelLeave } = useHoverPanel()
@@ -335,7 +341,7 @@ export function ProductAdsSection({ candidateId, isPro }: ProductAdsSectionProps
       <div className="grid grid-cols-[28px_68px_1fr_56px_88px] items-center gap-3 border-b border-border bg-secondary/20 px-4 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
         <span>#</span>
         <span>Ad</span>
-        <span>Origen</span>
+        <span>{showOrigin ? 'Origen' : ''}</span>
         <span>Días</span>
         <span />
       </div>
@@ -349,6 +355,7 @@ export function ProductAdsSection({ candidateId, isPro }: ProductAdsSectionProps
               ad={ad}
               index={i + 1}
               allowMetaLink={allowMetaLink}
+              showOrigin={showOrigin}
               onHover={handleHover}
               onLeave={handleLeave}
             />
