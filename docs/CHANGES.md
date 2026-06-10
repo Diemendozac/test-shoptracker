@@ -6,6 +6,25 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-006 — Editor de tiendas: cambio de dominio, nombre y pago anticipado
+**Fecha:** 2026-06-10
+**Tipo:** feature
+
+**Qué cambió:** El botón "Editar tienda" en el dropdown de cada fila de Stores ahora abre un modal funcional. Antes no hacía nada. El modal precarga los datos actuales de la tienda y permite cambiar nombre, dominio (baseUrl) y tipo de pago (pago anticipado). Al guardar llama `PUT /api/stores/:storeId` y refresca la lista automáticamente.
+
+**Archivos modificados:**
+- `app/(dashboard)/stores/components/EditStoreModal.tsx` — modal nuevo (creado)
+- `app/(dashboard)/stores/components/StoreRow.tsx` — prop `onEdit` añadida y conectada al DropdownMenuItem
+- `app/(dashboard)/stores/page.tsx` — estado `editingStore`, render del modal y `onEdit` en cada StoreRow
+- `app/(dashboard)/stores/services/storeApi.ts` — nuevo endpoint `updateStore` (PUT)
+- `app/(dashboard)/stores/types/index.ts` — nuevo tipo `UpdateStoreRequest`
+
+**Relacionado con backend:** requiere que el backend tenga `PUT /api/stores/:storeId` implementado.
+
+**Wiki actualizado:** No aplica.
+
+---
+
 ### CHANGE-028 — Fix: sidebar activo incorrecto al navegar desde Explorar testeos
 **Fecha:** 2026-06-09
 **Tipo:** bugfix

@@ -6,6 +6,7 @@ import { Plus, Search, X, ChevronUp, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useStores } from './hooks/useStores'
 import { AddStoreModal } from './components/AddStoreModal'
+import { EditStoreModal } from './components/EditStoreModal'
 import { StoreRow } from './components/StoreRow'
 import { useGetTrackerCandidatesQuery } from '../services/dashboardApi'
 import { computeStoreQuality } from '@/lib/store-quality'
@@ -36,6 +37,7 @@ export default function StoresPage() {
 
   const { data: allCandidates = [], isLoading: isCandidatesLoading } = useGetTrackerCandidatesQuery({})
 
+  const [editingStore, setEditingStore] = useState<StoreResponse | null>(null)
   const [query, setQuery] = useState('')
   const [sortField, setSortField] = useState<SortField>('calidad')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
@@ -128,6 +130,7 @@ export default function StoresPage() {
   return (
     <PageLayout title="Mis tiendas" description="Administra tus tiendas Shopify rastreadas">
       <AddStoreModal />
+      <EditStoreModal store={editingStore} onClose={() => setEditingStore(null)} />
 
       {/* Header */}
       <div className="mb-4 flex items-center gap-3">
@@ -240,6 +243,7 @@ export default function StoresPage() {
                 isDeleting={deletingStoreId === store.storeId}
                 onSync={() => syncStore(store.storeId, store.storeName)}
                 onDelete={() => deleteStore(store.storeId)}
+                onEdit={() => setEditingStore(store)}
               />
             ))}
           </div>

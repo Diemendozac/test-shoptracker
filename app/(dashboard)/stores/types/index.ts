@@ -24,3 +24,9 @@ export interface CreateStoreRequest {
   pagoAnticipado?: boolean
 }
 
+export interface UpdateStoreRequest {
+  storeName?: string
+  baseUrl?: string
+  pagoAnticipado?: boolean
+}
+

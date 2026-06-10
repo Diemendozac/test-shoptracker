@@ -95,9 +95,10 @@ interface StoreRowProps {
   isDeleting: boolean
   onSync: () => void
   onDelete: () => void
+  onEdit: () => void
 }
 
-export function StoreRow({ store, quality, qualityLoading, isSyncing, isDeleting, onSync, onDelete }: StoreRowProps) {
+export function StoreRow({ store, quality, qualityLoading, isSyncing, isDeleting, onSync, onDelete, onEdit }: StoreRowProps) {
   return (
     <div className={cn(
       'grid grid-cols-[40px_1fr_96px_72px_96px_80px_96px_80px] items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/30',
@@ -213,7 +214,7 @@ export function StoreRow({ store, quality, qualityLoading, isSyncing, isDeleting
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem className="gap-2">
+            <DropdownMenuItem className="gap-2" onClick={onEdit}>
               <Edit className="h-4 w-4" />
               Editar tienda
             </DropdownMenuItem>

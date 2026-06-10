@@ -1,7 +1,7 @@
 
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import type { RootState } from '@/store'
-import type { StoreResponse, CreateStoreRequest } from '../types'
+import type { StoreResponse, CreateStoreRequest, UpdateStoreRequest } from '../types'
 
 export interface SyncResult {
   storeId: string
@@ -39,6 +39,12 @@ export const storesApi = createApi({
       invalidatesTags: ['Store'],
     }),
 
+    // PUT /api/stores/:storeId
+    updateStore: builder.mutation<StoreResponse, { storeId: string; body: UpdateStoreRequest }>({
+      query: ({ storeId, body }) => ({ url: `/${storeId}`, method: 'PUT', body }),
+      invalidatesTags: ['Store'],
+    }),
+
     // DELETE /api/stores/:storeId
     deleteStore: builder.mutation<void, string>({
       query: (storeId) => ({ url: `/${storeId}`, method: 'DELETE' }),
@@ -63,6 +69,7 @@ export const storesApi = createApi({
 export const {
   useGetStoresQuery,
   useCreateStoreMutation,
+  useUpdateStoreMutation,
   useDeleteStoreMutation,
   useSyncStoreMutation,
   useRedetectPaymentsMutation,
