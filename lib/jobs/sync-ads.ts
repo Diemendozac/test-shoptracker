@@ -1,14 +1,14 @@
 // lib/jobs/sync-ads.ts
 // Scrapes Meta Ad Library for all Pro/Agency stores and pushes results to backend.
 //
-// Run manually or via cron on Easypanel (Node.js service, NOT Vercel):
+// Run manually or via cron on GitHub Actions / Easypanel:
 //   npx tsx lib/jobs/sync-ads.ts
 //
 // Required env vars:
-//   NEXT_PUBLIC_API_URL   — backend base URL (e.g. http://shoptracker-api:8080/api)
+//   NEXT_PUBLIC_API_URL   — backend base URL (e.g. https://api.example.com/api)
 //   WEBHOOK_SECRET        — shared secret for internal API endpoints
-//   ANTHROPIC_API_KEY     — optional, used by scraper for keyword normalization
 
+import fs from 'fs'
 import { scrapeAdsForStore, type ScrapedAd } from '../scrapers/meta-ads'
 
 const API_URL        = process.env.NEXT_PUBLIC_API_URL || 'http://shoptracker-api:8080/api'
@@ -185,7 +185,12 @@ async function pushAds(candidateId: string, storeDomain: string, ads: ScrapedAd[
 
 // ── Core sync logic ────────────────────────────────────────────────────────────
 
-async function syncStore(store: Store): Promise<void> {
+type StoreOutcome =
+  | { status: 'skipped'; reason: string }
+  | { status: 'error';   error: string }
+  | { status: 'synced';  adsSaved: number; matches: number }
+
+async function syncStore(store: Store): Promise<StoreOutcome> {
   let domain = new URL(store.baseUrl).hostname.replace(/^www\./, '')
   const country = store.country || 'ALL'
 
@@ -194,7 +199,7 @@ async function syncStore(store: Store): Promise<void> {
   if (resolvedDomain === null) {
     await markDomainError(store.storeId)
     console.log(`  ✗ ${domain} — no responde y no se pudo resolver → dominio no verificado`)
-    return
+    return { status: 'skipped', reason: 'domain_error' }
   }
   domain = resolvedDomain
 
@@ -202,14 +207,14 @@ async function syncStore(store: Store): Promise<void> {
   const candidates = await getCandidatesForStore(store.storeId)
   if (candidates.length === 0) {
     console.log(`  → No candidates for ${domain} — skipping`)
-    return
+    return { status: 'skipped', reason: 'no_candidates' }
   }
 
   // ── 2b. Smart scraping gate ───────────────────────────────────────────────
   const { scrape, reason } = shouldScrapeStore(candidates)
   if (!scrape) {
     console.log(`  ⏸ ${domain} — ${reason} → skip`)
-    return
+    return { status: 'skipped', reason }
   }
   console.log(`  ✓ ${domain} — ${reason} → scrapeando`)
 
@@ -221,8 +226,9 @@ async function syncStore(store: Store): Promise<void> {
       knownPageName: store.metaPageName ?? undefined,
     })
   } catch (e) {
-    console.error(`  ❌ Scrape failed: ${(e as Error).message}`)
-    return
+    const msg = (e as Error).message
+    console.error(`  ❌ Scrape failed: ${msg}`)
+    return { status: 'error', error: `${domain}: ${msg}` }
   }
 
   const { ads, advertiser, totalAdsOnMeta } = scrapeResult
@@ -239,7 +245,7 @@ async function syncStore(store: Store): Promise<void> {
 
   if (ads.length === 0) {
     console.log('  → 0 ads — skipping ingest')
-    return
+    return { status: 'synced', adsSaved: 0, matches: 0 }
   }
 
   // ── F3 verbose report ─────────────────────────────────────────────────────
@@ -262,6 +268,7 @@ async function syncStore(store: Store): Promise<void> {
   // ── 5. Push only ads with a real F3 match — no fallback ──────────────────
   let pushed = 0
   let skipped = 0
+  let totalAdsSaved = 0
   for (const candidate of candidates) {
     const matched = ads.filter(a => a.matchedCandidateId === candidate.candidateId)
     const handle  = candidate.productUrl?.match(/\/products\/([^/?#]+)/)?.[1] ?? candidate.candidateId.slice(0, 8)
@@ -273,23 +280,62 @@ async function syncStore(store: Store): Promise<void> {
     await pushAds(candidate.candidateId, domain, matched)
     console.log(`  ✅ ${handle} → ${matched.length} ads`)
     pushed++
+    totalAdsSaved += matched.length
   }
   console.log(`  [F3] Resultado: ${pushed} candidatos con ads / ${skipped} sin match / ${ads.length - totalMatched} ads descartados`)
+
+  return { status: 'synced', adsSaved: totalAdsSaved, matches: pushed }
 }
 
 async function main(): Promise<void> {
+  const startedAt = new Date()
   console.log('🚀 sync-ads: starting\n')
+
   const stores = await getProStores()
   console.log(`Found ${stores.length} Pro/Agency stores\n`)
+
+  let storesProcessed = 0
+  let storesSkipped   = 0
+  let totalAdsSaved   = 0
+  let totalMatches    = 0
+  const errors: string[] = []
 
   for (const store of stores) {
     const domain = new URL(store.baseUrl).hostname.replace(/^www\./, '')
     console.log(`\n📦 ${domain}`)
-    await syncStore(store)
+    const result = await syncStore(store)
+
+    if (result.status === 'skipped') {
+      storesSkipped++
+    } else if (result.status === 'error') {
+      storesProcessed++
+      errors.push(result.error)
+    } else {
+      storesProcessed++
+      totalAdsSaved += result.adsSaved
+      totalMatches  += result.matches
+    }
+
     await new Promise(r => setTimeout(r, 3000)) // rate-limit between stores
   }
 
+  const durationSeconds = Math.round((Date.now() - startedAt.getTime()) / 1000)
+
+  const summary = {
+    timestamp:        startedAt.toISOString(),
+    duration_seconds: durationSeconds,
+    stores_processed: storesProcessed,
+    stores_skipped:   storesSkipped,
+    total_ads_saved:  totalAdsSaved,
+    matches:          totalMatches,
+    errors,
+  }
+
+  fs.writeFileSync('sync-results.json', JSON.stringify(summary, null, 2))
+
   console.log('\n✅ sync-ads: done')
+  console.log(`   ${storesProcessed} procesadas / ${storesSkipped} skipped / ${totalAdsSaved} ads / ${durationSeconds}s`)
+  if (errors.length > 0) console.log(`   ⚠ ${errors.length} errores: ${errors.join(', ')}`)
 }
 
 main().catch(err => {

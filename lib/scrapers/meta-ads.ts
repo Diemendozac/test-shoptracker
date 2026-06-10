@@ -404,7 +404,7 @@ export async function scrapeAdsForStore(
   browser?: Browser,
   options: { headless?: boolean; knownPageId?: string; knownPageName?: string } = {},
 ): Promise<ScrapeResult> {
-  const headless = options.headless ?? false
+  const headless = options.headless ?? (process.env.CI === 'true')
   const ownBrowser = !browser
   if (!browser) {
     browser = await chromium.launch({
