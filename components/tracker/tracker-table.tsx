@@ -90,7 +90,17 @@ export function AdsCell({ candidateId, isPro }: { candidateId: string; isPro: bo
   const handleLeave = useCallback(() => setHoveredAd(null), [])
 
   const active = data?.ads.filter(a => a.status === 'active') ?? []
-  if (active.length === 0) return <div />
+  if (active.length === 0) return (
+    <div style={{ display: 'flex', gap: 3 }}>
+      {[0, 1, 2].map(i => (
+        <div key={i} style={{
+          width: 40, height: 56, borderRadius: 4,
+          border: '1px dashed var(--color-border)',
+          opacity: 0.4,
+        }} />
+      ))}
+    </div>
+  )
 
   const previews  = active.slice(0, 3)
   const remaining = active.length - 3
