@@ -8,9 +8,11 @@ import { convertCurrency, currencySymbol } from '@/lib/currency'
 import { useCurrency } from '@/store/hooks'
 import { useGetStoresQuery } from '@/app/(dashboard)/stores/services/storeApi'
 import { useGetTrackerCandidatesQuery } from '@/app/(dashboard)/services/dashboardApi'
+import { useGetMeQuery } from '@/app/(dashboard)/services/userApi'
 import { ScoreRing } from '@/components/dashboard/score-ring'
 import { PerformanceBadge } from '@/components/dashboard/performance-badge'
 import { Sparkline } from '@/components/tracker/sparkline'
+import { AdsCell } from '@/components/tracker/tracker-table'
 import {
   ArrowLeft, ExternalLink, CheckCircle, XCircle,
   Clock, Target, Zap, TrendingUp, BarChart3, Store,
@@ -37,6 +39,9 @@ function StoreDetailContent() {
 
   const { data: allCandidates = [], isLoading: loadingCandidates } =
     useGetTrackerCandidatesQuery({ storeId })
+
+  const { data: me } = useGetMeQuery()
+  const isPro = me?.plan === 'pro' || me?.plan === 'agency' || me?.plan === 'admin'
 
   if (!store && stores) {
     return (
@@ -206,7 +211,7 @@ function StoreDetailContent() {
                 <Link
                   key={c.candidateId}
                   href={`/tracker/${c.candidateId}?storeId=${c.storeId}&from=tracker`}
-                  className="grid grid-cols-[28px_52px_1fr_100px_70px_52px_52px] items-center gap-4 border-b border-border/50 px-5 py-3 transition-colors last:border-0 hover:bg-secondary/30"
+                  className="grid grid-cols-[28px_52px_1fr_100px_70px_140px_52px_52px] items-center gap-4 border-b border-border/50 px-5 py-3 transition-colors last:border-0 hover:bg-secondary/30"
                 >
                   {/* Rank */}
                   <span className={cn(
@@ -243,6 +248,11 @@ function StoreDetailContent() {
                       ? <Sparkline data={(c.growthHistory ?? []).slice(-7)} width={64} height={28} />
                       : <span className="text-[10px] text-muted-foreground/30">—</span>
                     }
+                  </div>
+
+                  {/* ADS — stopPropagation prevents Link navigation on ad click */}
+                  <div onClick={e => e.stopPropagation()}>
+                    <AdsCell candidateId={c.candidateId} isPro={isPro} />
                   </div>
 
                   {/* Growth */}
@@ -298,6 +308,10 @@ function StoreDetailContent() {
                       {sym}{price.toLocaleString('es-CO', { maximumFractionDigits: 0 })}
                     </span>
                   )}
+                  {/* ADS — stopPropagation prevents Link navigation on ad click */}
+                  <div onClick={e => e.stopPropagation()}>
+                    <AdsCell candidateId={c.candidateId} isPro={isPro} />
+                  </div>
                   <ScoreRing score={c.performanceScore ?? 0} size="sm" showLabel={false} />
                 </Link>
               )

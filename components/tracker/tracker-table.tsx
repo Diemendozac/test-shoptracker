@@ -68,7 +68,7 @@ function AdThumb({
   )
 }
 
-function AdsCell({ candidateId, isPro }: { candidateId: string; isPro: boolean }) {
+export function AdsCell({ candidateId, isPro }: { candidateId: string; isPro: boolean }) {
   const { data } = useGetProductAdsQuery(candidateId)
   const [hoveredAd, setHoveredAd] = useState<Ad | null>(null)
   const [hoverPos, setHoverPos]   = useState({ top: 0, left: 0 })
