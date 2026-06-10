@@ -44,7 +44,7 @@ function AdThumb({
         !isPro && 'pointer-events-none blur-sm',
       )}
       onMouseEnter={() => {
-        if (isPro && hasVideo && thumbRef.current)
+        if (isPro && thumbRef.current)
           onHover(ad, thumbRef.current.getBoundingClientRect())
       }}
       onMouseLeave={onLeave}
@@ -121,7 +121,7 @@ export function AdsCell({ candidateId, isPro }: { candidateId: string; isPro: bo
           +{remaining}
         </span>
       )}
-      {hoveredAd?.video_url_r2 && isPro && (
+      {hoveredAd && isPro && (
         <FloatingVideoPanel ad={hoveredAd} top={hoverPos.top} left={hoverPos.left} />
       )}
     </div>
