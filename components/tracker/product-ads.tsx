@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Lock } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -80,11 +81,13 @@ export function FloatingVideoPanel({ ad, top, left }: { ad: Ad; top: number; lef
 function AdRow({
   ad,
   index,
+  allowMetaLink,
   onHover,
   onLeave,
 }: {
   ad: Ad
   index: number
+  allowMetaLink: boolean
   onHover: (ad: Ad, rect: DOMRect) => void
   onLeave: () => void
 }) {
@@ -102,18 +105,21 @@ function AdRow({
       {/* # */}
       <span className="text-xs font-medium text-muted-foreground tabular-nums">{index}</span>
 
-      {/* Thumbnail 9:16 — hover triggers floating panel, click abre Meta */}
+      {/* Thumbnail 9:16 — hover triggers floating panel, click abre Meta si allowMetaLink */}
       <div
         ref={thumbRef}
         role="button"
         tabIndex={0}
-        className="relative h-[100px] w-[56px] shrink-0 cursor-pointer overflow-hidden rounded-md bg-secondary"
+        className={cn(
+          'relative h-[100px] w-[56px] shrink-0 overflow-hidden rounded-md bg-secondary',
+          allowMetaLink ? 'cursor-pointer' : 'cursor-default',
+        )}
         onMouseEnter={() => {
           if (thumbRef.current) onHover(ad, thumbRef.current.getBoundingClientRect())
         }}
         onMouseLeave={onLeave}
-        onClick={() => window.open(ad.ad_snapshot_url, '_blank', 'noopener,noreferrer')}
-        onKeyDown={e => { if (e.key === 'Enter') window.open(ad.ad_snapshot_url, '_blank', 'noopener,noreferrer') }}
+        onClick={() => allowMetaLink && window.open(ad.ad_snapshot_url, '_blank', 'noopener,noreferrer')}
+        onKeyDown={e => { if (e.key === 'Enter' && allowMetaLink) window.open(ad.ad_snapshot_url, '_blank', 'noopener,noreferrer') }}
       >
         <img
           src={ad.thumbnail_url || 'https://picsum.photos/seed/placeholder/400/700'}
@@ -147,15 +153,21 @@ function AdRow({
         {ad.days_running}d
       </span>
 
-      {/* Ver en Meta */}
-      <a
-        href={ad.ad_snapshot_url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center justify-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground whitespace-nowrap"
-      >
-        Meta →
-      </a>
+      {/* Ver en Meta — solo visible si allowMetaLink */}
+      {allowMetaLink ? (
+        <a
+          href={ad.ad_snapshot_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground whitespace-nowrap"
+        >
+          Meta →
+        </a>
+      ) : (
+        <div className="flex items-center justify-center gap-1 rounded-lg border border-border/40 px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground/30 whitespace-nowrap cursor-not-allowed">
+          Meta →
+        </div>
+      )}
     </div>
   )
 }
@@ -194,6 +206,9 @@ export function ProductAdsSection({ candidateId, isPro }: ProductAdsSectionProps
   const { data, isLoading, isError } = useGetProductAdsQuery(candidateId)
   const [devOverride, setDevOverride] = useState<boolean | null>(null)
   const effectiveIsPro = devOverride !== null ? devOverride : isPro
+
+  const searchParams = useSearchParams()
+  const allowMetaLink = effectiveIsPro || searchParams.get('from') !== 'pool'
 
   const [sortBy, setSortBy] = useState<SortOption>('impressions')
   const [hoveredAd, setHoveredAd] = useState<Ad | null>(null)
@@ -291,6 +306,7 @@ export function ProductAdsSection({ candidateId, isPro }: ProductAdsSectionProps
               key={ad.id}
               ad={ad}
               index={i + 1}
+              allowMetaLink={allowMetaLink}
               onHover={handleHover}
               onLeave={handleLeave}
             />
