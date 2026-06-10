@@ -28,6 +28,12 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install chromium --with-deps
 
+      - name: Test backend connectivity
+        run: |
+          curl -v "https://mujertrendy-shoptracker-api.agb62a.easypanel.host/api/internal/stores/pro" \
+            -H "X-Webhook-Secret: ${{ secrets.WEBHOOK_SECRET }}" \
+            --max-time 10 || echo "Backend unreachable"
+
       - name: Run ads sync
         env:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}

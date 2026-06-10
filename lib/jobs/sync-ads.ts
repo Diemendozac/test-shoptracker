@@ -97,9 +97,16 @@ async function markDomainError(storeId: string): Promise<void> {
 // ── Backend API helpers ────────────────────────────────────────────────────────
 
 async function getProStores(): Promise<Store[]> {
-  const res = await fetch(`${API_URL}/internal/stores/pro`, {
-    headers: { 'X-Webhook-Secret': WEBHOOK_SECRET },
-  })
+  let res: Response
+  try {
+    res = await fetch(`${API_URL}/internal/stores/pro`, {
+      headers: { 'X-Webhook-Secret': WEBHOOK_SECRET },
+    })
+  } catch (e) {
+    const err = e as Error & { cause?: unknown }
+    console.error('Fetch error detail:', err.message, err.cause)
+    throw new Error(`Fatal: fetch failed — ${err.message}`)
+  }
   if (!res.ok) throw new Error(`Failed to fetch stores: ${res.status}`)
   return res.json()
 }
