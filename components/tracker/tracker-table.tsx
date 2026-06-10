@@ -16,7 +16,7 @@ import {
 import { useRemoveCandidateMutation } from '@/app/(dashboard)/services/candidateApi'
 import { dashboardApi, useGetProductAdsQuery } from '@/app/(dashboard)/services/dashboardApi'
 import { useIsPro } from '@/lib/view-as'
-import { FloatingVideoPanel } from '@/components/tracker/product-ads'
+import { FloatingVideoPanel, useHoverPanel } from '@/components/tracker/product-ads'
 import { HoverImagePreview } from '@/components/ui/image-preview'
 import { ScoreRing } from '@/components/dashboard/score-ring'
 import { resolveDisplayLabel, isScalable } from '@/lib/label-utils'
@@ -70,24 +70,7 @@ function AdThumb({
 
 export function AdsCell({ candidateId, isPro }: { candidateId: string; isPro: boolean }) {
   const { data } = useGetProductAdsQuery(candidateId)
-  const [hoveredAd, setHoveredAd] = useState<Ad | null>(null)
-  const [hoverPos, setHoverPos]   = useState({ top: 0, left: 0 })
-
-  const handleHover = useCallback((ad: Ad, rect: DOMRect) => {
-    const panelH = 356
-    const top = Math.max(8, Math.min(
-      rect.top + rect.height / 2 - panelH / 2,
-      window.innerHeight - panelH - 8,
-    ))
-    const panelW = 200
-    const left = rect.right + 12 + panelW > window.innerWidth
-      ? rect.left - panelW - 12
-      : rect.right + 12
-    setHoverPos({ top, left })
-    setHoveredAd(ad)
-  }, [])
-
-  const handleLeave = useCallback(() => setHoveredAd(null), [])
+  const { hoveredAd, hoverPos, handleHover, handleLeave, handlePanelEnter, handlePanelLeave } = useHoverPanel()
 
   const active = data?.ads.filter(a => a.status === 'active') ?? []
   if (active.length === 0) return (
@@ -122,7 +105,10 @@ export function AdsCell({ candidateId, isPro }: { candidateId: string; isPro: bo
         </span>
       )}
       {hoveredAd && isPro && (
-        <FloatingVideoPanel ad={hoveredAd} top={hoverPos.top} left={hoverPos.left} />
+        <FloatingVideoPanel
+          ad={hoveredAd} top={hoverPos.top} left={hoverPos.left}
+          onMouseEnter={handlePanelEnter} onMouseLeave={handlePanelLeave}
+        />
       )}
     </div>
   )

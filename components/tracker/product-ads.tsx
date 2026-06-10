@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Lock, Volume2, VolumeX } from 'lucide-react'
@@ -42,7 +42,13 @@ export const mockAds: Ad[] = [
 
 // ─── FloatingVideoPanel ────────────────────────────────────────────────────────
 
-export function FloatingVideoPanel({ ad, top, left }: { ad: Ad; top: number; left: number }) {
+export function FloatingVideoPanel({
+  ad, top, left, onMouseEnter, onMouseLeave,
+}: {
+  ad: Ad; top: number; left: number
+  onMouseEnter?: () => void
+  onMouseLeave?: () => void
+}) {
   const [muted, setMuted] = useState(true)
   const videoRef = useRef<HTMLVideoElement>(null)
 
@@ -63,10 +69,11 @@ export function FloatingVideoPanel({ ad, top, left }: { ad: Ad; top: number; lef
         zIndex: 50,
         borderRadius: 8,
         overflow: 'hidden',
-        pointerEvents: 'none',
         boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
       }}
       className="animate-in fade-in duration-150"
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
       {ad.video_url_r2 ? (
         <>
@@ -78,7 +85,6 @@ export function FloatingVideoPanel({ ad, top, left }: { ad: Ad; top: number; lef
           />
           <button
             onClick={toggleMute}
-            style={{ pointerEvents: 'auto' }}
             className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-colors hover:bg-black/80"
           >
             {muted
@@ -96,6 +102,31 @@ export function FloatingVideoPanel({ ad, top, left }: { ad: Ad; top: number; lef
       )}
     </div>
   )
+}
+
+// ─── useHoverPanel — hover compartido con delay para FloatingVideoPanel ────────
+
+export function useHoverPanel() {
+  const [hoveredAd, setHoveredAd]     = useState<Ad | null>(null)
+  const [hoverPos, setHoverPos]       = useState({ top: 0, left: 0 })
+  const leaveTimer                    = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => () => { if (leaveTimer.current) clearTimeout(leaveTimer.current) }, [])
+
+  const handleHover = useCallback((ad: Ad, rect: DOMRect) => {
+    if (leaveTimer.current) clearTimeout(leaveTimer.current)
+    const panelH = 356, panelW = 200
+    const top  = Math.max(8, Math.min(rect.top + rect.height / 2 - panelH / 2, window.innerHeight - panelH - 8))
+    const left = rect.right + 12 + panelW > window.innerWidth ? rect.left - panelW - 12 : rect.right + 12
+    setHoverPos({ top, left })
+    setHoveredAd(ad)
+  }, [])
+
+  const handleLeave      = useCallback(() => { leaveTimer.current = setTimeout(() => setHoveredAd(null), 150) }, [])
+  const handlePanelEnter = useCallback(() => { if (leaveTimer.current) clearTimeout(leaveTimer.current) }, [])
+  const handlePanelLeave = useCallback(() => setHoveredAd(null), [])
+
+  return { hoveredAd, hoverPos, handleHover, handleLeave, handlePanelEnter, handlePanelLeave }
 }
 
 // ─── AdRow — fila de anuncio estilo Kalodata ───────────────────────────────────
@@ -233,24 +264,7 @@ export function ProductAdsSection({ candidateId, isPro }: ProductAdsSectionProps
   const allowMetaLink = effectiveIsPro && searchParams.get('from') !== 'pool'
 
   const [sortBy, setSortBy] = useState<SortOption>('impressions')
-  const [hoveredAd, setHoveredAd] = useState<Ad | null>(null)
-  const [hoverPosition, setHoverPosition] = useState({ top: 0, left: 0 })
-
-  const handleHover = useCallback((ad: Ad, rect: DOMRect) => {
-    const panelH = 356
-    const top = Math.max(8, Math.min(
-      rect.top + rect.height / 2 - panelH / 2,
-      window.innerHeight - panelH - 8,
-    ))
-    const panelW = 200
-    const left = rect.right + 12 + panelW > window.innerWidth
-      ? rect.left - panelW - 12
-      : rect.right + 12
-    setHoverPosition({ top, left })
-    setHoveredAd(ad)
-  }, [])
-
-  const handleLeave = useCallback(() => setHoveredAd(null), [])
+  const { hoveredAd, hoverPos, handleHover, handleLeave, handlePanelEnter, handlePanelLeave } = useHoverPanel()
 
   if (isLoading) {
     return (
@@ -355,7 +369,10 @@ export function ProductAdsSection({ candidateId, isPro }: ProductAdsSectionProps
 
       {/* Floating video panel — outside blur wrapper, position:fixed escapes stacking context */}
       {hoveredAd && (
-        <FloatingVideoPanel ad={hoveredAd} top={hoverPosition.top} left={hoverPosition.left} />
+        <FloatingVideoPanel
+          ad={hoveredAd} top={hoverPos.top} left={hoverPos.left}
+          onMouseEnter={handlePanelEnter} onMouseLeave={handlePanelLeave}
+        />
       )}
     </div>
   )
@@ -422,24 +439,7 @@ export function AdStripPreview({
   candidateId,
   storeId,
 }: AdStripPreviewProps) {
-  const [hoveredAd, setHoveredAd] = useState<Ad | null>(null)
-  const [hoverPosition, setHoverPosition] = useState({ top: 0, left: 0 })
-
-  const handleHover = useCallback((ad: Ad, rect: DOMRect) => {
-    const panelH = 356
-    const top = Math.max(8, Math.min(
-      rect.top + rect.height / 2 - panelH / 2,
-      window.innerHeight - panelH - 8,
-    ))
-    const panelW = 200
-    const left = rect.right + 12 + panelW > window.innerWidth
-      ? rect.left - panelW - 12
-      : rect.right + 12
-    setHoverPosition({ top, left })
-    setHoveredAd(ad)
-  }, [])
-
-  const handleLeave = useCallback(() => setHoveredAd(null), [])
+  const { hoveredAd, hoverPos, handleHover, handleLeave, handlePanelEnter, handlePanelLeave } = useHoverPanel()
 
   const activeAds = ads.filter(a => a.status === 'active')
   if (activeAds.length === 0) return null
@@ -476,7 +476,10 @@ export function AdStripPreview({
 
       {/* Floating video panel — position:fixed renders at viewport level, outside Link DOM */}
       {hoveredAd && isPro && (
-        <FloatingVideoPanel ad={hoveredAd} top={hoverPosition.top} left={hoverPosition.left} />
+        <FloatingVideoPanel
+          ad={hoveredAd} top={hoverPos.top} left={hoverPos.left}
+          onMouseEnter={handlePanelEnter} onMouseLeave={handlePanelLeave}
+        />
       )}
     </>
   )
