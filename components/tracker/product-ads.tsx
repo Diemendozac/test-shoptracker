@@ -199,7 +199,11 @@ export function ProductAdsSection({ candidateId, isPro }: ProductAdsSectionProps
       rect.top + rect.height / 2 - panelH / 2,
       window.innerHeight - panelH - 8,
     ))
-    setHoverPosition({ top, left: rect.right + 12 })
+    const panelW = 200
+    const left = rect.right + 12 + panelW > window.innerWidth
+      ? rect.left - panelW - 12
+      : rect.right + 12
+    setHoverPosition({ top, left })
     setHoveredAd(ad)
   }, [])
 
@@ -372,7 +376,11 @@ export function AdStripPreview({
       rect.top + rect.height / 2 - panelH / 2,
       window.innerHeight - panelH - 8,
     ))
-    setHoverPosition({ top, left: rect.right + 12 })
+    const panelW = 200
+    const left = rect.right + 12 + panelW > window.innerWidth
+      ? rect.left - panelW - 12
+      : rect.right + 12
+    setHoverPosition({ top, left })
     setHoveredAd(ad)
   }, [])
 

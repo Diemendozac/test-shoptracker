@@ -79,7 +79,11 @@ function AdsCell({ candidateId, isPro }: { candidateId: string; isPro: boolean }
       rect.top + rect.height / 2 - panelH / 2,
       window.innerHeight - panelH - 8,
     ))
-    setHoverPos({ top, left: rect.right + 12 })
+    const panelW = 200
+    const left = rect.right + 12 + panelW > window.innerWidth
+      ? rect.left - panelW - 12
+      : rect.right + 12
+    setHoverPos({ top, left })
     setHoveredAd(ad)
   }, [])
 
