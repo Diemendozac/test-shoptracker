@@ -8,7 +8,7 @@ import { convertCurrency, currencySymbol } from '@/lib/currency'
 import { useCurrency } from '@/store/hooks'
 import { useGetStoresQuery } from '@/app/(dashboard)/stores/services/storeApi'
 import { useGetTrackerCandidatesQuery } from '@/app/(dashboard)/services/dashboardApi'
-import { useGetMeQuery } from '@/app/(dashboard)/services/userApi'
+import { useIsPro } from '@/lib/view-as'
 import { ScoreRing } from '@/components/dashboard/score-ring'
 import { PerformanceBadge } from '@/components/dashboard/performance-badge'
 import { Sparkline } from '@/components/tracker/sparkline'
@@ -40,8 +40,7 @@ function StoreDetailContent() {
   const { data: allCandidates = [], isLoading: loadingCandidates } =
     useGetTrackerCandidatesQuery({ storeId })
 
-  const { data: me } = useGetMeQuery()
-  const isPro = me?.plan === 'pro' || me?.plan === 'agency' || me?.plan === 'admin'
+  const isPro = useIsPro()
 
   if (!store && stores) {
     return (

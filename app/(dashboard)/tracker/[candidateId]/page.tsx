@@ -11,7 +11,7 @@ import { RankChart } from '@/components/tracker/rank-chart'
 import { ScoreChart } from '@/components/tracker/score-chart'
 import { useGetCandidateDetailQuery } from '@/app/(dashboard)/services/dashboardApi'
 import { useGetStoresQuery } from '@/app/(dashboard)/stores/services/storeApi'
-import { useGetMeQuery } from '@/app/(dashboard)/services/userApi'
+import { useIsPro } from '@/lib/view-as'
 import { useCurrency } from '@/store/hooks'
 import { ProductAdsSection } from '@/components/tracker/product-ads'
 import { FormattedPrice } from '@/components/ui/formatted-price'
@@ -277,8 +277,7 @@ function CandidateDetailContent() {
   const storeBaseUrl = store?.baseUrl ?? ''
   const storeName = store?.storeName ?? null
 
-  const { data: me } = useGetMeQuery()
-  const isPro = me?.plan === 'pro' || me?.plan === 'agency' || me?.plan === 'admin'
+  const isPro = useIsPro()
 
   const { data, isLoading, isError } = useGetCandidateDetailQuery(
     { storeId: storeId!, candidateId },

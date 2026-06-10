@@ -15,7 +15,7 @@ import {
 } from 'lucide-react'
 import { useRemoveCandidateMutation } from '@/app/(dashboard)/services/candidateApi'
 import { dashboardApi, useGetProductAdsQuery } from '@/app/(dashboard)/services/dashboardApi'
-import { useGetMeQuery } from '@/app/(dashboard)/services/userApi'
+import { useIsPro } from '@/lib/view-as'
 import { FloatingVideoPanel } from '@/components/tracker/product-ads'
 import { HoverImagePreview } from '@/components/ui/image-preview'
 import { ScoreRing } from '@/components/dashboard/score-ring'
@@ -209,8 +209,7 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
   const { currency: preferredCurrency } = useCurrency()
   const dispatch = useDispatch()
   const [removeCandidate] = useRemoveCandidateMutation()
-  const { data: me } = useGetMeQuery()
-  const isPro = me?.plan === 'pro' || me?.plan === 'agency' || me?.plan === 'admin'
+  const isPro = useIsPro()
   const displayDays = windowDays === 30 ? 30 : 7
 
   const [sort, setSort] = useState<SortState>({ key: 'performanceScore', dir: 'desc' })

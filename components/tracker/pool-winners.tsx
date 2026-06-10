@@ -15,7 +15,7 @@ import type { Ad } from '@/components/tracker/product-ads'
 import type { PoolPreset } from '@/app/(dashboard)/pool/page'
 import { isScalable } from '@/lib/label-utils'
 import { useGetProductAdsQuery } from '@/app/(dashboard)/services/dashboardApi'
-import { useGetMeQuery } from '@/app/(dashboard)/services/userApi'
+import { useIsPro } from '@/lib/view-as'
 import { FloatingVideoPanel } from '@/components/tracker/product-ads'
 
 type PoolSortKey = 'productTitle' | 'productPrice' | 'performanceScore' | 'growthPct' | 'currentRank'
@@ -209,8 +209,7 @@ export function PoolWinnersSection({
   escalarFilter, onEscalarFilterChange,
 }: PoolWinnersSectionProps) {
   const { currency: preferredCurrency } = useCurrency()
-  const { data: me } = useGetMeQuery()
-  const isPro = me?.plan === 'pro' || me?.plan === 'agency' || me?.plan === 'admin'
+  const isPro = useIsPro()
   const [sort, setSort] = useState<SortState>({ key: 'performanceScore', dir: 'desc' })
 
   function toggleSet(prev: Set<string>, value: string): Set<string> {

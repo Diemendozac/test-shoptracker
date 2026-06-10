@@ -7,6 +7,8 @@ import { SidebarProvider } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { AppHeader } from '@/components/layout/app-header'
 import { useAppSelector } from '@/store/hooks'
+import { ViewAsProvider } from '@/lib/view-as'
+import { ViewAsBar } from '@/components/admin/ViewAsBar'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -33,14 +35,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!isAuthenticated) return null
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-background">
-        <AppSidebar pinned={true} />
-        <main className="flex flex-1 flex-col transition-all duration-300 pl-64">
-          <AppHeader />
-          <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden">{children}</div>
-        </main>
-      </div>
-    </SidebarProvider>
+    <ViewAsProvider>
+      <SidebarProvider>
+        <div className="flex min-h-screen w-full bg-background">
+          <AppSidebar pinned={true} />
+          <main className="flex flex-1 flex-col transition-all duration-300 pl-64">
+            <AppHeader />
+            <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden">{children}</div>
+          </main>
+        </div>
+        <ViewAsBar />
+      </SidebarProvider>
+    </ViewAsProvider>
   )
 }
