@@ -6,6 +6,24 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-026 — Smart scraping gate: saltar tiendas sin momentum
+
+**Fecha:** 2026-06-09
+**Archivos:** `lib/jobs/sync-ads.ts`
+
+**Qué cambió:**
+- Nuevo tipo `Candidate` con campos `score`, `label`, `daysSinceLastImprovement`
+- Nueva función `shouldScrapeStore(candidates)` con dos reglas:
+  - **Regla 1:** Si ningún candidato tiene score ≥ 20 ni label activo → skip ("sin candidatos activos")
+  - **Regla 2:** Si todos los candidatos llevan ≥ 5 días sin mejorar → skip ("estancada Nd")
+- Log en formato: `⏸ trivexicol.com — estancada 6d → skip` / `✓ boniss.com — activa → scrapeando`
+
+**Por qué:** Evitar gastar tiempo de browser en tiendas que ya no tienen tracción. La lógica de scraping era ciega: corría para todas las tiendas Pro sin importar si el producto seguía vivo.
+
+**Relacionado con backend:** El endpoint `/internal/stores/{storeId}/candidates` ahora devuelve `score`, `label` y `daysSinceLastImprovement` calculados desde los campos existentes (`daysInBestseller`, `firstBestsellerDate`, `daysElapsed`). Ver FIX-010 en el backend.
+
+---
+
 ### CHANGE-025 — Scraper Meta Ads: flujo dos fases (anunciante → todos sus anuncios)
 **Fecha:** 2026-06-09
 **Tipo:** feature

@@ -85,6 +85,27 @@ interface Candidate {
   storeDomain: string
   country: string
   productUrl?: string | null
+  score: number
+  label: string
+  daysSinceLastImprovement: number
+}
+
+function shouldScrapeStore(candidates: Candidate[]): { scrape: boolean; reason: string } {
+  const ACTIVE_LABELS = ['Rising', 'Rocket', 'Hot', 'Scaled']
+  const hasActiveCandidate = candidates.some(
+    c => c.score >= 20 || ACTIVE_LABELS.includes(c.label),
+  )
+  if (!hasActiveCandidate) {
+    return { scrape: false, reason: 'sin candidatos activos (score < 20)' }
+  }
+
+  const allStagnant = candidates.every(c => c.daysSinceLastImprovement >= 5)
+  if (allStagnant) {
+    const maxDays = Math.max(...candidates.map(c => c.daysSinceLastImprovement))
+    return { scrape: false, reason: `estancada ${maxDays}d` }
+  }
+
+  return { scrape: true, reason: 'activa' }
 }
 
 async function getCandidatesForStore(storeId: string): Promise<Candidate[]> {
@@ -171,8 +192,15 @@ async function syncStore(store: Store): Promise<void> {
     return
   }
 
+  // ── 2b. Smart scraping gate ───────────────────────────────────────────────
+  const { scrape, reason } = shouldScrapeStore(candidates)
+  if (!scrape) {
+    console.log(`  ⏸ ${domain} — ${reason} → skip`)
+    return
+  }
+  console.log(`  ✓ ${domain} — ${reason} → scrapeando`)
+
   // ── 3. Scrape (F1 → F2 → F3 → R2) ───────────────────────────────────────
-  console.log(`\n📦 Syncing ${domain}`)
   let scrapeResult: Awaited<ReturnType<typeof scrapeAdsForStore>>
   try {
     scrapeResult = await scrapeAdsForStore(domain, country, candidates, undefined, {
@@ -242,6 +270,8 @@ async function main(): Promise<void> {
   console.log(`Found ${stores.length} Pro/Agency stores\n`)
 
   for (const store of stores) {
+    const domain = new URL(store.baseUrl).hostname.replace(/^www\./, '')
+    console.log(`\n📦 ${domain}`)
     await syncStore(store)
     await new Promise(r => setTimeout(r, 3000)) // rate-limit between stores
   }
