@@ -115,9 +115,15 @@ export function useHoverPanel() {
 
   const handleHover = useCallback((ad: Ad, rect: DOMRect) => {
     if (leaveTimer.current) clearTimeout(leaveTimer.current)
-    const panelH = 356, panelW = 200
-    const top  = Math.max(8, Math.min(rect.top + rect.height / 2 - panelH / 2, window.innerHeight - panelH - 8))
-    const left = rect.right + 12 + panelW > window.innerWidth ? rect.left - panelW - 12 : rect.right + 12
+    const panelH = 356, panelW = 200, gap = 8
+    // Center horizontally over the thumbnail, clamped to viewport
+    const left = Math.max(gap, Math.min(
+      rect.left + rect.width / 2 - panelW / 2,
+      window.innerWidth - panelW - gap,
+    ))
+    // Above by default; flip below if not enough space
+    const topAbove = rect.top - panelH - gap
+    const top = topAbove >= gap ? topAbove : rect.bottom + gap
     setHoverPos({ top, left })
     setHoveredAd(ad)
   }, [])
