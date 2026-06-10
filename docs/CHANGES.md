@@ -6,6 +6,23 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-027 — Detección proactiva de cambio de dominio en sync
+
+**Fecha:** 2026-06-09
+**Archivos:** `lib/jobs/sync-ads.ts`
+
+**Qué cambió:**
+- `checkDomain` + `resolveNewDomain` reemplazados por `checkAndResolveDomain(storeId, domain)` — una sola función que sigue redirects HTTP directamente en `/products.json` (más confiable que root URL)
+- Si el dominio final difiere del guardado → actualiza DB **proactivamente** durante la ventana de transición, antes de que el redirect venza
+- Nueva función `markDomainError(storeId)` que llama `PATCH /internal/stores/{storeId}/domain-error`
+- Cuando el dominio no responde Y no hay redirect → llama `markDomainError` + log `✗ dominio no verificado`
+
+**Por qué:** Sin esto, cuando un dueño de tienda cambia su dominio en Shopify, Dropspy lo detecta solo cuando el dominio viejo muere — potencialmente semanas después. Con la nueva lógica lo detecta durante la ventana de transición (mientras el redirect aún vive) y actualiza automáticamente.
+
+**Relacionado con backend:** FIX-020 (endpoint domain-error).
+
+---
+
 ### CHANGE-026 — Smart scraping gate: saltar tiendas sin momentum
 
 **Fecha:** 2026-06-09

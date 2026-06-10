@@ -30,29 +30,42 @@ interface Store {
 
 // ── Domain health helpers ──────────────────────────────────────────────────────
 
-async function checkDomain(domain: string): Promise<boolean> {
+/**
+ * Fetches products.json following redirects.
+ * Returns the live domain (which may differ from the stored one if a redirect occurred).
+ * Returns null when the domain is unreachable and no redirect resolves to a live Shopify store.
+ *
+ * Handles the domain-change transition window: while Shopify/registrar still redirects
+ * the old domain, we detect it here and update the DB proactively — before the redirect
+ * expires and the store goes dark.
+ */
+async function checkAndResolveDomain(
+  storeId: string,
+  domain: string,
+): Promise<string | null> {
   try {
     const res = await fetch(`https://${domain}/products.json?limit=1`, {
-      signal: AbortSignal.timeout(8000),
-    })
-    return res.ok
-  } catch {
-    return false
-  }
-}
-
-async function resolveNewDomain(domain: string): Promise<string | null> {
-  try {
-    // Many stores redirect the old domain to the new one — follow the chain.
-    const res = await fetch(`https://${domain}`, {
       redirect: 'follow',
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(10000),
     })
+
+    if (!res.ok) return null
+
     const finalDomain = new URL(res.url).hostname.replace(/^www\./, '')
-    if (finalDomain === domain) return null
-    // Confirm the resolved domain is a live Shopify store.
-    const alive = await checkDomain(finalDomain)
-    return alive ? finalDomain : null
+
+    if (finalDomain !== domain) {
+      // Redirect detected during normal check — update DB before the window closes
+      try {
+        await updateStoreDomain(storeId, finalDomain)
+        console.log(`  🔄 ${domain} → ${finalDomain} (redirect detectado, DB actualizado)`)
+      } catch (e) {
+        console.warn(`  ⚠ Redirect detectado pero DB update falló: ${(e as Error).message}`)
+      }
+      return finalDomain
+    }
+
+    console.log(`  ✓ ${domain} — dominio OK`)
+    return domain
   } catch {
     return null
   }
@@ -68,6 +81,17 @@ async function updateStoreDomain(storeId: string, newDomain: string): Promise<vo
     body: JSON.stringify({ domain: newDomain }),
   })
   if (!res.ok) throw new Error(`domain update failed: ${res.status}`)
+}
+
+async function markDomainError(storeId: string): Promise<void> {
+  try {
+    await fetch(`${API_URL}/internal/stores/${storeId}/domain-error`, {
+      method: 'PATCH',
+      headers: { 'X-Webhook-Secret': WEBHOOK_SECRET },
+    })
+  } catch {
+    // Non-fatal — best effort
+  }
 }
 
 // ── Backend API helpers ────────────────────────────────────────────────────────
@@ -165,25 +189,14 @@ async function syncStore(store: Store): Promise<void> {
   let domain = new URL(store.baseUrl).hostname.replace(/^www\./, '')
   const country = store.country || 'ALL'
 
-  // ── 1. Domain health check ────────────────────────────────────────────────
-  const alive = await checkDomain(domain)
-  if (!alive) {
-    const newDomain = await resolveNewDomain(domain)
-    if (newDomain) {
-      try {
-        await updateStoreDomain(store.storeId, newDomain)
-        console.log(`  ✓ ${domain} → ${newDomain} (dominio actualizado en DB)`)
-      } catch (e) {
-        console.warn(`  ⚠ Resolved new domain but DB update failed: ${(e as Error).message}`)
-      }
-      domain = newDomain
-    } else {
-      console.log(`  ✗ ${domain} — no responde, no se pudo resolver → skipping`)
-      return
-    }
-  } else {
-    console.log(`  ✓ ${domain} — dominio OK`)
+  // ── 1. Domain health check (follows redirects proactively) ──────────────
+  const resolvedDomain = await checkAndResolveDomain(store.storeId, domain)
+  if (resolvedDomain === null) {
+    await markDomainError(store.storeId)
+    console.log(`  ✗ ${domain} — no responde y no se pudo resolver → dominio no verificado`)
+    return
   }
+  domain = resolvedDomain
 
   // ── 2. Get candidates (needed for Phase 3 matching) ──────────────────────
   const candidates = await getCandidatesForStore(store.storeId)
