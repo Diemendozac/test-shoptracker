@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Lock } from 'lucide-react'
+import { Lock, Volume2, VolumeX } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import type { Ad } from '@/app/(dashboard)/types'
@@ -43,6 +43,15 @@ export const mockAds: Ad[] = [
 // ─── FloatingVideoPanel ────────────────────────────────────────────────────────
 
 export function FloatingVideoPanel({ ad, top, left }: { ad: Ad; top: number; left: number }) {
+  const [muted, setMuted] = useState(true)
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  function toggleMute() {
+    const next = !muted
+    setMuted(next)
+    if (videoRef.current) videoRef.current.muted = next
+  }
+
   return (
     <div
       style={{
@@ -60,11 +69,24 @@ export function FloatingVideoPanel({ ad, top, left }: { ad: Ad; top: number; lef
       className="animate-in fade-in duration-150"
     >
       {ad.video_url_r2 ? (
-        <video
-          src={ad.video_url_r2}
-          autoPlay muted loop playsInline
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-        />
+        <>
+          <video
+            ref={videoRef}
+            src={ad.video_url_r2}
+            autoPlay muted loop playsInline
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+          <button
+            onClick={toggleMute}
+            style={{ pointerEvents: 'auto' }}
+            className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-colors hover:bg-black/80"
+          >
+            {muted
+              ? <VolumeX className="h-3.5 w-3.5" />
+              : <Volume2 className="h-3.5 w-3.5" />
+            }
+          </button>
+        </>
       ) : (
         <img
           src={ad.thumbnail_url}
