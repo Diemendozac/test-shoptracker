@@ -186,12 +186,13 @@ export default function StoresPage() {
       {/* Table */}
       <div className="rounded-2xl border border-border bg-card">
         {/* Column headers */}
-        <div className="grid grid-cols-[40px_1fr_96px_72px_96px_96px_80px] items-center gap-3 border-b border-border px-4 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        <div className="grid grid-cols-[40px_1fr_96px_72px_96px_80px_96px_80px] items-center gap-3 border-b border-border px-4 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           <div />
           <SortHeader field="name" label="Tienda" />
           <SortHeader field="calidad" label="Calidad" className="justify-center" />
           <SortHeader field="testeados" label="Testeos" className="justify-center" />
           <div className="text-center">Pago</div>
+          <div className="text-center">Ads</div>
           <SortHeader field="status" label="Estado" className="justify-center" />
           <div />
         </div>

@@ -88,6 +88,11 @@ export const dashboardApi = createApi({
       providesTags: (_r, _e, candidateId) => [{ type: 'Ads', id: candidateId }],
     }),
 
+    // GET /api/dashboard/stores/{storeId}/ads/count
+    getStoreAdsCount: builder.query<{ storeId: string; totalActiveAds: number }, string>({
+      query: (storeId) => `/stores/${storeId}/ads/count`,
+    }),
+
   }),
 })
 
@@ -101,4 +106,5 @@ export const {
   useGetInsightsQuery,
   useGetPodiumQuery,
   useGetProductAdsQuery,
+  useGetStoreAdsCountQuery,
 } = dashboardApi

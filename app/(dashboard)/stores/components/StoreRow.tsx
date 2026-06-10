@@ -15,6 +15,7 @@ import {
 import type { StoreResponse } from '../types'
 import { getStoreStatus } from '../utils/storeStatus'
 import type { StoreQuality } from '@/lib/store-quality'
+import { useGetStoreAdsCountQuery } from '@/app/(dashboard)/services/dashboardApi'
 
 function formatLastScraped(dateStr: string) {
   const diffHours = Math.round(
@@ -99,7 +100,7 @@ interface StoreRowProps {
 export function StoreRow({ store, quality, qualityLoading, isSyncing, isDeleting, onSync, onDelete }: StoreRowProps) {
   return (
     <div className={cn(
-      'grid grid-cols-[40px_1fr_96px_72px_96px_96px_80px] items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/30',
+      'grid grid-cols-[40px_1fr_96px_72px_96px_80px_96px_80px] items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/30',
       !store.isActive && 'opacity-50',
     )}>
       {/* Logo */}
@@ -161,6 +162,11 @@ export function StoreRow({ store, quality, qualityLoading, isSyncing, isDeleting
             Contraentrega
           </span>
         )}
+      </div>
+
+      {/* ADS badge */}
+      <div className="flex justify-center">
+        <StoreAdsBadge storeId={store.storeId} />
       </div>
 
       {/* Status + last scraped — single unified badge */}
@@ -229,6 +235,28 @@ export function StoreRow({ store, quality, qualityLoading, isSyncing, isDeleting
         </DropdownMenu>
       </div>
     </div>
+  )
+}
+
+// ─── StoreAdsBadge ────────────────────────────────────────────────────────────
+
+function StoreAdsBadge({ storeId }: { storeId: string }) {
+  const { data, isLoading } = useGetStoreAdsCountQuery(storeId)
+
+  if (isLoading) return <div className="h-5 w-12 animate-pulse rounded-full bg-secondary" />
+  if (!data || data.totalActiveAds === 0) return <span className="text-[10px] text-muted-foreground/30">—</span>
+
+  return (
+    <Link
+      href={`/stores/${storeId}`}
+      onClick={e => e.stopPropagation()}
+      className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary transition-colors hover:bg-primary/20"
+    >
+      <svg className="h-2.5 w-2.5 translate-x-px" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M8 5v14l11-7z" />
+      </svg>
+      {data.totalActiveAds}
+    </Link>
   )
 }
 
