@@ -208,7 +208,7 @@ export function ProductAdsSection({ candidateId, isPro }: ProductAdsSectionProps
   const effectiveIsPro = devOverride !== null ? devOverride : isPro
 
   const searchParams = useSearchParams()
-  const allowMetaLink = effectiveIsPro || searchParams.get('from') !== 'pool'
+  const allowMetaLink = effectiveIsPro && searchParams.get('from') !== 'pool'
 
   const [sortBy, setSortBy] = useState<SortOption>('impressions')
   const [hoveredAd, setHoveredAd] = useState<Ad | null>(null)

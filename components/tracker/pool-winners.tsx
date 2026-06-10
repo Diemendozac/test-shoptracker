@@ -48,7 +48,7 @@ function AdThumb({
     <div
       ref={thumbRef}
       className={cn(
-        'relative h-[56px] w-[40px] shrink-0 cursor-pointer overflow-hidden rounded-md bg-secondary',
+        'relative h-[56px] w-[40px] shrink-0 overflow-hidden rounded-md bg-secondary',
         !isPro && 'pointer-events-none blur-sm',
       )}
       onMouseEnter={() => {
@@ -56,7 +56,6 @@ function AdThumb({
           onHover(ad, thumbRef.current.getBoundingClientRect())
       }}
       onMouseLeave={onLeave}
-      onClick={() => isPro && window.open(ad.ad_snapshot_url, '_blank', 'noopener,noreferrer')}
     >
       <img src={ad.thumbnail_url || PLACEHOLDER} alt="" className="h-full w-full object-cover" />
       {hasVideo && isPro && (
