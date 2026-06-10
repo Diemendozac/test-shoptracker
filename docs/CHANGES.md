@@ -6,6 +6,19 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-028 — Fix: sidebar activo incorrecto al navegar desde Explorar testeos
+**Fecha:** 2026-06-09
+**Tipo:** bugfix
+
+**Qué cambió:** El sidebar resaltaba "Mis testeos" al navegar a `/tracker/[id]` desde "Explorar testeos", porque la lógica solo usaba `pathname.startsWith('/tracker')`. Ahora lee el query param `?from=` (ya presente en los links) para distinguir el origen.
+
+**Archivos modificados:**
+- `components/layout/app-sidebar.tsx` — agrega `useSearchParams`, lógica `isActive` diferenciada por `fromParam`
+
+**Por qué:** Los links desde el pool ya incluían `?from=pool` y los del tracker `?from=tracker`, pero el sidebar no los leía.
+
+---
+
 ### CHANGE-027 — Detección proactiva de cambio de dominio en sync
 
 **Fecha:** 2026-06-09

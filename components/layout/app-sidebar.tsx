@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { useAppSelector } from '@/store/hooks'
 import { useGetPendingCandidatesQuery } from '@/app/(dashboard)/services/candidateApi'
@@ -41,6 +41,8 @@ interface AppSidebarProps {
 
 export function AppSidebar({ pinned }: AppSidebarProps) {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const fromParam = searchParams.get('from')
   const { user } = useAppSelector((s) => s.auth)
   const displayName = user?.email?.split('@')[0] ?? '—'
   const avatarLetter = displayName[0]?.toUpperCase() ?? '?'
@@ -156,7 +158,12 @@ export function AppSidebar({ pinned }: AppSidebarProps) {
           )}>
             <div className="ml-3 mt-0.5 space-y-0.5 border-l border-border pl-3">
               {TESTEOS_ITEMS.map((item) => {
-                const isActive = pathname.startsWith(item.href)
+                const isActive =
+                  item.href === '/tracker'
+                    ? pathname.startsWith('/tracker') && fromParam !== 'pool'
+                    : item.href === '/pool'
+                    ? pathname.startsWith('/pool') || (pathname.startsWith('/tracker') && fromParam === 'pool')
+                    : pathname.startsWith(item.href)
                 const isPendientes = item.href === '/pendientes'
                 const showBadge = isPendientes && pendingCount > 0
                 return (
