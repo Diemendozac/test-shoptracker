@@ -6,6 +6,24 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-008 — Refactorizar scraper: búsqueda por dominio con abandono temprano
+**Fecha:** 2026-06-10
+**Tipo:** refactor / performance
+
+**Qué cambió:** El scraper de Meta Ad Library ya no navega al perfil del anunciante. Ahora se queda en la página de búsqueda por dominio y hace dos pasadas:
+1. **Probe**: scroll hasta ~50 ads, verifica si alguno tiene una URL de destino que apunte al dominio de la tienda. Si ninguno apunta → abandono temprano (`⏭ usaimpor.shop — 50 ads revisados, ninguno apunta al dominio → skip`).
+2. **Full scroll**: solo si hay match, carga todos los ads disponibles y los extrae.
+
+El `advertiser_name` ahora se extrae por card individual en lugar de asignarse globalmente — soporta el caso donde múltiples anunciantes (p.ej. "Tendencias Colombia" + "Importaciones Usa") pautan el mismo dominio.
+
+**Por qué:** El flujo anterior buscaba el anunciante, entraba a su perfil, scrapea TODOS sus ads (potencialmente 3500), y luego descartaba el 99%. El nuevo flujo evita la segunda navegación completa cuando la tienda no está pautando activamente.
+
+**Archivos modificados:**
+- `lib/scrapers/meta-ads.ts` — reescritura: eliminado `findAdvertiser` + navegación a perfil del anunciante; nueva función `probeSearchResults`; `extractAllAds` sin parámetro advertiser (extrae por card)
+- `lib/jobs/sync-ads.ts` — removidas opciones `knownPageId`/`knownPageName` del call a `scrapeAdsForStore`
+
+---
+
 ### CHANGE-007 — Ocultar origen de tienda en vista "Explorar testeos"
 **Fecha:** 2026-06-10
 **Tipo:** privacidad / fix

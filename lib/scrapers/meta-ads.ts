@@ -1,7 +1,7 @@
 // lib/scrapers/meta-ads.ts
-// Two-phase Meta Ad Library scraper.
-// Phase 1 — findAdvertiser: keyword search → majority-vote page name + pageId
-// Phase 2 — extractAllAds: navigate to advertiser page, scroll to load all, extract every ad
+// Domain-first Meta Ad Library scraper.
+// Probe — search by domain, scroll to ~50 ads, verify at least one links to the domain
+// If match: full scroll + extract all ads from search results (no advertiser profile navigation)
 // Phase 3 — matchAdToCandidate: match destination URL to tracked candidate by product handle
 // Phase 4 (in sync-ads.ts) — PATCH /stores/{id}/advertiser to persist discovered page info
 
@@ -56,16 +56,6 @@ function buildSearchUrl(keyword: string): string {
   return `https://www.facebook.com/ads/library/?${p.toString()}`
 }
 
-function buildAdvertiserUrl(pageId: string): string {
-  const p = new URLSearchParams({
-    view_all_page_id: pageId,
-    active_status: 'active',
-    ad_type: 'ALL',
-    country: 'ALL',
-  })
-  return `https://www.facebook.com/ads/library/?${p.toString()}`
-}
-
 // ── Shared page helpers ───────────────────────────────────────────────────────
 
 async function dismissCookies(page: Page): Promise<void> {
@@ -93,7 +83,6 @@ async function dismissCookies(page: Page): Promise<void> {
 // "Todos los anuncios" — uses broad text matching to survive DOM changes.
 async function fixAdTypeFilter(page: Page): Promise<void> {
   try {
-    // Find the ad-type button regardless of its current value
     const filterBtn = page.locator([
       'button:has-text("Temas sociales")',
       'button:has-text("Issues")',
@@ -103,14 +92,10 @@ async function fixAdTypeFilter(page: Page): Promise<void> {
 
     if (!await filterBtn.isVisible({ timeout: 5000 })) return
 
-    // Always click — the button DOM may contain hidden text of all options,
-    // so checking textContent() is unreliable for detecting the current selection.
     await filterBtn.click()
     await page.waitForTimeout(1200)
     await page.screenshot({ path: '/tmp/scout-frontend/debug-filter-open.png', fullPage: false }).catch(() => null)
 
-    // Use broad text selector — matches any visible element containing this text
-    // (works regardless of role= attribute Meta uses in the dropdown)
     const allOption = page.getByText('Todos los anuncios', { exact: true }).first()
 
     if (await allOption.isVisible({ timeout: 4000 })) {
@@ -118,7 +103,6 @@ async function fixAdTypeFilter(page: Page): Promise<void> {
       console.log('  → Filtro forzado a "Todos los anuncios" ✓')
       await page.waitForTimeout(2500)
     } else {
-      // Fallback: try clicking via evaluate (bypasses selector issues)
       const clicked = await page.evaluate(() => {
         const els = [...document.querySelectorAll('*')]
         const target = els.find(el =>
@@ -145,33 +129,37 @@ function extractAdId(adSnapshotUrl: string): string {
   return Buffer.from(adSnapshotUrl).toString('base64url').slice(0, 20)
 }
 
-// ── Phase 1 — Identify the advertiser ────────────────────────────────────────
+// ── Probe — scroll to ~50 ads, check if any link to the domain ───────────────
 
-export async function findAdvertiser(domain: string, page: Page): Promise<AdvertiserInfo | null> {
-  // Use the full domain as keyword — Meta searches ad landing page URLs, not ad text
-  const keyword = domain.replace(/^www\./, '')
+async function probeSearchResults(page: Page, domain: string): Promise<{
+  hasMatch: boolean
+  count: number
+  totalAdsOnMeta: number
+  advertiser: AdvertiserInfo | null
+}> {
+  // Scroll until we have ~50 cards or no more load
+  let lastCount = 0
+  for (let i = 0; i < 12; i++) {
+    const count = (await page.$$('[class*="_7jyh"]')).length
+    if (count >= 50 || count === lastCount) break
+    lastCount = count
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
+    await page.waitForTimeout(1200 + Math.random() * 600)
+  }
 
-  await page.goto(buildSearchUrl(keyword), { waitUntil: 'domcontentloaded', timeout: 40_000 })
-  await page.waitForTimeout(3000)
-  await dismissCookies(page)
-  await fixAdTypeFilter(page)
+  return page.evaluate((domainRaw: string) => {
+    const domain = domainRaw.replace(/^www\./, '')
 
-  const cardFound = await Promise.race([
-    page.waitForSelector('[role="article"]', { timeout: 15_000 }).then(() => true),
-    page.waitForSelector('[class*="_7jyh"]',  { timeout: 15_000 }).then(() => true),
-  ]).catch(() => false)
+    const bodyText = document.body.textContent || ''
+    const totalMatch = bodyText.match(/~?\s*(\d[\d.,]*)\s*(?:resultados|results)/i)
+    const totalAdsOnMeta = totalMatch ? parseInt(totalMatch[1].replace(/[.,]/g, '')) : 0
 
-  // Screenshot to diagnose what Meta is rendering (saved next to test-results.json)
-  await page.screenshot({ path: '/tmp/scout-frontend/debug-f1.png', fullPage: false }).catch(() => null)
-  console.log(`  → cards detectadas: ${cardFound} | screenshot: debug-f1.png`)
-  await page.waitForTimeout(1500)
-
-  const result = await page.evaluate(() => {
     const pagePattern = /facebook\.com\/((?!ads\/|share\/|photo\/|video\/|watch\/|groups\/|events\/|l\.php)[\w.%]+)/
+    const pageIdMatch = document.documentElement.innerHTML.match(/view_all_page_id[=\\"']+(\d+)/i)
+    const pageId: string | null = pageIdMatch ? pageIdMatch[1] : null
 
-    const articleCards = [...document.querySelectorAll('[role="article"]')].slice(0, 8)
+    const articleCards = [...document.querySelectorAll('[role="article"]')]
     const jyhCards = [...document.querySelectorAll('[class*="_7jyh"]')]
-      .slice(0, 8)
       .map(jyh => {
         let container: Element = jyh
         for (let i = 0; i < 6; i++) {
@@ -183,43 +171,48 @@ export async function findAdvertiser(domain: string, page: Page): Promise<Advert
       })
     const cards = articleCards.length > 0 ? articleCards : jyhCards
 
-    const tally: Record<string, { name: string; count: number }> = {}
+    let hasMatch = false
+    let advertiserName: string | null = null
+
     for (const card of cards) {
-      for (const a of card.querySelectorAll('a[href]')) {
-        const href = (a as HTMLAnchorElement).href || ''
-        const m = href.match(pagePattern)
-        const text = (a as HTMLElement).textContent?.trim() || ''
-        if (m && text.length > 1 && text.length < 90) {
-          const slug = m[1]
-          if (!tally[slug]) tally[slug] = { name: text, count: 0 }
-          tally[slug].count++
-          break
+      const anchors = [...card.querySelectorAll('a[href]')]
+
+      // Check if any destination URL points to the domain
+      for (const a of anchors) {
+        const raw = (a as HTMLAnchorElement).href || ''
+        const decoded = decodeURIComponent(raw)
+        const redirect = decoded.match(/[?&]u=([^&]+)/)
+        const dest = redirect ? decodeURIComponent(redirect[1]) : raw
+        if (dest.includes(domain)) { hasMatch = true; break }
+      }
+
+      // Extract advertiser name from first card that has one
+      if (!advertiserName) {
+        for (const a of anchors) {
+          const href = (a as HTMLAnchorElement).href || ''
+          const m = href.match(pagePattern)
+          const text = (a as HTMLElement).textContent?.trim() || ''
+          if (m && text.length > 1 && text.length < 90) {
+            advertiserName = text
+            break
+          }
         }
       }
     }
 
-    const entries = Object.values(tally)
-    if (entries.length === 0) return null
-    entries.sort((a, b) => b.count - a.count)
-    const winner = entries[0]
-
-    // view_all_page_id may appear in hrefs or inlined in the page source
-    const pageIdMatch = document.documentElement.innerHTML.match(/view_all_page_id[=\\"']+(\d+)/i)
-    const pageId: string | null = pageIdMatch ? pageIdMatch[1] : null
-
-    return { pageName: winner.name, pageId, matchCount: winner.count, totalCards: cards.length }
-  })
-
-  if (!result) return null
-  console.log(`  → "${result.pageName}" (${result.matchCount}/${result.totalCards} cards)`)
-  if (result.pageId) console.log(`  → page_id: ${result.pageId}`)
-  return { pageName: result.pageName, pageId: result.pageId }
+    return {
+      hasMatch,
+      count: cards.length,
+      totalAdsOnMeta,
+      advertiser: advertiserName ? { pageName: advertiserName, pageId } : null,
+    }
+  }, domain)
 }
 
-// ── Phase 2 — Scroll to load all ─────────────────────────────────────────────
+// ── Full scroll — load all ads ────────────────────────────────────────────────
 
 async function scrollToLoadAll(page: Page, totalExpected: number, maxAds = 200): Promise<void> {
-  const limit = Math.min(totalExpected, maxAds)
+  const limit = Math.min(totalExpected || maxAds, maxAds)
   let lastCount = 0
   let attempts = 0
 
@@ -236,147 +229,159 @@ async function scrollToLoadAll(page: Page, totalExpected: number, maxAds = 200):
   process.stdout.write(` ${finalCount} ✓\n`)
 }
 
-// ── Phase 2 — Extract all ads (no domain filter) ──────────────────────────────
+// ── Extract all ads — advertiser name extracted per card ──────────────────────
 
-async function extractAllAds(page: Page, advertiser: AdvertiserInfo): Promise<ScrapedAd[]> {
-  const raw = await page.evaluate(
-    ({ pageName, pageId }: { pageName: string; pageId: string | null }) => {
-      const today = new Date().toISOString().split('T')[0]
-      const results: Array<{
-        adSnapshotUrl: string; thumbnailUrl: string | null; videoUrl: string | null
-        status: 'active' | 'inactive'; daysRunning: number; firstSeen: string
-        lastSeen: string; productUrl: string; advertiserName: string | null
-        advertiserUrl: string | null; pageId: string | null
-      }> = []
-      const seen = new Set<string>()
+async function extractAllAds(page: Page): Promise<ScrapedAd[]> {
+  const raw = await page.evaluate(() => {
+    const today = new Date().toISOString().split('T')[0]
+    const pagePattern = /facebook\.com\/((?!ads\/|share\/|photo\/|video\/|watch\/|groups\/|events\/|l\.php)[\w.%]+)/
+    const results: Array<{
+      adSnapshotUrl: string; thumbnailUrl: string | null; videoUrl: string | null
+      status: 'active' | 'inactive'; daysRunning: number; firstSeen: string
+      lastSeen: string; productUrl: string; advertiserName: string | null
+      advertiserUrl: string | null; pageId: string | null
+    }> = []
+    const seen = new Set<string>()
 
-      // Meta Ad Library uses [class*="_7jyh"] for the creative container as of 2026.
-      // Walk up 6 levels to find the wider container that includes metadata (Library ID, date).
-      const articleCards = [...document.querySelectorAll('[role="article"]')]
-      const jyhCards = [...document.querySelectorAll('[class*="_7jyh"]')]
-        .map(jyh => {
-          let container: Element = jyh
-          for (let i = 0; i < 6; i++) {
-            if (!container.parentElement) break
-            container = container.parentElement
-            if (/Identificador|Library ID|\d{15}/.test(container.textContent || '')) break
-          }
-          return container
-        })
-      const cards = articleCards.length > 0 ? articleCards : jyhCards
-
-      for (const card of cards) {
-        const anchors = [...card.querySelectorAll('a[href]')]
-
-        // Ad snapshot URL
-        let adSnapshotUrl = ''
-        for (const a of anchors) {
-          const href = (a as HTMLAnchorElement).href || ''
-          if (href.includes('facebook.com/ads/library') && href.includes('id=')) {
-            adSnapshotUrl = href; break
-          }
+    const articleCards = [...document.querySelectorAll('[role="article"]')]
+    const jyhCards = [...document.querySelectorAll('[class*="_7jyh"]')]
+      .map(jyh => {
+        let container: Element = jyh
+        for (let i = 0; i < 6; i++) {
+          if (!container.parentElement) break
+          container = container.parentElement
+          if (/Identificador|Library ID|\d{15}/.test(container.textContent || '')) break
         }
-        if (!adSnapshotUrl) {
-          const cardText = card.textContent || ''
-          const idMatch = cardText.match(/(?:Identificador de la biblioteca|Library ID|Ad ID)[^0-9]*(\d{10,})/i)
-            ?? cardText.match(/\b(\d{15,16})\b/)
-          if (idMatch) adSnapshotUrl = `https://www.facebook.com/ads/library/?id=${idMatch[1]}`
-        }
-        if (!adSnapshotUrl || seen.has(adSnapshotUrl)) continue
-        seen.add(adSnapshotUrl)
+        return container
+      })
+    const cards = articleCards.length > 0 ? articleCards : jyhCards
 
-        // CTA destination URL — unwrap l.facebook.com redirects first, then take any direct non-FB link
-        let productUrl = ''
-        for (const a of anchors) {
-          const raw = (a as HTMLAnchorElement).href || ''
-          const decoded = decodeURIComponent(raw)
-          const redirect = decoded.match(/[?&]u=([^&]+)/)
-          if (redirect) { productUrl = decodeURIComponent(redirect[1]); break }
-          if (raw.startsWith('http')
-            && !raw.includes('facebook.com')
-            && !raw.includes('fb.com')
-            && !raw.includes('instagram.com')) {
-            productUrl = raw; break
-          }
-        }
+    for (const card of cards) {
+      const anchors = [...card.querySelectorAll('a[href]')]
 
-        const videoEl = card.querySelector('video')
-        const videoUrl = videoEl
-          ? (videoEl.getAttribute('src') || videoEl.querySelector('source')?.getAttribute('src') || null)
-          : null
-
-        // Find ad creative — skip small/circular avatars (profile pics ~32-48px).
-        // Key insight: in headless browser naturalWidth=0 (lazy loading), but
-        // clientWidth reflects the CSS-rendered size and works for all elements.
-        // Avatar: ~40px CSS. Creative: ~200-400px CSS.
-        let thumbnailUrl: string | null = null
-        let bestArea = 0
-        for (const imgEl of card.querySelectorAll('img')) {
-          const imgNode = imgEl as HTMLImageElement
-          // clientWidth/clientHeight: CSS rendered size, available even when lazy-loaded
-          const w = imgNode.clientWidth  || parseInt(imgEl.getAttribute('width')  || '0', 10)
-          const h = imgNode.clientHeight || parseInt(imgEl.getAttribute('height') || '0', 10)
-          if (w > 0 && w < 80) continue  // skip known-small avatars (~40px)
-          if (h > 0 && h < 80) continue
-          // Skip circular containers (avatar wrappers use border-radius: 50%)
-          const cs = window.getComputedStyle(imgEl)
-          const br = parseFloat(cs.borderRadius || '0')
-          if (br > 0 && w > 0 && br >= w * 0.4) continue
-          if (imgEl.parentElement) {
-            const pcs = window.getComputedStyle(imgEl.parentElement)
-            if (pcs.borderRadius === '50%') continue
-          }
-          const area = (w || 1) * (h || 1)
-          if (area > bestArea) { bestArea = area; thumbnailUrl = imgNode.src || null }
+      // Ad snapshot URL
+      let adSnapshotUrl = ''
+      for (const a of anchors) {
+        const href = (a as HTMLAnchorElement).href || ''
+        if (href.includes('facebook.com/ads/library') && href.includes('id=')) {
+          adSnapshotUrl = href; break
         }
-        // Fallback: video poster attr (often the ad frame) or video src
-        if (!thumbnailUrl && videoEl) {
-          thumbnailUrl = videoEl.getAttribute('poster') || videoEl.getAttribute('src') || null
-        }
-
+      }
+      if (!adSnapshotUrl) {
         const cardText = card.textContent || ''
-        let daysRunning = 0
-        const nowDate = new Date()
-        const esMatch = cardText.match(/En circulaci[oó]n desde el\s+(\d+)\s+(\w+)\s+(\d{4})/i)
-        const enMatch = cardText.match(/(?:Started running on|Active since)\s+(\w+\s+\d+,\s+\d{4})/i)
-        if (esMatch) {
-          const esMonths: Record<string, number> = {
-            ene:0, feb:1, mar:2, abr:3, may:4, jun:5, jul:6, ago:7, sep:8, oct:9, nov:10, dic:11
+        const idMatch = cardText.match(/(?:Identificador de la biblioteca|Library ID|Ad ID)[^0-9]*(\d{10,})/i)
+          ?? cardText.match(/\b(\d{15,16})\b/)
+        if (idMatch) adSnapshotUrl = `https://www.facebook.com/ads/library/?id=${idMatch[1]}`
+      }
+      if (!adSnapshotUrl || seen.has(adSnapshotUrl)) continue
+      seen.add(adSnapshotUrl)
+
+      // Advertiser name per card (not global — one store may have multiple advertisers)
+      let advertiserName: string | null = null
+      let advertiserPageId: string | null = null
+      let advertiserUrl: string | null = null
+      for (const a of anchors) {
+        const href = (a as HTMLAnchorElement).href || ''
+        const m = href.match(pagePattern)
+        const text = (a as HTMLElement).textContent?.trim() || ''
+        if (m && text.length > 1 && text.length < 90) {
+          advertiserName = text
+          const idM = href.match(/view_all_page_id[=\\"']+(\d+)/)
+          if (idM) {
+            advertiserPageId = idM[1]
+            advertiserUrl = `https://www.facebook.com/profile.php?id=${idM[1]}`
+          } else {
+            advertiserUrl = href
           }
-          const m = esMonths[esMatch[2].toLowerCase().slice(0, 3)]
-          if (m !== undefined) {
-            const start = new Date(parseInt(esMatch[3]), m, parseInt(esMatch[1]))
-            daysRunning = Math.max(0, Math.floor((nowDate.getTime() - start.getTime()) / 86_400_000))
-          }
-        } else if (enMatch) {
-          const start = new Date(enMatch[1])
-          if (!isNaN(start.getTime()))
-            daysRunning = Math.max(0, Math.floor((nowDate.getTime() - start.getTime()) / 86_400_000))
+          break
         }
-
-        const firstSeenDate = new Date()
-        firstSeenDate.setDate(firstSeenDate.getDate() - daysRunning)
-        const firstSeen = firstSeenDate.toISOString().split('T')[0]
-
-        results.push({
-          adSnapshotUrl,
-          thumbnailUrl,
-          videoUrl,
-          status: 'active',
-          daysRunning,
-          firstSeen,
-          lastSeen: today,
-          productUrl,
-          advertiserName: pageName,
-          advertiserUrl: pageId ? `https://www.facebook.com/profile.php?id=${pageId}` : null,
-          pageId,
-        })
       }
 
-      return results
-    },
-    { pageName: advertiser.pageName, pageId: advertiser.pageId || null },
-  )
+      // CTA destination URL — unwrap l.facebook.com redirects first, then take any direct non-FB link
+      let productUrl = ''
+      for (const a of anchors) {
+        const raw = (a as HTMLAnchorElement).href || ''
+        const decoded = decodeURIComponent(raw)
+        const redirect = decoded.match(/[?&]u=([^&]+)/)
+        if (redirect) { productUrl = decodeURIComponent(redirect[1]); break }
+        if (raw.startsWith('http')
+          && !raw.includes('facebook.com')
+          && !raw.includes('fb.com')
+          && !raw.includes('instagram.com')) {
+          productUrl = raw; break
+        }
+      }
+
+      const videoEl = card.querySelector('video')
+      const videoUrl = videoEl
+        ? (videoEl.getAttribute('src') || videoEl.querySelector('source')?.getAttribute('src') || null)
+        : null
+
+      // Find ad creative — skip small/circular avatars (profile pics ~32-48px).
+      // clientWidth reflects CSS-rendered size, available even when lazy-loaded.
+      let thumbnailUrl: string | null = null
+      let bestArea = 0
+      for (const imgEl of card.querySelectorAll('img')) {
+        const imgNode = imgEl as HTMLImageElement
+        const w = imgNode.clientWidth  || parseInt(imgEl.getAttribute('width')  || '0', 10)
+        const h = imgNode.clientHeight || parseInt(imgEl.getAttribute('height') || '0', 10)
+        if (w > 0 && w < 80) continue
+        if (h > 0 && h < 80) continue
+        const cs = window.getComputedStyle(imgEl)
+        const br = parseFloat(cs.borderRadius || '0')
+        if (br > 0 && w > 0 && br >= w * 0.4) continue
+        if (imgEl.parentElement) {
+          const pcs = window.getComputedStyle(imgEl.parentElement)
+          if (pcs.borderRadius === '50%') continue
+        }
+        const area = (w || 1) * (h || 1)
+        if (area > bestArea) { bestArea = area; thumbnailUrl = imgNode.src || null }
+      }
+      if (!thumbnailUrl && videoEl) {
+        thumbnailUrl = videoEl.getAttribute('poster') || videoEl.getAttribute('src') || null
+      }
+
+      const cardText = card.textContent || ''
+      let daysRunning = 0
+      const nowDate = new Date()
+      const esMatch = cardText.match(/En circulaci[oó]n desde el\s+(\d+)\s+(\w+)\s+(\d{4})/i)
+      const enMatch = cardText.match(/(?:Started running on|Active since)\s+(\w+\s+\d+,\s+\d{4})/i)
+      if (esMatch) {
+        const esMonths: Record<string, number> = {
+          ene:0, feb:1, mar:2, abr:3, may:4, jun:5, jul:6, ago:7, sep:8, oct:9, nov:10, dic:11
+        }
+        const m = esMonths[esMatch[2].toLowerCase().slice(0, 3)]
+        if (m !== undefined) {
+          const start = new Date(parseInt(esMatch[3]), m, parseInt(esMatch[1]))
+          daysRunning = Math.max(0, Math.floor((nowDate.getTime() - start.getTime()) / 86_400_000))
+        }
+      } else if (enMatch) {
+        const start = new Date(enMatch[1])
+        if (!isNaN(start.getTime()))
+          daysRunning = Math.max(0, Math.floor((nowDate.getTime() - start.getTime()) / 86_400_000))
+      }
+
+      const firstSeenDate = new Date()
+      firstSeenDate.setDate(firstSeenDate.getDate() - daysRunning)
+      const firstSeen = firstSeenDate.toISOString().split('T')[0]
+
+      results.push({
+        adSnapshotUrl,
+        thumbnailUrl,
+        videoUrl,
+        status: 'active',
+        daysRunning,
+        firstSeen,
+        lastSeen: today,
+        productUrl,
+        advertiserName,
+        advertiserUrl,
+        pageId: advertiserPageId,
+      })
+    }
+
+    return results
+  })
   return raw as ScrapedAd[]
 }
 
@@ -402,7 +407,7 @@ export async function scrapeAdsForStore(
   country: string,
   candidates: CandidateForMatch[] = [],
   browser?: Browser,
-  options: { headless?: boolean; knownPageId?: string; knownPageName?: string } = {},
+  options: { headless?: boolean } = {},
 ): Promise<ScrapeResult> {
   const headless = options.headless ?? (process.env.CI === 'true')
   const ownBrowser = !browser
@@ -422,57 +427,41 @@ export async function scrapeAdsForStore(
   const page = await context.newPage()
 
   try {
-    // ── F1 ───────────────────────────────────────────────────────────────────
-    let advertiser: AdvertiserInfo | null = null
+    const domain = storeDomain.replace(/^www\./, '')
 
-    if (options.knownPageId && options.knownPageName) {
-      advertiser = { pageName: options.knownPageName, pageId: options.knownPageId }
-      console.log(`  ✓ [F1] ${storeDomain} — page_id conocido (${options.knownPageId})`)
-    } else {
-      console.log(`  [F1] ${storeDomain} → buscando anunciante...`)
-      try {
-        advertiser = await findAdvertiser(storeDomain, page)
-      } catch (e) {
-        console.log(`  ✗ [F1] error: ${(e as Error).message} → skipping`)
-        return { ads: [], advertiser: null, totalAdsOnMeta: 0 }
-      }
-      if (!advertiser) {
-        console.log(`  ✗ [F1] sin anunciante detectado → skipping`)
-        return { ads: [], advertiser: null, totalAdsOnMeta: 0 }
-      }
-    }
-
-    // ── F2 ───────────────────────────────────────────────────────────────────
-    console.log(`  [F2] Entrando a perfil de "${advertiser.pageName}"...`)
-    const advertiserUrl = advertiser.pageId
-      ? buildAdvertiserUrl(advertiser.pageId)
-      : buildSearchUrl(advertiser.pageName)
-
-    await page.goto(advertiserUrl, { waitUntil: 'domcontentloaded', timeout: 40_000 })
+    // ── Navigate to domain search ─────────────────────────────────────────────
+    await page.goto(buildSearchUrl(domain), { waitUntil: 'domcontentloaded', timeout: 40_000 })
     await page.waitForTimeout(3000)
     await dismissCookies(page)
+    await fixAdTypeFilter(page)
 
     await Promise.race([
-      page.waitForSelector('[role="article"]', { timeout: 15_000 }),
-      page.waitForSelector('[class*="_7jyh"]',  { timeout: 15_000 }),
-    ]).catch(() => null)
-    await page.waitForTimeout(2000)
+      page.waitForSelector('[role="article"]', { timeout: 15_000 }).then(() => true),
+      page.waitForSelector('[class*="_7jyh"]',  { timeout: 15_000 }).then(() => true),
+    ]).catch(() => false)
+    await page.waitForTimeout(1500)
 
-    const bodyText = await page.evaluate(() => document.body.textContent || '')
-    const totalMatch = bodyText.match(/~?\s*(\d[\d.,]*)\s*(?:resultados|results)/i)
-    const totalAdsOnMeta = totalMatch ? parseInt(totalMatch[1].replace(/[.,]/g, '')) : 100
-    console.log(`  → ~${totalAdsOnMeta} anuncios activos`)
+    // ── Pasada 1: probe ───────────────────────────────────────────────────────
+    const probe = await probeSearchResults(page, domain)
 
-    await scrollToLoadAll(page, totalAdsOnMeta)
+    if (!probe.hasMatch) {
+      console.log(`  ⏭ ${domain} — ${probe.count} ads revisados, ninguno apunta al dominio → skip`)
+      return { ads: [], advertiser: null, totalAdsOnMeta: 0 }
+    }
+    console.log(`  ✓ ${domain} — match detectado (${probe.count} ads cargados) → cargando todos...`)
 
-    const ads = await extractAllAds(page, advertiser)
+    // ── Pasada 2: full scroll ─────────────────────────────────────────────────
+    await scrollToLoadAll(page, probe.totalAdsOnMeta || 200)
+
+    // ── Extract ───────────────────────────────────────────────────────────────
+    const ads = await extractAllAds(page)
     console.log(`  → ${ads.length} ads extraídos`)
 
     if (ads.length === 0) {
-      return { ads: [], advertiser, totalAdsOnMeta }
+      return { ads: [], advertiser: probe.advertiser, totalAdsOnMeta: probe.totalAdsOnMeta }
     }
 
-    // ── F3 ───────────────────────────────────────────────────────────────────
+    // ── F3 ────────────────────────────────────────────────────────────────────
     if (candidates.length > 0) {
       let matched = 0
       for (const ad of ads) {
@@ -499,7 +488,12 @@ export async function scrapeAdsForStore(
       }))
     }
 
-    return { ads, advertiser, totalAdsOnMeta }
+    // Return advertiser from probe (first detected from search results)
+    // or fall back to first ad's advertiser info
+    const advertiser = probe.advertiser
+      ?? (ads[0]?.advertiserName ? { pageName: ads[0].advertiserName, pageId: ads[0].pageId } : null)
+
+    return { ads, advertiser, totalAdsOnMeta: probe.totalAdsOnMeta }
 
   } finally {
     await context.close()

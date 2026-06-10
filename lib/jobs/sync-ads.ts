@@ -228,10 +228,7 @@ async function syncStore(store: Store): Promise<StoreOutcome> {
   // ── 3. Scrape (F1 → F2 → F3 → R2) ───────────────────────────────────────
   let scrapeResult: Awaited<ReturnType<typeof scrapeAdsForStore>>
   try {
-    scrapeResult = await scrapeAdsForStore(domain, country, candidates, undefined, {
-      knownPageId:   store.metaPageId   ?? undefined,
-      knownPageName: store.metaPageName ?? undefined,
-    })
+    scrapeResult = await scrapeAdsForStore(domain, country, candidates)
   } catch (e) {
     const msg = (e as Error).message
     console.error(`  ❌ Scrape failed: ${msg}`)
