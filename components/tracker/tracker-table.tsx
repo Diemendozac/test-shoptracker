@@ -40,7 +40,7 @@ function AdThumb({
     <div
       ref={thumbRef}
       className={cn(
-        'relative h-[52px] w-[52px] shrink-0 cursor-pointer overflow-hidden rounded-md bg-secondary',
+        'relative h-[56px] w-[40px] shrink-0 cursor-pointer overflow-hidden rounded-md bg-secondary',
         !isPro && 'pointer-events-none blur-sm',
       )}
       onMouseEnter={() => {
@@ -96,7 +96,7 @@ function AdsCell({ candidateId, isPro }: { candidateId: string; isPro: boolean }
   const remaining = active.length - 3
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-1">
       {previews.map(ad => (
         <AdThumb
           key={ad.id}
@@ -373,7 +373,7 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
       {/* ── Table ── */}
       <div className="overflow-hidden rounded-xl border border-border bg-card">
         {/* Header */}
-        <div className="grid grid-cols-[32px_64px_minmax(0,1fr)_110px_60px_48px_72px_110px_90px_160px_60px] items-center gap-3 border-b border-border bg-secondary/30 px-4 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        <div className="grid grid-cols-[32px_64px_minmax(0,1fr)_110px_60px_48px_72px_110px_90px_140px_60px] items-center gap-3 border-b border-border bg-secondary/30 px-4 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           <div>#</div>
           <div />
           <button onClick={() => handleSort('productTitle')} className="group/th flex items-center gap-1.5 text-left hover:text-foreground transition-colors">
@@ -456,7 +456,7 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
                   key={candidate.candidateId}
                   className="transition-colors hover:bg-secondary/30"
                 >
-                <div className="grid grid-cols-[32px_64px_minmax(0,1fr)_110px_60px_48px_72px_110px_90px_160px_60px] items-center gap-3 px-4 py-3">
+                <div className="grid grid-cols-[32px_64px_minmax(0,1fr)_110px_60px_48px_72px_110px_90px_140px_60px] items-center gap-3 px-4 py-3">
                   {/* # */}
                   <button
                     onClick={() => onToggleFavorite(candidate.candidateId)}
