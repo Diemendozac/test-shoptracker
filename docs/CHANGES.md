@@ -6,6 +6,44 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-029 — Instalación de skills de React y Redux Toolkit en `.claude/`
+**Fecha:** 2026-06-11
+**Tipo:** infra / configuración
+
+**Qué cambió:** Se instalaron 23 skills de código en `.claude/skills/` para guiar a Claude al generar código React/Redux. Las skills son archivos de criterio (solo markdown) — no modifican código de la app ni dependencias del `package.json`.
+
+**Skills instaladas:**
+- `redux-toolkit` — patrones RTK: slices, selectores, RTK Query
+- `react-core-architecture`, `react-core-state`, `react-core-concurrent` — arquitectura React
+- `react-syntax-*` (8 skills) — hooks, jsx, componentes, eventos, contexto, refs, formularios
+- `react-impl-testing`, `react-impl-performance`, `react-impl-styling`, `react-impl-server-components`, `react-impl-data-fetching` — implementación
+- `react-errors-boundaries`, `react-errors-debugging`, `react-errors-hooks`, `react-errors-hydration` — debugging
+- `react-agents-review`, `react-agents-project-scaffolder` — revisión y scaffolding
+
+**Skills descartadas:** `react-impl-project-setup` (orientada a Vite, incompatible con Next.js) y `react-impl-routing` (enseña React Router, usamos Next.js App Router). Ver `docs/DECISIONS.md` (DECISION-001) para el razonamiento completo.
+
+**Archivos modificados:**
+- `.claude/skills/` — 23 carpetas nuevas (solo markdown, sin impacto en build)
+- `CLAUDE.md` — sección `## Skills instaladas — reglas de uso` agregada al final
+- `docs/SKILLS-CHEATSHEET.md` — guía de uso para Daniel (nuevo)
+- `docs/DECISIONS.md` — registro de decisiones (nuevo)
+
+**Relacionado con backend:** No aplica.
+**Wiki actualizado:** No aplica.
+
+---
+
+### CHANGE-010 — Badge bloqueado mantiene fondo azul Facebook
+**Fecha:** 2026-06-10
+**Tipo:** fix
+
+**Qué cambió:** El `AdvertiserBadge` en estado bloqueado (`!allowMetaLink`) mostraba fondo negro (`#1a1a1a`) y texto gris. Ahora mantiene siempre `background: #1877F2` y `color: #fff`. La diferencia visual entre activo y bloqueado es únicamente: blur en el nombre del anunciante + ícono de candado a la derecha.
+
+- **Archivo:** `components/tracker/product-ads.tsx` — función `AdvertiserBadge` (estilos inline + render del nombre)
+- **Por qué:** El badge oscuro confundía al usuario — parecía un elemento roto, no un gate de plan.
+
+---
+
 ### CHANGE-009 — Badge de anunciante con link directo al centro de anuncios de Meta
 **Fecha:** 2026-06-10
 **Tipo:** feature

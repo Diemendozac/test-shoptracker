@@ -69,6 +69,12 @@ lib/
 
 ---
 
+## Protocolo de cierre de sesión
+
+**Regla obligatoria:** Toda sesión termina con `git add` + `git commit` + `git push` de lo trabajado antes de cerrar. El clon vive en `/tmp/scout-frontend` y lo no pusheado se pierde al reiniciar el sistema.
+
+---
+
 ## Regla de documentación de cambios
 
 Cuando se complete cualquier cambio importante (feature nueva, fix de bug, cambio de UI significativo):
@@ -104,3 +110,37 @@ NEXT_PUBLIC_API_URL=<URL del backend en Easypanel>
 - **Redux solo para estado global cross-page:** actualmente solo `currencySlice` (moneda preferida). No agregar Redux para estado local de componentes.
 - **Server vs Client components:** usar Server Components por defecto. Solo `'use client'` cuando se necesite estado, hooks de React, o event handlers.
 - **Autenticación:** JWT guardado en localStorage. `lib/api.ts` lo inyecta en cada request. El backend valida con `JwtUtil`.
+
+---
+
+## Skills instaladas — reglas de uso
+
+Las skills en `.claude/skills/` son guías de criterio para Claude. Las siguientes reglas son obligatorias:
+
+### 1. Estado global → `redux-toolkit`
+Antes de crear o modificar estado global (tiendas, productos monitoreados, sesión, plan del usuario) → consultar la skill `redux-toolkit`.
+
+**Prohibido:**
+- `createStore` manual o reducers con `switch/case`
+- Thunks manuales repetitivos cuando RTK Query resuelve el caso
+- Lógica inline en `useSelector` (usar selectores memoizados)
+- Slices para estado de UI local (modales, tabs, acordeones) → usar `useState`
+
+### 2. Componentes nuevos o cambios medianos/grandes → `react-agents-review`
+Antes de dar por terminado cualquier componente nuevo o cambio de mediano o gran alcance, ejecutar el checklist de `react-agents-review` y reportar el resultado en el resumen final de la respuesta.
+
+### 3. Bugs de renderizado, hooks o hidratación → `react-errors/`
+Antes de improvisar un fix, consultar la skill correspondiente:
+- Problema en hook → `react-errors-hooks`
+- Error de hidratación → `react-errors-hydration`
+- Error boundary → `react-errors-boundaries`
+- Debug general → `react-errors-debugging`
+
+### 4. Componentes con datos del servidor → `react-impl-server-components`
+Para cualquier componente que lea datos del servidor, consultar `react-impl-server-components` para decidir si debe ser Server Component o Client Component antes de escribir código.
+
+### 5. Las skills NO tienen prioridad sobre las reglas de producto
+Las reglas de labels, estimaciones con `~`, `signalConfidence`, moneda y null safety de este CLAUDE.md siempre ganan sobre cualquier recomendación de las skills. Si una skill sugiere algo que contradice el producto, gana el producto y se reporta el conflicto.
+
+### 6. Migraciones de arquitectura → flagear a Diego, NO implementar
+Si una skill recomienda introducir una nueva arquitectura que no existe en el proyecto (ej: TanStack Query donde ya existe RTK Query, nuevo sistema de routing) → NO implementar. Especificar la recomendación y flagear a Diego para que decida.
