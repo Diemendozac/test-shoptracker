@@ -16,7 +16,7 @@ import {
 import { useRemoveCandidateMutation } from '@/app/(dashboard)/services/candidateApi'
 import { dashboardApi, useGetProductAdsQuery } from '@/app/(dashboard)/services/dashboardApi'
 import { usePlanTier } from '@/lib/view-as'
-import { FloatingVideoPanel, useHoverPanel, AdvertiserBadge, uniqueAdvertisersFromAds } from '@/components/tracker/product-ads'
+import { FloatingVideoPanel, useHoverPanel, AdvertiserBadge, uniqueAdvertisersFromAds, isTestAd } from '@/components/tracker/product-ads'
 import { HoverImagePreview } from '@/components/ui/image-preview'
 import { ScoreRing } from '@/components/dashboard/score-ring'
 import { resolveDisplayLabel, isScalable } from '@/lib/label-utils'
@@ -80,18 +80,32 @@ export function AdsCell({ candidateId }: { candidateId: string }) {
   const { hoveredAd, hoverPos, handleHover, handleLeave, handlePanelEnter, handlePanelLeave } = useHoverPanel()
   const { canViewAds, allowMetaLink } = usePlanTier()
 
-  const active = data?.ads.filter(a => a.status === 'active') ?? []
-  if (active.length === 0) return (
-    <div style={{ display: 'flex', gap: 3 }}>
-      {[0, 1, 2].map(i => (
-        <div key={i} style={{
-          width: 40, height: 56, borderRadius: 4,
-          border: '1px dashed var(--color-border)',
-          opacity: 0.4,
-        }} />
-      ))}
-    </div>
-  )
+  const active = data?.ads.filter(a => a.status === 'active' && !isTestAd(a)) ?? []
+  if (active.length === 0) {
+    const advertisers = uniqueAdvertisersFromAds(data?.ads.filter(a => !isTestAd(a)) ?? [])
+    const placeholder = (
+      <div style={{ display: 'flex', gap: 3 }}>
+        {[0, 1, 2].map(i => (
+          <div key={i} style={{
+            width: 40, height: 56, borderRadius: 4,
+            border: '1px dashed var(--color-border)',
+            opacity: 0.4,
+          }} />
+        ))}
+      </div>
+    )
+    if (advertisers.length === 0) return placeholder
+    return (
+      <div className="flex flex-col gap-1.5">
+        {placeholder}
+        <div className="flex flex-wrap gap-1">
+          {advertisers.map(name => (
+            <AdvertiserBadge key={name} advertiserName={name} allowMetaLink={allowMetaLink} />
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   const previews          = active.slice(0, 3)
   const remaining         = active.length - 3

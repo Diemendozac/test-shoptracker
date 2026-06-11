@@ -6,6 +6,39 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-006 — AdvertiserBadge visible aunque no haya videos con match
+
+**Fecha:** 2026-06-11
+
+**Por qué:** Productos como "Camiseta Colombia Roja/Negro" tienen anunciante identificado en base de datos pero sus ads no pasan el filtro de activos (status inactive o sin thumbnail). El early return previo descartaba esa información y mostraba solo los placeholders vacíos, desperdiciando la data del anunciante.
+
+**Qué cambió:** En `AdsCell` (tracker-table.tsx), el bloque `if (active.length === 0)` ahora extrae `advertiser_name` de todos los ads no-test (incluyendo inactivos). Si encuentra anunciantes, muestra los placeholders + los `AdvertiserBadge` con el link a Meta Ads Library.
+
+**Archivos tocados:**
+- `components/tracker/tracker-table.tsx` — lógica del early return en `AdsCell`
+
+**Afecta Redux:** No. Solo estado local del RTK Query hook.
+
+---
+
+---
+
+### CHANGE-033 — Store detail: grid de videos de la tienda
+**Fecha:** 2026-06-11
+**Tipo:** feature
+
+**Qué cambió:** Se agregó la sección "Videos de la tienda" en la página de detalle de cada tienda (`/stores/[storeId]`). Muestra un scroll horizontal de tarjetas 9:16, una por producto (candidato) que tenga al menos un ad activo. Cada tarjeta muestra el thumbnail/video del primer ad activo, un overlay de play en hover, los días corriendo el ad, y la imagen del producto en esquina inferior izquierda (decorativa). El clic abre el `ad_snapshot_url` en Meta — disponible solo para Pro/Agency/Admin. Starter ve las tarjetas pero el clic está bloqueado con un lock en hover.
+
+**Por qué:** Dar al usuario un vistazo rápido de la actividad publicitaria de la tienda completa antes de entrar al detalle de cada producto.
+
+**Archivos modificados:**
+- `components/tracker/product-ads.tsx` — nuevo componente `StoreVideosGrid` + subcomponente `StoreVideoCard`
+- `app/(dashboard)/stores/[storeId]/page.tsx` — importa y renderiza `StoreVideosGrid` entre el store header y el Top 5 productos
+
+**Sin cambios de backend:** reutiliza `GET /candidates/{candidateId}/ads` por candidato.
+
+---
+
 ### CHANGE-032 — Documentación de estrategia de orquestación de agentes en roadmap
 **Fecha:** 2026-06-11
 **Tipo:** docs
