@@ -23,6 +23,32 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-034 — Framework multi-proyecto: starter-kit, agente auditor y formalización del vault
+**Fecha:** 2026-06-11
+**Tipo:** docs / infra
+
+**Qué cambió:** Se estableció el framework de escalamiento a múltiples proyectos futuros:
+- `~/.claude/CLAUDE.md` extendido con protocolos universales (niveles de riesgo, specs, escalamiento, verdad del código, doble registro, Protocolo de promoción a SecondBrain, referencia a /cierre)
+- `~/.claude/agents/auditor.md` — subagent de solo lectura para revisiones pre-commit y auditorías
+- `~/.claude/commands/cierre.md` — comando global `/cierre` de cierre de sesión
+- `~/Desktop/SecondBrain/CLAUDE.md` extendido con tres categorías de admisión para conocimiento transversal
+- Vault Shoptracker: `raw/` materializada; `CLAUDE.md` extendido con regla de subordinación y LINT formalizado; `wiki/lint-2026-06-11.md` creada; `index.md` actualizado
+
+**Por qué:** Dropspy tiene un framework maduro (skills, SPEC-TEMPLATE, DEV-CHANGE). Este cambio lo escala a todos los proyectos futuros y formaliza la relación wiki-código (wiki es derivada, el código manda).
+
+**Hallazgo del lint:** `scout-score-momentum.md` documenta fórmula v4 pero producción corre v5 — marcado STALE, pendiente confirmación Diego (ver DECISION-004). 2 páginas wiki huérfanas. Archivos no-wiki en vault root — limpieza pendiente de aprobación del usuario.
+
+**Archivos creados/modificados:**
+- `~/.claude/CLAUDE.md`, `~/.claude/agents/auditor.md`, `~/.claude/commands/cierre.md`
+- `~/Desktop/SecondBrain/CLAUDE.md`
+- `~/Desktop/Shoptracker/CLAUDE.md`, `raw/`, `wiki/lint-2026-06-11.md`, `index.md`
+- `docs/CHANGES.md` (esta entrada), `docs/DECISIONS.md` (DECISION-006)
+
+**Relacionado con backend:** No aplica.
+**Wiki actualizado:** Sí — lint-2026-06-11.md + index.md + log.md del vault.
+
+---
+
 ### CHANGE-033 — Store detail: grid de videos de la tienda
 **Fecha:** 2026-06-11
 **Tipo:** feature

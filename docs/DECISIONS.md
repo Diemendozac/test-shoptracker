@@ -4,6 +4,33 @@ Registro de decisiones no obvias que afectan el proyecto. El "por qué" es más 
 
 ---
 
+## DECISION-006 — Framework multi-proyecto adoptado; wiki subordinada al código; lint periódico formal
+
+**Fecha:** 2026-06-11
+**Quién decidió:** Daniel
+**Revisado por Diego:** pendiente (afecta convención de documentación)
+
+### Decisión
+
+Se adoptó un framework escalable a múltiples proyectos futuros con tres pilares:
+
+1. **Wiki subordinada al código:** toda página wiki con afirmaciones técnicas se considera derivada. Si hay discrepancia con el código real, la página se marca `[STALE]` y se reporta — nunca se corrige en silencio. El código real manda.
+
+2. **Lint periódico como operación formal:** cada ~10 ingestas se ejecuta una auditoría de salud del wiki (STALE, huérfanas, contradicciones, archivos no-wiki). El entregable es una página `wiki/lint-YYYY-MM-DD.md`. La primera auditoría (lint-2026-06-11) identificó: fórmula v4/v5 STALE en scout-score-momentum, 2 páginas huérfanas, artefactos de código en el vault root.
+
+3. **SecondBrain como repositorio transversal:** el conocimiento que valga aunque el proyecto muera se promueve a SecondBrain (3 categorías: dominio reutilizable, lección de operador, referencia de patrón/herramienta). Protocolo de promoción requiere aprobación explícita del usuario.
+
+### Por qué
+
+Dropspy creció orgánicamente con buenas prácticas locales. Formalizarlas evita redescubrirlas en cada proyecto nuevo. La subordinación del documento al código previene el riesgo de operar sobre documentación stale (como pasó con v4 vs v5 del score).
+
+### Qué descarta
+
+- Reorganización del vault en subcarpetas por proyecto: descartada. Cada proyecto tiene su propio vault.
+- Reconstrucción histórica de raw/: descartada. Las fuentes previas al 2026-06-11 se ingirieron sin copia inmutable — se anota en el schema pero no se reconstruye.
+
+---
+
 ## DECISION-001 — Instalación de skills de React y Redux Toolkit
 
 **Fecha:** 2026-06-11
