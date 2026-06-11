@@ -29,6 +29,7 @@ import { Button } from '@/components/ui/button'
 import type { CandidateHistory } from '@/app/(dashboard)/types'
 import { resolveDisplayLabel, isScalable } from '@/lib/label-utils'
 import { applyScoreDecay, computeDecayFactor, daysSinceLastImprovement } from '@/lib/score-decay'
+import { spike, unspike, loadAllSpikes, type SpikeEntry } from '@/lib/spike-store'
 
 function computeSmartLabel(
   entry: CandidateHistory,
@@ -282,6 +283,11 @@ function CandidateDetailContent() {
   )
 
   const [productImages, setProductImages] = useState<string[]>([])
+  const [spikeEntry, setSpikeEntry] = useState<SpikeEntry | null>(null)
+
+  useEffect(() => {
+    setSpikeEntry(loadAllSpikes()[candidateId] ?? null)
+  }, [candidateId])
 
   // Step 1: seed gallery immediately from the known cover image so it always renders
   useEffect(() => {
@@ -474,9 +480,28 @@ function CandidateDetailContent() {
                 <div className="flex flex-col items-center gap-2">
                   <ScoreRing score={adjustedScore} label={currentLabel} size="lg" showLabel={false} />
                   {isScalable(adjustedScore, summary.signalConfidence) && (
-                    <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-600">
-                      ↑ Listo para escalar
-                    </span>
+                    spikeEntry ? (
+                      <button
+                        onClick={() => {
+                          unspike(candidateId)
+                          setSpikeEntry(null)
+                        }}
+                        className="rounded-full bg-emerald-500/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-600 hover:bg-rose-500/15 hover:text-rose-500 transition-colors"
+                      >
+                        Spikeando ✕
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          const entry: SpikeEntry = { spike_floor: adjustedScore, last_score: adjustedScore, spiked_at: new Date().toISOString() }
+                          spike(candidateId, adjustedScore)
+                          setSpikeEntry(entry)
+                        }}
+                        className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-600 hover:bg-emerald-500/30 transition-colors"
+                      >
+                        ↑ Spikear
+                      </button>
+                    )
                   )}
                   {decayFactor < 1 && (
                     <span className="text-[10px] text-muted-foreground/70 tabular-nums">

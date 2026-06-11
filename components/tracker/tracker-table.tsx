@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useRef, useCallback } from 'react'
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import { useDispatch } from 'react-redux'
 import Link from 'next/link'
 import { cn, fmtCompact } from '@/lib/utils'
@@ -21,6 +21,12 @@ import { HoverImagePreview } from '@/components/ui/image-preview'
 import { ScoreRing } from '@/components/dashboard/score-ring'
 import { resolveDisplayLabel, isScalable } from '@/lib/label-utils'
 import { applyScoreDecay } from '@/lib/score-decay'
+import {
+  spike, unspike, syncScores,
+  computeSpikeState, computeSpikeLevel,
+  type SpikeEntry,
+} from '@/lib/spike-store'
+import { SpikeOverlay } from '@/components/tracker/spike-overlay'
 
 // ─── AdsCell — columna inline de anuncios con floating panel ─────────────────
 
@@ -220,8 +226,13 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
   const [nicheFilter, setNicheFilter] = useState<string>('all')
   const [currencyFilter, setCurrencyFilter] = useState<string>('all')
   const [paFilter, setPaFilter] = useState<string>('all')
-  const [escalarFilter, setEscalarFilter] = useState(false)
+  const [spikeFilter, setSpikeFilter] = useState(false)
   const [page, setPage] = useState(0)
+  const [spikes, setSpikes] = useState<Record<string, SpikeEntry>>({})
+
+  useEffect(() => {
+    setSpikes(syncScores(candidates))
+  }, [candidates])
 
   function resetPage() { setPage(0) }
 
@@ -259,7 +270,7 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
     if (currencyFilter !== 'all') result = result.filter(c => c.currency === currencyFilter)
     if (paFilter === 'yes') result = result.filter(c => !!c.pagoAnticipado)
     if (paFilter === 'no')  result = result.filter(c => !c.pagoAnticipado)
-    if (escalarFilter)      result = result.filter(c => isScalable(c.performanceScore, c.signalConfidence))
+    if (spikeFilter)      result = result.filter(c => isScalable(c.performanceScore, c.signalConfidence))
     if (sort.key) {
       const k = sort.key
       result.sort((a, b) => {
@@ -272,15 +283,15 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
       })
     }
     return result
-  }, [candidates, search, storeFilter, nicheFilter, currencyFilter, paFilter, escalarFilter, sort])
+  }, [candidates, search, storeFilter, nicheFilter, currencyFilter, paFilter, spikeFilter, sort])
 
   const hasActiveFilters =
     !!search || storeFilter !== 'all' || nicheFilter !== 'all' ||
-    currencyFilter !== 'all' || paFilter !== 'all' || escalarFilter
+    currencyFilter !== 'all' || paFilter !== 'all' || spikeFilter
 
   function clearFilters() {
     setSearch(''); setStoreFilter('all'); setNicheFilter('all')
-    setCurrencyFilter('all'); setPaFilter('all'); setEscalarFilter(false)
+    setCurrencyFilter('all'); setPaFilter('all'); setSpikeFilter(false)
     setSort({ key: 'performanceScore', dir: 'desc' })
     resetPage()
   }
@@ -342,15 +353,15 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
         </select>
 
         <button
-          onClick={() => { setEscalarFilter(f => !f); resetPage() }}
+          onClick={() => { setSpikeFilter(f => !f); resetPage() }}
           className={cn(
             'h-9 rounded-lg border px-3 text-xs font-medium transition-all',
-            escalarFilter
+            spikeFilter
               ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600'
               : 'border-border bg-secondary/40 text-muted-foreground hover:border-emerald-500/50 hover:text-emerald-600',
           )}
         >
-          ↑ Escalar
+          ↑ Spikear
         </button>
 
         <select
@@ -483,7 +494,16 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
                   </button>
 
                   {/* Image */}
-                  <HoverImagePreview src={candidate.productImage} fallback={candidate.productTitle.charAt(0)} size={64} proxy />
+                  {(() => {
+                    const spikeEntry = spikes[String(candidate.candidateId)]
+                    const spikeState = computeSpikeState(spikeEntry, candidate.performanceScore ?? 0)
+                    const spikeLevel = computeSpikeLevel(spikeEntry, candidate.performanceScore ?? 0)
+                    return (
+                      <SpikeOverlay state={spikeState} level={spikeLevel} size={64}>
+                        <HoverImagePreview src={candidate.productImage} fallback={candidate.productTitle.charAt(0)} size={64} proxy />
+                      </SpikeOverlay>
+                    )
+                  })()}
 
                   {/* Producto */}
                   <div className="min-w-0 pl-3">
@@ -494,11 +514,34 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
                       >
                         {candidate.productTitle}
                       </Link>
-                      {isScalable(candidate.performanceScore, candidate.signalConfidence) && (
-                        <span className="mt-0.5 shrink-0 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-600">
-                          Escalar
-                        </span>
-                      )}
+                      {isScalable(candidate.performanceScore, candidate.signalConfidence) && (() => {
+                        const id = String(candidate.candidateId)
+                        const isSpiked = !!spikes[id]
+                        return isSpiked ? (
+                          <button
+                            onClick={() => {
+                              unspike(id)
+                              setSpikes(prev => { const n = { ...prev }; delete n[id]; return n })
+                            }}
+                            className="mt-0.5 shrink-0 rounded-full bg-emerald-500/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-600 hover:bg-rose-500/15 hover:text-rose-500 transition-colors"
+                          >
+                            Spikeando ✕
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              spike(id, candidate.performanceScore ?? 0)
+                              setSpikes(prev => ({
+                                ...prev,
+                                [id]: { spike_floor: candidate.performanceScore ?? 0, last_score: candidate.performanceScore ?? 0, spiked_at: new Date().toISOString() },
+                              }))
+                            }}
+                            className="mt-0.5 shrink-0 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-600 hover:bg-emerald-500/30 transition-colors"
+                          >
+                            Spikear
+                          </button>
+                        )
+                      })()}
                     </div>
                     <div className="mt-1 flex items-center gap-1.5">
                       <span className="text-[11px] text-muted-foreground tabular-nums">
