@@ -109,10 +109,10 @@ export function AdsCell({ candidateId, isPro }: { candidateId: string; isPro: bo
       </div>
       {uniqueAdvertisers.length > 0 && (
         <div className="flex flex-wrap gap-1">
-          {uniqueAdvertisers.map(ad => (
+          {uniqueAdvertisers.map(name => (
             <AdvertiserBadge
-              key={ad.advertiser_page_id ?? ad.advertiser_name}
-              ad={ad}
+              key={name}
+              advertiserName={name}
               allowMetaLink={isPro}
             />
           ))}

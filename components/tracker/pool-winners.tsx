@@ -16,7 +16,7 @@ import type { PoolPreset } from '@/app/(dashboard)/pool/page'
 import { isScalable } from '@/lib/label-utils'
 import { useGetProductAdsQuery } from '@/app/(dashboard)/services/dashboardApi'
 import { useIsPro } from '@/lib/view-as'
-import { FloatingVideoPanel, useHoverPanel } from '@/components/tracker/product-ads'
+import { FloatingVideoPanel, useHoverPanel, AdvertiserBadge, uniqueAdvertisersFromAds } from '@/components/tracker/product-ads'
 
 type PoolSortKey = 'productTitle' | 'productPrice' | 'performanceScore' | 'growthPct' | 'currentRank'
 type SortDir = 'asc' | 'desc'
@@ -88,18 +88,32 @@ function AdsCell({ candidateId, isPro }: { candidateId: string; isPro: boolean }
     </div>
   )
 
-  const previews  = active.slice(0, 3)
-  const remaining = active.length - 3
+  const previews          = active.slice(0, 3)
+  const remaining         = active.length - 3
+  const uniqueAdvertisers = uniqueAdvertisersFromAds(active)
 
   return (
-    <div className="flex items-center gap-1">
-      {previews.map(ad => (
-        <AdThumb key={ad.id} ad={ad} isPro={isPro} onHover={handleHover} onLeave={handleLeave} />
-      ))}
-      {remaining > 0 && (
-        <span className="text-[10px] font-semibold tabular-nums text-muted-foreground">
-          +{remaining}
-        </span>
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-1">
+        {previews.map(ad => (
+          <AdThumb key={ad.id} ad={ad} isPro={isPro} onHover={handleHover} onLeave={handleLeave} />
+        ))}
+        {remaining > 0 && (
+          <span className="text-[10px] font-semibold tabular-nums text-muted-foreground">
+            +{remaining}
+          </span>
+        )}
+      </div>
+      {uniqueAdvertisers.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {uniqueAdvertisers.map(name => (
+            <AdvertiserBadge
+              key={name}
+              advertiserName={name}
+              allowMetaLink={isPro}
+            />
+          ))}
+        </div>
       )}
       {hoveredAd && isPro && (
         <FloatingVideoPanel
