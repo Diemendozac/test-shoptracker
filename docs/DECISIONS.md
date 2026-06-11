@@ -30,6 +30,38 @@ Registro de decisiones no obvias que afectan el proyecto. El "por qué" es más 
 
 ---
 
+## DECISION-003 — Tienda chica vs tienda grande en el score
+
+**Fecha:** 2026-05-19
+**Quién decidió:** Diego
+**Estado:** aceptada — re-evaluar bajo fórmula v5 (ver nota)
+
+Rank 3 de 30 productos (top 10%) puntúa menos que rank 3 de 3000 (top 1%) porque `rankQuality` se normaliza por log del total. La decisión original: "el moat es tendencias dentro de cada tienda, no comparar entre tiendas" — aceptable cuando rq solo modulaba el growth (v4).
+
+**Nota post-auditoría (2026-06-10):** en la fórmula v5, rq es 30% directo del score (antes era factor multiplicador de g). El sesgo pro-tienda-grande pesa más que cuando se tomó la decisión. No se cambia de oficio — DISCUTIBLE si Diego confirma que v5 fue intencional.
+
+**Cómo aplica:** no "corregir" la diferencia de score entre tiendas de distinto tamaño sin que Diego lo revise primero.
+
+---
+
+## DECISION-004 — Fórmula v4 vs v5 del performance score
+
+**Fecha:** 2026-06-10
+**Quién decide:** Diego
+**Estado:** ⚠️ PENDIENTE DIEGO
+
+El código en producción usa `g×0.50 + rq×0.30 + wm×0.20` (señales independientes, "v5"). El wiki del vault documenta `effectiveGrowth×0.5 + wm×0.3 + rq×0.2` (v4, donde `effectiveGrowth = g×rq/100` — growth dampened por posición).
+
+No existe FIX-NNN ni commit que explique el cambio. Dos escenarios posibles:
+- **v5 fue deliberada:** hay que documentar el porqué; el problema que motivó v4 (growth en zona muerta vale completo) está de vuelta intencionalmente.
+- **v5 es una regresión:** hay que restaurar v4 o definir v5 formal.
+
+**Consecuencia práctica:** con v5, subir 70% en rank 150→45 de 200 productos vale 35 pts de growth, llevando el score a ~44-47 pts (Steady, casi Rising) por moverse en zona donde nadie compra. Con v4 ese mismo movimiento valía ~10 pts.
+
+**Acción requerida:** Diego confirma si v5 es intencional antes de cualquier trabajo sobre scoring.
+
+---
+
 ## DECISION-002 — `pnpm build` vs `next build` directo
 
 **Fecha:** 2026-06-11

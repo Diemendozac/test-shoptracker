@@ -59,10 +59,47 @@ lib/
 
 ---
 
+## Sistema de scoring — referencia canónica
+
+> Fuente: `TrackingService.java` auditado el 2026-06-10. Si hay conflicto con el wiki del vault, gana el código.
+
+### Fórmula en producción (v5)
+
+```
+g = clamp(growthPct, 0, 100)     // growth desde floorRank, nunca negativo
+r = rankQuality                   // 100 − ln(rank)/ln(max(total,2))×100
+m = weightedMomentum              // Σ rq en días con mejora (ventana 10) / windowSize
+score = g×0.50 + r×0.30 + m×0.20
+```
+
+### Umbrales reales de label (bandas de score, no tendencias)
+
+| Label backend | Score | Mapeo UI |
+|---|---|---|
+| Rocket | ≥70 | "Señal más fuerte" / Rising badge |
+| Rising | ≥50 | Rising badge |
+| Steady | ≥30 | Watching badge |
+| Declining | ≥15 | — (ver nota) |
+| Watching | <15 | Watching badge |
+
+**Nota crítica — labels como bandas:** "Declining" significa score 15–29, NO que el producto esté cayendo. Un producto en día 1 en rank top 1% recibe label "Declining" en la DB porque su score máximo posible ese día es 30. **Pendiente decisión de Diego:** o el backend emite labels de tendencia reales, o el frontend elimina cualquier lógica que trate Declining como señal de caída.
+
+**Consecuencia directa:** el veto de `resolveDisplayLabel` (`Declining` solo si `growthPct < 0`) es imposible — el backend clampa `growthPct ≥ 0`. Las vistas que usan `resolveDisplayLabel` **nunca muestran Declining**. `pool-winners.tsx` sí puede. El mismo producto puede mostrar labels distintos en pool vs tracker.
+
+### Regresiones vivas en `main` (solo diagnóstico — no tocar sin spec)
+
+- **`tracker/[candidateId]/page.tsx:589`** — muestra `peakGrowthPct` con `%`; debería ser el score peak, no el porcentaje.
+- **`hero-signal-card.tsx:88`** — falta clamp de `topPct` ≤100 (sí existe en `tracker-table.tsx` y `pool-winners.tsx`).
+- **`consecutiveTop10Days()` en `hero-signal-card.tsx`** — divide el `rankHistory` histórico completo por el `storeProductCount` de hoy. Si el catálogo encogió, la racha se rompe retroactivamente. Fix: usar el `totalProducts` del día correspondiente.
+
+Estas regresiones requieren spec individual con nivel de riesgo antes de tocarlas.
+
+---
+
 ## Convenciones de código
 
 - **Estimaciones siempre con `~`:** nunca mostrar un número de ventas o ingresos estimados sin prefijo `~`. El backend los llama `estUnitsDayLow` / `estRevDayLow` — son estimaciones conservadoras, no cifras exactas.
-- **Labels de performance:** `Rocket` del backend se mapea a `Rising` en la UI. El usuario nunca ve "Rocket" ni "Winner" — siempre "Señal más fuerte" o el badge correspondiente.
+- **Labels de performance:** `Rocket` del backend se mapea a `Rising` en la UI. El usuario nunca ve "Rocket" ni "Declining" — siempre el badge correspondiente según la tabla de arriba.
 - **`signalConfidence`:** siempre pasar al `ScoreRing`. Un score alto con baja confianza debe verse mayormente amarillo, no verde.
 - **Moneda:** usar siempre `formatCurrency(amount, currency)` de `lib/utils.ts`. No hardcodear `$`.
 - **Null safety:** la API puede devolver `null` en casi cualquier campo numérico. Usar `?? 0` o `?? '—'` según el contexto, nunca asumir que hay un valor.

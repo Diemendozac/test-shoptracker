@@ -6,6 +6,50 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-030 — Auditoría del Performance Score contra 7 casos borde
+**Fecha:** 2026-06-10
+**Tipo:** docs
+
+**Qué cambió:** Se creó `docs/AUDIT-SCORE-2026-06-10.md` auditando el scoring real del backend (`TrackingService.java`, copiado a `backend-src/` para lectura) contra 7 casos borde. Solo diagnóstico — ningún fix de scoring implementado.
+
+**Por qué:** validar que la intención de producto del score coincide con lo que corre en producción antes de seguir construyendo encima.
+
+**Hallazgos principales:** (1) la fórmula en producción es una v5 no documentada (`g×0.5 + rq×0.3 + wm×0.2`, señales independientes) que reintroduce el problema que v4 resolvía; (2) los labels son bandas de score (≥70/≥50/≥30/≥15), no tendencias — "Declining" en día 1 para productos top; (3) el veto frontend de Declining usa `growthPct < 0`, imposible porque el backend clampa ≥0; (4) productos estancados en la cima se expiran en el día 10 como si estuvieran muertos; (5) rank=0 produce un score astronómico (~10¹⁶) con label Rocket; (6) la racha "Xd en top 10%" del frontend divide ranks históricos por el total de hoy. Detalle y propuestas en el archivo de auditoría, sección "Para Diego".
+
+**Archivos creados:**
+- `docs/AUDIT-SCORE-2026-06-10.md` — nuevo
+- `CLAUDE.md` y `docs/DECISIONS.md` — actualizados con los umbrales/fórmula reales del backend
+
+**Relacionado con backend:** requiere revisión de Diego (6 puntos listados en la auditoría). Ningún FIX-NNN aún.
+**Wiki actualizado:** pendiente — `scout-score-momentum` describe la fórmula v4 superada; actualizar tras confirmación de Diego.
+
+---
+
+### CHANGE-031 — Framework operativo: SPEC-TEMPLATE, DECISIONS y gobierno CLAUDE.md
+**Fecha:** 2026-06-10
+**Tipo:** docs
+**Nota de numeración:** esta entrada era CHANGE-029 en la sesión original perdida; CHANGE-029 fue ocupado por la instalación de skills en la sesión de recuperación (2026-06-11).
+
+**Qué cambió:** Se estableció el framework operativo para sesiones con Claude: (1) `CLAUDE.md` actualizado con principios de diseño, reglas canónicas de labels, lista de regresiones prohibidas verificada contra el código real, protocolo de cambios y verificación mínima; (2) `docs/SPEC-TEMPLATE.md` — plantilla obligatoria para cambios medianos/grandes con nivel de riesgo (solo / con cuidado / Diego); (3) `docs/DECISIONS.md` — registro de decisiones reconstruido desde el vault y el código.
+
+**Por qué:** Daniel no es desarrollador; el framework reduce el riesgo de cambios prompteados sin contexto y define cuándo detener todo y flagear a Diego (scoring, DB, migraciones, arquitectura).
+
+**Hallazgos al verificar contra código real (solo diagnóstico — no se corrigió nada):**
+- Regresión viva: `tracker/[candidateId]/page.tsx:589` muestra `peakGrowthPct` con `%` (debería ser el score, no el porcentaje).
+- Falta clamp de `topPct` ≤100 en `hero-signal-card.tsx:88` y en la narrativa de `page.tsx:601` (sí existe en `tracker-table.tsx` y `pool-winners.tsx`).
+- Sistema de labels inconsistente entre `lib/types.ts`, `performance-badge.tsx`, `kpi-cards.tsx` y `label-utils.ts`.
+- La regla "Declining nunca si currentRank === bestRank" no está implementada en ningún punto del frontend.
+
+**Archivos creados/modificados:**
+- `docs/SPEC-TEMPLATE.md` — nuevo
+- `docs/DECISIONS.md` — actualizado
+- `CLAUDE.md` — actualizado
+
+**Relacionado con backend:** pendiente auditoría del Performance Score (AUDIT-SCORE-2026-06-10) sobre `TrackingService.java`.
+**Wiki actualizado:** pendiente — registrar en `log.md` del vault.
+
+---
+
 ### CHANGE-029 — Instalación de skills de React y Redux Toolkit en `.claude/`
 **Fecha:** 2026-06-11
 **Tipo:** infra / configuración
