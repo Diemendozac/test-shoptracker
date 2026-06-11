@@ -62,6 +62,22 @@ No existe FIX-NNN ni commit que explique el cambio. Dos escenarios posibles:
 
 ---
 
+## DECISION-005 — Orquestación de agentes: evaluada y diferida
+
+**Fecha:** 2026-06-11
+**Quién decidió:** Daniel
+**Revisado por Diego:** pendiente (afecta settings del entorno en Fase B)
+
+Los agent teams de Claude Code y los subagents fueron evaluados como mecanismo de aceleración del desarrollo. Decisión: **diferido** hasta contar con un plan de Claude con límites de tokens holgados (Max o superior) y hasta que la feature salga de fase experimental.
+
+La **Fase A (subagents)** queda permitida desde ya: uso de subagents dentro de sesiones normales para verificaciones enfocadas que solo reportan resultados (build checks, investigación de librerías, validación de fixes). No requiere activar ningún flag.
+
+Las Fases B y C (agent teams) requieren las precondiciones listadas en [ROADMAP-001](ROADMAP.md#roadmap-001--orquestación-de-agentes-subagents-y-agent-teams).
+
+Motivo principal del diferimiento: costo de tokens del plan actual + feature experimental con limitaciones conocidas + riesgo de permisos en auto-accept.
+
+---
+
 ## DECISION-002 — `pnpm build` vs `next build` directo
 
 **Fecha:** 2026-06-11

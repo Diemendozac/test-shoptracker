@@ -6,6 +6,50 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-032 — Documentación de estrategia de orquestación de agentes en roadmap
+**Fecha:** 2026-06-11
+**Tipo:** docs
+
+**Qué cambió:** Se creó `docs/ROADMAP.md` con la estructura base del roadmap del proyecto (secciones Ahora / Próximo / Diferido). Se registró la estrategia de orquestación de agentes (subagents y agent teams) bajo `ROADMAP-001` con estado DIFERIDO. Se actualizaron `docs/DECISIONS.md` (DECISION-005) y este archivo.
+
+**Por qué:** Los agent teams de Claude Code fueron evaluados como herramienta de aceleración del desarrollo. El diferimiento es por costo de tokens del plan actual y por ser feature experimental. La Fase A (subagents dentro de sesiones normales) queda permitida desde ya. Registrar la decisión evita re-evaluar el mismo tradeoff en futuras sesiones.
+
+**Archivos creados/modificados:**
+- `docs/ROADMAP.md` — nuevo. Estructura base + ROADMAP-001
+- `docs/DECISIONS.md` — DECISION-005 agregada
+- `docs/CHANGES.md` — esta entrada
+
+**Relacionado con backend:** No aplica.
+**Wiki actualizado:** No aplica (decisión de tooling, sin impacto en lógica de producto).
+
+---
+
+### CHANGE-031 — Fase A Spikear: verbo propietario + mecánica visual de espinas
+**Fecha:** 2026-06-11
+**Tipo:** feature
+
+**Qué cambió:** Se introdujo el concepto "Spikear" como acción propietaria de SCOUT para activar seguimiento activo de un producto candidato. Reemplaza el label estático "Escalar" con un botón interactivo. Al hacer click, aparecen raíces SVG sobre la imagen del producto; las espinas crecen/decrecen/desaparecen según el delta del score vs. el piso fijado en el momento de spikear. Estado persistido en localStorage (sin backend, Phase A).
+
+**Por qué:** diferenciación de marca — ningún competidor tiene un verbo propio para esta acción. Las espinas son la visualización directa del momentum del producto desde que el usuario decidió actuar. Ver wiki `scout-spikear.md` para la filosofía completa.
+
+**Lógica de espinas:**
+- `score > floor` y subiendo → espinas crecen (color esmeralda)
+- `score > floor` pero bajando → espinas decrecen (color ámbar)
+- `score < floor` → espinas desaparecen, producto sale de spike mode automáticamente
+- Al hacer click: aparecen raíces (estado inicial, score en piso)
+
+**Archivos creados:**
+- `lib/spike-store.ts` — localStorage CRUD + cálculo de estado y nivel de espina
+- `components/tracker/spike-overlay.tsx` — overlay SVG de raíces/espinas sobre imagen del producto
+
+**Archivos editados:**
+- `components/tracker/tracker-table.tsx` — badge "Escalar" → botón "Spikear" interactivo + SpikeOverlay en imagen + filtro renombrado
+- `app/(dashboard)/tracker/[candidateId]/page.tsx` — label "Listo para escalar" → botón "Spikear" / "Spikeando"
+
+**Pendiente Fase B (requiere Diego):** migrar spike_floor y spiked_at a base de datos; endpoint POST /candidates/{id}/spike para persistir entre dispositivos.
+
+---
+
 ### CHANGE-030 — Auditoría del Performance Score contra 7 casos borde
 **Fecha:** 2026-06-10
 **Tipo:** docs
