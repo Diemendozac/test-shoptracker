@@ -519,9 +519,11 @@ export function uniqueAdvertisersFromAds(ads: Ad[]): Ad[] {
 }
 
 export function AdvertiserBadge({ ad, allowMetaLink }: { ad: Ad; allowMetaLink: boolean }) {
-  const canLink = allowMetaLink && !!ad.advertiser_page_id
+  const canLink = allowMetaLink && !!ad.advertiser_name
   const href = canLink
-    ? `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=CO&search_type=page&view_all_page_id=${ad.advertiser_page_id}`
+    ? ad.advertiser_page_id
+      ? `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=CO&search_type=page&view_all_page_id=${ad.advertiser_page_id}`
+      : `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=CO&search_type=keyword_unordered&q=${encodeURIComponent(ad.advertiser_name!)}`
     : '#'
 
   return (
