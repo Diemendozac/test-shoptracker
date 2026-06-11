@@ -16,7 +16,7 @@ import {
 import { useRemoveCandidateMutation } from '@/app/(dashboard)/services/candidateApi'
 import { dashboardApi, useGetProductAdsQuery } from '@/app/(dashboard)/services/dashboardApi'
 import { useIsPro } from '@/lib/view-as'
-import { FloatingVideoPanel, useHoverPanel } from '@/components/tracker/product-ads'
+import { FloatingVideoPanel, useHoverPanel, AdvertiserBadge, uniqueAdvertisersFromAds } from '@/components/tracker/product-ads'
 import { HoverImagePreview } from '@/components/ui/image-preview'
 import { ScoreRing } from '@/components/dashboard/score-ring'
 import { resolveDisplayLabel, isScalable } from '@/lib/label-utils'
@@ -85,24 +85,38 @@ export function AdsCell({ candidateId, isPro }: { candidateId: string; isPro: bo
     </div>
   )
 
-  const previews  = active.slice(0, 3)
-  const remaining = active.length - 3
+  const previews          = active.slice(0, 3)
+  const remaining         = active.length - 3
+  const uniqueAdvertisers = uniqueAdvertisersFromAds(active)
 
   return (
-    <div className="flex items-center gap-1">
-      {previews.map(ad => (
-        <AdThumb
-          key={ad.id}
-          ad={ad}
-          isPro={isPro}
-          onHover={handleHover}
-          onLeave={handleLeave}
-        />
-      ))}
-      {remaining > 0 && (
-        <span className="text-[10px] font-semibold tabular-nums text-muted-foreground">
-          +{remaining}
-        </span>
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-1">
+        {previews.map(ad => (
+          <AdThumb
+            key={ad.id}
+            ad={ad}
+            isPro={isPro}
+            onHover={handleHover}
+            onLeave={handleLeave}
+          />
+        ))}
+        {remaining > 0 && (
+          <span className="text-[10px] font-semibold tabular-nums text-muted-foreground">
+            +{remaining}
+          </span>
+        )}
+      </div>
+      {uniqueAdvertisers.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {uniqueAdvertisers.map(ad => (
+            <AdvertiserBadge
+              key={ad.advertiser_page_id ?? ad.advertiser_name}
+              ad={ad}
+              allowMetaLink={isPro}
+            />
+          ))}
+        </div>
       )}
       {hoveredAd && isPro && (
         <FloatingVideoPanel

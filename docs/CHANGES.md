@@ -6,6 +6,29 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-009 — Badge de anunciante con link directo al centro de anuncios de Meta
+**Fecha:** 2026-06-10
+**Tipo:** feature
+
+**Qué cambió:** El `pageId` del anunciante ya se extraía en el scraper por card pero no se persistía. Ahora se propaga hasta la UI en un badge clicable.
+
+- **Scraper** (`sync-ads.ts`): `pushAds()` ahora incluye `advertiserPageId` en cada ad del payload.
+- **Tipo** (`types/index.ts`): campo `advertiser_page_id` agregado al tipo `Ad`.
+- **Componente** (`product-ads.tsx`): nuevo `AdvertiserBadge` con logo FB + nombre del anunciante. Link a `facebook.com/ads/library/?search_type=page&view_all_page_id={pageId}`. Badges en el header de `ProductAdsSection` (vista detalle). Azul si Pro + tiene pageId; gris sin click si Free.
+- **Tabla** (`tracker-table.tsx`): badges de anunciantes únicos debajo de los thumbnails en `AdsCell`.
+- **Backend**: `ProductAd.java` + `schema.sql` (columna `advertiser_page_id`), `WebhookController.java` (acepta el campo), `DashboardController.java` (lo incluye en el response).
+
+**Por qué:** Permite ir directo al centro de anuncios del anunciante en Meta, que muestra TODOS sus ads activos — no solo los del candidato puntual. Es el punto de entrada para competencia directa y research de creativos.
+
+**Archivos modificados:**
+- `lib/jobs/sync-ads.ts`
+- `app/(dashboard)/types/index.ts`
+- `components/tracker/product-ads.tsx`
+- `components/tracker/tracker-table.tsx`
+- Backend: `ProductAd.java`, `schema.sql`, `WebhookController.java`, `DashboardController.java`
+
+---
+
 ### CHANGE-008 — Refactorizar scraper: búsqueda por dominio con abandono temprano
 **Fecha:** 2026-06-10
 **Tipo:** refactor / performance

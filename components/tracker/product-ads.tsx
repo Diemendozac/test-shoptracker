@@ -297,6 +297,7 @@ export function ProductAdsSection({ candidateId, isPro }: ProductAdsSectionProps
   if (activeAds.length === 0) return null
 
   const lastUpdated = data?.lastUpdated ? formatRelative(data.lastUpdated) : ''
+  const uniqueAdvertisers = uniqueAdvertisersFromAds(activeAds)
 
   const sorted = [...activeAds]
   if (sortBy === 'recent') sorted.sort((a, b) => new Date(b.first_seen).getTime() - new Date(a.first_seen).getTime())
@@ -307,11 +308,18 @@ export function ProductAdsSection({ candidateId, isPro }: ProductAdsSectionProps
 
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border px-6 py-4">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <h3 className="font-semibold text-foreground">Anuncios activos</h3>
           <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-600">
             {activeAds.length} activos
           </span>
+          {uniqueAdvertisers.map(ad => (
+            <AdvertiserBadge
+              key={ad.advertiser_page_id ?? ad.advertiser_name}
+              ad={ad}
+              allowMetaLink={allowMetaLink}
+            />
+          ))}
         </div>
         <div className="flex items-center gap-3">
           <select
@@ -495,6 +503,58 @@ export function AdStripPreview({
         />
       )}
     </>
+  )
+}
+
+// ─── AdvertiserBadge — badge clicable al centro de anuncios de Meta ──────────
+
+export function uniqueAdvertisersFromAds(ads: Ad[]): Ad[] {
+  return Array.from(
+    new Map(
+      ads
+        .filter(ad => ad.advertiser_name)
+        .map(ad => [ad.advertiser_page_id ?? ad.advertiser_name, ad])
+    ).values()
+  )
+}
+
+export function AdvertiserBadge({ ad, allowMetaLink }: { ad: Ad; allowMetaLink: boolean }) {
+  const canLink = allowMetaLink && !!ad.advertiser_page_id
+  const href = canLink
+    ? `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=CO&search_type=page&view_all_page_id=${ad.advertiser_page_id}`
+    : '#'
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={canLink ? undefined : 'Upgrade a Pro para ver el centro de anuncios'}
+      onClick={e => {
+        e.stopPropagation()
+        if (!canLink) e.preventDefault()
+      }}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
+        padding: '3px 7px',
+        borderRadius: 4,
+        fontSize: 11,
+        background: canLink ? '#1877F2' : '#1a1a1a',
+        color: canLink ? '#fff' : '#555',
+        textDecoration: 'none',
+        cursor: canLink ? 'pointer' : 'default',
+        border: canLink ? 'none' : '1px solid #2a2a2a',
+        userSelect: 'none',
+        flexShrink: 0,
+      }}
+    >
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+      </svg>
+      {ad.advertiser_name ?? 'Ver anuncios'}
+    </a>
   )
 }
 

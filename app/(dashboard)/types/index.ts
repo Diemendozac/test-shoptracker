@@ -187,6 +187,7 @@ export interface Ad {
   product_url: string
   video_url_r2?: string | null
   advertiser_name?: string | null
+  advertiser_page_id?: string | null
 }
 
 export interface ProductAdsResponse {
