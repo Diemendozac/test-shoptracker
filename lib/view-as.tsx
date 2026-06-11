@@ -58,3 +58,12 @@ export function useIsPro(): boolean {
   const { effectivePlan } = useViewAs()
   return effectivePlan === 'pro' || effectivePlan === 'agency' || effectivePlan === 'admin'
 }
+
+export function usePlanTier() {
+  const { effectivePlan } = useViewAs()
+  const isPro     = effectivePlan === 'pro' || effectivePlan === 'agency' || effectivePlan === 'admin'
+  const isStarter = effectivePlan === 'starter'
+  const canViewAds   = isPro || isStarter   // thumbnails + hover
+  const allowMetaLink = isPro               // badge clickable + Meta link
+  return { isPro, isStarter, canViewAds, allowMetaLink }
+}

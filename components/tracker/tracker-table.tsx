@@ -15,7 +15,7 @@ import {
 } from 'lucide-react'
 import { useRemoveCandidateMutation } from '@/app/(dashboard)/services/candidateApi'
 import { dashboardApi, useGetProductAdsQuery } from '@/app/(dashboard)/services/dashboardApi'
-import { useIsPro } from '@/lib/view-as'
+import { usePlanTier } from '@/lib/view-as'
 import { FloatingVideoPanel, useHoverPanel, AdvertiserBadge, uniqueAdvertisersFromAds } from '@/components/tracker/product-ads'
 import { HoverImagePreview } from '@/components/ui/image-preview'
 import { ScoreRing } from '@/components/dashboard/score-ring'
@@ -27,10 +27,11 @@ import { applyScoreDecay } from '@/lib/score-decay'
 const PLACEHOLDER = 'https://picsum.photos/seed/placeholder/400/700'
 
 function AdThumb({
-  ad, isPro, onHover, onLeave,
+  ad, canViewAds, allowMetaLink, onHover, onLeave,
 }: {
   ad: Ad
-  isPro: boolean
+  canViewAds: boolean
+  allowMetaLink: boolean
   onHover: (ad: Ad, rect: DOMRect) => void
   onLeave: () => void
 }) {
@@ -40,22 +41,22 @@ function AdThumb({
     <div
       ref={thumbRef}
       className={cn(
-        'relative h-[56px] w-[40px] shrink-0 cursor-pointer overflow-hidden rounded-md bg-secondary',
-        !isPro && 'pointer-events-none blur-sm',
+        'relative h-[56px] w-[40px] shrink-0 overflow-hidden rounded-md bg-secondary',
+        canViewAds ? 'cursor-pointer' : 'pointer-events-none blur-sm',
       )}
       onMouseEnter={() => {
-        if (isPro && thumbRef.current)
+        if (canViewAds && thumbRef.current)
           onHover(ad, thumbRef.current.getBoundingClientRect())
       }}
       onMouseLeave={onLeave}
-      onClick={() => isPro && window.open(ad.ad_snapshot_url, '_blank', 'noopener,noreferrer')}
+      onClick={() => allowMetaLink && window.open(ad.ad_snapshot_url, '_blank', 'noopener,noreferrer')}
     >
       <img
         src={ad.thumbnail_url || PLACEHOLDER}
         alt=""
         className="h-full w-full object-cover"
       />
-      {hasVideo && isPro && (
+      {hasVideo && canViewAds && (
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="flex h-5 w-5 items-center justify-center rounded-full bg-black/50">
             <svg className="h-2.5 w-2.5 translate-x-px text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -68,9 +69,10 @@ function AdThumb({
   )
 }
 
-export function AdsCell({ candidateId, isPro }: { candidateId: string; isPro: boolean }) {
+export function AdsCell({ candidateId }: { candidateId: string }) {
   const { data } = useGetProductAdsQuery(candidateId)
   const { hoveredAd, hoverPos, handleHover, handleLeave, handlePanelEnter, handlePanelLeave } = useHoverPanel()
+  const { canViewAds, allowMetaLink } = usePlanTier()
 
   const active = data?.ads.filter(a => a.status === 'active') ?? []
   if (active.length === 0) return (
@@ -96,7 +98,8 @@ export function AdsCell({ candidateId, isPro }: { candidateId: string; isPro: bo
           <AdThumb
             key={ad.id}
             ad={ad}
-            isPro={isPro}
+            canViewAds={canViewAds}
+            allowMetaLink={allowMetaLink}
             onHover={handleHover}
             onLeave={handleLeave}
           />
@@ -113,12 +116,12 @@ export function AdsCell({ candidateId, isPro }: { candidateId: string; isPro: bo
             <AdvertiserBadge
               key={name}
               advertiserName={name}
-              allowMetaLink={isPro}
+              allowMetaLink={allowMetaLink}
             />
           ))}
         </div>
       )}
-      {hoveredAd && isPro && (
+      {hoveredAd && canViewAds && (
         <FloatingVideoPanel
           ad={hoveredAd} top={hoverPos.top} left={hoverPos.left}
           onMouseEnter={handlePanelEnter} onMouseLeave={handlePanelLeave}
@@ -209,7 +212,6 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
   const { currency: preferredCurrency } = useCurrency()
   const dispatch = useDispatch()
   const [removeCandidate] = useRemoveCandidateMutation()
-  const isPro = useIsPro()
   const displayDays = windowDays === 30 ? 30 : 7
 
   const [sort, setSort] = useState<SortState>({ key: 'performanceScore', dir: 'desc' })
@@ -581,7 +583,7 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
                   <ContextBar rank={candidate.currentRank} total={candidate.storeProductCount} />
 
                   {/* Ads */}
-                  <AdsCell candidateId={candidate.candidateId} isPro={isPro} />
+                  <AdsCell candidateId={candidate.candidateId} />
 
                   {/* Acción */}
                   <div className="flex items-center justify-center gap-1.5">

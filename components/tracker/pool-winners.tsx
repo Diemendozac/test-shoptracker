@@ -15,7 +15,7 @@ import type { Ad } from '@/components/tracker/product-ads'
 import type { PoolPreset } from '@/app/(dashboard)/pool/page'
 import { isScalable } from '@/lib/label-utils'
 import { useGetProductAdsQuery } from '@/app/(dashboard)/services/dashboardApi'
-import { useIsPro } from '@/lib/view-as'
+import { usePlanTier } from '@/lib/view-as'
 import { FloatingVideoPanel, useHoverPanel, AdvertiserBadge, uniqueAdvertisersFromAds } from '@/components/tracker/product-ads'
 
 type PoolSortKey = 'productTitle' | 'productPrice' | 'performanceScore' | 'growthPct' | 'currentRank'
@@ -35,10 +35,11 @@ const CURRENCIES = ['COP', 'EUR', 'GBP', 'USD']
 const PLACEHOLDER = 'https://picsum.photos/seed/placeholder/400/700'
 
 function AdThumb({
-  ad, isPro, onHover, onLeave,
+  ad, canViewAds, allowMetaLink, onHover, onLeave,
 }: {
   ad: Ad
-  isPro: boolean
+  canViewAds: boolean
+  allowMetaLink: boolean
   onHover: (ad: Ad, rect: DOMRect) => void
   onLeave: () => void
 }) {
@@ -49,16 +50,17 @@ function AdThumb({
       ref={thumbRef}
       className={cn(
         'relative h-[56px] w-[40px] shrink-0 overflow-hidden rounded-md bg-secondary',
-        !isPro && 'pointer-events-none blur-sm',
+        canViewAds ? 'cursor-pointer' : 'pointer-events-none blur-sm',
       )}
       onMouseEnter={() => {
-        if (isPro && thumbRef.current)
+        if (canViewAds && thumbRef.current)
           onHover(ad, thumbRef.current.getBoundingClientRect())
       }}
       onMouseLeave={onLeave}
+      onClick={() => allowMetaLink && window.open(ad.ad_snapshot_url, '_blank', 'noopener,noreferrer')}
     >
       <img src={ad.thumbnail_url || PLACEHOLDER} alt="" className="h-full w-full object-cover" />
-      {hasVideo && isPro && (
+      {hasVideo && canViewAds && (
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="flex h-5 w-5 items-center justify-center rounded-full bg-black/50">
             <svg className="h-2.5 w-2.5 translate-x-px text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -71,9 +73,10 @@ function AdThumb({
   )
 }
 
-function AdsCell({ candidateId, isPro }: { candidateId: string; isPro: boolean }) {
+function AdsCell({ candidateId }: { candidateId: string }) {
   const { data } = useGetProductAdsQuery(candidateId)
   const { hoveredAd, hoverPos, handleHover, handleLeave, handlePanelEnter, handlePanelLeave } = useHoverPanel()
+  const { canViewAds, allowMetaLink } = usePlanTier()
 
   const active = data?.ads.filter(a => a.status === 'active') ?? []
   if (active.length === 0) return (
@@ -96,7 +99,11 @@ function AdsCell({ candidateId, isPro }: { candidateId: string; isPro: boolean }
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center gap-1">
         {previews.map(ad => (
-          <AdThumb key={ad.id} ad={ad} isPro={isPro} onHover={handleHover} onLeave={handleLeave} />
+          <AdThumb
+            key={ad.id} ad={ad}
+            canViewAds={canViewAds} allowMetaLink={allowMetaLink}
+            onHover={handleHover} onLeave={handleLeave}
+          />
         ))}
         {remaining > 0 && (
           <span className="text-[10px] font-semibold tabular-nums text-muted-foreground">
@@ -110,12 +117,12 @@ function AdsCell({ candidateId, isPro }: { candidateId: string; isPro: boolean }
             <AdvertiserBadge
               key={name}
               advertiserName={name}
-              allowMetaLink={isPro}
+              allowMetaLink={allowMetaLink}
             />
           ))}
         </div>
       )}
-      {hoveredAd && isPro && (
+      {hoveredAd && canViewAds && (
         <FloatingVideoPanel
           ad={hoveredAd} top={hoverPos.top} left={hoverPos.left}
           onMouseEnter={handlePanelEnter} onMouseLeave={handlePanelLeave}
@@ -208,7 +215,6 @@ export function PoolWinnersSection({
   escalarFilter, onEscalarFilterChange,
 }: PoolWinnersSectionProps) {
   const { currency: preferredCurrency } = useCurrency()
-  const isPro = useIsPro()
   const [sort, setSort] = useState<SortState>({ key: 'performanceScore', dir: 'desc' })
 
   function toggleSet(prev: Set<string>, value: string): Set<string> {
@@ -516,7 +522,6 @@ export function PoolWinnersSection({
               preferredCurrency={preferredCurrency}
               isFavorite={favorites.has(winner.candidateId)}
               onToggleFavorite={onToggleFavorite}
-              isPro={isPro}
             />
           ))
         )}
@@ -627,13 +632,12 @@ function LockedState() {
   )
 }
 
-function PoolWinnerRow({ winner, position, preferredCurrency, isFavorite, onToggleFavorite, isPro }: {
+function PoolWinnerRow({ winner, position, preferredCurrency, isFavorite, onToggleFavorite }: {
   winner: PoolWinnerProduct
   position: number
   preferredCurrency: string | null
   isFavorite: boolean
   onToggleFavorite: (id: string) => void
-  isPro: boolean
 }) {
   const isFirst = position === 1
 
@@ -799,7 +803,7 @@ function PoolWinnerRow({ winner, position, preferredCurrency, isFavorite, onTogg
       </div>
 
       {/* Ads */}
-      <AdsCell candidateId={winner.candidateId} isPro={isPro} />
+      <AdsCell candidateId={winner.candidateId} />
 
       {/* Acción */}
       <div className="flex items-center justify-center">

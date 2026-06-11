@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import type { Ad } from '@/app/(dashboard)/types'
 import { useGetProductAdsQuery } from '@/app/(dashboard)/services/dashboardApi'
+import { usePlanTier } from '@/lib/view-as'
 
 export type { Ad }
 
@@ -262,17 +263,30 @@ type SortOption = 'impressions' | 'recent' | 'oldest'
 
 interface ProductAdsSectionProps {
   candidateId: string
-  isPro: boolean
 }
 
-export function ProductAdsSection({ candidateId, isPro }: ProductAdsSectionProps) {
+type DevPlan = 'free' | 'starter' | 'pro'
+const DEV_CYCLE: DevPlan[] = ['free', 'starter', 'pro']
+
+export function ProductAdsSection({ candidateId }: ProductAdsSectionProps) {
   const { data, isLoading, isError } = useGetProductAdsQuery(candidateId)
-  const [devOverride, setDevOverride] = useState<boolean | null>(null)
-  const effectiveIsPro = devOverride !== null ? devOverride : isPro
+  const [devPlan, setDevPlan] = useState<DevPlan | null>(null)
+
+  const plan = usePlanTier()
+  const effectivePlan: { isPro: boolean; isStarter: boolean; canViewAds: boolean; allowMetaLink: boolean } =
+    devPlan
+      ? {
+          isPro:        devPlan === 'pro',
+          isStarter:    devPlan === 'starter',
+          canViewAds:   devPlan !== 'free',
+          allowMetaLink: devPlan === 'pro',
+        }
+      : plan
+
+  const { canViewAds, allowMetaLink } = effectivePlan
 
   const searchParams = useSearchParams()
   const isFromPool = searchParams.get('from') === 'pool'
-  const allowMetaLink = effectiveIsPro
   const showOrigin = !isFromPool
 
   const [sortBy, setSortBy] = useState<SortOption>('impressions')
@@ -336,10 +350,13 @@ export function ProductAdsSection({ candidateId, isPro }: ProductAdsSectionProps
           )}
           {process.env.NODE_ENV === 'development' && (
             <button
-              onClick={() => setDevOverride(prev => prev === null ? !isPro : prev === isPro ? null : isPro)}
+              onClick={() => setDevPlan(prev => {
+                const idx = prev ? DEV_CYCLE.indexOf(prev) : -1
+                return idx >= DEV_CYCLE.length - 1 ? null : DEV_CYCLE[idx + 1]
+              })}
               className="rounded border border-border px-2 py-0.5 text-[10px] text-muted-foreground transition-colors hover:text-foreground"
             >
-              [dev] {effectiveIsPro ? 'Pro ✓' : 'Free 🔒'}
+              [dev] {devPlan ?? 'real'}
             </button>
           )}
         </div>
@@ -356,7 +373,7 @@ export function ProductAdsSection({ candidateId, isPro }: ProductAdsSectionProps
 
       {/* Rows */}
       <div className="relative">
-        <div className={cn('divide-y divide-border/50', !effectiveIsPro && 'pointer-events-none select-none blur-sm')}>
+        <div className={cn('divide-y divide-border/50', !canViewAds && 'pointer-events-none select-none blur-sm')}>
           {sorted.map((ad, i) => (
             <AdRow
               key={ad.id}
@@ -370,19 +387,19 @@ export function ProductAdsSection({ candidateId, isPro }: ProductAdsSectionProps
           ))}
         </div>
 
-        {!effectiveIsPro && (
+        {!canViewAds && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-b-xl bg-card/70">
             <Lock className="h-5 w-5 text-foreground/50" />
             <div className="text-center">
               <p className="text-sm font-semibold text-foreground">
-                Los anuncios activos son exclusivos de Pro
+                Los anuncios activos requieren plan Starter o superior
               </p>
               <p className="mt-1 max-w-xs text-xs text-muted-foreground">
                 Ve exactamente qué está pautando esta tienda y en qué productos.
               </p>
             </div>
             <Button size="sm" variant="outline" asChild>
-              <Link href="/pricing">Upgrade a Pro →</Link>
+              <Link href="/pricing">Upgrade →</Link>
             </Button>
           </div>
         )}

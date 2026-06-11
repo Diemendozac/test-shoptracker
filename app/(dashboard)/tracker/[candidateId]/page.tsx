@@ -11,7 +11,6 @@ import { RankChart } from '@/components/tracker/rank-chart'
 import { ScoreChart } from '@/components/tracker/score-chart'
 import { useGetCandidateDetailQuery } from '@/app/(dashboard)/services/dashboardApi'
 import { useGetStoresQuery } from '@/app/(dashboard)/stores/services/storeApi'
-import { useIsPro } from '@/lib/view-as'
 import { useCurrency } from '@/store/hooks'
 import { ProductAdsSection } from '@/components/tracker/product-ads'
 import { FormattedPrice } from '@/components/ui/formatted-price'
@@ -277,8 +276,6 @@ function CandidateDetailContent() {
   const storeBaseUrl = store?.baseUrl ?? ''
   const storeName = store?.storeName ?? null
 
-  const isPro = useIsPro()
-
   const { data, isLoading, isError } = useGetCandidateDetailQuery(
     { storeId: storeId!, candidateId },
     { skip: !storeId }
@@ -438,7 +435,7 @@ function CandidateDetailContent() {
                 {storeName && (
                   <div className="mb-2">
                     <Link
-                      href="/stores"
+                      href={`/stores/${storeId}`}
                       className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
                     >
                       <Store className="h-3.5 w-3.5" />
@@ -680,7 +677,7 @@ function CandidateDetailContent() {
       </div>
 
       {/* Active Ads */}
-      <ProductAdsSection candidateId={candidateId} isPro={isPro} />
+      <ProductAdsSection candidateId={candidateId} />
 
     </PageLayout>
   )
