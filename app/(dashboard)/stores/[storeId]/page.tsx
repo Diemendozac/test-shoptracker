@@ -17,6 +17,7 @@ import {
   Clock, Target, Zap, TrendingUp, BarChart3, Store,
 } from 'lucide-react'
 import { resolveDisplayLabel } from '@/lib/label-utils'
+import { StoreVideosGrid } from '@/components/tracker/product-ads'
 
 export default function StoreDetailPage() {
   return (
@@ -179,6 +180,11 @@ function StoreDetailContent() {
         </div>
       )}
 
+      {/* Videos de la tienda */}
+      {allCandidates.length > 0 && !loadingCandidates && (
+        <StoreVideosGrid candidates={allCandidates} />
+      )}
+
       {/* Top 5 productos */}
       <div>
         <div className="mb-3 flex items-center gap-2">
@@ -204,10 +210,13 @@ function StoreDetailContent() {
                 ? convertCurrency(c.productPrice, c.currency ?? 'USD', preferredCurrency)
                 : null
               return (
-                <Link
+                <div
                   key={c.candidateId}
-                  href={`/tracker/${c.candidateId}?storeId=${c.storeId}&from=tracker`}
-                  className="grid grid-cols-[28px_52px_1fr_100px_70px_140px_52px_52px] items-center gap-4 border-b border-border/50 px-5 py-3 transition-colors last:border-0 hover:bg-secondary/30"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => router.push(`/tracker/${c.candidateId}?storeId=${c.storeId}&from=tracker`)}
+                  onKeyDown={e => { if (e.key === 'Enter') router.push(`/tracker/${c.candidateId}?storeId=${c.storeId}&from=tracker`) }}
+                  className="grid grid-cols-[28px_52px_1fr_100px_70px_140px_52px_52px] cursor-pointer items-center gap-4 border-b border-border/50 px-5 py-3 transition-colors last:border-0 hover:bg-secondary/30"
                 >
                   {/* Rank */}
                   <span className={cn(
@@ -246,7 +255,7 @@ function StoreDetailContent() {
                     }
                   </div>
 
-                  {/* ADS — stopPropagation prevents Link navigation on ad click */}
+                  {/* ADS — stopPropagation prevents row navigation on ad click */}
                   <div onClick={e => e.stopPropagation()}>
                     <AdsCell candidateId={c.candidateId} />
                   </div>
@@ -261,7 +270,7 @@ function StoreDetailContent() {
 
                   {/* Score */}
                   <ScoreRing score={c.performanceScore ?? 0} size="sm" showLabel={false} />
-                </Link>
+                </div>
               )
             })}
           </div>
@@ -282,10 +291,13 @@ function StoreDetailContent() {
                 ? convertCurrency(c.productPrice, c.currency ?? 'USD', preferredCurrency)
                 : null
               return (
-                <Link
+                <div
                   key={c.candidateId}
-                  href={`/tracker/${c.candidateId}?storeId=${c.storeId}&from=tracker`}
-                  className="flex items-center gap-4 border-b border-border/50 px-5 py-3 transition-colors last:border-0 hover:bg-secondary/30"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => router.push(`/tracker/${c.candidateId}?storeId=${c.storeId}&from=tracker`)}
+                  onKeyDown={e => { if (e.key === 'Enter') router.push(`/tracker/${c.candidateId}?storeId=${c.storeId}&from=tracker`) }}
+                  className="flex cursor-pointer items-center gap-4 border-b border-border/50 px-5 py-3 transition-colors last:border-0 hover:bg-secondary/30"
                 >
                   {c.productImage ? (
                     <img src={c.productImage} alt="" className="h-9 w-9 shrink-0 rounded-lg object-cover" />
@@ -304,12 +316,12 @@ function StoreDetailContent() {
                       {sym}{price.toLocaleString('es-CO', { maximumFractionDigits: 0 })}
                     </span>
                   )}
-                  {/* ADS — stopPropagation prevents Link navigation on ad click */}
+                  {/* ADS — stopPropagation prevents row navigation on ad click */}
                   <div onClick={e => e.stopPropagation()}>
                     <AdsCell candidateId={c.candidateId} />
                   </div>
                   <ScoreRing score={c.performanceScore ?? 0} size="sm" showLabel={false} />
-                </Link>
+                </div>
               )
             })}
           </div>

@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Lock, Volume2, VolumeX } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import type { Ad } from '@/app/(dashboard)/types'
+import type { Ad, TrackerCandidate } from '@/app/(dashboard)/types'
 import { useGetProductAdsQuery } from '@/app/(dashboard)/services/dashboardApi'
 import { usePlanTier } from '@/lib/view-as'
 
@@ -307,7 +307,7 @@ export function ProductAdsSection({ candidateId }: ProductAdsSectionProps) {
     ? (process.env.NODE_ENV === 'development' ? mockAds : [])
     : data.ads
 
-  const activeAds = rawAds.filter(a => a.status === 'active')
+  const activeAds = rawAds.filter(a => a.status === 'active' && !isTestAd(a))
   if (activeAds.length === 0) return null
 
   const lastUpdated = data?.lastUpdated ? formatRelative(data.lastUpdated) : ''
@@ -479,7 +479,7 @@ export function AdStripPreview({
 }: AdStripPreviewProps) {
   const { hoveredAd, hoverPos, handleHover, handleLeave, handlePanelEnter, handlePanelLeave } = useHoverPanel()
 
-  const activeAds = ads.filter(a => a.status === 'active')
+  const activeAds = ads.filter(a => a.status === 'active' && !isTestAd(a))
   if (activeAds.length === 0) return null
 
   const previews  = activeAds.slice(0, 3)
@@ -551,11 +551,11 @@ export function AdvertiserBadge({ advertiserName, allowMetaLink }: { advertiserN
         padding: '3px 7px',
         borderRadius: 4,
         fontSize: 11,
-        background: allowMetaLink ? '#1877F2' : '#1a1a1a',
-        color: allowMetaLink ? '#fff' : '#555',
+        background: '#1877F2',
+        color: '#fff',
         textDecoration: 'none',
         cursor: allowMetaLink ? 'pointer' : 'default',
-        border: allowMetaLink ? 'none' : '1px solid #2a2a2a',
+        border: 'none',
         userSelect: 'none',
         flexShrink: 0,
       }}
@@ -563,12 +563,27 @@ export function AdvertiserBadge({ advertiserName, allowMetaLink }: { advertiserN
       <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
         <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
       </svg>
-      {advertiserName}
+      <span style={allowMetaLink ? undefined : { filter: 'blur(3px)', pointerEvents: 'none' }}>
+        {advertiserName}
+      </span>
+      {!allowMetaLink && (
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0, opacity: 0.9 }}>
+          <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+        </svg>
+      )}
     </a>
   )
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+export function isTestAd(ad: Ad): boolean {
+  return (
+    ad.thumbnail_url?.includes('picsum.photos') ||
+    ad.ad_snapshot_url?.includes('TEST') ||
+    ad.id?.startsWith('ad_00')  // mock IDs from mockAds constant
+  ) ?? false
+}
 
 function formatRelative(isoString: string): string {
   try {
@@ -589,4 +604,132 @@ function formatDate(isoDate: string): string {
   } catch {
     return isoDate
   }
+}
+
+// ─── StoreVideosGrid ──────────────────────────────────────────────────────────
+// One card per candidate that has active ads. Click → Meta (pro/agency/admin).
+// Starter sees thumbnails but click is blocked. Product image is a decorative
+// overlay in the bottom-left corner.
+
+interface StoreVideoCardProps {
+  candidate: TrackerCandidate
+  allowMetaLink: boolean
+  canViewAds: boolean
+  onHover: (ad: Ad, rect: DOMRect) => void
+  onLeave: () => void
+}
+
+function StoreVideoCard({ candidate, allowMetaLink, canViewAds, onHover, onLeave }: StoreVideoCardProps) {
+  const { data } = useGetProductAdsQuery(candidate.candidateId)
+  const cardRef = useRef<HTMLDivElement>(null)
+
+  const firstAd = data?.ads.find(a => a.status === 'active' && !isTestAd(a))
+  if (!firstAd) return null
+
+  const hasVideo = !!firstAd.video_url_r2
+
+  function handleClick() {
+    if (allowMetaLink) window.open(firstAd!.ad_snapshot_url, '_blank', 'noopener,noreferrer')
+  }
+
+  return (
+    <div
+      ref={cardRef}
+      role="button"
+      tabIndex={0}
+      onClick={handleClick}
+      onKeyDown={e => { if (e.key === 'Enter') handleClick() }}
+      onMouseEnter={() => {
+        if (canViewAds && cardRef.current)
+          onHover(firstAd, cardRef.current.getBoundingClientRect())
+      }}
+      onMouseLeave={onLeave}
+      className={cn(
+        'relative shrink-0 w-[100px] h-[178px] rounded-xl overflow-hidden bg-secondary group',
+        allowMetaLink ? 'cursor-pointer' : 'cursor-default',
+      )}
+    >
+      {/* Video thumbnail */}
+      <img
+        src={firstAd.thumbnail_url || 'https://picsum.photos/seed/placeholder/400/700'}
+        alt=""
+        className="absolute inset-0 h-full w-full object-cover"
+      />
+
+      {/* Play indicator */}
+      {hasVideo && (
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-black/60 backdrop-blur-sm">
+            <svg className="h-4 w-4 translate-x-0.5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+          </div>
+        </div>
+      )}
+
+      {/* Lock overlay for starter */}
+      {!allowMetaLink && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-colors">
+          <Lock className="h-4 w-4 text-white opacity-0 group-hover:opacity-70 transition-opacity" />
+        </div>
+      )}
+
+      {/* Product image overlay — bottom-left corner */}
+      {candidate.productImage && (
+        <div className="absolute bottom-2 left-2 h-8 w-8 rounded-md overflow-hidden border border-white/30 bg-black/40 shadow-md">
+          <img
+            src={candidate.productImage}
+            alt=""
+            className="h-full w-full object-cover"
+          />
+        </div>
+      )}
+
+      {/* Days running badge */}
+      {firstAd.days_running > 0 && (
+        <div className="absolute top-2 right-2 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
+          {firstAd.days_running}d
+        </div>
+      )}
+    </div>
+  )
+}
+
+export function StoreVideosGrid({ candidates }: { candidates: TrackerCandidate[] }) {
+  const { allowMetaLink, canViewAds } = usePlanTier()
+  const { hoveredAd, hoverPos, handleHover, handleLeave, handlePanelEnter, handlePanelLeave } = useHoverPanel()
+
+  if (candidates.length === 0) return null
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-foreground">Videos de la tienda</h2>
+        {!allowMetaLink && (
+          <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+            <Lock className="h-3 w-3" />
+            Clic a Meta disponible en Pro
+          </span>
+        )}
+      </div>
+
+      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
+        {candidates.map(c => (
+          <StoreVideoCard
+            key={c.candidateId}
+            candidate={c}
+            allowMetaLink={allowMetaLink}
+            canViewAds={canViewAds}
+            onHover={handleHover}
+            onLeave={handleLeave}
+          />
+        ))}
+      </div>
+
+      {hoveredAd && canViewAds && (
+        <FloatingVideoPanel
+          ad={hoveredAd} top={hoverPos.top} left={hoverPos.left}
+          onMouseEnter={handlePanelEnter} onMouseLeave={handlePanelLeave}
+        />
+      )}
+    </div>
+  )
 }
