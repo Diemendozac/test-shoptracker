@@ -617,13 +617,19 @@ interface StoreVideoCardProps {
   canViewAds: boolean
   onHover: (ad: Ad, rect: DOMRect) => void
   onLeave: () => void
+  onHasAd: () => void
 }
 
-function StoreVideoCard({ candidate, allowMetaLink, canViewAds, onHover, onLeave }: StoreVideoCardProps) {
+function StoreVideoCard({ candidate, allowMetaLink, canViewAds, onHover, onLeave, onHasAd }: StoreVideoCardProps) {
   const { data } = useGetProductAdsQuery(candidate.candidateId)
   const cardRef = useRef<HTMLDivElement>(null)
 
   const firstAd = data?.ads.find(a => a.status === 'active' && !isTestAd(a))
+
+  useEffect(() => {
+    if (firstAd) onHasAd()
+  }, [firstAd]) // eslint-disable-line react-hooks/exhaustive-deps
+
   if (!firstAd) return null
 
   const hasVideo = !!firstAd.video_url_r2
@@ -696,11 +702,13 @@ function StoreVideoCard({ candidate, allowMetaLink, canViewAds, onHover, onLeave
 export function StoreVideosGrid({ candidates }: { candidates: TrackerCandidate[] }) {
   const { allowMetaLink, canViewAds } = usePlanTier()
   const { hoveredAd, hoverPos, handleHover, handleLeave, handlePanelEnter, handlePanelLeave } = useHoverPanel()
+  const [hasAnyAd, setHasAnyAd] = useState(false)
+  const handleHasAd = useCallback(() => setHasAnyAd(true), [])
 
   if (candidates.length === 0) return null
 
   return (
-    <div className="space-y-3">
+    <div className={cn('space-y-3', !hasAnyAd && 'hidden')}>
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-foreground">Videos de la tienda</h2>
         {!allowMetaLink && (
@@ -718,6 +726,7 @@ export function StoreVideosGrid({ candidates }: { candidates: TrackerCandidate[]
             candidate={c}
             allowMetaLink={allowMetaLink}
             canViewAds={canViewAds}
+            onHasAd={handleHasAd}
             onHover={handleHover}
             onLeave={handleLeave}
           />
