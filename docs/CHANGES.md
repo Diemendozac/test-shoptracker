@@ -6,6 +6,27 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-006 — Restricción de paginación para plan Starter en Explorar testeos
+**Fecha:** 2026-06-12
+**Tipo:** feature / access control
+
+**Por qué:** El plan Starter debe tener acceso limitado al pool — solo la primera página. Esto crea un incentivo concreto para subir a Pro y alinea la propuesta de valor con los niveles de plan.
+
+**Qué cambió:**
+- Si un usuario Starter intenta navegar a página 2+, ve un componente `PageLockedForStarter`: 4 filas blureadas + overlay con candado + CTA "Actualizar a Pro".
+- En la paginación (cuando el usuario está en página 1), los botones de página 2+ se renderizan con un icono `Lock` en lugar del número — no son clicables.
+- El botón "Siguiente" queda `disabled` para usuarios Starter.
+- La lógica usa `isStarter` del hook `usePlanTier()` ya existente — sin nuevo estado, sin Redux.
+
+**Archivos modificados:**
+- `components/tracker/pool-winners.tsx` — guard `if (isStarter && page > 0)`, paginación bloqueada, nuevo componente `PageLockedForStarter`
+
+**Riesgo:** solo — display puro, sin afectar lógica de scoring ni backend.
+
+**Verificación:** TypeScript sin errores nuevos (tsc --noEmit). Visual: usuario Starter en page 0 ve paginación con locks en páginas 2+; al llegar a page 1 ve overlay con candado.
+
+---
+
 ### CHANGE-006 — AdvertiserBadge visible aunque no haya videos con match
 
 **Fecha:** 2026-06-11

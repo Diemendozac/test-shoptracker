@@ -215,6 +215,7 @@ export function PoolWinnersSection({
   escalarFilter, onEscalarFilterChange,
 }: PoolWinnersSectionProps) {
   const { currency: preferredCurrency } = useCurrency()
+  const { isStarter } = usePlanTier()
   const [sort, setSort] = useState<SortState>({ key: 'performanceScore', dir: 'desc' })
 
   function toggleSet(prev: Set<string>, value: string): Set<string> {
@@ -291,6 +292,10 @@ export function PoolWinnersSection({
 
   if (data.locked) {
     return <LockedState />
+  }
+
+  if (isStarter && page > 0) {
+    return <PageLockedForStarter />
   }
 
   if (data.winners.length === 0) {
@@ -544,6 +549,13 @@ export function PoolWinnersSection({
             {getPageRange(page, data.totalPages ?? 1).map((p, idx) =>
               p === 'ellipsis' ? (
                 <span key={`e${idx}`} className="flex h-7 w-5 items-center justify-center text-xs text-muted-foreground select-none">…</span>
+              ) : isStarter && p > 0 ? (
+                <span
+                  key={p}
+                  className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/40 text-muted-foreground/30"
+                >
+                  <Lock className="h-3 w-3" />
+                </span>
               ) : (
                 <button
                   key={p}
@@ -561,7 +573,7 @@ export function PoolWinnersSection({
             )}
             <button
               onClick={() => onPageChange(page + 1)}
-              disabled={page >= (data.totalPages ?? 1) - 1}
+              disabled={page >= (data.totalPages ?? 1) - 1 || isStarter}
               className="flex h-7 w-7 items-center justify-center rounded-lg border border-border text-muted-foreground hover:border-primary/40 hover:text-foreground disabled:opacity-30 disabled:pointer-events-none transition-colors"
             >
               <ChevronRight className="h-3.5 w-3.5" />
@@ -580,6 +592,43 @@ export function PoolWinnersSection({
 
 // ─── sub-components ───────────────────────────────────────────────────────────
 
+
+function PageLockedForStarter() {
+  return (
+    <div className="mb-6 overflow-hidden rounded-2xl border border-border bg-card">
+      <div className="relative">
+        <div className="pointer-events-none select-none space-y-3 p-6 blur-sm">
+          {[42, 38, 35, 31].map((score, i) => (
+            <div key={i} className="flex items-center gap-4 rounded-xl border border-border/50 bg-secondary/30 px-4 py-3">
+              <span className="text-xs font-bold text-muted-foreground">#{i + 21}</span>
+              <div className="h-8 w-8 rounded-full bg-secondary" />
+              <div className="flex-1 space-y-1">
+                <div className="h-3 w-40 rounded bg-secondary" />
+                <div className="h-2 w-24 rounded bg-secondary/60" />
+              </div>
+              <ScoreRing score={score} size="sm" showLabel={false} />
+            </div>
+          ))}
+        </div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-card/80 backdrop-blur-[2px]">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+            <Lock className="h-5 w-5 text-primary" />
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-semibold text-foreground">Página bloqueada</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              El plan Starter solo accede a la primera página. Actualiza a Pro para ver todos los productos.
+            </p>
+          </div>
+          <Button size="sm" className="mt-1 gap-1.5">
+            <Crown className="h-3.5 w-3.5" />
+            Actualizar a Pro
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function LockedState() {
   return (
