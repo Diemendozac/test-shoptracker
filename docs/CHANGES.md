@@ -6,6 +6,42 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-008 — Fix: scrollToLoadAll sale después de 3 scrolls sin nuevas cards, no del primero
+**Fecha:** 2026-06-12
+**Tipo:** fix / scraper
+
+**Por qué:** El scraper detectaba que una tienda tenía ads en Meta (ej: thritake.com con ~1.500) pero solo extraía 17 — los que cargó el probe. `scrollToLoadAll` salía en el segundo intento porque el lazy loading de Facebook no respondía en el primer scroll adicional. El resultado era un `17 ✓` silencioso cuando el objetivo eran 200.
+
+**Qué cambió:**
+- `lib/scrapers/meta-ads.ts` — `scrollToLoadAll` ahora requiere 3 scrolls consecutivos sin nuevas cards antes de parar. El cap de 200 ads no cambia.
+
+**Riesgo:** solo — lógica interna del scraper, no afecta contratos de API ni store de Redux.
+
+---
+
+### CHANGE-007 — Documentación de diseño: Sistema de Alertas completo
+**Fecha:** 2026-06-12
+**Tipo:** documentación / diseño de arquitectura
+
+**Por qué:** El sistema de alertas existe parcialmente (AlertService envía Rocket sin verificar plan). Antes de ampliar, se necesita una fuente de verdad que documente el diseño completo, las reglas de negocio, y las fases de implementación. Este documento es esa fuente.
+
+**Qué cambió:**
+- Creados 5 documentos en `docs/alerts/`
+- `alerts-overview.md` — visión, 3 tipos, principios
+- `alerts-architecture.md` — integración con pipeline, modelo de datos, idempotencia, canales
+- `alerts-rules.md` — catálogo completo: 9 alertas con condición SQL exacta, cooldowns, copys
+- `alerts-digest-spec.md` — especificación del email digest: secciones, layout HTML, caso sin novedades
+- `alerts-roadmap.md` — 4 fases, riesgos, dependencias, tabla estado actual vs. falta
+
+**Discrepancias encontradas en el codebase:**
+- `AlertService` no verifica `user.plan` — usuarios Free reciben alertas Rocket (bug)
+- `previous_rank` y `entry_score` en `ScoreSummary.java` no están en `schema.sql` (migración faltante)
+- `EmailService.buildHtml()` usa gradientes — contradice el principio "sin gradientes" de la marca
+
+**Riesgo:** solo — documentación, sin modificar lógica de producción.
+
+---
+
 ### CHANGE-006 — Restricción de paginación para plan Starter en Explorar testeos
 **Fecha:** 2026-06-12
 **Tipo:** feature / access control

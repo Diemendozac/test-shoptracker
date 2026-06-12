@@ -214,11 +214,18 @@ async function probeSearchResults(page: Page, domain: string): Promise<{
 async function scrollToLoadAll(page: Page, totalExpected: number, maxAds = 200): Promise<void> {
   const limit = Math.min(totalExpected || maxAds, maxAds)
   let lastCount = 0
+  let stagnantRounds = 0
   let attempts = 0
 
   while (attempts < 30) {
     const cards = await page.$$('[class*="_7jyh"]')
-    if (cards.length >= limit || cards.length === lastCount) break
+    if (cards.length >= limit) break
+    if (cards.length === lastCount) {
+      stagnantRounds++
+      if (stagnantRounds >= 3) break
+    } else {
+      stagnantRounds = 0
+    }
     lastCount = cards.length
     if (attempts % 5 === 0) process.stdout.write(`  Cargando: ${lastCount}...`)
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
