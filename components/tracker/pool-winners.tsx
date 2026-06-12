@@ -620,10 +620,12 @@ function PageLockedForStarter() {
               El plan Starter solo accede a la primera página. Actualiza a Pro para ver todos los productos.
             </p>
           </div>
-          <Button size="sm" className="mt-1 gap-1.5">
-            <Crown className="h-3.5 w-3.5" />
-            Actualizar a Pro
-          </Button>
+          <Link href="/settings">
+            <Button size="sm" className="mt-1 gap-1.5">
+              <Crown className="h-3.5 w-3.5" />
+              Actualizar a Pro
+            </Button>
+          </Link>
         </div>
       </div>
     </div>
