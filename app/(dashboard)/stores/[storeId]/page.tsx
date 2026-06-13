@@ -7,7 +7,8 @@ import { cn } from '@/lib/utils'
 import { convertCurrency, currencySymbol } from '@/lib/currency'
 import { useCurrency } from '@/store/hooks'
 import { useGetStoresQuery } from '@/app/(dashboard)/stores/services/storeApi'
-import { useGetTrackerCandidatesQuery } from '@/app/(dashboard)/services/dashboardApi'
+import { useGetTrackerCandidatesQuery, useGetPoolWinnersQuery } from '@/app/(dashboard)/services/dashboardApi'
+import type { TrackerCandidate } from '@/app/(dashboard)/types'
 import { ScoreRing } from '@/components/dashboard/score-ring'
 import { PerformanceBadge } from '@/components/dashboard/performance-badge'
 import { Sparkline } from '@/components/tracker/sparkline'
@@ -39,6 +40,13 @@ function StoreDetailContent() {
 
   const { data: allCandidates = [], isLoading: loadingCandidates } =
     useGetTrackerCandidatesQuery({ storeId })
+
+  // Para StoreVideosGrid usamos candidatos del pool (Explorar testeos)
+  // filtrados por dominio — esos sí tienen ads scrapeados
+  const { data: poolData } = useGetPoolWinnersQuery({ size: 500 })
+  const storeDomain = store?.baseUrl.replace(/^https?:\/\//, '').replace(/\/$/, '') ?? ''
+  const videoCandidates = (poolData?.winners ?? [])
+    .filter(w => storeDomain && w.baseUrl?.includes(storeDomain)) as unknown as TrackerCandidate[]
 
   if (!store && stores) {
     return (
@@ -181,8 +189,8 @@ function StoreDetailContent() {
       )}
 
       {/* Videos de la tienda */}
-      {allCandidates.length > 0 && !loadingCandidates && (
-        <StoreVideosGrid candidates={allCandidates} />
+      {videoCandidates.length > 0 && (
+        <StoreVideosGrid candidates={videoCandidates} />
       )}
 
       {/* Top 5 productos */}

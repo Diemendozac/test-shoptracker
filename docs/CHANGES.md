@@ -6,6 +6,19 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-035 — StoreVideosGrid usa candidatos del pool (Explorar testeos) en vez de candidatos store-specific
+
+**Fecha:** 2026-06-13
+**Archivos:** `app/(dashboard)/stores/[storeId]/page.tsx`
+
+**Qué cambió:** La sección "Videos de la tienda" en la página de detalle de tienda ahora filtra candidatos del pool global (`getPoolWinners`) por dominio de la tienda, en lugar de usar los candidatos store-specific (`getTrackerCandidates({ storeId })`).
+
+**Por qué:** Los candidatos store-specific no tienen ads scrapeados en el backend — el scraper de Meta Ads opera sobre los candidatos del pool. Filtrar por dominio (`baseUrl`) permite cruzar la tienda con sus candidatos que sí tienen datos de anuncios.
+
+**Pendiente para Diego:** La columna ADS en Mis testeos muestra vacío para los mismos productos porque sigue usando los candidatos store-specific. Requiere sincronización de ads en el backend entre candidatos del pool y candidatos del tracker, o un cambio en el endpoint.
+
+---
+
 ### CHANGE-016 — Detalle de producto: revertir a tabla AdRow + mover sección sobre los charts
 **Fecha:** 2026-06-12
 **Tipo:** UX / posición
