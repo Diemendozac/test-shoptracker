@@ -6,6 +6,21 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-014 — AdsCell: dedup por creativo antes de mostrar strip y count
+**Fecha:** 2026-06-12
+**Tipo:** UX / visualización
+
+**Qué cambió:** `AdsCell` en `tracker-table.tsx` (columna ADS en "Explorar testeos") ahora deduplica los ads activos por creativo antes de calcular `previews` y `remaining`. Si hay 41 ads pero 18 creativos únicos, muestra 3 thumbnails distintos y `+15`, no `+38`.
+
+**Qué NO cambió:** `ProductAdsSection` (detalle de producto) ya tenía dedup — funciona automáticamente con el content-hash de R2 sin cambios adicionales.
+
+**Archivos modificados:**
+- `components/tracker/tracker-table.tsx` — dedup con Map keyed por `thumbnail_url.split('?')[0]` antes de `slice(0, 3)`.
+
+**Por qué:** El mismo video creativo corriendo como múltiples ads inflaba el count (`+58` cuando en realidad hay 18 creativos únicos). El content-hash en R2 (CHANGE-013) garantiza que mismo video = misma URL = dedup funciona.
+
+---
+
 ### CHANGE-013 — R2: content-hash como filename para dedup de creativos idénticos
 **Fecha:** 2026-06-12
 **Tipo:** storage / scraper

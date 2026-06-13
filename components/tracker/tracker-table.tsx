@@ -107,8 +107,11 @@ export function AdsCell({ candidateId }: { candidateId: string }) {
     )
   }
 
-  const previews          = active.slice(0, 3)
-  const remaining         = active.length - 3
+  const deduped = [...new Map(
+    active.map(a => [(a.thumbnail_url ?? a.video_url_r2 ?? a.ad_snapshot_url ?? '').split('?')[0], a])
+  ).values()]
+  const previews          = deduped.slice(0, 3)
+  const remaining         = deduped.length - 3
   const uniqueAdvertisers = uniqueAdvertisersFromAds(active)
 
   return (
