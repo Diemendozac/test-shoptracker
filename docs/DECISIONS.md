@@ -74,18 +74,16 @@ Rank 3 de 30 productos (top 10%) puntúa menos que rank 3 de 3000 (top 1%) porqu
 ## DECISION-004 — Fórmula v4 vs v5 del performance score
 
 **Fecha:** 2026-06-10
-**Quién decide:** Diego
-**Estado:** ⚠️ PENDIENTE DIEGO
+**Quién decidió:** Daniel
+**Estado:** ✅ Confirmado: v5 intencional — 2026-06-12
 
-El código en producción usa `g×0.50 + rq×0.30 + wm×0.20` (señales independientes, "v5"). El wiki del vault documenta `effectiveGrowth×0.5 + wm×0.3 + rq×0.2` (v4, donde `effectiveGrowth = g×rq/100` — growth dampened por posición).
+El código en producción usa `g×0.50 + rq×0.30 + wm×0.20` (señales independientes). v5 se adopta como fórmula vigente.
 
-No existe FIX-NNN ni commit que explique el cambio. Dos escenarios posibles:
-- **v5 fue deliberada:** hay que documentar el porqué; el problema que motivó v4 (growth en zona muerta vale completo) está de vuelta intencionalmente.
-- **v5 es una regresión:** hay que restaurar v4 o definir v5 formal.
+**Trade-off aceptado:** growth en zona baja recibe el 50% completo, sin dampening por posición. La compensación parcial es que `rankQuality` (30%) y `weightedMomentum` (20%) penalizan la posición baja en el resto del score.
 
-**Consecuencia práctica:** con v5, subir 70% en rank 150→45 de 200 productos vale 35 pts de growth, llevando el score a ~44-47 pts (Steady, casi Rising) por moverse en zona donde nadie compra. Con v4 ese mismo movimiento valía ~10 pts.
+**Por qué no se revierte a v4:** v4 double-penalizaba productos legítimamente subiendo desde base baja. El dampening era correcto en filosofía pero creaba falsos negativos en transiciones reales.
 
-**Acción requerida:** Diego confirma si v5 es intencional antes de cualquier trabajo sobre scoring.
+**Cuándo revisar:** con 100+ predicciones verificables. Si aparecen falsos positivos (Steady/Rising en zona muerta sin ventas reales), evaluar v4.5: `effectiveGrowth = growthPct × max(rankQuality/100, 0.3)` — piso del 30% para no castigar subidas legítimas desde base baja.
 
 ---
 
