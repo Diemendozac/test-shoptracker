@@ -21,6 +21,19 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-010 — Fix: scroll incremental para headless (GitHub Actions cargaba solo 15 ads)
+**Fecha:** 2026-06-12
+**Tipo:** fix / scraper
+
+**Por qué:** En GitHub Actions (`CI=true`, modo headless), `scrollTo(0, scrollHeight)` no disparaba el lazy loading de Facebook. El scraper cargaba solo 15 ads en lugar de 100+. En headed (local) funcionaba porque el browser renderiza el scroll visualmente. La solución: scroll en pasos de 600px con 150ms entre cada uno, dando tiempo al lazy loading de Firefox en headless.
+
+**Qué cambió:**
+- `lib/scrapers/meta-ads.ts` — nueva función `incrementalScroll` reemplaza `window.scrollTo(0, scrollHeight)` en `probeSearchResults` y `scrollToLoadAll`.
+
+**Riesgo:** solo — lógica interna del scraper.
+
+---
+
 ### CHANGE-009 — Sort automático por "Más recientes" para tiendas con más de 200 ads en Meta
 **Fecha:** 2026-06-12
 **Tipo:** mejora / scraper
