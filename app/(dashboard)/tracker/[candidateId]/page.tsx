@@ -578,7 +578,7 @@ function CandidateDetailContent() {
       </div>
 
       {/* Active Ads */}
-      <ProductAdsSection candidateId={candidateId} productImage={candidate.productImage} label={summary?.performanceLabel} />
+      <ProductAdsSection candidateId={candidateId} />
 
       {/* Charts Grid */}
       <div className="grid gap-6 lg:grid-cols-2">

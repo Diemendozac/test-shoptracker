@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
-import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Lock, Volume2, VolumeX, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -263,113 +262,6 @@ function AdSlide({
   )
 }
 
-// ─── AdRow — fila de anuncio estilo Kalodata ───────────────────────────────────
-
-function AdRow({
-  ad,
-  index,
-  count = 1,
-  allowMetaLink,
-  showOrigin,
-  onHover,
-  onLeave,
-}: {
-  ad: Ad
-  index: number
-  count?: number
-  allowMetaLink: boolean
-  showOrigin: boolean
-  onHover: (ad: Ad, rect: DOMRect) => void
-  onLeave: () => void
-}) {
-  const thumbRef = useRef<HTMLDivElement>(null)
-  const hasVideo = !!ad.video_url_r2
-  const label = ad.advertiser_name && ad.advertiser_name.length > 0
-    ? ad.advertiser_name
-    : ad.product_url
-      ? ad.product_url.replace(/^https?:\/\//, '').split('/')[0]
-      : `Anuncio ${index}`
-
-  return (
-    <div className="grid grid-cols-[28px_68px_1fr_56px_88px] items-center gap-3 px-4 py-3">
-
-      {/* # */}
-      <span className="text-xs font-medium text-muted-foreground tabular-nums">{index}</span>
-
-      {/* Thumbnail 9:16 — hover triggers floating panel, click abre Meta si allowMetaLink */}
-      <div
-        ref={thumbRef}
-        role="button"
-        tabIndex={0}
-        className={cn(
-          'relative h-[100px] w-[56px] shrink-0 overflow-hidden rounded-md bg-secondary',
-          allowMetaLink ? 'cursor-pointer' : 'cursor-default',
-        )}
-        onMouseEnter={() => {
-          if (thumbRef.current) onHover(ad, thumbRef.current.getBoundingClientRect())
-        }}
-        onMouseLeave={onLeave}
-        onClick={() => allowMetaLink && window.open(ad.ad_snapshot_url, '_blank', 'noopener,noreferrer')}
-        onKeyDown={e => { if (e.key === 'Enter' && allowMetaLink) window.open(ad.ad_snapshot_url, '_blank', 'noopener,noreferrer') }}
-      >
-        <img
-          src={ad.thumbnail_url || 'https://picsum.photos/seed/placeholder/400/700'}
-          alt=""
-          className="h-full w-full object-cover"
-        />
-        {hasVideo && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-black/50 backdrop-blur-sm">
-              <svg className="h-3 w-3 translate-x-0.5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            </div>
-          </div>
-        )}
-        {count > 1 && (
-          <div className="absolute bottom-1 right-1 rounded-full bg-amber-500 px-1.5 py-0.5 text-[9px] font-bold leading-none text-white">
-            ×{count}
-          </div>
-        )}
-      </div>
-
-      {/* Metadata */}
-      <div className="min-w-0">
-        {showOrigin && (
-          <p className="truncate text-sm font-medium text-foreground">{label}</p>
-        )}
-        <p className="mt-0.5 text-[11px] text-muted-foreground">
-          Desde {formatDate(ad.first_seen)}
-        </p>
-      </div>
-
-      {/* Días */}
-      <span className={cn(
-        'text-sm font-bold tabular-nums',
-        ad.days_running >= 30 ? 'text-emerald-600' : 'text-foreground/80',
-      )}>
-        {ad.days_running}d
-      </span>
-
-      {/* Ver en Meta — solo visible si allowMetaLink */}
-      {allowMetaLink ? (
-        <a
-          href={ad.ad_snapshot_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground whitespace-nowrap"
-        >
-          Meta →
-        </a>
-      ) : (
-        <div className="flex items-center justify-center gap-1 rounded-lg border border-border/40 px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground/30 whitespace-nowrap cursor-not-allowed">
-          Meta →
-        </div>
-      )}
-    </div>
-  )
-}
-
 // ─── Loading skeleton ─────────────────────────────────────────────────────────
 
 function AdsSkeleton() {
@@ -397,14 +289,12 @@ type SortOption = 'impressions' | 'recent' | 'oldest'
 
 interface ProductAdsSectionProps {
   candidateId: string
-  productImage?: string | null
-  label?: string
 }
 
 type DevPlan = 'free' | 'starter' | 'pro'
 const DEV_CYCLE: DevPlan[] = ['free', 'starter', 'pro']
 
-export function ProductAdsSection({ candidateId, productImage, label }: ProductAdsSectionProps) {
+export function ProductAdsSection({ candidateId }: ProductAdsSectionProps) {
   const { data, isLoading, isError } = useGetProductAdsQuery(candidateId)
   const [devPlan, setDevPlan] = useState<DevPlan | null>(null)
 
@@ -425,8 +315,6 @@ export function ProductAdsSection({ candidateId, productImage, label }: ProductA
   const [slideIdx, setSlideIdx] = useState(0)
   const scrollRef = useRef<HTMLDivElement>(null)
   const { hoveredAd, hoverPos, handleHover, handleLeave, handlePanelEnter, handlePanelLeave } = useHoverPanel()
-  const searchParams = useSearchParams()
-
   if (isLoading) {
     return (
       <div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
@@ -463,8 +351,6 @@ export function ProductAdsSection({ candidateId, productImage, label }: ProductA
     }
   }
   const deduped = [...dedupedMap.values()]
-
-  const isFromPool = searchParams.get('from') === 'pool'
 
   const scrollToSlide = (idx: number) => {
     const clamped = Math.max(0, Math.min(idx, deduped.length - 1))
@@ -522,7 +408,7 @@ export function ProductAdsSection({ candidateId, productImage, label }: ProductA
       </div>
 
       {/* Carousel */}
-      <div className={cn('relative', !canViewAds && 'pointer-events-none select-none blur-sm')}>
+      <div className={cn('relative w-full overflow-hidden', !canViewAds && 'pointer-events-none select-none blur-sm')}>
         <div
           ref={scrollRef}
           onScroll={handleScroll}
