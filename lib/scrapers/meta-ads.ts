@@ -168,19 +168,6 @@ function extractAdId(adSnapshotUrl: string): string {
   return Buffer.from(adSnapshotUrl).toString('base64url').slice(0, 20)
 }
 
-// Scrolls in small steps so Facebook's lazy loading fires in headless mode.
-// A single scrollTo(0, scrollHeight) works in headed but stalls headless.
-async function incrementalScroll(page: Page): Promise<void> {
-  const step = 600
-  let pos = await page.evaluate(() => window.scrollY)
-  const total = await page.evaluate(() => document.body.scrollHeight)
-  while (pos < total) {
-    pos = Math.min(pos + step, total)
-    await page.evaluate((y: number) => window.scrollTo(0, y), pos)
-    await page.waitForTimeout(150)
-  }
-}
-
 // ── Probe — scroll to ~50 ads, check if any link to the domain ───────────────
 
 async function probeSearchResults(page: Page, domain: string): Promise<{
@@ -195,8 +182,8 @@ async function probeSearchResults(page: Page, domain: string): Promise<{
     const count = (await page.$$('[class*="_7jyh"]')).length
     if (count >= 50 || count === lastCount) break
     lastCount = count
-    await incrementalScroll(page)
-    await page.waitForTimeout(800 + Math.random() * 400)
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
+    await page.waitForTimeout(1200 + Math.random() * 600)
   }
 
   return page.evaluate((domainRaw: string) => {
@@ -280,8 +267,8 @@ async function scrollToLoadAll(page: Page, totalExpected: number, maxAds = 200):
     }
     lastCount = cards.length
     if (attempts % 5 === 0) process.stdout.write(`  Cargando: ${lastCount}...`)
-    await incrementalScroll(page)
-    await page.waitForTimeout(1000 + Math.random() * 500)
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
+    await page.waitForTimeout(1200 + Math.random() * 800)
     attempts++
   }
   const finalCount = (await page.$$('[class*="_7jyh"]')).length
