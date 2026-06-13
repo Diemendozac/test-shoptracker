@@ -6,6 +6,21 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-036 — Sección de anuncios: de tabla plana a carrusel de slides 9:16
+**Fecha:** 2026-06-13
+**Tipo:** UI / feature
+
+**Qué cambió:** `ProductAdsSection` reemplaza la vista de tabla (columnas #/Creativo/Anunciante/Días/Meta) por un carrusel horizontal de cards 9:16. Cada slide muestra: thumbnail grande, badge de días activo (verde si ≥30d), badge ×N para creativos repetidos, overlay inferior con plataforma (Facebook) y nombre del anunciante, fecha "Desde X" y "● Activo" debajo de la imagen, y botón "Ver en Meta →". Navegación con flechas ←/→ y contador "1 / N". El carrusel es también scrolleable por drag/swipe.
+
+**Por qué:** La tabla plana mostraba información útil pero era visualmente pobre — las thumbnails (56px de ancho) no transmitían el formato real del anuncio. El carrusel 9:16 refleja cómo los usuarios ven el anuncio en Meta y facilita evaluar creativos de un vistazo.
+
+**Qué NO cambió:** lógica de dedup por creativo (×N), permisos por plan (blur/lock para free), floating video panel en hover, `AdStripPreview`, `StoreVideosGrid`, helpers de formato.
+
+**Afecta Redux:** No — solo estado local (`slideIdx`, `scrollRef`).
+
+**Archivos modificados:**
+- `components/tracker/product-ads.tsx` — nuevo componente `AdSlide`, constante `SLIDE_W`, carrusel en `ProductAdsSection`
+
 ### CHANGE-035 — StoreVideosGrid usa candidatos del pool (Explorar testeos) en vez de candidatos store-specific
 
 **Fecha:** 2026-06-13

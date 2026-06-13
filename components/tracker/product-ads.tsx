@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Lock, Volume2, VolumeX } from 'lucide-react'
+import { Lock, Volume2, VolumeX, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import type { Ad, TrackerCandidate } from '@/app/(dashboard)/types'
@@ -134,6 +134,133 @@ export function useHoverPanel() {
   const handlePanelLeave = useCallback(() => setHoveredAd(null), [])
 
   return { hoveredAd, hoverPos, handleHover, handleLeave, handlePanelEnter, handlePanelLeave }
+}
+
+// ─── Carousel constant ────────────────────────────────────────────────────────
+const SLIDE_W = 172 // 160px card + 12px gap
+
+// ─── AdSlide — card 9:16 para carrusel de anuncios ────────────────────────────
+
+function AdSlide({
+  ad,
+  index,
+  count = 1,
+  allowMetaLink,
+  onHover,
+  onLeave,
+}: {
+  ad: Ad
+  index: number
+  count?: number
+  allowMetaLink: boolean
+  onHover: (ad: Ad, rect: DOMRect) => void
+  onLeave: () => void
+}) {
+  const thumbRef = useRef<HTMLDivElement>(null)
+  const hasVideo = !!ad.video_url_r2
+  const label = ad.advertiser_name?.length
+    ? ad.advertiser_name
+    : ad.product_url
+      ? ad.product_url.replace(/^https?:\/\//, '').split('/')[0]
+      : `Anuncio ${index}`
+
+  return (
+    <div className="flex w-[160px] flex-col">
+
+      {/* Creative 9:16 */}
+      <div
+        ref={thumbRef}
+        role="button"
+        tabIndex={0}
+        className={cn(
+          'relative h-[284px] w-[160px] overflow-hidden rounded-xl bg-secondary',
+          allowMetaLink ? 'cursor-pointer' : 'cursor-default',
+        )}
+        onMouseEnter={() => {
+          if (thumbRef.current) onHover(ad, thumbRef.current.getBoundingClientRect())
+        }}
+        onMouseLeave={onLeave}
+        onClick={() => allowMetaLink && window.open(ad.ad_snapshot_url, '_blank', 'noopener,noreferrer')}
+        onKeyDown={e => {
+          if (e.key === 'Enter' && allowMetaLink)
+            window.open(ad.ad_snapshot_url, '_blank', 'noopener,noreferrer')
+        }}
+      >
+        <img
+          src={ad.thumbnail_url || 'https://picsum.photos/seed/placeholder/400/700'}
+          alt=""
+          className="h-full w-full object-cover"
+        />
+
+        {/* Play icon for videos */}
+        {hasVideo && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black/50 backdrop-blur-sm">
+              <svg className="h-4 w-4 translate-x-0.5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </div>
+          </div>
+        )}
+
+        {/* Top row: ×N count (left) + days running (right) */}
+        <div className="absolute left-2 right-2 top-2 flex items-start justify-between">
+          {count > 1 ? (
+            <span className="rounded-full bg-amber-500 px-1.5 py-0.5 text-[9px] font-bold leading-none text-white">
+              ×{count}
+            </span>
+          ) : <span />}
+          <span className={cn(
+            'rounded-md px-1.5 py-0.5 text-[10px] font-bold leading-none text-white backdrop-blur-sm',
+            ad.days_running >= 30 ? 'bg-emerald-500/80' : 'bg-black/60',
+          )}>
+            {ad.days_running}d
+          </span>
+        </div>
+
+        {/* Bottom gradient overlay: platform + advertiser */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-2.5 pb-2.5 pt-10">
+          <div className="flex items-center gap-1.5">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="#fff" className="shrink-0 opacity-80">
+              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            </svg>
+            <span className="text-[9px] font-semibold uppercase tracking-wide text-white/70">
+              Facebook
+            </span>
+          </div>
+          <p className="mt-0.5 truncate text-[12px] font-semibold text-white">{label}</p>
+        </div>
+      </div>
+
+      {/* Below-image metadata */}
+      <div className="mt-2 space-y-1.5 px-0.5">
+        <div className="flex items-center justify-between gap-1">
+          <p className="text-[11px] text-muted-foreground">
+            Desde {formatDate(ad.first_seen)}
+          </p>
+          <span className="flex shrink-0 items-center gap-1 text-[10px] font-medium text-emerald-600">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            Activo
+          </span>
+        </div>
+        {allowMetaLink ? (
+          <a
+            href={ad.ad_snapshot_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex w-full items-center justify-center rounded-lg border border-border px-2 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+            onClick={e => e.stopPropagation()}
+          >
+            Ver en Meta →
+          </a>
+        ) : (
+          <div className="flex w-full items-center justify-center rounded-lg border border-border/40 px-2 py-1.5 text-[11px] font-medium text-muted-foreground/30 cursor-not-allowed">
+            Ver en Meta →
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }
 
 // ─── AdRow — fila de anuncio estilo Kalodata ───────────────────────────────────
@@ -295,6 +422,8 @@ export function ProductAdsSection({ candidateId, productImage, label }: ProductA
   const { canViewAds, allowMetaLink } = effectivePlan
 
   const [sortBy, setSortBy] = useState<SortOption>('impressions')
+  const [slideIdx, setSlideIdx] = useState(0)
+  const scrollRef = useRef<HTMLDivElement>(null)
   const { hoveredAd, hoverPos, handleHover, handleLeave, handlePanelEnter, handlePanelLeave } = useHoverPanel()
   const searchParams = useSearchParams()
 
@@ -336,7 +465,16 @@ export function ProductAdsSection({ candidateId, productImage, label }: ProductA
   const deduped = [...dedupedMap.values()]
 
   const isFromPool = searchParams.get('from') === 'pool'
-  const showOrigin = uniqueAdvertisers.length > 1 || isFromPool
+
+  const scrollToSlide = (idx: number) => {
+    const clamped = Math.max(0, Math.min(idx, deduped.length - 1))
+    setSlideIdx(clamped)
+    scrollRef.current?.scrollTo({ left: clamped * SLIDE_W, behavior: 'smooth' })
+  }
+  const handleScroll = () => {
+    if (scrollRef.current)
+      setSlideIdx(Math.round(scrollRef.current.scrollLeft / SLIDE_W))
+  }
 
   return (
     <div id="ads" className="relative mt-6 overflow-hidden rounded-xl border border-border bg-card">
@@ -383,29 +521,48 @@ export function ProductAdsSection({ candidateId, productImage, label }: ProductA
         </div>
       </div>
 
-      {/* Column headers */}
-      <div className="grid grid-cols-[28px_68px_1fr_56px_88px] items-center gap-3 border-b border-border bg-secondary/20 px-4 py-2">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">#</span>
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Creativo</span>
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Anunciante</span>
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Días</span>
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Ver en Meta</span>
-      </div>
+      {/* Carousel */}
+      <div className={cn('relative', !canViewAds && 'pointer-events-none select-none blur-sm')}>
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="flex gap-3 overflow-x-auto px-4 py-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          style={{ scrollSnapType: 'x mandatory', scrollPaddingLeft: '16px' }}
+        >
+          {deduped.map(({ ad, count }, idx) => (
+            <div key={ad.id} style={{ scrollSnapAlign: 'start' }} className="shrink-0">
+              <AdSlide
+                ad={ad}
+                index={idx + 1}
+                count={count}
+                allowMetaLink={allowMetaLink}
+                onHover={handleHover}
+                onLeave={handleLeave}
+              />
+            </div>
+          ))}
+        </div>
 
-      {/* Ad rows */}
-      <div className={cn('relative divide-y divide-border', !canViewAds && 'pointer-events-none select-none blur-sm')}>
-        {deduped.map(({ ad, count }, idx) => (
-          <AdRow
-            key={ad.id}
-            ad={ad}
-            index={idx + 1}
-            count={count}
-            allowMetaLink={allowMetaLink}
-            showOrigin={showOrigin}
-            onHover={handleHover}
-            onLeave={handleLeave}
-          />
-        ))}
+        {/* Navigation: prev / counter / next */}
+        <div className="flex items-center justify-center gap-4 pb-4">
+          <button
+            onClick={() => scrollToSlide(slideIdx - 1)}
+            disabled={slideIdx === 0}
+            className="flex h-7 w-7 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </button>
+          <span className="text-[11px] tabular-nums text-muted-foreground">
+            {slideIdx + 1} / {deduped.length}
+          </span>
+          <button
+            onClick={() => scrollToSlide(slideIdx + 1)}
+            disabled={slideIdx >= deduped.length - 1}
+            className="flex h-7 w-7 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
+          >
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
 
       {!canViewAds && (
