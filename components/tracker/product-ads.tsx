@@ -634,13 +634,14 @@ function formatDate(isoDate: string): string {
 interface StoreVideoCardProps {
   ad: Ad
   candidate: TrackerCandidate
+  count: number
   allowMetaLink: boolean
   canViewAds: boolean
   onHover: (ad: Ad, rect: DOMRect) => void
   onLeave: () => void
 }
 
-function StoreVideoCard({ ad, candidate, allowMetaLink, canViewAds, onHover, onLeave }: StoreVideoCardProps) {
+function StoreVideoCard({ ad, candidate, count, allowMetaLink, canViewAds, onHover, onLeave }: StoreVideoCardProps) {
   const cardRef = useRef<HTMLDivElement>(null)
   const hasVideo = !!ad.video_url_r2
 
@@ -688,74 +689,94 @@ function StoreVideoCard({ ad, candidate, allowMetaLink, canViewAds, onHover, onL
         </div>
       )}
 
-      {/* Product image overlay — bottom-left corner */}
-      {candidate.productImage && (
-        <div className="absolute bottom-2 left-2 h-8 w-8 rounded-md overflow-hidden border border-white/30 bg-black/40 shadow-md">
-          <img
-            src={candidate.productImage}
-            alt=""
-            className="h-full w-full object-cover"
-          />
-        </div>
-      )}
+      {/* Top row: ×N count (left) + days running (right) */}
+      <div className="absolute top-2 left-2 right-2 flex items-start justify-between">
+        {count > 1 ? (
+          <div className="rounded-full bg-amber-500 px-1.5 py-0.5 text-[9px] font-bold leading-none text-white">
+            ×{count}
+          </div>
+        ) : <div />}
+        {ad.days_running > 0 && (
+          <div className="rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
+            {ad.days_running}d
+          </div>
+        )}
+      </div>
 
-      {/* Days running badge */}
-      {ad.days_running > 0 && (
-        <div className="absolute top-2 right-2 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
-          {ad.days_running}d
-        </div>
-      )}
+      {/* Bottom row: product image (left) + label (right) */}
+      <div className="absolute bottom-2 left-2 right-2 flex items-end justify-between gap-1">
+        {candidate.productImage ? (
+          <div className="h-8 w-8 shrink-0 rounded-md overflow-hidden border border-white/30 bg-black/40 shadow-md">
+            <img src={candidate.productImage} alt="" className="h-full w-full object-cover" />
+          </div>
+        ) : <div />}
+        {candidate.performanceLabel && (
+          <div className="rounded-md bg-black/60 px-1.5 py-0.5 text-[9px] font-semibold text-white backdrop-blur-sm max-w-[56px] truncate">
+            {candidate.performanceLabel}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
 
 interface StoreVideosForCandidateProps {
   candidate: TrackerCandidate
-  allowMetaLink: boolean
-  canViewAds: boolean
-  onHover: (ad: Ad, rect: DOMRect) => void
-  onLeave: () => void
-  onHasAd: () => void
+  onAds: (candidateId: string, ads: Ad[], candidate: TrackerCandidate) => void
 }
 
-function StoreVideosForCandidate({ candidate, allowMetaLink, canViewAds, onHover, onLeave, onHasAd }: StoreVideosForCandidateProps) {
+function StoreVideosForCandidate({ candidate, onAds }: StoreVideosForCandidateProps) {
   const { data } = useGetProductAdsQuery(candidate.candidateId)
-  const activeAds = useMemo(
-    () => data?.ads.filter((a: Ad) => a.status === 'active' && !isTestAd(a)) ?? [],
-    [data],
-  )
 
   useEffect(() => {
-    if (activeAds.length > 0) onHasAd()
-  }, [activeAds.length]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (!data?.ads) return
+    const activeAds = data.ads.filter((a: Ad) => a.status === 'active' && !isTestAd(a))
+    if (activeAds.length > 0) onAds(candidate.candidateId, activeAds, candidate)
+  }, [data]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  return (
-    <>
-      {activeAds.map(ad => (
-        <StoreVideoCard
-          key={ad.ad_snapshot_url}
-          ad={ad}
-          candidate={candidate}
-          allowMetaLink={allowMetaLink}
-          canViewAds={canViewAds}
-          onHover={onHover}
-          onLeave={onLeave}
-        />
-      ))}
-    </>
-  )
+  return null
 }
 
 export function StoreVideosGrid({ candidates }: { candidates: TrackerCandidate[] }) {
   const { allowMetaLink, canViewAds } = usePlanTier()
   const { hoveredAd, hoverPos, handleHover, handleLeave, handlePanelEnter, handlePanelLeave } = useHoverPanel()
-  const [hasAnyAd, setHasAnyAd] = useState(false)
-  const handleHasAd = useCallback(() => setHasAnyAd(true), [])
+  const [candidateAds, setCandidateAds] = useState<Map<string, { ads: Ad[]; candidate: TrackerCandidate }>>(new Map())
+
+  const handleCandidateAds = useCallback((candidateId: string, ads: Ad[], candidate: TrackerCandidate) => {
+    setCandidateAds(prev => {
+      const next = new Map(prev)
+      next.set(candidateId, { ads, candidate })
+      return next
+    })
+  }, [])
+
+  const dedupedAndSorted = useMemo(() => {
+    const creativeMap = new Map<string, { ad: Ad; candidate: TrackerCandidate; count: number }>()
+    for (const { ads, candidate } of candidateAds.values()) {
+      for (const ad of ads) {
+        const key = (ad.thumbnail_url ?? ad.video_url_r2 ?? ad.ad_snapshot_url ?? '').split('?')[0]
+        const existing = creativeMap.get(key)
+        if (existing) {
+          existing.count++
+        } else {
+          creativeMap.set(key, { ad, candidate, count: 1 })
+        }
+      }
+    }
+    return [...creativeMap.values()].sort((a, b) => b.count - a.count)
+  }, [candidateAds])
 
   if (candidates.length === 0) return null
 
+  const hasAnyAd = dedupedAndSorted.length > 0
+
   return (
     <div className={cn('space-y-3', !hasAnyAd && 'hidden')}>
+      {/* Invisible fetchers — one per candidate, renders null */}
+      {candidates.map(c => (
+        <StoreVideosForCandidate key={c.candidateId} candidate={c} onAds={handleCandidateAds} />
+      ))}
+
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-foreground">Videos de la tienda</h2>
         {!allowMetaLink && (
@@ -767,13 +788,14 @@ export function StoreVideosGrid({ candidates }: { candidates: TrackerCandidate[]
       </div>
 
       <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
-        {candidates.map(c => (
-          <StoreVideosForCandidate
-            key={c.candidateId}
-            candidate={c}
+        {dedupedAndSorted.map(({ ad, candidate, count }) => (
+          <StoreVideoCard
+            key={ad.ad_snapshot_url}
+            ad={ad}
+            candidate={candidate}
+            count={count}
             allowMetaLink={allowMetaLink}
             canViewAds={canViewAds}
-            onHasAd={handleHasAd}
             onHover={handleHover}
             onLeave={handleLeave}
           />

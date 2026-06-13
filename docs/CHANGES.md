@@ -6,6 +6,21 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-012 — Videos de la tienda: dedup por creativo, sort por count, label badge
+**Fecha:** 2026-06-12
+**Tipo:** UX / visualización
+
+**Qué cambió:** El grid "Videos de la tienda" ahora: (1) deduplica creativos — el mismo video aparece como un solo card con badge `×N`; (2) ordena de más anuncios a menos (los creativos ganadores primero); (3) muestra el `performanceLabel` del candidato (Rising, Hot, etc.) en el card. Internamente, `StoreVideosForCandidate` se convirtió en un fetcher invisible que reporta sus ads al padre, y `StoreVideosGrid` acumula, deduplica y renderiza centralmente.
+
+**Qué NO cambió:** Número de API calls (uno por candidato), lógica de hover panel, paywall.
+
+**Archivos modificados:**
+- `components/tracker/product-ads.tsx` — `StoreVideoCard` añade `count` + label badge. `StoreVideosForCandidate` pasa a render null y llama `onAds`. `StoreVideosGrid` acumula en Map, deduplica con creativeMap, ordena por count desc.
+
+**Por qué:** El mismo video de un candidato con 19 ads aparecía 19 veces en el scroll. La dedup lo colapsa a 1 card con `×19`, y el sort pone los creativos más usados primero — señal de cuáles son los ganadores.
+
+---
+
 ### CHANGE-011 — Videos de la tienda: mostrar todos los ads activos por candidato
 **Fecha:** 2026-06-12
 **Tipo:** UX / visualización
