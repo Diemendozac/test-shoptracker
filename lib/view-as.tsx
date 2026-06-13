@@ -63,7 +63,7 @@ export function usePlanTier() {
   const { effectivePlan } = useViewAs()
   const isPro     = effectivePlan === 'pro' || effectivePlan === 'agency' || effectivePlan === 'admin'
   const isStarter = effectivePlan === 'starter'
-  const canViewAds   = isPro || isStarter   // thumbnails + hover
+  const canViewAds   = true                 // all plans: thumbnails + hover; only Pro gets Meta link
   const allowMetaLink = isPro               // badge clickable + Meta link
   return { isPro, isStarter, canViewAds, allowMetaLink }
 }

@@ -6,6 +6,21 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-010 — Plan FREE puede ver anuncios igual que Starter
+**Fecha:** 2026-06-12
+**Tipo:** acceso / plan
+
+**Qué cambió:** `canViewAds` en `usePlanTier()` ahora devuelve `true` para todos los planes, incluyendo FREE. Antes FREE veía un overlay con candado sobre la sección de anuncios. Ahora ve thumbnails + panel flotante con video al hover, igual que Starter.
+
+**Qué NO cambió:** `allowMetaLink` sigue siendo exclusivo de Pro. Los thumbnails en el strip de la tracker-table siguen blur para non-Pro. Backend sin cambios.
+
+**Archivos modificados:**
+- `lib/view-as.tsx` — línea 66: `canViewAds = isPro || isStarter` → `canViewAds = true`
+
+**Por qué:** Usuario `hsebash4@gmail.com` (FREE) reportó que no veía los videos de anuncios. Se decidió dar acceso de visualización a todos los planes como primer valor entregado.
+
+---
+
 ### CHANGE-009 — Sort automático por "Más recientes" para tiendas con más de 200 ads en Meta
 **Fecha:** 2026-06-12
 **Tipo:** mejora / scraper
