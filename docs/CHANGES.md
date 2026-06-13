@@ -6,6 +6,22 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-015 — Detalle de producto: sección de anuncios como grid horizontal
+**Fecha:** 2026-06-12
+**Tipo:** UX / visualización
+
+**Qué cambió:** `ProductAdsSection` (página de detalle del candidato) ahora muestra los anuncios como grid horizontal scrollable de cards, igual que "Videos de la tienda" en el store page. Misma lógica: dedup por creativo, ×N badge, days running badge, product image y label del candidato.
+
+**Qué NO cambió:** Header (count, advertiser badge, sort dropdown, lastUpdated), overlay de `canViewAds`, dedup logic, sort options.
+
+**Archivos modificados:**
+- `components/tracker/product-ads.tsx` — `StoreVideoCard` ahora acepta `productImage?` y `label?` sueltos en lugar de `candidate: TrackerCandidate`. `ProductAdsSectionProps` reemplaza `candidate?: TrackerCandidate` con esas dos props. Body reemplaza tabla AdRow por grid de `StoreVideoCard`. Eliminado `showOrigin` (ya no se usa).
+- `app/(dashboard)/tracker/[candidateId]/page.tsx` — pasa `productImage` y `label` a `ProductAdsSection`.
+
+**Por qué:** El usuario quería consistencia visual entre la vista de tienda y la vista de producto.
+
+---
+
 ### CHANGE-014 — AdsCell: dedup por creativo antes de mostrar strip y count
 **Fecha:** 2026-06-12
 **Tipo:** UX / visualización

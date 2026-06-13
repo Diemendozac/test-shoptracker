@@ -702,7 +702,7 @@ function CandidateDetailContent() {
       </div>
 
       {/* Active Ads */}
-      <ProductAdsSection candidateId={candidateId} />
+      <ProductAdsSection candidateId={candidateId} productImage={candidate.productImage} label={summary?.performanceLabel} />
 
     </PageLayout>
   )

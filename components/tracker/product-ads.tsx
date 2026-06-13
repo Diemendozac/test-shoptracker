@@ -270,12 +270,14 @@ type SortOption = 'impressions' | 'recent' | 'oldest'
 
 interface ProductAdsSectionProps {
   candidateId: string
+  productImage?: string | null
+  label?: string
 }
 
 type DevPlan = 'free' | 'starter' | 'pro'
 const DEV_CYCLE: DevPlan[] = ['free', 'starter', 'pro']
 
-export function ProductAdsSection({ candidateId }: ProductAdsSectionProps) {
+export function ProductAdsSection({ candidateId, productImage, label }: ProductAdsSectionProps) {
   const { data, isLoading, isError } = useGetProductAdsQuery(candidateId)
   const [devPlan, setDevPlan] = useState<DevPlan | null>(null)
 
@@ -291,10 +293,6 @@ export function ProductAdsSection({ candidateId }: ProductAdsSectionProps) {
       : plan
 
   const { canViewAds, allowMetaLink } = effectivePlan
-
-  const searchParams = useSearchParams()
-  const isFromPool = searchParams.get('from') === 'pool'
-  const showOrigin = !isFromPool
 
   const [sortBy, setSortBy] = useState<SortOption>('impressions')
   const { hoveredAd, hoverPos, handleHover, handleLeave, handlePanelEnter, handlePanelLeave } = useHoverPanel()
@@ -381,30 +379,24 @@ export function ProductAdsSection({ candidateId }: ProductAdsSectionProps) {
         </div>
       </div>
 
-      {/* Column headers */}
-      <div className="grid grid-cols-[28px_68px_1fr_56px_88px] items-center gap-3 border-b border-border bg-secondary/20 px-4 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-        <span>#</span>
-        <span>Ad</span>
-        <span>{showOrigin ? 'Origen' : ''}</span>
-        <span>Días</span>
-        <span />
-      </div>
-
-      {/* Rows */}
-      <div className="relative">
-        <div className={cn('divide-y divide-border/50', !canViewAds && 'pointer-events-none select-none blur-sm')}>
-          {deduped.map(({ ad, count }, i) => (
-            <AdRow
-              key={ad.id}
-              ad={ad}
-              index={i + 1}
-              count={count}
-              allowMetaLink={allowMetaLink}
-              showOrigin={showOrigin}
-              onHover={handleHover}
-              onLeave={handleLeave}
-            />
-          ))}
+      {/* Video grid */}
+      <div className="relative px-6 pb-6 pt-4">
+        <div className={cn(!canViewAds && 'pointer-events-none select-none blur-sm')}>
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
+            {deduped.map(({ ad, count }) => (
+              <StoreVideoCard
+                key={ad.id}
+                ad={ad}
+                productImage={productImage}
+                label={label}
+                count={count}
+                allowMetaLink={allowMetaLink}
+                canViewAds={canViewAds}
+                onHover={handleHover}
+                onLeave={handleLeave}
+              />
+            ))}
+          </div>
         </div>
 
         {!canViewAds && (
@@ -633,7 +625,8 @@ function formatDate(isoDate: string): string {
 
 interface StoreVideoCardProps {
   ad: Ad
-  candidate: TrackerCandidate
+  productImage?: string | null
+  label?: string
   count: number
   allowMetaLink: boolean
   canViewAds: boolean
@@ -641,7 +634,7 @@ interface StoreVideoCardProps {
   onLeave: () => void
 }
 
-function StoreVideoCard({ ad, candidate, count, allowMetaLink, canViewAds, onHover, onLeave }: StoreVideoCardProps) {
+function StoreVideoCard({ ad, productImage, label, count, allowMetaLink, canViewAds, onHover, onLeave }: StoreVideoCardProps) {
   const cardRef = useRef<HTMLDivElement>(null)
   const hasVideo = !!ad.video_url_r2
 
@@ -705,14 +698,14 @@ function StoreVideoCard({ ad, candidate, count, allowMetaLink, canViewAds, onHov
 
       {/* Bottom row: product image (left) + label (right) */}
       <div className="absolute bottom-2 left-2 right-2 flex items-end justify-between gap-1">
-        {candidate.productImage ? (
+        {productImage ? (
           <div className="h-8 w-8 shrink-0 rounded-md overflow-hidden border border-white/30 bg-black/40 shadow-md">
-            <img src={candidate.productImage} alt="" className="h-full w-full object-cover" />
+            <img src={productImage} alt="" className="h-full w-full object-cover" />
           </div>
         ) : <div />}
-        {candidate.performanceLabel && (
+        {label && (
           <div className="rounded-md bg-black/60 px-1.5 py-0.5 text-[9px] font-semibold text-white backdrop-blur-sm max-w-[56px] truncate">
-            {candidate.performanceLabel}
+            {label}
           </div>
         )}
       </div>
@@ -792,7 +785,8 @@ export function StoreVideosGrid({ candidates }: { candidates: TrackerCandidate[]
           <StoreVideoCard
             key={ad.ad_snapshot_url}
             ad={ad}
-            candidate={candidate}
+            productImage={candidate.productImage}
+            label={candidate.performanceLabel}
             count={count}
             allowMetaLink={allowMetaLink}
             canViewAds={canViewAds}
