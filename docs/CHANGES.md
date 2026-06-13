@@ -6,6 +6,21 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-011 — Videos de la tienda: mostrar todos los ads activos por candidato
+**Fecha:** 2026-06-12
+**Tipo:** UX / visualización
+
+**Qué cambió:** La sección "Videos de la tienda" ahora muestra un card por cada ad activo de cada candidato, en lugar de uno solo por candidato. Un candidato con 19 ads activos contribuye 19 thumbnails al grid horizontal.
+
+**Qué NO cambió:** La fuente de datos (mismo query por candidato), el diseño visual de cada card, la lógica de hover panel, el paywall de clic a Meta.
+
+**Archivos modificados:**
+- `components/tracker/product-ads.tsx` — `StoreVideoCard` ya no fetcha datos (recibe `ad: Ad` directamente). Nuevo componente `StoreVideosForCandidate` fetcha todos los ads del candidato y renderiza un card por cada uno. `StoreVideosGrid` usa `StoreVideosForCandidate`.
+
+**Por qué:** El grid mostraba 8 thumbnails para una tienda con 17 candidatos y cientos de ads. El candidato #1 solo tenía 19 ads pero solo se veía 1. El usuario esperaba ver todos los videos que la tienda está corriendo en Meta.
+
+---
+
 ### CHANGE-010 — Plan FREE puede ver anuncios igual que Starter
 **Fecha:** 2026-06-12
 **Tipo:** acceso / plan

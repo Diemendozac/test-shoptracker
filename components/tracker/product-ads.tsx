@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Lock, Volume2, VolumeX } from 'lucide-react'
@@ -632,30 +632,20 @@ function formatDate(isoDate: string): string {
 // overlay in the bottom-left corner.
 
 interface StoreVideoCardProps {
+  ad: Ad
   candidate: TrackerCandidate
   allowMetaLink: boolean
   canViewAds: boolean
   onHover: (ad: Ad, rect: DOMRect) => void
   onLeave: () => void
-  onHasAd: () => void
 }
 
-function StoreVideoCard({ candidate, allowMetaLink, canViewAds, onHover, onLeave, onHasAd }: StoreVideoCardProps) {
-  const { data } = useGetProductAdsQuery(candidate.candidateId)
+function StoreVideoCard({ ad, candidate, allowMetaLink, canViewAds, onHover, onLeave }: StoreVideoCardProps) {
   const cardRef = useRef<HTMLDivElement>(null)
-
-  const firstAd = data?.ads.find(a => a.status === 'active' && !isTestAd(a))
-
-  useEffect(() => {
-    if (firstAd) onHasAd()
-  }, [firstAd]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  if (!firstAd) return null
-
-  const hasVideo = !!firstAd.video_url_r2
+  const hasVideo = !!ad.video_url_r2
 
   function handleClick() {
-    if (allowMetaLink) window.open(firstAd!.ad_snapshot_url, '_blank', 'noopener,noreferrer')
+    if (allowMetaLink) window.open(ad.ad_snapshot_url, '_blank', 'noopener,noreferrer')
   }
 
   return (
@@ -667,7 +657,7 @@ function StoreVideoCard({ candidate, allowMetaLink, canViewAds, onHover, onLeave
       onKeyDown={e => { if (e.key === 'Enter') handleClick() }}
       onMouseEnter={() => {
         if (canViewAds && cardRef.current)
-          onHover(firstAd, cardRef.current.getBoundingClientRect())
+          onHover(ad, cardRef.current.getBoundingClientRect())
       }}
       onMouseLeave={onLeave}
       className={cn(
@@ -677,7 +667,7 @@ function StoreVideoCard({ candidate, allowMetaLink, canViewAds, onHover, onLeave
     >
       {/* Video thumbnail */}
       <img
-        src={firstAd.thumbnail_url || 'https://picsum.photos/seed/placeholder/400/700'}
+        src={ad.thumbnail_url || 'https://picsum.photos/seed/placeholder/400/700'}
         alt=""
         className="absolute inset-0 h-full w-full object-cover"
       />
@@ -710,12 +700,49 @@ function StoreVideoCard({ candidate, allowMetaLink, canViewAds, onHover, onLeave
       )}
 
       {/* Days running badge */}
-      {firstAd.days_running > 0 && (
+      {ad.days_running > 0 && (
         <div className="absolute top-2 right-2 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
-          {firstAd.days_running}d
+          {ad.days_running}d
         </div>
       )}
     </div>
+  )
+}
+
+interface StoreVideosForCandidateProps {
+  candidate: TrackerCandidate
+  allowMetaLink: boolean
+  canViewAds: boolean
+  onHover: (ad: Ad, rect: DOMRect) => void
+  onLeave: () => void
+  onHasAd: () => void
+}
+
+function StoreVideosForCandidate({ candidate, allowMetaLink, canViewAds, onHover, onLeave, onHasAd }: StoreVideosForCandidateProps) {
+  const { data } = useGetProductAdsQuery(candidate.candidateId)
+  const activeAds = useMemo(
+    () => data?.ads.filter((a: Ad) => a.status === 'active' && !isTestAd(a)) ?? [],
+    [data],
+  )
+
+  useEffect(() => {
+    if (activeAds.length > 0) onHasAd()
+  }, [activeAds.length]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <>
+      {activeAds.map(ad => (
+        <StoreVideoCard
+          key={ad.ad_snapshot_url}
+          ad={ad}
+          candidate={candidate}
+          allowMetaLink={allowMetaLink}
+          canViewAds={canViewAds}
+          onHover={onHover}
+          onLeave={onLeave}
+        />
+      ))}
+    </>
   )
 }
 
@@ -741,7 +768,7 @@ export function StoreVideosGrid({ candidates }: { candidates: TrackerCandidate[]
 
       <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
         {candidates.map(c => (
-          <StoreVideoCard
+          <StoreVideosForCandidate
             key={c.candidateId}
             candidate={c}
             allowMetaLink={allowMetaLink}
