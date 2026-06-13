@@ -43,7 +43,7 @@ export interface ScrapeResult {
 
 // ── URL builders ──────────────────────────────────────────────────────────────
 
-function buildSearchUrl(keyword: string): string {
+function buildSearchUrl(keyword: string, sort: 'impressions' | 'recent' = 'impressions'): string {
   const p = new URLSearchParams({
     active_status: 'active',
     ad_type: 'all',
@@ -52,6 +52,8 @@ function buildSearchUrl(keyword: string): string {
     media_type: 'all',
     q: keyword,
     search_type: 'keyword_unordered',
+    'sort_data[mode]': sort === 'recent' ? 'creation_time' : 'relevancy_monthly_grouped',
+    'sort_data[direction]': 'desc',
   })
   return `https://www.facebook.com/ads/library/?${p.toString()}`
 }
@@ -121,6 +123,43 @@ async function fixAdTypeFilter(page: Page): Promise<void> {
       }
     }
   } catch { /* filter not present or already correct */ }
+}
+
+// Meta ignores sort_data in the URL and restores the last session sort.
+// Strategy: click "Ordenar por" button, then click "Más recientes".
+async function fixSortOrder(page: Page, sort: 'impressions' | 'recent'): Promise<void> {
+  if (sort !== 'recent') return
+  try {
+    const sortBtn = page.getByText(/Ordenar por|Sort by/i).first()
+    if (!await sortBtn.isVisible({ timeout: 5000 })) return
+
+    await sortBtn.click()
+    await page.waitForTimeout(1000)
+
+    const recentOption = page.getByText('Más recientes', { exact: true }).first()
+    if (await recentOption.isVisible({ timeout: 3000 })) {
+      await recentOption.click()
+      console.log('  → Sort forzado a "Más recientes" ✓')
+      await page.waitForTimeout(2500)
+    } else {
+      const clicked = await page.evaluate(() => {
+        const els = [...document.querySelectorAll('*')]
+        const target = els.find(el =>
+          el.children.length === 0 &&
+          (el.textContent || '').trim() === 'Más recientes'
+        )
+        if (target) { (target as HTMLElement).click(); return true }
+        return false
+      })
+      if (clicked) {
+        console.log('  → Sort forzado via evaluate ✓')
+        await page.waitForTimeout(2500)
+      } else {
+        console.log('  ⚠ No se encontró opción "Más recientes" — usando sort por defecto')
+        await page.keyboard.press('Escape')
+      }
+    }
+  } catch { /* sort button not present */ }
 }
 
 function extractAdId(adSnapshotUrl: string): string {
@@ -414,7 +453,7 @@ export async function scrapeAdsForStore(
   country: string,
   candidates: CandidateForMatch[] = [],
   browser?: Browser,
-  options: { headless?: boolean } = {},
+  options: { headless?: boolean; sort?: 'impressions' | 'recent' } = {},
 ): Promise<ScrapeResult> {
   const headless = options.headless ?? (process.env.CI === 'true')
   const ownBrowser = !browser
@@ -437,7 +476,7 @@ export async function scrapeAdsForStore(
     const domain = storeDomain.replace(/^www\./, '')
 
     // ── Navigate to domain search ─────────────────────────────────────────────
-    await page.goto(buildSearchUrl(domain), { waitUntil: 'domcontentloaded', timeout: 40_000 })
+    await page.goto(buildSearchUrl(domain, options.sort), { waitUntil: 'domcontentloaded', timeout: 40_000 })
     await page.waitForTimeout(3000)
     await dismissCookies(page)
     await fixAdTypeFilter(page)
@@ -456,6 +495,16 @@ export async function scrapeAdsForStore(
       return { ads: [], advertiser: null, totalAdsOnMeta: 0 }
     }
     console.log(`  ✓ ${domain} — match detectado (${probe.count} ads cargados) → cargando todos...`)
+
+    // ── Sort por más recientes si hay más de 200 ads (elegimos qué 200 priorizar) ──
+    if (probe.totalAdsOnMeta > 200) {
+      await fixSortOrder(page, 'recent')
+      await Promise.race([
+        page.waitForSelector('[role="article"]', { timeout: 10_000 }).then(() => true),
+        page.waitForSelector('[class*="_7jyh"]',  { timeout: 10_000 }).then(() => true),
+      ]).catch(() => false)
+      await page.waitForTimeout(1500)
+    }
 
     // ── Pasada 2: full scroll ─────────────────────────────────────────────────
     await scrollToLoadAll(page, probe.totalAdsOnMeta || 200)

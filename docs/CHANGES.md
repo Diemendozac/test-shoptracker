@@ -6,6 +6,21 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-009 — Sort automático por "Más recientes" para tiendas con más de 200 ads en Meta
+**Fecha:** 2026-06-12
+**Tipo:** mejora / scraper
+
+**Por qué:** El scraper cargaba los 200 ads por defecto en orden de impresiones — los más veteranos y escalados. Para tiendas con más de 200 ads activos, esos 200 no son necesariamente los más relevantes para detectar productos nuevos. Ordenando por "Más recientes" se prioriza el catálogo actual de la tienda, mejorando el match rate. Validado en thritake.com: 41/108 matches vs 20/201 con el orden anterior.
+
+**Qué cambió:**
+- `lib/scrapers/meta-ads.ts` — nueva función `fixSortOrder` (interacción UI con dropdown de Meta, igual que `fixAdTypeFilter`). Se llama automáticamente después del probe si `totalAdsOnMeta > 200`.
+- `lib/scrapers/meta-ads.ts` — `buildSearchUrl` acepta parámetro `sort` (preparación, Meta lo ignora vía URL).
+- Sin cambios en `sync-ads.ts` — la lógica es completamente automática.
+
+**Riesgo:** solo — lógica interna del scraper, sin cambios en contratos de API, Redux ni base de datos.
+
+---
+
 ### CHANGE-008 — Fix: scrollToLoadAll sale después de 3 scrolls sin nuevas cards, no del primero
 **Fecha:** 2026-06-12
 **Tipo:** fix / scraper
