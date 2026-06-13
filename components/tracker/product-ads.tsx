@@ -296,6 +296,7 @@ export function ProductAdsSection({ candidateId, productImage, label }: ProductA
 
   const [sortBy, setSortBy] = useState<SortOption>('impressions')
   const { hoveredAd, hoverPos, handleHover, handleLeave, handlePanelEnter, handlePanelLeave } = useHoverPanel()
+  const searchParams = useSearchParams()
 
   if (isLoading) {
     return (
@@ -334,9 +335,8 @@ export function ProductAdsSection({ candidateId, productImage, label }: ProductA
   }
   const deduped = [...dedupedMap.values()]
 
-  const searchParams = useSearchParams()
-  const isFromPool   = searchParams.get('from') === 'pool'
-  const showOrigin   = uniqueAdvertisers.length > 1 || isFromPool
+  const isFromPool = searchParams.get('from') === 'pool'
+  const showOrigin = uniqueAdvertisers.length > 1 || isFromPool
 
   return (
     <div id="ads" className="relative mt-6 overflow-hidden rounded-xl border border-border bg-card">
