@@ -6,6 +6,23 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-013 — R2: content-hash como filename para dedup de creativos idénticos
+**Fecha:** 2026-06-12
+**Tipo:** storage / scraper
+
+**Qué cambió:** `mirrorUrlToR2` ahora computa SHA-256 de los bytes descargados y usa los primeros 40 chars del hash como filename en R2, en lugar del `adId`. El directorio y extensión no cambian. Ejemplo: `ads/videos/thritake-com/{sha256}.mp4` en lugar de `ads/videos/thritake-com/{adId}.mp4`.
+
+**Qué NO cambió:** URLs existentes en DB (siguen funcionando — los archivos viejos en R2 permanecen). La firma pública de `mirrorUrlToR2` y `adMediaKey` no cambia. El caller sigue pasando el key basado en adId, pero la función lo reemplaza internamente.
+
+**Archivos modificados:**
+- `lib/storage/r2.ts` — import `createHash` de `crypto`. En `mirrorUrlToR2`: extraer dir y ext del key recibido, computar `sha256(buffer).slice(0,40)`, construir `contentKey = dir/hash.ext`, subir y retornar ese URL.
+
+**Por qué:** Mismo video creativo en Meta corre como múltiples ads (diferentes ad IDs, diferentes URLs en Facebook CDN). El scraper los subía como archivos distintos en R2 → URLs distintas → el dedup frontend no funcionaba. Con content-hash, el mismo video siempre produce el mismo URL en R2 desde el primer sync.
+
+**Efecto en el frontend:** A partir del próximo sync, ads con el mismo video tendrán el mismo `video_url_r2` → `StoreVideosGrid` los colapsa en un card `×N`.
+
+---
+
 ### CHANGE-012 — Videos de la tienda: dedup por creativo, sort por count, label badge
 **Fecha:** 2026-06-12
 **Tipo:** UX / visualización

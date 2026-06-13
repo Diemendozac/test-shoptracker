@@ -1,3 +1,4 @@
+import { createHash } from 'crypto'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 
 const R2_ACCOUNT_ID     = process.env.R2_ACCOUNT_ID     || ''
@@ -42,13 +43,19 @@ export async function mirrorUrlToR2(
     })
     if (!response.ok) return null
     const buffer = Buffer.from(await response.arrayBuffer())
+    // Use content hash as filename so identical files (same creative, different ad IDs)
+    // always map to the same R2 key — enables deduplication by URL in the frontend.
+    const hash = createHash('sha256').update(buffer).digest('hex').slice(0, 40)
+    const ext  = key.substring(key.lastIndexOf('.'))
+    const dir  = key.substring(0, key.lastIndexOf('/'))
+    const contentKey = `${dir}/${hash}${ext}`
     await r2Client.send(new PutObjectCommand({
       Bucket: BUCKET,
-      Key: key,
+      Key: contentKey,
       Body: buffer,
       ContentType: contentType,
     }))
-    return `${PUBLIC_URL}/${key}`
+    return `${PUBLIC_URL}/${contentKey}`
   } catch {
     // Never break the job because of a storage failure.
     return null
