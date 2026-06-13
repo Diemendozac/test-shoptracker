@@ -334,8 +334,12 @@ export function ProductAdsSection({ candidateId, productImage, label }: ProductA
   }
   const deduped = [...dedupedMap.values()]
 
+  const searchParams = useSearchParams()
+  const isFromPool   = searchParams.get('from') === 'pool'
+  const showOrigin   = uniqueAdvertisers.length > 1 || isFromPool
+
   return (
-    <div id="ads" className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
+    <div id="ads" className="relative mt-6 overflow-hidden rounded-xl border border-border bg-card">
 
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border px-6 py-4">
@@ -379,45 +383,48 @@ export function ProductAdsSection({ candidateId, productImage, label }: ProductA
         </div>
       </div>
 
-      {/* Video grid */}
-      <div className="relative px-6 pb-6 pt-4">
-        <div className={cn(!canViewAds && 'pointer-events-none select-none blur-sm')}>
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
-            {deduped.map(({ ad, count }) => (
-              <StoreVideoCard
-                key={ad.id}
-                ad={ad}
-                productImage={productImage}
-                label={label}
-                count={count}
-                allowMetaLink={allowMetaLink}
-                canViewAds={canViewAds}
-                onHover={handleHover}
-                onLeave={handleLeave}
-              />
-            ))}
-          </div>
-        </div>
-
-        {!canViewAds && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-b-xl bg-card/70">
-            <Lock className="h-5 w-5 text-foreground/50" />
-            <div className="text-center">
-              <p className="text-sm font-semibold text-foreground">
-                Los anuncios activos requieren plan Starter o superior
-              </p>
-              <p className="mt-1 max-w-xs text-xs text-muted-foreground">
-                Ve exactamente qué está pautando esta tienda y en qué productos.
-              </p>
-            </div>
-            <Button size="sm" variant="outline" asChild>
-              <Link href="/pricing">Upgrade →</Link>
-            </Button>
-          </div>
-        )}
+      {/* Column headers */}
+      <div className="grid grid-cols-[28px_68px_1fr_56px_88px] items-center gap-3 border-b border-border bg-secondary/20 px-4 py-2">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">#</span>
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Creativo</span>
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Anunciante</span>
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Días</span>
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Ver en Meta</span>
       </div>
 
-      {/* Floating video panel — outside blur wrapper, position:fixed escapes stacking context */}
+      {/* Ad rows */}
+      <div className={cn('relative divide-y divide-border', !canViewAds && 'pointer-events-none select-none blur-sm')}>
+        {deduped.map(({ ad, count }, idx) => (
+          <AdRow
+            key={ad.id}
+            ad={ad}
+            index={idx + 1}
+            count={count}
+            allowMetaLink={allowMetaLink}
+            showOrigin={showOrigin}
+            onHover={handleHover}
+            onLeave={handleLeave}
+          />
+        ))}
+      </div>
+
+      {!canViewAds && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-b-xl bg-card/70">
+          <Lock className="h-5 w-5 text-foreground/50" />
+          <div className="text-center">
+            <p className="text-sm font-semibold text-foreground">
+              Los anuncios activos requieren plan Starter o superior
+            </p>
+            <p className="mt-1 max-w-xs text-xs text-muted-foreground">
+              Ve exactamente qué está pautando esta tienda y en qué productos.
+            </p>
+          </div>
+          <Button size="sm" variant="outline" asChild>
+            <Link href="/pricing">Upgrade →</Link>
+          </Button>
+        </div>
+      )}
+
       {hoveredAd && (
         <FloatingVideoPanel
           ad={hoveredAd} top={hoverPos.top} left={hoverPos.left}

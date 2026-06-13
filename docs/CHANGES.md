@@ -6,19 +6,33 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
-### CHANGE-015 — Detalle de producto: sección de anuncios como grid horizontal
+### CHANGE-016 — Detalle de producto: revertir a tabla AdRow + mover sección sobre los charts
 **Fecha:** 2026-06-12
-**Tipo:** UX / visualización
+**Tipo:** UX / posición
 
-**Qué cambió:** `ProductAdsSection` (página de detalle del candidato) ahora muestra los anuncios como grid horizontal scrollable de cards, igual que "Videos de la tienda" en el store page. Misma lógica: dedup por creativo, ×N badge, days running badge, product image y label del candidato.
+**Qué cambió:**
+- `ProductAdsSection` revertida al layout de tabla (AdRow) después de múltiples intentos fallidos con grid horizontal (el flex row expandía el page layout a ~6800px independientemente del wrapper de overflow).
+- Posición movida: la sección ahora aparece debajo del header card del producto (Current Rank / Best Rank / Growth / Confidence) y antes de los gráficos Rank Progression / Performance Score. Antes aparecía al fondo, después del Tracking History.
+- Restaurado `showOrigin` (useSearchParams + isFromPool logic).
+- Añadido `relative` al contenedor para que el lock overlay (absolute inset-0) se posicione correctamente.
 
-**Qué NO cambió:** Header (count, advertiser badge, sort dropdown, lastUpdated), overlay de `canViewAds`, dedup logic, sort options.
+**Qué NO cambió:** Header, dedup, sort, overlay de canViewAds, AdRow component.
 
 **Archivos modificados:**
-- `components/tracker/product-ads.tsx` — `StoreVideoCard` ahora acepta `productImage?` y `label?` sueltos en lugar de `candidate: TrackerCandidate`. `ProductAdsSectionProps` reemplaza `candidate?: TrackerCandidate` con esas dos props. Body reemplaza tabla AdRow por grid de `StoreVideoCard`. Eliminado `showOrigin` (ya no se usa).
-- `app/(dashboard)/tracker/[candidateId]/page.tsx` — pasa `productImage` y `label` a `ProductAdsSection`.
+- `components/tracker/product-ads.tsx` — return restaurado a tabla AdRow; showOrigin restaurado.
+- `app/(dashboard)/tracker/[candidateId]/page.tsx` — ProductAdsSection movida después del header card.
 
-**Por qué:** El usuario quería consistencia visual entre la vista de tienda y la vista de producto.
+**Por qué:** El grid horizontal de cards quiebra el page layout por un conflicto CSS en el contexto específico del tracker page (flex items con shrink-0 expanden el layout a pesar de overflow-x-auto). Requiere investigación adicional con Diego. La tabla AdRow es visualmente correcta y no tiene ese problema.
+
+---
+
+### CHANGE-015 — Detalle de producto: sección de anuncios como grid horizontal
+**Fecha:** 2026-06-12
+**Tipo:** UX / visualización — REVERTIDO en CHANGE-016
+
+**Qué cambió:** `ProductAdsSection` reemplazó la tabla AdRow por grid horizontal de `StoreVideoCard` (igual que "Videos de la tienda"). Dedup por creativo, ×N badge, product image y label del candidato.
+
+**Por qué se revirtió:** El flex row de cards expandía el page layout a ~6800px. Ninguna combinación de overflow-hidden / overflow-x-auto / overflow-x-clip / min-w-max resolvió el problema sin romper otra cosa. Requiere investigación de raíz.
 
 ---
 
