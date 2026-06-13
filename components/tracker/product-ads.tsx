@@ -141,6 +141,7 @@ export function useHoverPanel() {
 function AdRow({
   ad,
   index,
+  count = 1,
   allowMetaLink,
   showOrigin,
   onHover,
@@ -148,6 +149,7 @@ function AdRow({
 }: {
   ad: Ad
   index: number
+  count?: number
   allowMetaLink: boolean
   showOrigin: boolean
   onHover: (ad: Ad, rect: DOMRect) => void
@@ -195,6 +197,11 @@ function AdRow({
                 <path d="M8 5v14l11-7z" />
               </svg>
             </div>
+          </div>
+        )}
+        {count > 1 && (
+          <div className="absolute bottom-1 right-1 rounded-full bg-amber-500 px-1.5 py-0.5 text-[9px] font-bold leading-none text-white">
+            ×{count}
           </div>
         )}
       </div>
@@ -317,6 +324,18 @@ export function ProductAdsSection({ candidateId }: ProductAdsSectionProps) {
   if (sortBy === 'recent') sorted.sort((a, b) => new Date(b.first_seen).getTime() - new Date(a.first_seen).getTime())
   else if (sortBy === 'oldest') sorted.sort((a, b) => b.days_running - a.days_running)
 
+  // Dedup by video: same thumbnail = same creative. Badge shows count.
+  const dedupedMap = new Map<string, { ad: Ad; count: number }>()
+  for (const ad of sorted) {
+    const key = (ad.thumbnail_url ?? ad.video_url_r2 ?? ad.ad_snapshot_url ?? '').split('?')[0]
+    if (dedupedMap.has(key)) {
+      dedupedMap.get(key)!.count++
+    } else {
+      dedupedMap.set(key, { ad, count: 1 })
+    }
+  }
+  const deduped = [...dedupedMap.values()]
+
   return (
     <div id="ads" className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
 
@@ -374,11 +393,12 @@ export function ProductAdsSection({ candidateId }: ProductAdsSectionProps) {
       {/* Rows */}
       <div className="relative">
         <div className={cn('divide-y divide-border/50', !canViewAds && 'pointer-events-none select-none blur-sm')}>
-          {sorted.map((ad, i) => (
+          {deduped.map(({ ad, count }, i) => (
             <AdRow
               key={ad.id}
               ad={ad}
               index={i + 1}
+              count={count}
               allowMetaLink={allowMetaLink}
               showOrigin={showOrigin}
               onHover={handleHover}

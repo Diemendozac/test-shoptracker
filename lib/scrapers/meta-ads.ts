@@ -528,13 +528,21 @@ export async function scrapeAdsForStore(
     }
 
     // ── R2 mirror ─────────────────────────────────────────────────────────────
+    // sourceUrlCache: same source URL → same R2 key so identical creatives share one object.
     if (r2Configured && ads.length > 0) {
+      const sourceUrlCache = new Map<string, string>()
       await Promise.all(ads.map(async ad => {
         const adId = extractAdId(ad.adSnapshotUrl)
         if (ad.thumbnailUrl) {
-          const key = adMediaKey(storeDomain, adId, 'thumbnail')
-          const r2Url = await mirrorUrlToR2(ad.thumbnailUrl, key, 'image/jpeg')
-          if (r2Url) ad.thumbnailUrl = r2Url
+          const srcUrl = ad.thumbnailUrl
+          const cached = sourceUrlCache.get(srcUrl)
+          if (cached) {
+            ad.thumbnailUrl = cached
+          } else {
+            const key = adMediaKey(storeDomain, adId, 'thumbnail')
+            const r2Url = await mirrorUrlToR2(srcUrl, key, 'image/jpeg')
+            if (r2Url) { ad.thumbnailUrl = r2Url; sourceUrlCache.set(srcUrl, r2Url) }
+          }
         }
         if (ad.videoUrl) {
           const key = adMediaKey(storeDomain, adId, 'video')

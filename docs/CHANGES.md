@@ -21,6 +21,20 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-010 — Dedup de ads por video: badge ×N en thumbnail + R2 key por source URL
+**Fecha:** 2026-06-12
+**Tipo:** mejora / UI + scraper
+
+**Por qué:** La misma tienda puede correr N anuncios distintos usando el mismo video (mismo creative). Antes aparecían N filas idénticas. Ahora se colapsan en una sola con un badge naranja ×N, que indica cuántos anuncios usan ese video — a mayor número, más señal de ganador.
+
+**Qué cambió:**
+- `components/tracker/product-ads.tsx` — dedup de `sorted` por `thumbnail_url` (sin query params) antes del render. `AdRow` acepta prop `count` y muestra badge `×N` en esquina del thumbnail cuando `count > 1`.
+- `lib/scrapers/meta-ads.ts` — R2 mirror ahora usa `sourceUrlCache`: si dos ads del mismo scrape comparten la misma URL de thumbnail original, se reutiliza el mismo objeto R2. Mismo creative → misma URL en DB → dedup del frontend funciona.
+
+**Riesgo:** solo — display puro en frontend. Scraper: solo afecta qué key se usa en R2 para nuevas subidas, sin cambios en contratos de API ni DB.
+
+---
+
 ### CHANGE-009 — Sort automático por "Más recientes" para tiendas con más de 200 ads en Meta
 **Fecha:** 2026-06-12
 **Tipo:** mejora / scraper
