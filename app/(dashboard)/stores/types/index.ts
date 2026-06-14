@@ -29,5 +29,6 @@ export interface UpdateStoreRequest {
   storeName?: string
   baseUrl?: string
   pagoAnticipado?: boolean
+  country?: string
 }
 

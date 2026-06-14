@@ -63,6 +63,7 @@ export function EditStoreModal({ store, onClose }: EditStoreModalProps) {
   const [storeName, setStoreName]           = useState<FieldState>(makeField())
   const [baseUrl, setBaseUrl]               = useState<FieldState>(makeField())
   const [pagoAnticipado, setPagoAnticipado] = useState(false)
+  const [country, setCountry]               = useState<string>('')
   const [submitError, setSubmitError]       = useState<string | null>(null)
 
   useEffect(() => {
@@ -70,6 +71,7 @@ export function EditStoreModal({ store, onClose }: EditStoreModalProps) {
       setStoreName(makeField(store.storeName))
       setBaseUrl(makeField(store.baseUrl))
       setPagoAnticipado(store.pagoAnticipado ?? false)
+      setCountry(store.country ?? '')
       setSubmitError(null)
     }
   }, [store])
@@ -92,6 +94,7 @@ export function EditStoreModal({ store, onClose }: EditStoreModalProps) {
           storeName:      storeName.value.trim(),
           baseUrl:        parsed.origin,
           pagoAnticipado,
+          ...(country.trim() ? { country: country.trim().toUpperCase() } : {}),
         },
       }).unwrap()
       onClose()
@@ -169,6 +172,33 @@ export function EditStoreModal({ store, onClose }: EditStoreModalProps) {
             </p>
             <PreviewRow label="Bestseller" value={previewBase + DEFAULT_BESTSELLER_PATH} />
           </div>
+
+          {/* país — solo mostrar si el auto-detect no lo pudo resolver (USD/null) */}
+          {(store.country === null || store.country === undefined) && (
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-foreground">País</label>
+                <span className="text-[10px] text-muted-foreground">No detectado auto (moneda USD)</span>
+              </div>
+              <select
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                disabled={isSaving}
+                className="w-full rounded-lg border border-border bg-secondary/50 px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-primary/60 focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
+              >
+                <option value="">— Sin especificar —</option>
+                <option value="US">🇺🇸 Estados Unidos (US)</option>
+                <option value="EC">🇪🇨 Ecuador (EC)</option>
+                <option value="CO">🇨🇴 Colombia (CO)</option>
+                <option value="MX">🇲🇽 México (MX)</option>
+                <option value="BR">🇧🇷 Brasil (BR)</option>
+                <option value="AR">🇦🇷 Argentina (AR)</option>
+                <option value="CL">🇨🇱 Chile (CL)</option>
+                <option value="PE">🇵🇪 Perú (PE)</option>
+                <option value="GT">🇬🇹 Guatemala (GT)</option>
+              </select>
+            </div>
+          )}
 
           {/* pago anticipado */}
           <label className="flex cursor-pointer items-center justify-between rounded-lg border border-border bg-secondary/30 px-3 py-2.5">

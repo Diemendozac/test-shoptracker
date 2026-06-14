@@ -6,6 +6,27 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-039 — EditStoreModal: select de país para tiendas USD
+**Fecha:** 2026-06-14
+**Tipo:** UI / edge case fix
+
+**Qué cambió:**
+- `EditStoreModal` muestra un `<select>` de país únicamente cuando `store.country === null` (tiendas con moneda USD donde el auto-detect no puede distinguir US vs EC).
+- El select permite elegir manualmente entre los 9 países soportados. Al guardar, envía `country` en el body del PUT.
+- `UpdateStoreRequest` type: campo opcional `country?: string`.
+
+**Por qué:** USD es ambiguo — tanto US como Ecuador usan USD. Sin este campo el usuario no podía corregir el `null`.
+
+**Qué NO cambió:** Para tiendas con país ya detectado (COP, MXN, etc.) el campo no aparece.
+
+**Afecta Redux:** No.
+
+**Archivos modificados:**
+- `app/(dashboard)/stores/components/EditStoreModal.tsx`
+- `app/(dashboard)/stores/types/index.ts`
+
+---
+
 ### CHANGE-038 — Campo country en tiendas: detección automática por moneda
 **Fecha:** 2026-06-14
 **Tipo:** feature
