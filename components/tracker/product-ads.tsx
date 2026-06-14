@@ -349,7 +349,7 @@ export function ProductAdsSection({ candidateId }: ProductAdsSectionProps) {
   }
   const deduped = [...dedupedMap.values()]
 
-  const INITIAL = 4
+  const INITIAL = 6
   const visible = expanded ? deduped : deduped.slice(0, INITIAL)
   const hiddenCount = deduped.length - INITIAL
 
