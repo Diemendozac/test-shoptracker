@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import { Lock, Volume2, VolumeX, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Lock, Volume2, VolumeX } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import type { Ad, TrackerCandidate } from '@/app/(dashboard)/types'
@@ -134,9 +134,6 @@ export function useHoverPanel() {
 
   return { hoveredAd, hoverPos, handleHover, handleLeave, handlePanelEnter, handlePanelLeave }
 }
-
-// ─── Carousel constant ────────────────────────────────────────────────────────
-const SLIDE_W = 172 // 160px card + 12px gap
 
 // ─── AdSlide — card 9:16 para carrusel de anuncios ────────────────────────────
 
@@ -312,8 +309,9 @@ export function ProductAdsSection({ candidateId }: ProductAdsSectionProps) {
   const { canViewAds, allowMetaLink } = effectivePlan
 
   const [sortBy, setSortBy] = useState<SortOption>('impressions')
-  const [slideIdx, setSlideIdx] = useState(0)
+  const [expanded, setExpanded] = useState(false)
   const { hoveredAd, hoverPos, handleHover, handleLeave, handlePanelEnter, handlePanelLeave } = useHoverPanel()
+
   if (isLoading) {
     return (
       <div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
@@ -351,7 +349,9 @@ export function ProductAdsSection({ candidateId }: ProductAdsSectionProps) {
   }
   const deduped = [...dedupedMap.values()]
 
-  const clampSlide = (idx: number) => Math.max(0, Math.min(idx, deduped.length - 1))
+  const INITIAL = 4
+  const visible = expanded ? deduped : deduped.slice(0, INITIAL)
+  const hiddenCount = deduped.length - INITIAL
 
   return (
     <div id="ads" className="relative mt-6 overflow-hidden rounded-xl border border-border bg-card">
@@ -398,50 +398,33 @@ export function ProductAdsSection({ candidateId }: ProductAdsSectionProps) {
         </div>
       </div>
 
-      {/* Carousel — transform-based, sin overflow-x-auto para evitar layout bleed */}
+      {/* Grid */}
       <div className={cn('relative', !canViewAds && 'pointer-events-none select-none blur-sm')}>
-        {/* Viewport: overflow-hidden crea BFC y recorta el track */}
-        <div className="overflow-hidden px-4 pt-4">
-          {/* Track: se mueve con transform, nunca altera el layout del documento */}
-          <div
-            className="flex gap-3 pb-4 transition-transform duration-300 ease-out"
-            style={{ transform: `translateX(calc(-${slideIdx} * ${SLIDE_W}px))` }}
-          >
-            {deduped.map(({ ad, count }, idx) => (
-              <div key={ad.id} className="shrink-0">
-                <AdSlide
-                  ad={ad}
-                  index={idx + 1}
-                  count={count}
-                  allowMetaLink={allowMetaLink}
-                  onHover={handleHover}
-                  onLeave={handleLeave}
-                />
-              </div>
-            ))}
-          </div>
+        <div className="flex flex-wrap gap-3 px-4 pt-4 pb-3">
+          {visible.map(({ ad, count }, idx) => (
+            <AdSlide
+              key={ad.id}
+              ad={ad}
+              index={idx + 1}
+              count={count}
+              allowMetaLink={allowMetaLink}
+              onHover={handleHover}
+              onLeave={handleLeave}
+            />
+          ))}
         </div>
 
-        {/* Navigation: prev / counter / next */}
-        <div className="flex items-center justify-center gap-4 pb-4">
-          <button
-            onClick={() => setSlideIdx(i => clampSlide(i - 1))}
-            disabled={slideIdx === 0}
-            className="flex h-7 w-7 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
-          >
-            <ChevronLeft className="h-3.5 w-3.5" />
-          </button>
-          <span className="text-[11px] tabular-nums text-muted-foreground">
-            {slideIdx + 1} / {deduped.length}
-          </span>
-          <button
-            onClick={() => setSlideIdx(i => clampSlide(i + 1))}
-            disabled={slideIdx >= deduped.length - 1}
-            className="flex h-7 w-7 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
-          >
-            <ChevronRight className="h-3.5 w-3.5" />
-          </button>
-        </div>
+        {deduped.length > INITIAL && (
+          <div className="px-4 pb-4">
+            <button
+              onClick={() => setExpanded(e => !e)}
+              className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+            >
+              {expanded ? 'Ver menos ↑' : `Ver ${hiddenCount} anuncios más ↓`}
+            </button>
+          </div>
+        )}
+        {deduped.length <= INITIAL && <div className="pb-4" />}
       </div>
 
       {!canViewAds && (
