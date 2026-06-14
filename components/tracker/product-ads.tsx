@@ -313,7 +313,6 @@ export function ProductAdsSection({ candidateId }: ProductAdsSectionProps) {
 
   const [sortBy, setSortBy] = useState<SortOption>('impressions')
   const [slideIdx, setSlideIdx] = useState(0)
-  const scrollRef = useRef<HTMLDivElement>(null)
   const { hoveredAd, hoverPos, handleHover, handleLeave, handlePanelEnter, handlePanelLeave } = useHoverPanel()
   if (isLoading) {
     return (
@@ -352,15 +351,7 @@ export function ProductAdsSection({ candidateId }: ProductAdsSectionProps) {
   }
   const deduped = [...dedupedMap.values()]
 
-  const scrollToSlide = (idx: number) => {
-    const clamped = Math.max(0, Math.min(idx, deduped.length - 1))
-    setSlideIdx(clamped)
-    scrollRef.current?.scrollTo({ left: clamped * SLIDE_W, behavior: 'smooth' })
-  }
-  const handleScroll = () => {
-    if (scrollRef.current)
-      setSlideIdx(Math.round(scrollRef.current.scrollLeft / SLIDE_W))
-  }
+  const clampSlide = (idx: number) => Math.max(0, Math.min(idx, deduped.length - 1))
 
   return (
     <div id="ads" className="relative mt-6 overflow-hidden rounded-xl border border-border bg-card">
@@ -407,32 +398,34 @@ export function ProductAdsSection({ candidateId }: ProductAdsSectionProps) {
         </div>
       </div>
 
-      {/* Carousel */}
-      <div className={cn('relative w-full overflow-hidden', !canViewAds && 'pointer-events-none select-none blur-sm')}>
-        <div
-          ref={scrollRef}
-          onScroll={handleScroll}
-          className="flex gap-3 overflow-x-auto px-4 py-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          style={{ scrollSnapType: 'x mandatory', scrollPaddingLeft: '16px' }}
-        >
-          {deduped.map(({ ad, count }, idx) => (
-            <div key={ad.id} style={{ scrollSnapAlign: 'start' }} className="shrink-0">
-              <AdSlide
-                ad={ad}
-                index={idx + 1}
-                count={count}
-                allowMetaLink={allowMetaLink}
-                onHover={handleHover}
-                onLeave={handleLeave}
-              />
-            </div>
-          ))}
+      {/* Carousel — transform-based, sin overflow-x-auto para evitar layout bleed */}
+      <div className={cn('relative', !canViewAds && 'pointer-events-none select-none blur-sm')}>
+        {/* Viewport: overflow-hidden crea BFC y recorta el track */}
+        <div className="overflow-hidden px-4 pt-4">
+          {/* Track: se mueve con transform, nunca altera el layout del documento */}
+          <div
+            className="flex gap-3 pb-4 transition-transform duration-300 ease-out"
+            style={{ transform: `translateX(calc(-${slideIdx} * ${SLIDE_W}px))` }}
+          >
+            {deduped.map(({ ad, count }, idx) => (
+              <div key={ad.id} className="shrink-0">
+                <AdSlide
+                  ad={ad}
+                  index={idx + 1}
+                  count={count}
+                  allowMetaLink={allowMetaLink}
+                  onHover={handleHover}
+                  onLeave={handleLeave}
+                />
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Navigation: prev / counter / next */}
         <div className="flex items-center justify-center gap-4 pb-4">
           <button
-            onClick={() => scrollToSlide(slideIdx - 1)}
+            onClick={() => setSlideIdx(i => clampSlide(i - 1))}
             disabled={slideIdx === 0}
             className="flex h-7 w-7 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
           >
@@ -442,7 +435,7 @@ export function ProductAdsSection({ candidateId }: ProductAdsSectionProps) {
             {slideIdx + 1} / {deduped.length}
           </span>
           <button
-            onClick={() => scrollToSlide(slideIdx + 1)}
+            onClick={() => setSlideIdx(i => clampSlide(i + 1))}
             disabled={slideIdx >= deduped.length - 1}
             className="flex h-7 w-7 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
           >
