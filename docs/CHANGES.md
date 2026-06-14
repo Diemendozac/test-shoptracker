@@ -6,6 +6,29 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-038 — Campo country en tiendas: detección automática por moneda
+**Fecha:** 2026-06-14
+**Tipo:** feature
+
+**Qué cambió:**
+- `StoreResponse` ahora incluye el campo `country: string | null` (código ISO-2, ej. "CO", "MX").
+- `StoreCard` muestra el country como badge secundario junto a la moneda.
+- `StoreRow` muestra el country code en la sección de nombre/URL.
+- `types/index.ts`: `country: string | null` agregado a `StoreResponse`.
+
+**Por qué:** Para el filtro por país en la vista de pool global (Data Infinita) y para dar más contexto al usuario sobre qué mercado opera cada tienda. No se pide al usuario — se detecta silenciosamente vía el mapping moneda→país que el backend ya calcula al detectar la moneda.
+
+**Qué NO cambió:** Formulario de agregar tienda (sin nuevo campo), lógica de scoring, Redux.
+
+**Afecta Redux:** No — solo tipo de respuesta y display.
+
+**Archivos modificados:**
+- `app/(dashboard)/stores/types/index.ts` — `country` en `StoreResponse`
+- `app/(dashboard)/stores/components/StoreCard.tsx` — badge country
+- `app/(dashboard)/stores/components/StoreRow.tsx` — country code en sección nombre
+
+---
+
 ### CHANGE-037 — Sección de anuncios: cards llenan ancho completo + campo body_text
 **Fecha:** 2026-06-14
 **Tipo:** UI / feature

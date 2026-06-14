@@ -124,6 +124,9 @@ export function StoreRow({ store, quality, qualityLoading, isSyncing, isDeleting
           {store.baseUrl.replace(/^https?:\/\//, '')}
           <ExternalLink className="h-2.5 w-2.5" />
         </a>
+        {store.country && (
+          <span className="text-[10px] font-medium text-muted-foreground/60">{store.country}</span>
+        )}
         {store.productCount != null && store.productCount > 0 && (
           <p className="text-[10px] text-muted-foreground/50 tabular-nums">
             {store.productCount} productos

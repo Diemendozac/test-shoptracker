@@ -8,6 +8,7 @@ export interface StoreResponse {
   lastScrapedAt: string
   niche: string | null
   currency: string | null
+  country: string | null
   pagoAnticipado: boolean | null
   inactivityScore: number | null
   inactivityTier: 'ACTIVA' | 'MODERADA' | 'INACTIVA' | 'ZOMBIE' | null
