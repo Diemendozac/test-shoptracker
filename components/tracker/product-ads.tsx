@@ -161,7 +161,7 @@ function AdSlide({
       : `Anuncio ${index}`
 
   return (
-    <div className="flex w-[160px] flex-col">
+    <div className="flex w-full flex-col">
 
       {/* Creative 9:16 */}
       <div
@@ -169,7 +169,7 @@ function AdSlide({
         role="button"
         tabIndex={0}
         className={cn(
-          'relative h-[284px] w-[160px] overflow-hidden rounded-xl bg-secondary',
+          'relative w-full overflow-hidden rounded-xl bg-secondary aspect-[9/16]',
           allowMetaLink ? 'cursor-pointer' : 'cursor-default',
         )}
         onMouseEnter={() => {
@@ -253,6 +253,11 @@ function AdSlide({
           <div className="flex w-full items-center justify-center rounded-lg border border-border/40 px-2 py-1.5 text-[11px] font-medium text-muted-foreground/30 cursor-not-allowed">
             Ver en Meta →
           </div>
+        )}
+        {ad.body_text && (
+          <p className="mt-1.5 line-clamp-3 text-[11px] leading-snug text-muted-foreground">
+            {ad.body_text}
+          </p>
         )}
       </div>
     </div>
@@ -400,7 +405,7 @@ export function ProductAdsSection({ candidateId }: ProductAdsSectionProps) {
 
       {/* Grid */}
       <div className={cn('relative', !canViewAds && 'pointer-events-none select-none blur-sm')}>
-        <div className="flex flex-wrap gap-3 px-4 pt-4 pb-3">
+        <div className="grid grid-cols-6 gap-3 px-4 pt-4 pb-3">
           {visible.map(({ ad, count }, idx) => (
             <AdSlide
               key={ad.id}

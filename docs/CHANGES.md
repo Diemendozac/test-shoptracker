@@ -6,6 +6,30 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-037 — Sección de anuncios: cards llenan ancho completo + campo body_text
+**Fecha:** 2026-06-14
+**Tipo:** UI / feature
+
+**Qué cambió:**
+- `AdSlide` ahora usa `w-full` + `aspect-[9/16]` en lugar de dimensiones fijas `w-[160px] h-[284px]`. Las cards crecen para llenar su celda de grid.
+- El grid en `ProductAdsSection` cambió de `flex flex-wrap` a `grid grid-cols-6`, de modo que los 6 slots llenan siempre el ancho disponible sin espacio en blanco a la derecha.
+- Se agrega sección de copy debajo del botón "Ver en Meta →": si la API devuelve `body_text` en el objeto `Ad`, se muestra en texto pequeño con `line-clamp-3`. Si no hay copy, la sección no renderiza.
+- Se agrega `body_text?: string | null` al interface `Ad` en `types/index.ts`.
+
+**Por qué:** Las cards de 160px dejaban espacio en blanco visible a la derecha de la fila. El grid de 6 columnas con 1fr elimina ese espacio. El copy del anuncio es información clave para evaluar creativos — pendiente de implementación en el backend.
+
+**⚠️ Pendiente para Diego:** el endpoint de ads (`GET /api/ads/:candidateId`) debe agregar el campo `body_text` (texto del anuncio de Meta) al objeto `Ad` en la respuesta. Sin ese campo el copy no aparece, pero el frontend ya está listo.
+
+**Qué NO cambió:** lógica de dedup (×N), permisos por plan, floating video panel, `AdStripPreview`, `StoreVideosGrid`.
+
+**Afecta Redux:** No — solo estado local.
+
+**Archivos modificados:**
+- `components/tracker/product-ads.tsx` — `AdSlide` (dimensiones, copy), grid en `ProductAdsSection`
+- `app/(dashboard)/types/index.ts` — campo `body_text` en interface `Ad`
+
+---
+
 ### CHANGE-036 — Sección de anuncios: de tabla plana a carrusel de slides 9:16
 **Fecha:** 2026-06-13
 **Tipo:** UI / feature
