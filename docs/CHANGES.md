@@ -6,6 +6,30 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-040 — Tracker: bandera de país en celda Tienda + filtro por país
+
+**Fecha:** 2026-06-14
+
+**Qué cambió:**
+- Cada fila del tracker muestra la bandera emoji del país de la tienda (🇨🇴 🇲🇽 🇧🇷...) antes del nombre.
+- Nuevo filtro "Todos los países" en la barra de filtros — aparece solo si hay más de 1 país distinto en los candidatos.
+- `TrackerCandidate` type: campo `storeCountry: string | null`.
+- `DashboardController.java` (`/api/dashboard/tracker`): campo `storeCountry` incluido en el response.
+
+**Por qué:** Los dropshippers gestionan tiendas de múltiples países. La bandera da contexto visual inmediato para separar CO/MX/BR sin leer el nombre. El filtro permite enfocarse en un mercado específico.
+
+**Afecta Redux:** No. Estado local del componente.
+
+**Archivos modificados:**
+- `app/(dashboard)/types/index.ts`
+- `app/(dashboard)/tracker/page.tsx`
+- `components/tracker/tracker-table.tsx`
+
+**Archivos modificados (backend):**
+- `src/main/java/com/shoptracker/controller/DashboardController.java`
+
+---
+
 ### CHANGE-039 — EditStoreModal: select de país para tiendas USD
 **Fecha:** 2026-06-14
 **Tipo:** UI / edge case fix

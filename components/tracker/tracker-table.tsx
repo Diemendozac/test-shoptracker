@@ -156,6 +156,13 @@ export function AdsCell({ candidateId }: { candidateId: string }) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+function countryFlag(code: string | null | undefined): string {
+  if (!code || code.length !== 2) return ''
+  const base = 0x1F1E6 - 65
+  return String.fromCodePoint(base + code.charCodeAt(0)) +
+         String.fromCodePoint(base + code.charCodeAt(1))
+}
+
 function getPageRange(current: number, total: number): (number | 'ellipsis')[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i)
   if (current <= 3) return [0, 1, 2, 3, 4, 'ellipsis', total - 1]
@@ -242,6 +249,7 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
   const [storeFilter, setStoreFilter] = useState<string>('all')
   const [nicheFilter, setNicheFilter] = useState<string>('all')
   const [currencyFilter, setCurrencyFilter] = useState<string>('all')
+  const [countryFilter, setCountryFilter] = useState<string>('all')
   const [paFilter, setPaFilter] = useState<string>('all')
   const [spikeFilter, setSpikeFilter] = useState(false)
   const [page, setPage] = useState(0)
@@ -267,6 +275,11 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
     [candidates],
   )
 
+  const countries = useMemo(
+    () => ['all', ...Array.from(new Set(candidates.map(c => c.storeCountry).filter(Boolean) as string[])).sort()],
+    [candidates],
+  )
+
   function handleSort(key: SortKey) {
     resetPage()
     setSort(prev =>
@@ -285,6 +298,7 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
     if (storeFilter !== 'all') result = result.filter(c => c.storeName === storeFilter)
     if (nicheFilter !== 'all') result = result.filter(c => c.niche === nicheFilter)
     if (currencyFilter !== 'all') result = result.filter(c => c.currency === currencyFilter)
+    if (countryFilter !== 'all') result = result.filter(c => c.storeCountry === countryFilter)
     if (paFilter === 'yes') result = result.filter(c => !!c.pagoAnticipado)
     if (paFilter === 'no')  result = result.filter(c => !c.pagoAnticipado)
     if (spikeFilter)      result = result.filter(c => isScalable(c.performanceScore, c.signalConfidence))
@@ -300,15 +314,15 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
       })
     }
     return result
-  }, [candidates, search, storeFilter, nicheFilter, currencyFilter, paFilter, spikeFilter, sort])
+  }, [candidates, search, storeFilter, nicheFilter, currencyFilter, countryFilter, paFilter, spikeFilter, sort])
 
   const hasActiveFilters =
     !!search || storeFilter !== 'all' || nicheFilter !== 'all' ||
-    currencyFilter !== 'all' || paFilter !== 'all' || spikeFilter
+    currencyFilter !== 'all' || countryFilter !== 'all' || paFilter !== 'all' || spikeFilter
 
   function clearFilters() {
     setSearch(''); setStoreFilter('all'); setNicheFilter('all')
-    setCurrencyFilter('all'); setPaFilter('all'); setSpikeFilter(false)
+    setCurrencyFilter('all'); setCountryFilter('all'); setPaFilter('all'); setSpikeFilter(false)
     setSort({ key: 'performanceScore', dir: 'desc' })
     resetPage()
   }
@@ -359,6 +373,16 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
             className="h-9 appearance-none rounded-lg border border-border bg-secondary/40 px-3 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer">
             <option value="all">Todas las monedas</option>
             {currencies.filter(c => c !== 'all').map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        )}
+
+        {countries.length > 1 && (
+          <select value={countryFilter} onChange={e => { setCountryFilter(e.target.value); resetPage() }}
+            className="h-9 appearance-none rounded-lg border border-border bg-secondary/40 px-3 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer">
+            <option value="all">Todos los países</option>
+            {countries.filter(c => c !== 'all').map(c => (
+              <option key={c} value={c}>{countryFlag(c)} {c}</option>
+            ))}
           </select>
         )}
 
@@ -581,6 +605,9 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
                   {/* Tienda */}
                   <div className="min-w-0 text-center">
                     <span className="block truncate rounded-md bg-secondary px-2 py-1 text-[11px] font-medium text-muted-foreground">
+                      {candidate.storeCountry && (
+                        <span className="mr-1">{countryFlag(candidate.storeCountry)}</span>
+                      )}
                       {candidate.storeName}
                     </span>
                     {candidate.storeProductCount != null && candidate.storeProductCount > 0 && (

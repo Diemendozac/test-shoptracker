@@ -68,6 +68,7 @@ export default function TrackerPage() {
     createdAt: null,
     previousRank: null,
     storeProductCount: null,
+    storeCountry: null,
     signalConfidence: 0,
     cyclePhase: null,
   }))
