@@ -193,13 +193,12 @@ async function probeSearchResults(page: Page, domain: string): Promise<{
       stagnantRounds = 0
     }
     lastCount = count
-    const pageHeight = await page.evaluate(() => document.body.scrollHeight)
-    const currentY   = await page.evaluate(() => window.scrollY)
-    for (let y = currentY + 800; y < pageHeight; y += 800) {
-      await page.evaluate((pos: number) => window.scrollTo(0, pos), y)
-      await page.waitForTimeout(80)
+    // mouse.wheel genera eventos de scroll reales que disparan los intersection observers de Meta.
+    // window.scrollTo dentro de page.evaluate cambia scrollY pero no dispara el lazy load.
+    for (let step = 0; step < 8; step++) {
+      await page.mouse.wheel(0, 600)
+      await page.waitForTimeout(120)
     }
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
     await page.waitForTimeout(1400 + Math.random() * 600)
   }
 
@@ -292,16 +291,10 @@ async function scrollToLoadAll(page: Page, totalExpected: number, maxAds = 500):
     }
     lastCount = cards.length
     if (attempts % 5 === 0) process.stdout.write(`  Cargando: ${lastCount}...`)
-    // Scroll incremental desde Node para activar intersection observers de Meta.
-    // page.evaluate(async) serializa la función al browser context donde los helpers
-    // de TypeScript (__name, etc.) no existen — hacemos el loop desde Node en su lugar.
-    const pageHeight = await page.evaluate(() => document.body.scrollHeight)
-    const currentY   = await page.evaluate(() => window.scrollY)
-    for (let y = currentY + 800; y < pageHeight; y += 800) {
-      await page.evaluate((pos: number) => window.scrollTo(0, pos), y)
-      await page.waitForTimeout(80)
+    for (let step = 0; step < 8; step++) {
+      await page.mouse.wheel(0, 600)
+      await page.waitForTimeout(120)
     }
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
     await page.waitForTimeout(1400 + Math.random() * 800)
     attempts++
   }

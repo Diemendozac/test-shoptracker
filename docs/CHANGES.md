@@ -6,6 +6,19 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-046 — Scroll: page.mouse.wheel() en probe y scrollToLoadAll
+
+**Fecha:** 2026-06-15
+
+**Qué cambió:** Reemplazado el scroll incremental Node-side (`window.scrollTo` en pasos) por `page.mouse.wheel(0, 600)` repetido en ambos lugares: probe y `scrollToLoadAll`.
+
+**Por qué:** `window.scrollTo` dentro de `page.evaluate` cambia `window.scrollY` pero no genera un evento de input real — los intersection observers de Meta no se disparan. `page.mouse.wheel()` es un evento físico de Playwright que sí los activa. comprasegura26 tiene 67 ads pero el scraper solo cargaba 30.
+
+**Archivos afectados:**
+- `lib/scrapers/meta-ads.ts` — loop de scroll en `probeSearchResults` y `scrollToLoadAll`
+
+---
+
 ### CHANGE-045 — Probe: scroll incremental + fallback totalAdsOnMeta
 
 **Fecha:** 2026-06-15
