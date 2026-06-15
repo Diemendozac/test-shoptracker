@@ -176,14 +176,31 @@ async function probeSearchResults(page: Page, domain: string): Promise<{
   totalAdsOnMeta: number
   advertiser: AdvertiserInfo | null
 }> {
-  // Scroll until we have ~50 cards or no more load
+  // Scroll incremental desde Node hasta tener ~50 cards o estancamiento.
+  // scrollTo(0, scrollHeight) no dispara los intersection observers de Meta.
   let lastCount = 0
+  let stagnantRounds = 0
   for (let i = 0; i < 12; i++) {
-    const count = (await page.$$('[class*="_7jyh"]')).length
-    if (count >= 50 || count === lastCount) break
+    const articleCards = await page.$$('[role="article"]')
+    const count = articleCards.length > 0
+      ? articleCards.length
+      : (await page.$$('[class*="_7jyh"]')).length
+    if (count >= 50) break
+    if (count === lastCount) {
+      stagnantRounds++
+      if (stagnantRounds >= 3) break
+    } else {
+      stagnantRounds = 0
+    }
     lastCount = count
+    const pageHeight = await page.evaluate(() => document.body.scrollHeight)
+    const currentY   = await page.evaluate(() => window.scrollY)
+    for (let y = currentY + 800; y < pageHeight; y += 800) {
+      await page.evaluate((pos: number) => window.scrollTo(0, pos), y)
+      await page.waitForTimeout(80)
+    }
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
-    await page.waitForTimeout(1200 + Math.random() * 600)
+    await page.waitForTimeout(1400 + Math.random() * 600)
   }
 
   return page.evaluate((domainRaw: string) => {
@@ -281,7 +298,7 @@ async function scrollToLoadAll(page: Page, totalExpected: number, maxAds = 500):
     const pageHeight = await page.evaluate(() => document.body.scrollHeight)
     const currentY   = await page.evaluate(() => window.scrollY)
     for (let y = currentY + 800; y < pageHeight; y += 800) {
-      await page.evaluate((pos) => window.scrollTo(0, pos), y)
+      await page.evaluate((pos: number) => window.scrollTo(0, pos), y)
       await page.waitForTimeout(80)
     }
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
@@ -508,11 +525,19 @@ export async function scrapeAdsForStore(
     // ── Pasada 1: probe ───────────────────────────────────────────────────────
     const probe = await probeSearchResults(page, domain)
 
-    if (!probe.hasMatch) {
-      console.log(`  ⏭ ${domain} — ${probe.count} ads revisados, ninguno apunta al dominio → skip`)
+    // Fallback: si el check de DOM falló pero Meta reporta resultados para este dominio,
+    // proceder igual — los resultados de keyword search por dominio exacto son señal suficiente.
+    const effectiveMatch = probe.hasMatch || probe.totalAdsOnMeta > 0
+
+    if (!effectiveMatch) {
+      console.log(`  ⏭ ${domain} — ${probe.count} ads revisados, 0 resultados en Meta → skip`)
       return { ads: [], advertiser: null, totalAdsOnMeta: 0 }
     }
-    console.log(`  ✓ ${domain} — match detectado (${probe.count} ads cargados) → cargando todos...`)
+    if (!probe.hasMatch && probe.totalAdsOnMeta > 0) {
+      console.log(`  ≈ ${domain} — ${probe.totalAdsOnMeta} resultados en Meta, dominio no visible en DOM → scrapeando`)
+    } else {
+      console.log(`  ✓ ${domain} — match detectado (${probe.count} ads cargados) → cargando todos...`)
+    }
 
     // ── Sort por más recientes solo si hay más de 1000 ads (elegimos qué 200 priorizar) ──
     // Con ≤ 1000 ads no vale la pena — cargamos hasta 500 con el sort por defecto (impresiones).

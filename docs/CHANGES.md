@@ -6,6 +6,21 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-045 — Probe: scroll incremental + fallback totalAdsOnMeta
+
+**Fecha:** 2026-06-15
+
+**Qué cambió:**
+1. El loop de scroll del probe ahora usa el mismo patrón incremental Node-side (pasos de 800px) que `scrollToLoadAll` — el `scrollTo(0, scrollHeight)` anterior no disparaba el lazy load de Meta.
+2. Si el check de DOM (`hasMatch`) falla pero Meta reporta resultados (`totalAdsOnMeta > 0`), se procede igualmente con el scraping. Se loguea `≈` en vez de `✓` para distinguirlo.
+
+**Por qué:** `chic-lucky.com` fallaba el probe intermitentemente porque las ~15 cards que cargaban inicialmente no siempre incluían el dominio en texto visible. Con 680 resultados reportados por Meta para la búsqueda exacta del dominio, es evidencia suficiente para proceder.
+
+**Archivos afectados:**
+- `lib/scrapers/meta-ads.ts` — `probeSearchResults` (scroll) y `scrapeAdsForStore` (fallback)
+
+---
+
 ### CHANGE-044 — Scroll: incremental en vez de salto directo al fondo
 
 **Fecha:** 2026-06-15
