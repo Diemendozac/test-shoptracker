@@ -225,6 +225,12 @@ async function probeSearchResults(page: Page, domain: string): Promise<{
         if (dest.includes(domain)) { hasMatch = true; break }
       }
 
+      // Fallback: domain displayed as text in card (e.g. "CHIC-LUCKY.COM" in <div role="button">)
+      // Meta renders the CTA destination as a styled div, not an <a href>, so querySelectorAll('a[href]') misses it.
+      if (!hasMatch && (card.textContent || '').toLowerCase().includes(domain.toLowerCase())) {
+        hasMatch = true
+      }
+
       // Extract advertiser name from first card that has one
       if (!advertiserName) {
         for (const a of anchors) {

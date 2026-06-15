@@ -6,6 +6,19 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-042 — Probe: fallback de dominio en textContent del card
+
+**Fecha:** 2026-06-15
+
+**Qué cambió:** En `probeSearchResults`, se agregó un fallback que verifica si el dominio de la tienda aparece como texto en el card cuando no se encontró ningún `<a href>` que apunte al dominio.
+
+**Por qué:** Meta renderiza el dominio de destino del CTA (ej: "CHIC-LUCKY.COM") dentro de un `<div role="button">`, no como `<a href>`. El probe solo buscaba con `querySelectorAll('a[href]')`, lo que causaba `hasMatch = false` aunque los ads claramente apuntaran al dominio — bloqueando el scraping completo. `chic-lucky.com` tiene ~610 ads activos y el sistema scrapeaba 0.
+
+**Archivos afectados:**
+- `lib/scrapers/meta-ads.ts` — 4 líneas agregadas en `probeSearchResults`
+
+---
+
 ### CHANGE-041 — Admin: dropdown para cambiar plan de usuario
 
 **Fecha:** 2026-06-14
