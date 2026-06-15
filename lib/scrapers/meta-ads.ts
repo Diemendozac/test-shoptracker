@@ -275,17 +275,16 @@ async function scrollToLoadAll(page: Page, totalExpected: number, maxAds = 500):
     }
     lastCount = cards.length
     if (attempts % 5 === 0) process.stdout.write(`  Cargando: ${lastCount}...`)
-    // Scroll incremental para activar intersection observers de Meta (lazy load).
-    // scrollTo(0, scrollHeight) salta directo al fondo y no dispara el lazy load.
-    await page.evaluate(async () => {
-      const step = 800
-      const delay = (ms: number) => new Promise(r => setTimeout(r, ms))
-      for (let y = window.scrollY + step; y < document.body.scrollHeight; y += step) {
-        window.scrollTo(0, y)
-        await delay(80)
-      }
-      window.scrollTo(0, document.body.scrollHeight)
-    })
+    // Scroll incremental desde Node para activar intersection observers de Meta.
+    // page.evaluate(async) serializa la función al browser context donde los helpers
+    // de TypeScript (__name, etc.) no existen — hacemos el loop desde Node en su lugar.
+    const pageHeight = await page.evaluate(() => document.body.scrollHeight)
+    const currentY   = await page.evaluate(() => window.scrollY)
+    for (let y = currentY + 800; y < pageHeight; y += 800) {
+      await page.evaluate((pos) => window.scrollTo(0, pos), y)
+      await page.waitForTimeout(80)
+    }
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
     await page.waitForTimeout(1400 + Math.random() * 800)
     attempts++
   }
