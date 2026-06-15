@@ -557,7 +557,7 @@ export async function scrapeAdsForStore(
     // ── Pasada 2a: impresiones ────────────────────────────────────────────────
     // Click sort → reload → fix filtro → scroll.
     // El reload garantiza página limpia con el sort ya guardado por Meta.
-    const maxPerPass = 200
+    const maxPerPass = 50
     await fixSortOrder(page, 'impressions')
     await page.reload({ waitUntil: 'domcontentloaded', timeout: 40_000 })
     await page.waitForTimeout(2000)
@@ -593,7 +593,7 @@ export async function scrapeAdsForStore(
         page.waitForSelector('[class*="_7jyh"]',  { timeout: 20_000 }).then(() => true),
       ]).catch(() => false)
       await page.waitForTimeout(2000)
-      await scrollToLoadAll(page, 100, 100)
+      await scrollToLoadAll(page, 50, 50)
       const adsByRecent = await extractAllAds(page)
       const seenUrls = new Set(adsByImpressions.map(a => a.adSnapshotUrl))
       const freshAds  = adsByRecent.filter(a => !seenUrls.has(a.adSnapshotUrl))
