@@ -147,21 +147,22 @@ async function getCandidatesForStore(storeId: string): Promise<Candidate[]> {
   return res.json()
 }
 
-async function updateStoreAdvertiser(
-  storeId: string,
-  pageName: string,
-  pageId: string | null | undefined,
-  totalAds: number,
-): Promise<void> {
-  const res = await fetch(`${API_URL}/internal/stores/${storeId}/advertiser`, {
-    method: 'PATCH',
+interface AdvertiserPagePayload {
+  pageId:   string | null
+  pageName: string
+  totalAds: number
+}
+
+async function pushAdvertiserPages(storeId: string, pages: AdvertiserPagePayload[]): Promise<void> {
+  const res = await fetch(`${API_URL}/internal/stores/${storeId}/advertiser-pages`, {
+    method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'X-Webhook-Secret': WEBHOOK_SECRET,
     },
-    body: JSON.stringify({ metaPageName: pageName, metaPageId: pageId || null, metaTotalAds: totalAds }),
+    body: JSON.stringify(pages),
   })
-  if (!res.ok) throw new Error(`advertiser update failed: ${res.status}`)
+  if (!res.ok) throw new Error(`advertiser-pages push failed: ${res.status}`)
 }
 
 async function pushAds(candidateId: string, storeDomain: string, ads: ScrapedAd[]): Promise<void> {
@@ -238,13 +239,29 @@ async function syncStore(store: Store): Promise<StoreOutcome> {
 
   const { ads, advertiser, totalAdsOnMeta } = scrapeResult
 
-  // ── 4. Persist advertiser if newly discovered ─────────────────────────────
-  if (advertiser && !store.metaPageId) {
+  // ── 4. Persist ALL advertiser pages discovered (upsert) ──────────────────
+  // Collect unique advertisers from every ad + the probe-discovered one.
+  // A store can have multiple Facebook pages advertising for it.
+  const advertiserMap = new Map<string, { pageId: string | null }>()
+  if (advertiser) {
+    advertiserMap.set(advertiser.pageName, { pageId: advertiser.pageId ?? null })
+  }
+  for (const ad of ads) {
+    if (ad.advertiserName && !advertiserMap.has(ad.advertiserName)) {
+      advertiserMap.set(ad.advertiserName, { pageId: ad.pageId ?? null })
+    }
+  }
+  if (advertiserMap.size > 0) {
+    const pages: AdvertiserPagePayload[] = [...advertiserMap.entries()].map(([pageName, info]) => ({
+      pageName,
+      pageId: info.pageId,
+      totalAds: totalAdsOnMeta,
+    }))
     try {
-      await updateStoreAdvertiser(store.storeId, advertiser.pageName, advertiser.pageId, totalAdsOnMeta)
-      console.log(`  [F4] ✓ Guardado: "${advertiser.pageName}" (pageId: ${advertiser.pageId || 'n/a'}, total: ${totalAdsOnMeta})`)
+      await pushAdvertiserPages(store.storeId, pages)
+      console.log(`  [F4] ✓ ${pages.length} página(s) anunciante(s): ${pages.map(p => p.pageName).join(', ')}`)
     } catch (e) {
-      console.warn(`  [F4] ⚠ No se pudo guardar advertiser: ${(e as Error).message}`)
+      console.warn(`  [F4] ⚠ No se pudieron guardar advertiser pages: ${(e as Error).message}`)
     }
   }
 

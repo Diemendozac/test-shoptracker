@@ -6,6 +6,20 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-047 — F4: múltiples páginas anunciantes por tienda
+
+**Fecha:** 2026-06-15
+
+**Qué cambió:** El bloque F4 del sync ya no guarda solo la primera página anunciante descubierta. Ahora colecta todas las páginas únicas de los ads extraídos + la del probe, y las pushea en un solo `POST /internal/stores/{id}/advertiser-pages` (upsert). El backend guarda todas en la nueva tabla `store_advertiser_pages`.
+
+**Por qué:** Una tienda puede tener múltiples páginas de Facebook anunciando para ella (comprasegura26 tenía ImportadorDirecto, NaturaZen y OfertasOnline). El modelo anterior solo guardaba una (la primera, y nunca la actualizaba).
+
+**Archivos afectados:**
+- `lib/jobs/sync-ads.ts` — F4 reemplazado, nueva función `pushAdvertiserPages`
+- Backend: nueva tabla, entidad, repository y endpoint (en feature branch `feature/multiple-advertiser-pages`)
+
+---
+
 ### CHANGE-046 — Scroll: page.mouse.wheel() en probe y scrollToLoadAll
 
 **Fecha:** 2026-06-15
