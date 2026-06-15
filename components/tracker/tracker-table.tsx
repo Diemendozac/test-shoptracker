@@ -612,9 +612,6 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
                   {/* Tienda */}
                   <div className="min-w-0 text-center">
                     <span className="block truncate rounded-md bg-secondary px-2 py-1 text-[11px] font-medium text-muted-foreground">
-                      {candidate.storeCountry && (
-                        <span className="mr-1">{countryFlag(candidate.storeCountry)}</span>
-                      )}
                       {candidate.storeName}
                     </span>
                     {candidate.storeProductCount != null && candidate.storeProductCount > 0 && (
