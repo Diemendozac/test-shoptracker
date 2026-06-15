@@ -3,6 +3,14 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import type { RootState } from '@/store'
 import type { StoreResponse, CreateStoreRequest, UpdateStoreRequest } from '../types'
 
+export interface AdvertiserPage {
+  pageId:    string | null
+  pageName:  string
+  totalAds:  number | null
+  firstSeen: string
+  lastSeen:  string
+}
+
 export interface SyncResult {
   storeId: string
   storeName: string
@@ -63,6 +71,11 @@ export const storesApi = createApi({
       invalidatesTags: ['Store'],
     }),
 
+    // GET /api/stores/:storeId/advertiser-pages
+    getAdvertiserPages: builder.query<AdvertiserPage[], string>({
+      query: (storeId) => `/${storeId}/advertiser-pages`,
+    }),
+
   }),
 })
 
@@ -73,4 +86,5 @@ export const {
   useDeleteStoreMutation,
   useSyncStoreMutation,
   useRedetectPaymentsMutation,
+  useGetAdvertiserPagesQuery,
 } = storesApi

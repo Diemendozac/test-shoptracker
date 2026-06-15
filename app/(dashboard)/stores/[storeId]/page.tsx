@@ -15,10 +15,11 @@ import { Sparkline } from '@/components/tracker/sparkline'
 import { AdsCell } from '@/components/tracker/tracker-table'
 import {
   ArrowLeft, ExternalLink, CheckCircle, XCircle,
-  Clock, Target, Zap, TrendingUp, BarChart3, Store,
+  Clock, Target, Zap, TrendingUp, BarChart3, Store, Megaphone,
 } from 'lucide-react'
 import { resolveDisplayLabel } from '@/lib/label-utils'
 import { StoreVideosGrid } from '@/components/tracker/product-ads'
+import { useGetAdvertiserPagesQuery } from '@/app/(dashboard)/stores/services/storeApi'
 
 export default function StoreDetailPage() {
   return (
@@ -188,6 +189,9 @@ function StoreDetailContent() {
         </div>
       )}
 
+      {/* Páginas anunciantes en Meta */}
+      <AdvertiserPagesSection storeId={storeId} />
+
       {/* Videos de la tienda */}
       {videoCandidates.length > 0 && (
         <StoreVideosGrid candidates={videoCandidates} />
@@ -335,6 +339,48 @@ function StoreDetailContent() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+// ─── Advertiser pages section ─────────────────────────────────────────────────
+
+function AdvertiserPagesSection({ storeId }: { storeId: string }) {
+  const { data: pages = [], isLoading } = useGetAdvertiserPagesQuery(storeId)
+
+  if (isLoading) return null
+  if (pages.length === 0) return null
+
+  return (
+    <div>
+      <div className="mb-3 flex items-center gap-2">
+        <Megaphone className="h-4 w-4 text-primary" />
+        <h2 className="text-sm font-semibold text-foreground">Páginas anunciantes en Meta</h2>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {pages.map((p) => (
+          <a
+            key={p.pageName}
+            href={p.pageId ? `https://www.facebook.com/${p.pageId}` : undefined}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(
+              'inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-sm transition-colors',
+              p.pageId ? 'hover:border-primary/40 hover:bg-primary/5 cursor-pointer' : 'cursor-default',
+            )}
+          >
+            {/* Meta "f" logo */}
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#1877F2] text-[10px] font-bold text-white">f</span>
+            <span className="font-medium text-foreground">{p.pageName}</span>
+            {p.totalAds != null && (
+              <span className="rounded-md bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground tabular-nums">
+                {p.totalAds.toLocaleString()} ads
+              </span>
+            )}
+            {p.pageId && <ExternalLink className="h-3 w-3 shrink-0 text-muted-foreground/50" />}
+          </a>
+        ))}
+      </div>
     </div>
   )
 }
