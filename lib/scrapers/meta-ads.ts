@@ -299,6 +299,9 @@ async function scrollToLoadAll(page: Page, totalExpected: number, maxAds = 200):
     // Si no estamos en el fondo, seguimos scrolleando aunque el conteo no crezca
     // (Meta carga por lotes — entre lotes el DOM queda igual por 2-3 s).
     if (atBottom && count === lastCount) {
+      // Al fondo y sin nuevos ads: esperar más antes de contar la ronda como estancada.
+      // Meta puede tardar 5-8 s en disparar el siguiente lote desde el fondo.
+      await page.waitForTimeout(5000)
       stagnantAtBottom++
       if (stagnantAtBottom >= 4) break
     } else {
@@ -312,7 +315,6 @@ async function scrollToLoadAll(page: Page, totalExpected: number, maxAds = 200):
       await page.mouse.wheel(0, 600)
       await page.waitForTimeout(150)
     }
-    // 3 s de espera para dar tiempo al request de red + render del siguiente lote
     await page.waitForTimeout(3000 + Math.random() * 1000)
     attempts++
   }
