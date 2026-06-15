@@ -599,6 +599,13 @@ export async function scrapeAdsForStore(
       const freshAds  = adsByRecent.filter(a => !seenUrls.has(a.adSnapshotUrl))
       ads = [...adsByImpressions, ...freshAds]
       console.log(`  → ${adsByRecent.length} ads (recientes) | ${freshAds.length} nuevos | total ${ads.length}`)
+
+      // Log de matches por pasada — solo si hay candidatos para comparar
+      if (candidates.length > 0) {
+        const impMatches  = adsByImpressions.filter(a => matchAdToCandidate(a.productUrl, candidates)).length
+        const recMatches  = freshAds.filter(a => matchAdToCandidate(a.productUrl, candidates)).length
+        console.log(`  [F3-dual] impresiones: ${impMatches} matches | recientes únicos: ${recMatches} matches`)
+      }
     }
 
     if (ads.length === 0) {
