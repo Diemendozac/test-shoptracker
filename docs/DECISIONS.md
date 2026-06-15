@@ -4,6 +4,43 @@ Registro de decisiones no obvias que afectan el proyecto. El "por qué" es más 
 
 ---
 
+## DECISION-007 — Estrategia de escalado del sync de anuncios
+
+**Fecha:** 2026-06-15
+**Quién decidió:** Daniel
+**Revisado por Diego:** pendiente (afecta infraestructura)
+
+### Contexto
+
+El sync actual (`lib/jobs/sync-ads.ts`) corre secuencialmente — una tienda a la vez. Con tiendas que tienen >200 ads (dual-sort: pasada de impresiones + recientes), cada tienda tarda ~5-10 minutos. El workflow de GitHub Actions tiene un timeout de 60 minutos.
+
+### Opciones evaluadas
+
+| Opción | Cuándo usarla | Complejidad |
+|---|---|---|
+| **pLimit (paralelismo en el mismo job)** | < 20 tiendas. Implementación ~15 líneas. | Baja |
+| **Matrix sharding en GitHub Actions** | 20-100 tiendas. Divide tiendas en grupos, cada grupo es un job paralelo. | Media |
+| **Cola BullMQ + worker en Easypanel** | > 100 tiendas. Worker Node.js dedicado, Redis como broker, concurrencia controlada. | Alta |
+
+### Decisión adoptada
+
+**Fase actual:** correr con el sync secuencial mientras el número de tiendas sea manejable.
+
+**Próximo paso (cuando el sync supere 30-40 min):** implementar `pLimit` con concurrencia 3-4. Playwright/Chromium consume ~300-500 MB RAM por instancia; el runner de GitHub Actions (7 GB) aguanta 4-5 instancias simultáneas. Con 20 tiendas y concurrencia 4, el sync baja de ~80 min a ~20 min.
+
+**Largo plazo (> 50 tiendas):** migrar a BullMQ + worker en Easypanel. Es el único diseño que escala sin depender del timeout de GitHub Actions y permite reintentos por tienda sin rehacer el sync completo.
+
+### Qué NO se hace ahora
+
+- No se implementa `pLimit` todavía — el número de tiendas no lo justifica.
+- No se migra a BullMQ — overhead de infraestructura innecesario por ahora.
+
+### Señal para revisar
+
+Cuando un sync completo supere 30 minutos o haya > 15 tiendas Pro activas.
+
+---
+
 ## DECISION-006 — Framework multi-proyecto adoptado; wiki subordinada al código; lint periódico formal
 
 **Fecha:** 2026-06-11
