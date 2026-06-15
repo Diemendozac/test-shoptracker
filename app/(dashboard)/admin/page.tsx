@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAppSelector } from '@/store/hooks'
 import { useGetMeQuery } from '@/app/(dashboard)/services/userApi'
-import { useGetAdminUsersQuery } from '@/app/(dashboard)/services/adminApi'
+import { useGetAdminUsersQuery, useUpdateUserPlanMutation } from '@/app/(dashboard)/services/adminApi'
 import { cn } from '@/lib/utils'
 
 const PLAN_COLORS: Record<string, string> = {
@@ -15,11 +15,64 @@ const PLAN_COLORS: Record<string, string> = {
   free:    'bg-secondary text-muted-foreground',
 }
 
+const PLAN_OPTIONS = ['free', 'starter', 'pro', 'agency', 'admin'] as const
+
 function PlanBadge({ plan }: { plan: string }) {
   return (
     <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide', PLAN_COLORS[plan] ?? PLAN_COLORS.free)}>
       {plan}
     </span>
+  )
+}
+
+function PlanSelector({ userId, currentPlan }: { userId: string; currentPlan: string }) {
+  const [open, setOpen] = useState(false)
+  const [updatePlan, { isLoading }] = useUpdateUserPlanMutation()
+
+  async function handleSelect(plan: string) {
+    if (plan === currentPlan) { setOpen(false); return }
+    await updatePlan({ userId, plan })
+    setOpen(false)
+  }
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen((o: boolean) => !o)}
+        disabled={isLoading}
+        className={cn(
+          'flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide transition-opacity',
+          PLAN_COLORS[currentPlan] ?? PLAN_COLORS.free,
+          isLoading && 'opacity-50',
+        )}
+      >
+        {isLoading ? '…' : currentPlan}
+        <svg className="h-2.5 w-2.5 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 top-full z-20 mt-1 min-w-[90px] overflow-hidden rounded-lg border border-border bg-card shadow-lg">
+            {PLAN_OPTIONS.map(plan => (
+              <button
+                key={plan}
+                onClick={() => handleSelect(plan)}
+                className={cn(
+                  'flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-secondary',
+                  plan === currentPlan && 'font-semibold',
+                )}
+              >
+                <span className={cn('h-1.5 w-1.5 rounded-full', PLAN_COLORS[plan]?.split(' ')[0])} />
+                {plan}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
   )
 }
 
@@ -109,7 +162,7 @@ export default function AdminPage() {
               <span className="truncate font-medium text-foreground" title={u.email}>{u.email}</span>
 
               {/* Plan */}
-              <PlanBadge plan={u.plan} />
+              <PlanSelector userId={u.userId} currentPlan={u.plan} />
 
               {/* Registro */}
               <span className="text-xs text-muted-foreground tabular-nums">{fmt(u.createdAt)}</span>

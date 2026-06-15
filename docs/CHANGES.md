@@ -6,6 +6,20 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-041 — Admin: dropdown para cambiar plan de usuario
+
+**Fecha:** 2026-06-14
+
+**Qué cambió:** En el panel admin (`/admin`), cada fila de usuario tiene ahora un dropdown en la columna Plan. El admin puede cambiar el plan de cualquier usuario (free/starter/pro/agency/admin) directamente desde la tabla. El cambio persiste en la base de datos vía `PATCH /api/admin/users/{id}/plan` y la tabla se refresca automáticamente.
+
+**Por qué:** Usuario `hsebash4@gmail.com` no veía ads (plan Free → backend devuelve lista vacía). No existía forma de cambiar el plan desde la UI — el admin tenía que hacerlo directamente en la DB.
+
+**Archivos afectados:**
+- `app/(dashboard)/services/adminApi.ts` — nuevo mutation `updateUserPlan` + cache invalidation
+- `app/(dashboard)/admin/page.tsx` — componente `PlanSelector` reemplaza `PlanBadge` en la columna Plan
+
+---
+
 ### CHANGE-040 — Tracker: bandera de país en celda Tienda + filtro por país
 
 **Fecha:** 2026-06-14
