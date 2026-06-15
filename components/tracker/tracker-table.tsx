@@ -540,9 +540,16 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
                     const spikeState = computeSpikeState(spikeEntry, candidate.performanceScore ?? 0)
                     const spikeLevel = computeSpikeLevel(spikeEntry, candidate.performanceScore ?? 0)
                     return (
-                      <SpikeOverlay state={spikeState} level={spikeLevel} size={64}>
-                        <HoverImagePreview src={candidate.productImage} fallback={candidate.productTitle.charAt(0)} size={64} proxy />
-                      </SpikeOverlay>
+                      <div className="relative" style={{ width: 64, height: 64, flexShrink: 0 }}>
+                        <SpikeOverlay state={spikeState} level={spikeLevel} size={64}>
+                          <HoverImagePreview src={candidate.productImage} fallback={candidate.productTitle.charAt(0)} size={64} proxy />
+                        </SpikeOverlay>
+                        {candidate.storeCountry && (
+                          <span className="pointer-events-none absolute -bottom-1 -right-1 z-20 flex h-5 w-5 items-center justify-center rounded-full bg-card text-[13px] leading-none shadow-sm ring-1 ring-border">
+                            {countryFlag(candidate.storeCountry)}
+                          </span>
+                        )}
+                      </div>
                     )
                   })()}
 
