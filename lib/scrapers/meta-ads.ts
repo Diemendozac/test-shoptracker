@@ -256,18 +256,20 @@ async function probeSearchResults(page: Page, domain: string): Promise<{
 
 // ── Full scroll — load all ads ────────────────────────────────────────────────
 
-async function scrollToLoadAll(page: Page, totalExpected: number, maxAds = 200): Promise<void> {
+async function scrollToLoadAll(page: Page, totalExpected: number, maxAds = 500): Promise<void> {
   const limit = Math.min(totalExpected || maxAds, maxAds)
   let lastCount = 0
   let stagnantRounds = 0
   let attempts = 0
 
   while (attempts < 30) {
-    const cards = await page.$$('[class*="_7jyh"]')
+    // Dual-selector: same logic as probeSearchResults for consistency
+    const articleCards = await page.$$('[role="article"]')
+    const cards = articleCards.length > 0 ? articleCards : await page.$$('[class*="_7jyh"]')
     if (cards.length >= limit) break
     if (cards.length === lastCount) {
       stagnantRounds++
-      if (stagnantRounds >= 3) break
+      if (stagnantRounds >= 6) break
     } else {
       stagnantRounds = 0
     }
@@ -277,7 +279,8 @@ async function scrollToLoadAll(page: Page, totalExpected: number, maxAds = 200):
     await page.waitForTimeout(1200 + Math.random() * 800)
     attempts++
   }
-  const finalCount = (await page.$$('[class*="_7jyh"]')).length
+  const articleCards = await page.$$('[role="article"]')
+  const finalCount = articleCards.length > 0 ? articleCards.length : (await page.$$('[class*="_7jyh"]')).length
   process.stdout.write(` ${finalCount} ✓\n`)
 }
 
@@ -502,8 +505,10 @@ export async function scrapeAdsForStore(
     }
     console.log(`  ✓ ${domain} — match detectado (${probe.count} ads cargados) → cargando todos...`)
 
-    // ── Sort por más recientes si hay más de 200 ads (elegimos qué 200 priorizar) ──
-    if (probe.totalAdsOnMeta > 200) {
+    // ── Sort por más recientes solo si hay más de 1000 ads (elegimos qué 200 priorizar) ──
+    // Con ≤ 1000 ads no vale la pena — cargamos hasta 500 con el sort por defecto (impresiones).
+    const manyAds = probe.totalAdsOnMeta > 1000
+    if (manyAds) {
       await fixSortOrder(page, 'recent')
       await Promise.race([
         page.waitForSelector('[role="article"]', { timeout: 10_000 }).then(() => true),
@@ -513,7 +518,9 @@ export async function scrapeAdsForStore(
     }
 
     // ── Pasada 2: full scroll ─────────────────────────────────────────────────
-    await scrollToLoadAll(page, probe.totalAdsOnMeta || 200)
+    // > 1000 ads → sort reciente → tomar 200. ≤ 1000 → sort impresiones → tomar hasta 500.
+    const maxAdsToLoad = manyAds ? 200 : 500
+    await scrollToLoadAll(page, probe.totalAdsOnMeta || maxAdsToLoad, maxAdsToLoad)
 
     // ── Extract ───────────────────────────────────────────────────────────────
     const ads = await extractAllAds(page)

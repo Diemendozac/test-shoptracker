@@ -6,6 +6,22 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-043 — Scroll: dual-selector + umbral sort > 1000 + maxAds 500
+
+**Fecha:** 2026-06-15
+
+**Qué cambió:**
+- `scrollToLoadAll` ahora usa dual-selector (`[role="article"]` primero, `[class*="_7jyh"]` como fallback) — igual que el probe. Stagnation threshold subió de 3 a 6 rondas.
+- Sort por "Más recientes" ahora solo se activa con > 1000 ads (antes: > 200). Con ≤ 1000 se mantiene el sort por impresiones.
+- `maxAds` sube a 500 cuando no se ordena por recientes (≤ 1000 ads). Con > 1000 se mantiene en 200.
+
+**Por qué:** `chic-lucky.com` tiene ~660 ads pero el sync solo extraía 12. El selector `[class*="_7jyh"]` no matcheaba todos los cards para ese advertiser. Además, activar el sort por recientes con 660 ads reiniciaba la página y dejaba aún menos cards visibles. Con el nuevo umbral, tiendas con ≤ 1000 ads cargan hasta 500 con el sort original.
+
+**Archivos afectados:**
+- `lib/scrapers/meta-ads.ts` — `scrollToLoadAll` y bloque de sort en `scrapeAdsForStore`
+
+---
+
 ### CHANGE-042 — Probe: fallback de dominio en textContent del card
 
 **Fecha:** 2026-06-15
