@@ -275,8 +275,18 @@ async function scrollToLoadAll(page: Page, totalExpected: number, maxAds = 500):
     }
     lastCount = cards.length
     if (attempts % 5 === 0) process.stdout.write(`  Cargando: ${lastCount}...`)
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
-    await page.waitForTimeout(1200 + Math.random() * 800)
+    // Scroll incremental para activar intersection observers de Meta (lazy load).
+    // scrollTo(0, scrollHeight) salta directo al fondo y no dispara el lazy load.
+    await page.evaluate(async () => {
+      const step = 800
+      const delay = (ms: number) => new Promise(r => setTimeout(r, ms))
+      for (let y = window.scrollY + step; y < document.body.scrollHeight; y += step) {
+        window.scrollTo(0, y)
+        await delay(80)
+      }
+      window.scrollTo(0, document.body.scrollHeight)
+    })
+    await page.waitForTimeout(1400 + Math.random() * 800)
     attempts++
   }
   const articleCards = await page.$$('[role="article"]')

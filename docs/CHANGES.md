@@ -6,6 +6,19 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-044 — Scroll: incremental en vez de salto directo al fondo
+
+**Fecha:** 2026-06-15
+
+**Qué cambió:** `scrollToLoadAll` ahora hace scroll incremental (pasos de 800px con 80ms de pausa) en vez de `scrollTo(0, scrollHeight)` que salta directo al fondo.
+
+**Por qué:** `window.scrollTo(0, scrollHeight)` no dispara los intersection observers de Meta que controlan el lazy load de ads. En headless Chromium, el viewport nunca "pasa" por los elementos intermedios, así que Meta no carga más cards. Con scroll incremental el viewport recorre la página y activa el lazy load. `chic-lucky.com` tenía 680 ads disponibles pero el sync solo extraía 12.
+
+**Archivos afectados:**
+- `lib/scrapers/meta-ads.ts` — lógica de scroll en `scrollToLoadAll`
+
+---
+
 ### CHANGE-043 — Scroll: dual-selector + umbral sort > 1000 + maxAds 500
 
 **Fecha:** 2026-06-15
