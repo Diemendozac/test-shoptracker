@@ -18,6 +18,13 @@ import { useGetProductAdsQuery } from '@/app/(dashboard)/services/dashboardApi'
 import { usePlanTier } from '@/lib/view-as'
 import { FloatingVideoPanel, useHoverPanel, AdvertiserBadge, uniqueAdvertisersFromAds } from '@/components/tracker/product-ads'
 
+function countryFlag(code: string | null | undefined): string {
+  if (!code || code.length !== 2) return ''
+  const base = 0x1F1E6 - 65
+  return String.fromCodePoint(base + code.toUpperCase().charCodeAt(0)) +
+         String.fromCodePoint(base + code.toUpperCase().charCodeAt(1))
+}
+
 type PoolSortKey = 'productTitle' | 'productPrice' | 'performanceScore' | 'growthPct' | 'currentRank'
 type SortDir = 'asc' | 'desc'
 interface SortState { key: PoolSortKey | null; dir: SortDir }
@@ -202,6 +209,8 @@ interface PoolWinnersSectionProps {
   onCurrencyFilterChange: (v: Set<string>) => void
   escalarFilter: boolean
   onEscalarFilterChange: (v: boolean) => void
+  countryFilter: Set<string>
+  onCountryFilterChange: (v: Set<string>) => void
 }
 
 export function PoolWinnersSection({
@@ -213,6 +222,7 @@ export function PoolWinnersSection({
   nicheFilter, onNicheFilterChange,
   currencyFilter, onCurrencyFilterChange,
   escalarFilter, onEscalarFilterChange,
+  countryFilter, onCountryFilterChange,
 }: PoolWinnersSectionProps) {
   const { currency: preferredCurrency } = useCurrency()
   const { isStarter } = usePlanTier()
@@ -234,6 +244,14 @@ export function PoolWinnersSection({
 
   const winners = data?.winners ?? []
 
+  const countries = useMemo(() => {
+    const set = new Set<string>()
+    for (const w of winners) {
+      if (w.storeCountry) set.add(w.storeCountry.toUpperCase())
+    }
+    return Array.from(set).sort()
+  }, [winners])
+
   // Client-side: deduplication + tab presets + sort only.
   // All other filters (search, dates, niche, currency, pago, escalar) are server-side
   // query params — never filter() on a partial page.
@@ -248,6 +266,8 @@ export function PoolWinnersSection({
       }
     }
     let r = Array.from(seen.values())
+    // Country filter (client-side — storeCountry comes from store, available in this page's data)
+    if (countryFilter.size > 0) r = r.filter(w => w.storeCountry && countryFilter.has(w.storeCountry.toUpperCase()))
     // Tab preset filters (client-side valid: favorites uses localStorage, rising/new are display hints)
     if (preset === 'favorites')  r = r.filter(w => favorites.has(w.candidateId))
     if (preset === 'rising')     r = r.filter(isRising)
@@ -267,9 +287,9 @@ export function PoolWinnersSection({
       })
     }
     return r
-  }, [winners, preset, favorites, sort])
+  }, [winners, preset, favorites, sort, countryFilter])
 
-  const hasActiveFilters = !!search || nicheFilter.size > 0 || currencyFilter.size > 0 || dateFilter > 0 || pagoFilter !== 'all' || escalarFilter
+  const hasActiveFilters = !!search || nicheFilter.size > 0 || currencyFilter.size > 0 || dateFilter > 0 || pagoFilter !== 'all' || escalarFilter || countryFilter.size > 0
 
   if (isLoading) {
     return (
@@ -442,6 +462,43 @@ export function PoolWinnersSection({
           ↑ Escalar
         </button>
 
+        {/* País — solo aparece si hay más de 1 país en los datos */}
+        {countries.length > 1 && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">País</span>
+            <button
+              onClick={() => onCountryFilterChange(new Set())}
+              className={cn(
+                'rounded-full border px-3 py-1 text-xs font-medium transition-all',
+                countryFilter.size === 0
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
+              )}
+            >
+              Todos
+            </button>
+            {countries.map((c) => (
+              <button
+                key={c}
+                onClick={() => {
+                  const next = new Set(countryFilter)
+                  next.has(c) ? next.delete(c) : next.add(c)
+                  onCountryFilterChange(next)
+                }}
+                className={cn(
+                  'rounded-full border px-2.5 py-1 text-sm font-medium transition-all',
+                  countryFilter.has(c)
+                    ? 'border-primary bg-primary/10'
+                    : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
+                )}
+                title={c}
+              >
+                {countryFlag(c)}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Count + clear */}
         <div className="ml-auto flex items-center gap-3">
           <span className="text-xs text-muted-foreground tabular-nums">
@@ -456,6 +513,7 @@ export function PoolWinnersSection({
                 onDateFilterChange(0)
                 onPagoFilterChange?.('all')
                 onEscalarFilterChange(false)
+                onCountryFilterChange(new Set())
               }}
               className="text-[10px] text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
             >
@@ -749,13 +807,20 @@ function PoolWinnerRow({ winner, position, preferredCurrency, isFavorite, onTogg
         )} />
       </button>
 
-      {/* Image */}
-      <HoverImagePreview
-        src={winner.productImage}
-        fallback={winner.productTitle.charAt(0)}
-        size={64}
-        proxy
-      />
+      {/* Image + country badge */}
+      <div className="relative inline-block">
+        <HoverImagePreview
+          src={winner.productImage}
+          fallback={winner.productTitle.charAt(0)}
+          size={64}
+          proxy
+        />
+        {winner.storeCountry && (
+          <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-card text-[13px] shadow-sm ring-1 ring-border leading-none">
+            {countryFlag(winner.storeCountry)}
+          </span>
+        )}
+      </div>
 
       {/* Producto + rank */}
       <div className="min-w-0 pl-3">

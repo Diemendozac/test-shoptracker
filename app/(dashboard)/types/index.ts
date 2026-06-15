@@ -93,6 +93,7 @@ export interface PoolWinnerProduct extends WinnerProduct {
   baseUrl?: string
   niche: string | null
   currency: string | null
+  storeCountry: string | null
   pagoAnticipado: boolean | null
   estUnitsDayLow: number | null
   estRevDayLow: number | null

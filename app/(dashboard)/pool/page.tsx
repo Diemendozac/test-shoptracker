@@ -29,6 +29,7 @@ export default function PoolPage() {
   const [nicheFilter, setNicheFilter] = useState<Set<string>>(new Set())
   const [currencyFilter, setCurrencyFilter] = useState<Set<string>>(new Set())
   const [escalarFilter, setEscalarFilter] = useState(false)
+  const [countryFilter, setCountryFilter] = useState<Set<string>>(new Set())
 
   const [favorites, setFavorites] = useState<Set<string>>(() => {
     if (typeof window === 'undefined') return new Set()
@@ -52,6 +53,7 @@ export default function PoolPage() {
   function handleNicheFilterChange(v: Set<string>) { setNicheFilter(v); setPage(0) }
   function handleCurrencyFilterChange(v: Set<string>) { setCurrencyFilter(v); setPage(0) }
   function handleEscalarFilterChange(v: boolean) { setEscalarFilter(v); setPage(0) }
+  function handleCountryFilterChange(v: Set<string>) { setCountryFilter(v); setPage(0) }
 
   function toggleFavorite(id: string) {
     setFavorites(prev => {
@@ -135,6 +137,8 @@ export default function PoolPage() {
           onCurrencyFilterChange={handleCurrencyFilterChange}
           escalarFilter={escalarFilter}
           onEscalarFilterChange={handleEscalarFilterChange}
+          countryFilter={countryFilter}
+          onCountryFilterChange={handleCountryFilterChange}
         />
       </div>
     </>
