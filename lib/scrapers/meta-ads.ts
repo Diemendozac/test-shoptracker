@@ -126,9 +126,11 @@ async function fixAdTypeFilter(page: Page): Promise<void> {
 }
 
 // Meta ignores sort_data in the URL and restores the last session sort.
-// Strategy: click "Ordenar por" button, then click "Más recientes".
+// Strategy: click "Ordenar por" → click the target option → page.reload() para arrancar limpio.
 async function fixSortOrder(page: Page, sort: 'impressions' | 'recent'): Promise<void> {
-  if (sort !== 'recent') return
+  const targetText  = sort === 'recent' ? 'Más recientes' : null
+  const targetRegex = sort === 'recent' ? /Más recientes/ : /Impresion/i
+  const label       = sort === 'recent' ? 'Más recientes' : 'Impresiones'
   try {
     const sortBtn = page.getByText(/Ordenar por|Sort by/i).first()
     if (!await sortBtn.isVisible({ timeout: 5000 })) return
@@ -136,26 +138,28 @@ async function fixSortOrder(page: Page, sort: 'impressions' | 'recent'): Promise
     await sortBtn.click()
     await page.waitForTimeout(1000)
 
-    const recentOption = page.getByText('Más recientes', { exact: true }).first()
-    if (await recentOption.isVisible({ timeout: 3000 })) {
-      await recentOption.click()
-      console.log('  → Sort forzado a "Más recientes" ✓')
-      await page.waitForTimeout(2500)
+    const option = targetText
+      ? page.getByText(targetText, { exact: true }).first()
+      : page.locator('[role="menuitem"], [role="option"], li').filter({ hasText: targetRegex }).first()
+
+    if (await option.isVisible({ timeout: 3000 })) {
+      await option.click()
+      console.log(`  → Sort: "${label}" ✓`)
+      await page.waitForTimeout(1000)
     } else {
-      const clicked = await page.evaluate(() => {
-        const els = [...document.querySelectorAll('*')]
-        const target = els.find(el =>
-          el.children.length === 0 &&
-          (el.textContent || '').trim() === 'Más recientes'
+      const clicked = await page.evaluate((rx: string) => {
+        const re = new RegExp(rx, 'i')
+        const target = [...document.querySelectorAll('*')].find(el =>
+          el.children.length === 0 && re.test((el.textContent || '').trim())
         )
         if (target) { (target as HTMLElement).click(); return true }
         return false
-      })
+      }, targetRegex.source)
       if (clicked) {
-        console.log('  → Sort forzado via evaluate ✓')
-        await page.waitForTimeout(2500)
+        console.log(`  → Sort "${label}" via evaluate ✓`)
+        await page.waitForTimeout(1000)
       } else {
-        console.log('  ⚠ No se encontró opción "Más recientes" — usando sort por defecto')
+        console.log(`  ⚠ No se encontró opción "${label}"`)
         await page.keyboard.press('Escape')
       }
     }
@@ -272,34 +276,52 @@ async function probeSearchResults(page: Page, domain: string): Promise<{
 
 // ── Full scroll — load all ads ────────────────────────────────────────────────
 
-async function scrollToLoadAll(page: Page, totalExpected: number, maxAds = 500): Promise<void> {
+async function scrollToLoadAll(page: Page, totalExpected: number, maxAds = 200): Promise<void> {
   const limit = Math.min(totalExpected || maxAds, maxAds)
   let lastCount = 0
-  let stagnantRounds = 0
+  let stagnantAtBottom = 0
   let attempts = 0
 
-  while (attempts < 30) {
-    // Dual-selector: same logic as probeSearchResults for consistency
-    const articleCards = await page.$$('[role="article"]')
-    const cards = articleCards.length > 0 ? articleCards : await page.$$('[class*="_7jyh"]')
-    if (cards.length >= limit) break
-    if (cards.length === lastCount) {
-      stagnantRounds++
-      if (stagnantRounds >= 6) break
+  while (attempts < 60) {
+    const { count, atBottom } = await page.evaluate(() => {
+      const articles = document.querySelectorAll('[role="article"]')
+      const jyh     = document.querySelectorAll('[class*="_7jyh"]')
+      const n = articles.length > 0 ? articles.length : jyh.length
+      return {
+        count:    n,
+        atBottom: window.scrollY + window.innerHeight >= document.body.scrollHeight - 300,
+      }
+    })
+
+    if (count >= limit) break
+
+    // Solo corta por estancamiento cuando YA estamos en el fondo de la página.
+    // Si no estamos en el fondo, seguimos scrolleando aunque el conteo no crezca
+    // (Meta carga por lotes — entre lotes el DOM queda igual por 2-3 s).
+    if (atBottom && count === lastCount) {
+      stagnantAtBottom++
+      if (stagnantAtBottom >= 4) break
     } else {
-      stagnantRounds = 0
+      stagnantAtBottom = 0
     }
-    lastCount = cards.length
-    if (attempts % 5 === 0) process.stdout.write(`  Cargando: ${lastCount}...`)
+    lastCount = count
+
+    if (attempts % 3 === 0) process.stdout.write(`  Cargando: ${lastCount}/${limit}...`)
+
     for (let step = 0; step < 8; step++) {
       await page.mouse.wheel(0, 600)
-      await page.waitForTimeout(120)
+      await page.waitForTimeout(150)
     }
-    await page.waitForTimeout(1400 + Math.random() * 800)
+    // 3 s de espera para dar tiempo al request de red + render del siguiente lote
+    await page.waitForTimeout(3000 + Math.random() * 1000)
     attempts++
   }
-  const articleCards = await page.$$('[role="article"]')
-  const finalCount = articleCards.length > 0 ? articleCards.length : (await page.$$('[class*="_7jyh"]')).length
+
+  const { count: finalCount } = await page.evaluate(() => {
+    const articles = document.querySelectorAll('[role="article"]')
+    const jyh     = document.querySelectorAll('[class*="_7jyh"]')
+    return { count: articles.length > 0 ? articles.length : jyh.length }
+  })
   process.stdout.write(` ${finalCount} ✓\n`)
 }
 
@@ -532,26 +554,52 @@ export async function scrapeAdsForStore(
       console.log(`  ✓ ${domain} — match detectado (${probe.count} ads cargados) → cargando todos...`)
     }
 
-    // ── Sort por más recientes solo si hay más de 1000 ads (elegimos qué 200 priorizar) ──
-    // Con ≤ 1000 ads no vale la pena — cargamos hasta 500 con el sort por defecto (impresiones).
-    const manyAds = probe.totalAdsOnMeta > 1000
-    if (manyAds) {
-      await fixSortOrder(page, 'recent')
+    // ── Pasada 2a: impresiones ────────────────────────────────────────────────
+    // Click sort → reload → fix filtro → scroll.
+    // El reload garantiza página limpia con el sort ya guardado por Meta.
+    const maxPerPass = 200
+    await fixSortOrder(page, 'impressions')
+    await page.reload({ waitUntil: 'domcontentloaded', timeout: 40_000 })
+    await page.waitForTimeout(2000)
+    await fixAdTypeFilter(page)
+    await Promise.race([
+      page.waitForSelector('[role="article"]', { timeout: 15_000 }).then(() => true),
+      page.waitForSelector('[class*="_7jyh"]',  { timeout: 15_000 }).then(() => true),
+    ]).catch(() => false)
+    await page.waitForTimeout(1500)
+    await scrollToLoadAll(page, probe.totalAdsOnMeta || maxPerPass, maxPerPass)
+    const adsByImpressions = await extractAllAds(page)
+    console.log(`  → ${adsByImpressions.length} ads (impresiones)`)
+
+    // ── Pasada 2b: recientes — solo si hay >200 ads ───────────────────────────
+    // Los productos en crecimiento tienen ads recientes, no de mayor impresión.
+    // 100 ads recientes son suficientes — son los últimos creados.
+    let ads = adsByImpressions
+    if (probe.totalAdsOnMeta > 200) {
+      await page.goto(buildSearchUrl(domain), { waitUntil: 'domcontentloaded', timeout: 40_000 })
+      await page.waitForTimeout(3000)
+      await fixAdTypeFilter(page)
       await Promise.race([
-        page.waitForSelector('[role="article"]', { timeout: 10_000 }).then(() => true),
-        page.waitForSelector('[class*="_7jyh"]',  { timeout: 10_000 }).then(() => true),
+        page.waitForSelector('[role="article"]', { timeout: 15_000 }).then(() => true),
+        page.waitForSelector('[class*="_7jyh"]',  { timeout: 15_000 }).then(() => true),
       ]).catch(() => false)
       await page.waitForTimeout(1500)
+      await fixSortOrder(page, 'recent')
+      await page.reload({ waitUntil: 'domcontentloaded', timeout: 40_000 })
+      await page.waitForTimeout(2000)
+      await fixAdTypeFilter(page)
+      await Promise.race([
+        page.waitForSelector('[role="article"]', { timeout: 20_000 }).then(() => true),
+        page.waitForSelector('[class*="_7jyh"]',  { timeout: 20_000 }).then(() => true),
+      ]).catch(() => false)
+      await page.waitForTimeout(2000)
+      await scrollToLoadAll(page, 100, 100)
+      const adsByRecent = await extractAllAds(page)
+      const seenUrls = new Set(adsByImpressions.map(a => a.adSnapshotUrl))
+      const freshAds  = adsByRecent.filter(a => !seenUrls.has(a.adSnapshotUrl))
+      ads = [...adsByImpressions, ...freshAds]
+      console.log(`  → ${adsByRecent.length} ads (recientes) | ${freshAds.length} nuevos | total ${ads.length}`)
     }
-
-    // ── Pasada 2: full scroll ─────────────────────────────────────────────────
-    // > 1000 ads → sort reciente → tomar 200. ≤ 1000 → sort impresiones → tomar hasta 500.
-    const maxAdsToLoad = manyAds ? 200 : 500
-    await scrollToLoadAll(page, probe.totalAdsOnMeta || maxAdsToLoad, maxAdsToLoad)
-
-    // ── Extract ───────────────────────────────────────────────────────────────
-    const ads = await extractAllAds(page)
-    console.log(`  → ${ads.length} ads extraídos`)
 
     if (ads.length === 0) {
       return { ads: [], advertiser: probe.advertiser, totalAdsOnMeta: probe.totalAdsOnMeta }

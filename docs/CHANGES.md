@@ -6,6 +6,22 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-048 — Dual-sort scraper: scroll fix + pasada de recientes corregida
+
+**Fecha:** 2026-06-15
+
+**Qué cambió:**
+1. `scrollToLoadAll` — reemplaza lógica de estancamiento fija (6 rondas) por corte basado en `atBottom`. Solo corta si el conteo no creció Y ya se llegó al fondo de la página. Antes salía con 20 ads; ahora llega a 200+.
+2. Pasada de recientes — antes navegaba a una URL con `sort_data[mode]=creation_time` lo que confundía a Meta y retornaba 0 cards. Ahora navega a la misma URL de impresiones (fresh load) y DESPUÉS hace click en "Más recientes". Resultado verificado: 122 ads recientes cargados para thritake.com (>900 ads en Meta).
+3. Orden de operaciones en pasada de recientes: `fixAdTypeFilter` → wait cards → `fixSortOrder` → `fixAdTypeFilter` de nuevo (Meta puede resetear el filtro al cambiar sort) → wait re-render → scroll.
+
+**Por qué:** Tiendas con >200 ads activos solo mostraban 20 ads por estancamiento prematuro. Los productos en crecimiento (bajo número de impresiones, recientes) nunca aparecían en la pasada por impresiones.
+
+**Archivos afectados:**
+- `lib/scrapers/meta-ads.ts` — `scrollToLoadAll`, bloque pasada 2b en `scrapeAdsForStore`
+
+---
+
 ### CHANGE-047 — F4: múltiples páginas anunciantes por tienda
 
 **Fecha:** 2026-06-15
