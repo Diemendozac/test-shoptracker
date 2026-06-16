@@ -6,6 +6,21 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-049 — Scraper: reducir tiempo de estancamiento al fondo
+
+**Fecha:** 2026-06-16
+
+**Qué cambió:**
+- `scrollToLoadAll`: eliminado el `waitForTimeout(5000)` extra al detectar estancamiento al fondo, y reducido el umbral de corte de 4 a 2 rondas consecutivas sin nuevos ads.
+
+**Por qué:**
+Análisis del sync run 27583736543 (39 min) vs run viejo 27550717277 (11 min): la mayor parte del tiempo extra venía del estancamiento. Con 4 rondas × 9.2s = 36.8s por tienda × 31 tiendas = 1140s (~19 min) solo esperando el fondo. La mayoría de tiendas tienen <50 ads activos y tocan fondo genuinamente — los 5s extra no cargan más ads. Con 2 rondas × 4.2s = 8.4s por tienda, ahorro estimado de ~880s (~15 min). El dual-sort para >200 ads se mantiene — shoponlygo y coolddy dependen críticamente de la pasada de recientes (12 y 7 matches respectivamente).
+
+**Archivos afectados:** `lib/scrapers/meta-ads.ts`
+**Riesgo:** solo — afecta solo el timing del scroll, no la lógica de matching ni de ingest.
+
+---
+
 ### CHANGE-048 — Dual-sort scraper: scroll fix + pasada de recientes corregida
 
 **Fecha:** 2026-06-15
