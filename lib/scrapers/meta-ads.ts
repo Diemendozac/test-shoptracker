@@ -557,14 +557,25 @@ export async function scrapeAdsForStore(
     // ≤200 ads: un solo pase con el sort por defecto del probe (esaske necesita
     // este default sin forzar nada).
     // >200 ads: un solo pase forzado a "Más recientes" con scroll más profundo
-    // (cap=130 en vez de 50) en lugar de 2 pases (impresiones + recientes con
-    // reload entre medio). Validado localmente contra las 6 tiendas dual-sort
-    // de producción: mismo o más ads que las 2 pasadas juntas (+0 a +42), en
-    // menos tiempo en 5/6 casos (ver CHANGE-056). El sort de impresiones queda
-    // descartado — "recientes" con scroll profundo cubre más superficie total.
+    // (cap=130 en vez de 50). CRÍTICO: requiere un page.goto FRESCO antes del
+    // reload — el sort por defecto del probe YA es "recientes" (ver CHANGE-052),
+    // así que forzar "recientes" con solo page.reload() no resetea el cursor de
+    // paginación de Meta (Meta no detecta cambio real de sort, sigue desde donde
+    // el probe ya había agotado). La navegación fresca sí resetea ese cursor.
+    // CHANGE-056 original no tenía este goto y se quedaba pegado exactamente en
+    // el conteo del probe en las 4 tiendas dual-sort de un run real — confirmado
+    // en producción (run 27626600525). Corregido en CHANGE-057.
     const maxPerPass = 50
     let ads: ScrapedAd[]
     if (probe.totalAdsOnMeta > 200) {
+      await page.goto(buildSearchUrl(domain), { waitUntil: 'domcontentloaded', timeout: 40_000 })
+      await page.waitForTimeout(3000)
+      await fixAdTypeFilter(page)
+      await Promise.race([
+        page.waitForSelector('[role="article"]', { timeout: 15_000 }).then(() => true),
+        page.waitForSelector('[class*="_7jyh"]',  { timeout: 15_000 }).then(() => true),
+      ]).catch(() => false)
+      await page.waitForTimeout(1500)
       await fixSortOrder(page, 'recent')
       await page.reload({ waitUntil: 'domcontentloaded', timeout: 40_000 })
       await page.waitForTimeout(2000)

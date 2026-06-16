@@ -6,7 +6,36 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-057 — Fix CHANGE-056: pasada única se quedaba pegada en el conteo del probe
+
+**Fecha:** 2026-06-16
+
+**Qué cambió:**
+- En el mismo branch `probe.totalAdsOnMeta > 200` de `scrapeAdsForStore` (`lib/scrapers/meta-ads.ts`), se agrega de vuelta un `page.goto` fresco (navegación completa, no solo reload) antes de forzar `fixSortOrder(page, 'recent')`. CHANGE-056 forzaba el sort directo sobre la página ya scrolleada por el probe, solo con `page.reload()`.
+
+**Por qué (causa raíz confirmada en producción, run 27626600525):**
+Las 4 tiendas dual-sort de ese run (chic-lucky, comprasmart, thritake, boniss) quedaron con el conteo final de ads **exactamente igual** al conteo que ya tenía el probe — el scroll no avanzó nada tras el reload. Causa: el sort por defecto que usa el probe ya es "Más recientes" (hallazgo de CHANGE-052). Forzar "recientes" otra vez con solo `reload()` no es un cambio real de sort desde la perspectiva de Meta — sigue sirviendo desde el mismo cursor de paginación que el probe ya agotó, aunque el DOM se vea reseteado visualmente. La pasada vieja de "recientes" (pre-CHANGE-056) sí funcionaba porque hacía un `page.goto` completo (no solo reload) antes de forzar el sort, lo cual resetea la paginación de Meta de verdad.
+- Error metodológico en la validación de CHANGE-056: la prueba local que "confirmó" la mejora nunca corrió el probe antes del sort+reload (solo goto inicial + sort directo), por lo que no reproducía el escenario real. Validé el código equivocado.
+
+**Verificación:** re-testeado con `scrapeAdsForStore` real (probe incluido) contra las mismas 4 tiendas que fallaron en producción:
+| Tienda | Antes (bug) | Después (fix) |
+|---|---|---|
+| chic-lucky | 30 | 131 |
+| comprasmart | 18 | 147 |
+| thritake | 6 | 130 |
+| boniss | 28 | 151 |
+
+**Archivos afectados:** `lib/scrapers/meta-ads.ts`
+
+**Riesgo:** solo
+
+**Pendiente de verificar:** correr un sync real completo (requiere que el backend esté disponible — el run 27626600525 también falló por un 502 al pushear datos, problema de infraestructura separado de este fix) para confirmar en producción.
+
+---
+
 ### CHANGE-056 — Scraper dual-sort: pasada única bajo "recientes" en vez de 2 pasadas
+
+**[CORREGIDO POR CHANGE-057 — ver arriba]** Esta versión tenía un bug que dejaba el scroll pegado en el conteo del probe en las 4 tiendas dual-sort probadas en producción. Se deja la entrada original sin editar como registro histórico.
 
 **Fecha:** 2026-06-16
 
