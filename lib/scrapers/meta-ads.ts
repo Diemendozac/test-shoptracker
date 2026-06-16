@@ -554,13 +554,17 @@ export async function scrapeAdsForStore(
     }
 
     // ── Pasada 2a: scroll con sort por defecto (impresiones) ─────────────────
-    // Meta ya cargó con el sort por defecto desde el probe — no forzamos nada.
+    // Meta ya cargó con el sort por defecto desde el probe — no forzamos nada
+    // para tiendas de un solo pase (esaske necesita este default sin forzar).
     const maxPerPass = 50
     if (probe.totalAdsOnMeta > 200) {
-      // El probe deja la paginación de Meta "trabada" en el lote chico que cargó
-      // para detectar el match — scrollToLoadAll no consigue destrabarla sin un
-      // reload. Solo se hace para tiendas con >200 ads (las que van a dual-sort);
-      // no se fuerza ningún sort, solo se resetea el estado de paginación.
+      // Dual-sort: el sort default de Meta ya no es "por impresiones" — es
+      // indistinguible del de "Más recientes" (runs 27587693514, 27589293246,
+      // 27592121043 muestran 0 nuevos en TODAS las tiendas dual-sort, con o sin
+      // reload). Sin forzar, pasada 2a y la pasada de recientes terminan viendo
+      // el mismo conjunto. Solo aquí forzamos "Impresiones" explícitamente para
+      // que las dos pasadas sean genuinamente distintas.
+      await fixSortOrder(page, 'impressions')
       await page.reload({ waitUntil: 'domcontentloaded', timeout: 40_000 })
       await page.waitForTimeout(2000)
       await fixAdTypeFilter(page)

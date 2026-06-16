@@ -6,6 +6,26 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-052 — Scraper: forzar sort "Impresiones" explícito en dual-sort (revierte parte de CHANGE-051)
+
+**Fecha:** 2026-06-16
+
+**Qué cambió:**
+- El reload sin forzar sort de CHANGE-051 se reemplaza por `fixSortOrder(page, 'impressions')` + reload, solo dentro del branch `probe.totalAdsOnMeta > 200` (dual-sort). Las tiendas de un solo pase (≤200 ads, incluida esaske) siguen sin forzar nada — sin cambios para ellas.
+
+**Por qué:**
+El reload-sin-forzar de CHANGE-051 (probado en run 27592121043, tras esperar a que el backend de Easypanel volviera de un timeout) tampoco resolvió la regresión: mismo patrón de "0 nuevos" en las 6 tiendas dual-sort, con el conteo del probe idéntico al final de la pasada de impresiones en cada una (chic-lucky 22→22, thritake 3→3, comprasmart 19→19, thrivin 18→18, shoponlygo 30→30, coolddy 28→28) — descartando la hipótesis de "paginación trabada".
+
+Nueva hipótesis con más evidencia a favor: el sort que Meta deja por defecto (el que usa pasada 2a sin forzar, desde commit `5437576`) ya no es "por impresiones" sino algo equivalente a "recientes"/relevancia. Sin forzar, pasada 2a y la pasada de recientes (2b, que sí fuerza "Más recientes") terminan viendo el mismo conjunto — de ahí el 0 nuevos consistente en 3 runs distintos (stagnant=2, stagnant=4, +reload). Esto también explica por qué quitar el forzado de impresiones arregló a esaske: el sort real por defecto sí mostraba sus productos en crecimiento que "Impresiones" forzado ocultaba.
+
+Se restringe el forzado de "Impresiones" únicamente al branch dual-sort, donde sí necesitamos dos sorts genuinamente distintos para que el merge tenga sentido. Las tiendas de un solo pase (esaske y el resto con ≤200 ads) no se tocan — siguen usando el sort default sin forzar, que es lo que las arregló.
+
+**Archivos afectados:** `lib/scrapers/meta-ads.ts`
+**Riesgo:** solo — cambia el sort forzado únicamente dentro del branch >200 ads; no toca el path de esaske ni la lógica de matching/ingest.
+**Pendiente de verificar:** correr un sync y confirmar (a) `recientes únicos` > 0 en al menos algunas de las 6 tiendas dual-sort, y (b) esaske sigue en ~30/30 (no debería verse afectada, queda fuera de este branch).
+
+---
+
 ### CHANGE-051 — Scraper: reload de paginación antes de la pasada de impresiones (dual-sort)
 
 **Fecha:** 2026-06-16
