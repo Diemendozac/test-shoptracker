@@ -6,6 +6,22 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-050 — Scraper: umbral de estancamiento separado para la pasada de recientes
+
+**Fecha:** 2026-06-16
+
+**Qué cambió:**
+- `scrollToLoadAll` ahora acepta un 4° parámetro `stagnantLimit` (default 2).
+- La pasada de recientes (`fixSortOrder(page, 'recent')` + reload, dentro de `scrapeAdsForStore`) ahora llama `scrollToLoadAll(page, 50, 50, 4)` — 4 rondas de estancamiento en vez de 2. La pasada de impresiones no cambia (sigue en el default de 2).
+
+**Por qué:**
+Run 27587693514 (post CHANGE-049) bajó el sync a 17.3 min, pero el log `[F3-dual]` mostró `recientes únicos: 0 matches` en las 6 tiendas dual-sort, con conteos idénticos entre pasadas (ej. chic-lucky: 22/22, comprasmart: 30/30, thrivin: 18/18) — la pasada de recientes no estaba capturando ads nuevos en ninguna tienda, patrón 100% consistente que descarta coincidencia. Hipótesis: el umbral de 2 rondas (~8.4s) es insuficiente después del reload + click en "Más recientes" — el scroll se da por estancado antes de que Meta termine de aplicar el nuevo orden, dejando la pasada de recientes leyendo contenido todavía ordenado por impresiones. La pasada de impresiones no tiene este problema (no hay reload/cambio de sort de por medio), por eso mantiene el umbral rápido de 2.
+
+**Archivos afectados:** `lib/scrapers/meta-ads.ts`
+**Riesgo:** solo — cambio de timing en una rama del scraper, no toca matching ni ingest.
+
+---
+
 ### CHANGE-049 — Scraper: reducir tiempo de estancamiento al fondo
 
 **Fecha:** 2026-06-16

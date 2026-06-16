@@ -276,7 +276,7 @@ async function probeSearchResults(page: Page, domain: string): Promise<{
 
 // ── Full scroll — load all ads ────────────────────────────────────────────────
 
-async function scrollToLoadAll(page: Page, totalExpected: number, maxAds = 200): Promise<void> {
+async function scrollToLoadAll(page: Page, totalExpected: number, maxAds = 200, stagnantLimit = 2): Promise<void> {
   const limit = Math.min(totalExpected || maxAds, maxAds)
   let lastCount = 0
   let stagnantAtBottom = 0
@@ -300,7 +300,7 @@ async function scrollToLoadAll(page: Page, totalExpected: number, maxAds = 200):
     // (Meta carga por lotes — entre lotes el DOM queda igual por 2-3 s).
     if (atBottom && count === lastCount) {
       stagnantAtBottom++
-      if (stagnantAtBottom >= 2) break
+      if (stagnantAtBottom >= stagnantLimit) break
     } else {
       stagnantAtBottom = 0
     }
@@ -582,7 +582,10 @@ export async function scrapeAdsForStore(
         page.waitForSelector('[class*="_7jyh"]',  { timeout: 20_000 }).then(() => true),
       ]).catch(() => false)
       await page.waitForTimeout(2000)
-      await scrollToLoadAll(page, 50, 50)
+      // stagnantLimit más alto que la pasada de impresiones — el reload + cambio de sort
+      // necesita más tiempo para que Meta termine de aplicar "Más recientes" antes de
+      // que el scroll decida que no hay nada nuevo.
+      await scrollToLoadAll(page, 50, 50, 4)
       const adsByRecent = await extractAllAds(page)
       const seenUrls = new Set(adsByImpressions.map(a => a.adSnapshotUrl))
       const freshAds  = adsByRecent.filter(a => !seenUrls.has(a.adSnapshotUrl))
