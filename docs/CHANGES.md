@@ -6,6 +6,22 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-051 — Scraper: reload de paginación antes de la pasada de impresiones (dual-sort)
+
+**Fecha:** 2026-06-16
+
+**Qué cambió:**
+- Para tiendas con `probe.totalAdsOnMeta > 200` (las que disparan dual-sort), se agrega un `page.reload()` — sin forzar ningún sort — antes de la pasada 2a (impresiones). Las demás ~25 tiendas no se ven afectadas.
+
+**Por qué:**
+CHANGE-050 (subir `stagnantLimit` a 4 solo en la pasada de recientes) no resolvió la regresión de "0 nuevos" — el run 27589293246 mostró el mismo patrón: las 6 tiendas dual-sort en 0 matches únicos de recientes. Diagnóstico más profundo: en ese run, para las 31 tiendas SIN excepción, el conteo de `match detectado (N ads cargados)` del probe es idéntico al conteo final de la pasada de impresiones — la pasada 2a no scrollea nada nuevo, solo confirma lo que el probe ya había cargado. Como la pasada de recientes hace reload + ve el mismo techo bajo, ambas pasadas terminan con el mismo subconjunto pequeño de tarjetas, y "0 nuevos" es matemáticamente inevitable, no un problema de timing. Hipótesis: el probe deja la paginación de Meta trabada en el lote chico que cargó para detectar el match; el commit `5437576` (que quitó el reload forzado de la pasada 2a para arreglar el sesgo de esaske) eliminó el único mecanismo que destrababa esa paginación. Este cambio reintroduce el reload, pero sin forzar sort — separa "refrescar paginación" de "forzar orden", que era la causa del sesgo de esaske.
+
+**Archivos afectados:** `lib/scrapers/meta-ads.ts`
+**Riesgo:** solo — afecta timing/paginación del scroll en una rama del scraper (>200 ads), no toca lógica de matching ni de ingest.
+**Pendiente de verificar:** correr un sync nuevo y confirmar que `recientes únicos` vuelve a tener matches >0 en las 6 tiendas dual-sort, sin que esaske regrese (sigue sin forzar sort en pasada 2a) ni que la duración total suba significativamente.
+
+---
+
 ### CHANGE-050 — Scraper: umbral de estancamiento separado para la pasada de recientes
 
 **Fecha:** 2026-06-16

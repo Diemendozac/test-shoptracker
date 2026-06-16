@@ -556,6 +556,20 @@ export async function scrapeAdsForStore(
     // ── Pasada 2a: scroll con sort por defecto (impresiones) ─────────────────
     // Meta ya cargó con el sort por defecto desde el probe — no forzamos nada.
     const maxPerPass = 50
+    if (probe.totalAdsOnMeta > 200) {
+      // El probe deja la paginación de Meta "trabada" en el lote chico que cargó
+      // para detectar el match — scrollToLoadAll no consigue destrabarla sin un
+      // reload. Solo se hace para tiendas con >200 ads (las que van a dual-sort);
+      // no se fuerza ningún sort, solo se resetea el estado de paginación.
+      await page.reload({ waitUntil: 'domcontentloaded', timeout: 40_000 })
+      await page.waitForTimeout(2000)
+      await fixAdTypeFilter(page)
+      await Promise.race([
+        page.waitForSelector('[role="article"]', { timeout: 20_000 }).then(() => true),
+        page.waitForSelector('[class*="_7jyh"]',  { timeout: 20_000 }).then(() => true),
+      ]).catch(() => false)
+      await page.waitForTimeout(1500)
+    }
     await scrollToLoadAll(page, probe.totalAdsOnMeta || maxPerPass, maxPerPass)
     const adsByImpressions = await extractAllAds(page)
     console.log(`  → ${adsByImpressions.length} ads (impresiones)`)
