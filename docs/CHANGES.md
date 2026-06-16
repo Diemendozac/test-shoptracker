@@ -6,6 +6,25 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-053 — Sync: filtrar advertiser pages por ad realmente matcheado a un candidato
+
+**Fecha:** 2026-06-16
+
+**Qué cambió:**
+- En `syncStore()` (paso F4), `advertiserMap` ya no agrega el `advertiser` detectado por el probe de forma incondicional, ni cualquier `advertiserName` que aparezca en `ads`. Ahora solo agrega el advertiser de un ad si ese ad tiene `matchedCandidateId` (es decir, si Meta lo devolvió como anuncio de un producto/candidato real de la tienda).
+- Se quitó `advertiser` del destructuring de `scrapeResult` (quedó sin uso tras el cambio).
+
+**Por qué:**
+El run 27592121043 mostró el caso de hogar-inteligente.co: `[F4] ✓ 21 página(s) anunciante(s)` (PC-SOLUTIONS, ADT Costa Rica, Bazar Aram's, etc.) guardadas como anunciantes de la tienda, pero `[F3] 0 / 29 ads con candidato` — cero matches reales. La causa: esta tienda usa el fallback `effectiveMatch` (dominio no visible en el DOM, pero Meta devuelve resultados de búsqueda igual — log `≈ ... dominio no visible en DOM → scrapeando`). En ese modo, el "advertiser" del probe y los `advertiserName` de los ads pueden ser cualquier página que Meta asoció a la búsqueda por texto, no necesariamente la tienda real. Un ad con `matchedCandidateId` es la única señal confiable de que ese anunciante realmente vende ese producto — se usa como filtro.
+
+**Verificación local (sin live scrape):** se replicó el bloque exacto de `advertiserMap` con datos sintéticos imitando el caso real (6 advertisers garbage sin match + 1 advertiser con `matchedCandidateId` real + 1 duplicado + 1 ad matcheado sin `advertiserName`). Resultado: solo el advertiser con match sobrevive, sin duplicados, con su `pageId` correcto. Test descartado tras confirmar (no se commitea, era solo de verificación).
+
+**Archivos afectados:** `lib/jobs/sync-ads.ts`
+**Riesgo:** con cuidado — afecta datos persistidos que el frontend consume (`AdvertiserPagesSection` en `app/(dashboard)/stores/[storeId]/page.tsx`), aunque la lectura/render del lado frontend ya estaba correcta (usa `pageId` para el link clickeable a Facebook) y no se tocó.
+**Pendiente de verificar:** correr un sync real y confirmar que hogar-inteligente.co (y otras tiendas en modo `effectiveMatch`) ya no guardan advertiser pages sin match real — debería bajar a 0 páginas si sigue sin matches, o solo las legítimas si los hay.
+
+---
+
 ### CHANGE-052 — Scraper: forzar sort "Impresiones" explícito en dual-sort (revierte parte de CHANGE-051)
 
 **Fecha:** 2026-06-16

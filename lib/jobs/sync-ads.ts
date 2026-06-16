@@ -237,17 +237,16 @@ async function syncStore(store: Store): Promise<StoreOutcome> {
     return { status: 'error', error: `${domain}: ${msg}` }
   }
 
-  const { ads, advertiser, totalAdsOnMeta } = scrapeResult
+  const { ads, totalAdsOnMeta } = scrapeResult
 
-  // ── 4. Persist ALL advertiser pages discovered (upsert) ──────────────────
-  // Collect unique advertisers from every ad + the probe-discovered one.
-  // A store can have multiple Facebook pages advertising for it.
+  // ── 4. Persist solo anunciantes con al menos un ad matcheado a un candidato ─
+  // No usar el advertiser del probe sin condición — con el fallback de
+  // effectiveMatch (dominio no visible en DOM), ese advertiser puede ser
+  // cualquier página que Meta devolvió para la búsqueda, no necesariamente
+  // la de esta tienda. Un ad matcheado es la única señal real de pertenencia.
   const advertiserMap = new Map<string, { pageId: string | null }>()
-  if (advertiser) {
-    advertiserMap.set(advertiser.pageName, { pageId: advertiser.pageId ?? null })
-  }
   for (const ad of ads) {
-    if (ad.advertiserName && !advertiserMap.has(ad.advertiserName)) {
+    if (ad.matchedCandidateId && ad.advertiserName && !advertiserMap.has(ad.advertiserName)) {
       advertiserMap.set(ad.advertiserName, { pageId: ad.pageId ?? null })
     }
   }
