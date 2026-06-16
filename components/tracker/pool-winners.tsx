@@ -14,7 +14,7 @@ import type { PoolWinnersResponse, PoolWinnerProduct } from '@/app/(dashboard)/t
 import type { Ad } from '@/components/tracker/product-ads'
 import type { PoolPreset } from '@/app/(dashboard)/pool/page'
 import { isScalable } from '@/lib/label-utils'
-import { useGetProductAdsQuery } from '@/app/(dashboard)/services/dashboardApi'
+import { useGetProductAdsQuery, useGetPoolCountriesQuery } from '@/app/(dashboard)/services/dashboardApi'
 import { usePlanTier } from '@/lib/view-as'
 import { FloatingVideoPanel, useHoverPanel, AdvertiserBadge, uniqueAdvertisersFromAds } from '@/components/tracker/product-ads'
 
@@ -209,8 +209,8 @@ interface PoolWinnersSectionProps {
   onCurrencyFilterChange: (v: Set<string>) => void
   escalarFilter: boolean
   onEscalarFilterChange: (v: boolean) => void
-  countryFilter: Set<string>
-  onCountryFilterChange: (v: Set<string>) => void
+  countryFilter: string
+  onCountryFilterChange: (v: string) => void
 }
 
 export function PoolWinnersSection({
@@ -244,16 +244,12 @@ export function PoolWinnersSection({
 
   const winners = data?.winners ?? []
 
-  const countries = useMemo(() => {
-    const set = new Set<string>()
-    for (const w of winners) {
-      if (w.storeCountry) set.add(w.storeCountry.toUpperCase())
-    }
-    return Array.from(set).sort()
-  }, [winners])
+  // Pool-wide — no afectado por paginación ni por los demás filtros, alimenta el dropdown
+  const { data: countriesData } = useGetPoolCountriesQuery()
+  const countries = countriesData?.countries ?? []
 
   // Client-side: deduplication + tab presets + sort only.
-  // All other filters (search, dates, niche, currency, pago, escalar) are server-side
+  // All other filters (search, dates, niche, currency, pago, escalar, country) are server-side
   // query params — never filter() on a partial page.
   const filtered = useMemo(() => {
     // Deduplicate: same product title + same store → keep the one with higher score
@@ -266,8 +262,6 @@ export function PoolWinnersSection({
       }
     }
     let r = Array.from(seen.values())
-    // Country filter (client-side — storeCountry comes from store, available in this page's data)
-    if (countryFilter.size > 0) r = r.filter(w => w.storeCountry && countryFilter.has(w.storeCountry.toUpperCase()))
     // Tab preset filters (client-side valid: favorites uses localStorage, rising/new are display hints)
     if (preset === 'favorites')  r = r.filter(w => favorites.has(w.candidateId))
     if (preset === 'rising')     r = r.filter(isRising)
@@ -287,9 +281,9 @@ export function PoolWinnersSection({
       })
     }
     return r
-  }, [winners, preset, favorites, sort, countryFilter])
+  }, [winners, preset, favorites, sort])
 
-  const hasActiveFilters = !!search || nicheFilter.size > 0 || currencyFilter.size > 0 || dateFilter > 0 || pagoFilter !== 'all' || escalarFilter || countryFilter.size > 0
+  const hasActiveFilters = !!search || nicheFilter.size > 0 || currencyFilter.size > 0 || dateFilter > 0 || pagoFilter !== 'all' || escalarFilter || !!countryFilter
 
   if (isLoading) {
     return (
@@ -462,40 +456,22 @@ export function PoolWinnersSection({
           ↑ Escalar
         </button>
 
-        {/* País — solo aparece si hay más de 1 país en los datos */}
+        {/* País — dropdown con todos los países del pool, no solo los de esta página */}
         {countries.length > 1 && (
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex items-center gap-1.5">
             <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">País</span>
-            <button
-              onClick={() => onCountryFilterChange(new Set())}
-              className={cn(
-                'rounded-full border px-3 py-1 text-xs font-medium transition-all',
-                countryFilter.size === 0
-                  ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
-              )}
+            <select
+              value={countryFilter}
+              onChange={e => onCountryFilterChange(e.target.value)}
+              className="h-8 rounded-lg border border-border bg-background px-2.5 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
             >
-              Todos
-            </button>
-            {countries.map((c) => (
-              <button
-                key={c}
-                onClick={() => {
-                  const next = new Set(countryFilter)
-                  next.has(c) ? next.delete(c) : next.add(c)
-                  onCountryFilterChange(next)
-                }}
-                className={cn(
-                  'rounded-full border px-2.5 py-1 text-sm font-medium transition-all',
-                  countryFilter.has(c)
-                    ? 'border-primary bg-primary/10'
-                    : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
-                )}
-                title={c}
-              >
-                {countryFlag(c)}
-              </button>
-            ))}
+              <option value="">Todos</option>
+              {countries.map((c) => (
+                <option key={c} value={c}>
+                  {countryFlag(c)} {c}
+                </option>
+              ))}
+            </select>
           </div>
         )}
 
@@ -513,7 +489,7 @@ export function PoolWinnersSection({
                 onDateFilterChange(0)
                 onPagoFilterChange?.('all')
                 onEscalarFilterChange(false)
-                onCountryFilterChange(new Set())
+                onCountryFilterChange('')
               }}
               className="text-[10px] text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
             >

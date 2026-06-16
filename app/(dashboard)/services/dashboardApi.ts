@@ -37,12 +37,12 @@ export const dashboardApi = createApi({
       providesTags: ['Winner'],
     }),
 
-    // GET /api/dashboard/pool/winners?page=&size=&pagoAnticipado=&q=&niche=&currency=&days=&scalable=
+    // GET /api/dashboard/pool/winners?page=&size=&pagoAnticipado=&q=&niche=&currency=&days=&scalable=&country=
     getPoolWinners: builder.query<PoolWinnersResponse, {
       page?: number; size?: number; pagoAnticipado?: boolean
-      q?: string; niche?: string[]; currency?: string[]; days?: number; scalable?: boolean
+      q?: string; niche?: string[]; currency?: string[]; days?: number; scalable?: boolean; country?: string
     }>({
-      query: ({ page = 0, size = 20, pagoAnticipado, q, niche, currency, days, scalable } = {}) => ({
+      query: ({ page = 0, size = 20, pagoAnticipado, q, niche, currency, days, scalable, country } = {}) => ({
         url: '/pool/winners',
         params: {
           page, size,
@@ -52,8 +52,15 @@ export const dashboardApi = createApi({
           ...(currency?.length && { currency }), // TODO: backend pendiente
           ...(days             && { days }),      // TODO: backend pendiente
           ...(scalable         && { scalable }),  // TODO: backend pendiente
+          ...(country          && { country }),
         },
       }),
+      providesTags: ['Pool'],
+    }),
+
+    // GET /api/dashboard/pool/countries — países distintos en todo el pool (no paginado)
+    getPoolCountries: builder.query<{ countries: string[] }, void>({
+      query: () => '/pool/countries',
       providesTags: ['Pool'],
     }),
 
@@ -103,6 +110,7 @@ export const {
   useGetCandidateDetailQuery,
   useGetWeeklyWinnerQuery,
   useGetPoolWinnersQuery,
+  useGetPoolCountriesQuery,
   useGetInsightsQuery,
   useGetPodiumQuery,
   useGetProductAdsQuery,

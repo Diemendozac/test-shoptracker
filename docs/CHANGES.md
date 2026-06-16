@@ -6,6 +6,29 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-055 — Filtro de país en pool: dropdown server-side con todos los países del pool
+
+**Fecha:** 2026-06-16
+
+**Qué cambió:**
+- `dashboardApi.ts` — `getPoolWinners` ahora envía `country` como query param. Nuevo `getPoolCountries` (`GET /pool/countries`).
+- `pool/page.tsx` — `countryFilter` pasó de `Set<string>` (multi-select client-side) a `string` (single-select), enviado al backend en `useGetPoolWinnersQuery`.
+- `pool-winners.tsx` — los pills de país se reemplazaron por un `<select>`, alimentado por `useGetPoolCountriesQuery` (países distintos de TODO el pool, no solo la página de 20 cargada). Se eliminó el filtrado client-side de país (`filtered` useMemo) — ahora el backend ya devuelve solo lo que corresponde.
+
+**Por qué:**
+El filtro de país anterior operaba sobre `winners`, que es solo la página actual (20 ítems) — no podía filtrar productos fuera de esa página, y el dropdown solo mostraba países presentes en esa página. Pedido explícito del usuario: un dropdown con TODOS los países del pool, que filtre de verdad sobre todo el dataset. Ver FIX-039 en el repo backend para el detalle de los cambios server-side correspondientes (incluye también la 4ª señal de detección de país que cierra el hueco de tiendas como thritake.com).
+
+**Qué NO cambió:** el bug pre-existente de `niche`/`currency`/`days`/`scalable` ignorados por el backend (TODO ya existente en el código) — fuera de alcance de este cambio, documentado como pendiente separado. `tracker-table.tsx` ("Mis testeos") no se tocó — ya tenía un dropdown de país funcionando correctamente sobre el dataset completo (su endpoint no pagina).
+
+**Archivos afectados:**
+- `app/(dashboard)/services/dashboardApi.ts`
+- `app/(dashboard)/pool/page.tsx`
+- `components/tracker/pool-winners.tsx`
+
+**Riesgo:** con cuidado — toca un endpoint compartido (`/pool/winners`) y su contrato de filtros, aunque de forma aditiva (parámetro nuevo, comportamiento previo sin filtro queda igual).
+
+---
+
 ### CHANGE-054 — Scraper: pausa más larga antes de scroll en dual-sort (descartar timing)
 
 **Fecha:** 2026-06-16
