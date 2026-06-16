@@ -553,46 +553,18 @@ export async function scrapeAdsForStore(
       console.log(`  ✓ ${domain} — match detectado (${probe.count} ads cargados) → cargando todos...`)
     }
 
-    // ── Pasada 2a: scroll con sort por defecto (impresiones) ─────────────────
-    // Meta ya cargó con el sort por defecto desde el probe — no forzamos nada
-    // para tiendas de un solo pase (esaske necesita este default sin forzar).
+    // ── Scroll y extracción ────────────────────────────────────────────────────
+    // ≤200 ads: un solo pase con el sort por defecto del probe (esaske necesita
+    // este default sin forzar nada).
+    // >200 ads: un solo pase forzado a "Más recientes" con scroll más profundo
+    // (cap=130 en vez de 50) en lugar de 2 pases (impresiones + recientes con
+    // reload entre medio). Validado localmente contra las 6 tiendas dual-sort
+    // de producción: mismo o más ads que las 2 pasadas juntas (+0 a +42), en
+    // menos tiempo en 5/6 casos (ver CHANGE-056). El sort de impresiones queda
+    // descartado — "recientes" con scroll profundo cubre más superficie total.
     const maxPerPass = 50
+    let ads: ScrapedAd[]
     if (probe.totalAdsOnMeta > 200) {
-      // Dual-sort: el sort default de Meta ya no es "por impresiones" — es
-      // indistinguible del de "Más recientes" (runs 27587693514, 27589293246,
-      // 27592121043 muestran 0 nuevos en TODAS las tiendas dual-sort, con o sin
-      // reload). Sin forzar, pasada 2a y la pasada de recientes terminan viendo
-      // el mismo conjunto. Solo aquí forzamos "Impresiones" explícitamente para
-      // que las dos pasadas sean genuinamente distintas.
-      await fixSortOrder(page, 'impressions')
-      await page.reload({ waitUntil: 'domcontentloaded', timeout: 40_000 })
-      await page.waitForTimeout(2000)
-      await fixAdTypeFilter(page)
-      await Promise.race([
-        page.waitForSelector('[role="article"]', { timeout: 20_000 }).then(() => true),
-        page.waitForSelector('[class*="_7jyh"]',  { timeout: 20_000 }).then(() => true),
-      ]).catch(() => false)
-      // Pausa más larga que en el path de un solo pase — descartar que el scroll
-      // arranque antes de que Meta termine de aplicar "Impresiones" tras el reload.
-      await page.waitForTimeout(4000)
-    }
-    await scrollToLoadAll(page, probe.totalAdsOnMeta || maxPerPass, maxPerPass)
-    const adsByImpressions = await extractAllAds(page)
-    console.log(`  → ${adsByImpressions.length} ads (impresiones)`)
-
-    // ── Pasada 2b: recientes — solo si hay >200 ads ───────────────────────────
-    // Los productos en crecimiento tienen ads recientes, no de mayor impresión.
-    // 100 ads recientes son suficientes — son los últimos creados.
-    let ads = adsByImpressions
-    if (probe.totalAdsOnMeta > 200) {
-      await page.goto(buildSearchUrl(domain), { waitUntil: 'domcontentloaded', timeout: 40_000 })
-      await page.waitForTimeout(3000)
-      await fixAdTypeFilter(page)
-      await Promise.race([
-        page.waitForSelector('[role="article"]', { timeout: 15_000 }).then(() => true),
-        page.waitForSelector('[class*="_7jyh"]',  { timeout: 15_000 }).then(() => true),
-      ]).catch(() => false)
-      await page.waitForTimeout(1500)
       await fixSortOrder(page, 'recent')
       await page.reload({ waitUntil: 'domcontentloaded', timeout: 40_000 })
       await page.waitForTimeout(2000)
@@ -601,25 +573,14 @@ export async function scrapeAdsForStore(
         page.waitForSelector('[role="article"]', { timeout: 20_000 }).then(() => true),
         page.waitForSelector('[class*="_7jyh"]',  { timeout: 20_000 }).then(() => true),
       ]).catch(() => false)
-      // Misma pausa larga que en la pasada de impresiones — descartar que el scroll
-      // arranque antes de que Meta termine de aplicar "Más recientes" tras el reload.
       await page.waitForTimeout(4000)
-      // stagnantLimit más alto que la pasada de impresiones — el reload + cambio de sort
-      // necesita más tiempo para que Meta termine de aplicar "Más recientes" antes de
-      // que el scroll decida que no hay nada nuevo.
-      await scrollToLoadAll(page, 50, 50, 4)
-      const adsByRecent = await extractAllAds(page)
-      const seenUrls = new Set(adsByImpressions.map(a => a.adSnapshotUrl))
-      const freshAds  = adsByRecent.filter(a => !seenUrls.has(a.adSnapshotUrl))
-      ads = [...adsByImpressions, ...freshAds]
-      console.log(`  → ${adsByRecent.length} ads (recientes) | ${freshAds.length} nuevos | total ${ads.length}`)
-
-      // Log de matches por pasada — solo si hay candidatos para comparar
-      if (candidates.length > 0) {
-        const impMatches  = adsByImpressions.filter(a => matchAdToCandidate(a.productUrl, candidates)).length
-        const recMatches  = freshAds.filter(a => matchAdToCandidate(a.productUrl, candidates)).length
-        console.log(`  [F3-dual] impresiones: ${impMatches} matches | recientes únicos: ${recMatches} matches`)
-      }
+      await scrollToLoadAll(page, 130, 130, 5)
+      ads = await extractAllAds(page)
+      console.log(`  → ${ads.length} ads (pasada única, recientes)`)
+    } else {
+      await scrollToLoadAll(page, probe.totalAdsOnMeta || maxPerPass, maxPerPass)
+      ads = await extractAllAds(page)
+      console.log(`  → ${ads.length} ads`)
     }
 
     if (ads.length === 0) {

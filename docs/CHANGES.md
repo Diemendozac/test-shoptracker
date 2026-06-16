@@ -6,6 +6,26 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-056 — Scraper dual-sort: pasada única bajo "recientes" en vez de 2 pasadas
+
+**Fecha:** 2026-06-16
+
+**Qué cambió:**
+- En `scrapeAdsForStore` (`lib/scrapers/meta-ads.ts`), el branch `probe.totalAdsOnMeta > 200` pasa de 2 pasadas completas (impresiones → reload → scroll, luego goto → recientes → reload → scroll, con merge por `adSnapshotUrl` único) a **1 sola pasada**: forzar sort "Más recientes" → reload → scroll con cap=130 (antes 50 por pasada) y `stagnantLimit=5` (antes 4) → extraer directo. Se elimina el segundo `page.goto`, el merge de únicos, y el log `[F3-dual]`.
+- El branch `≤200 ads` (sort por defecto del probe, esaske y similares) no se tocó.
+
+**Por qué:**
+CHANGE-054 (pausa más larga) confirmó que el costo de las 2 pasadas no se justificaba — +220s/sync por una ganancia marginal. Probé localmente (headless, contra Meta real, sin tocar producción) si una sola pasada bajo "recientes" con scroll más profundo daba mejor resultado que las 2 pasadas combinadas, igualando el presupuesto total de scroll (cap=130 ≈ la suma de los 2 caps de 50 que ya tenía cada pasada). Resultado en las 6 tiendas dual-sort de producción (chic-lucky, thrivin, comprasmart, coolddy, shoponlygo, hogar-inteligente): **nunca perdió ads** (rango +0 a +42 vs el total de las 2 pasadas) y fue más rápido en 5/6 casos (rango -10.3s a +3.5s, la única excepción es ruido de red). El segundo reload completo (goto + settle + fixAdTypeFilter + wait ~10-15s de overhead fijo) resultó ser más caro que el valor que aportaba mantener 2 sorts separados — un solo "recientes" con scroll profundo cubre más superficie total, aunque no es subconjunto exacto del de "impresiones" (overlap parcial, ~60-85 de los ads coinciden entre los 2 approaches, pero la pasada única siempre encontró más en total).
+- Se probó también un tercer approach (re-sort en sitio a "impresiones" sin reload, antes de extraer) — descartado: rompe el DOM de Meta y colapsa el conteo de ads cargados (204→21, 217→29 en la primera prueba). No se llegó a implementar en ninguna versión.
+
+**Archivos afectados:** `lib/scrapers/meta-ads.ts`
+
+**Riesgo:** solo
+
+**Pendiente de verificar:** esta prueba se corrió sin candidatos reales (solo conteo bruto de ads únicos) — falta confirmar en el próximo sync real si los ads adicionales que capturó la pasada única generan matches reales con candidatos rastreados, sobre todo en comprasmart y thrivin (los 2 casos que venían en 0 matches con el approach anterior).
+
+---
+
 ### CHANGE-055 — Filtro de país en pool: dropdown server-side con todos los países del pool
 
 **Fecha:** 2026-06-16
