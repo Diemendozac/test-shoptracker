@@ -572,7 +572,9 @@ export async function scrapeAdsForStore(
         page.waitForSelector('[role="article"]', { timeout: 20_000 }).then(() => true),
         page.waitForSelector('[class*="_7jyh"]',  { timeout: 20_000 }).then(() => true),
       ]).catch(() => false)
-      await page.waitForTimeout(1500)
+      // Pausa más larga que en el path de un solo pase — descartar que el scroll
+      // arranque antes de que Meta termine de aplicar "Impresiones" tras el reload.
+      await page.waitForTimeout(4000)
     }
     await scrollToLoadAll(page, probe.totalAdsOnMeta || maxPerPass, maxPerPass)
     const adsByImpressions = await extractAllAds(page)
@@ -599,7 +601,9 @@ export async function scrapeAdsForStore(
         page.waitForSelector('[role="article"]', { timeout: 20_000 }).then(() => true),
         page.waitForSelector('[class*="_7jyh"]',  { timeout: 20_000 }).then(() => true),
       ]).catch(() => false)
-      await page.waitForTimeout(2000)
+      // Misma pausa larga que en la pasada de impresiones — descartar que el scroll
+      // arranque antes de que Meta termine de aplicar "Más recientes" tras el reload.
+      await page.waitForTimeout(4000)
       // stagnantLimit más alto que la pasada de impresiones — el reload + cambio de sort
       // necesita más tiempo para que Meta termine de aplicar "Más recientes" antes de
       // que el scroll decida que no hay nada nuevo.

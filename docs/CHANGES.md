@@ -6,6 +6,22 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-054 — Scraper: pausa más larga antes de scroll en dual-sort (descartar timing)
+
+**Fecha:** 2026-06-16
+
+**Qué cambió:**
+- En el branch `probe.totalAdsOnMeta > 200`, la pausa final antes de `scrollToLoadAll` sube de 1500ms → 4000ms en la pasada de impresiones (2a), y de 2000ms → 4000ms en la pasada de recientes (2b). Sin cambios fuera de este branch.
+
+**Por qué:**
+Tras confirmar que CHANGE-052 funcionó (run 27595841892: la mayoría de las 6 tiendas dual-sort ya muestran `recientes únicos > 0`), quedaban 2 casos en 0 matches (comprasmart, thrivin). Análisis de evidencia: en ambos, el conteo final de la pasada de impresiones fue MAYOR que el del probe (comprasmart 19→23, thrivin 18→29) — la señal contraria al bug viejo (donde probe == final indicaba scroll pegado). Esto sugiere que el 0-matches no es un problema de timing/carga sino que esos candidatos simplemente no tienen ads enlazados a su página de producto en Meta en este momento. Se implementa la pausa más larga igual, a pedido explícito, para descartarlo por completo — no se espera que cambie el resultado de comprasmart/thrivin, pero es un cambio de bajo riesgo.
+
+**Archivos afectados:** `lib/scrapers/meta-ads.ts`
+**Riesgo:** solo — cambio de timing en una rama del scraper, no toca matching ni ingest.
+**Pendiente de verificar:** correr un sync y confirmar que comprasmart/thrivin siguen en 0 matches (esperado, ya explicado por evidencia) y que no sube significativamente la duración total ni regresiona a las otras 4 tiendas dual-sort que ya estaban funcionando.
+
+---
+
 ### CHANGE-053 — Sync: filtrar advertiser pages por ad realmente matcheado a un candidato
 
 **Fecha:** 2026-06-16
