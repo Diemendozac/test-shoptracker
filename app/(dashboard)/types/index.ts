@@ -163,6 +163,7 @@ export interface CandidateDetail {
     firstSeenDate: string
     currency: string | null
     daysElapsed: number
+    isScoutStore: boolean
   }
   summary: {
     performanceScore: number

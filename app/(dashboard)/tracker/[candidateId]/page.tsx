@@ -512,7 +512,7 @@ function CandidateDetailContent() {
                   )}
                 </div>
               )}
-              {(fromTracker || isPro) && (() => {
+              {(fromTracker || isPro || candidate.isScoutStore) && (() => {
                 const url = buildProductUrl(candidate.productUrl, candidate.productHandle)
                 return url ? (
                   <Button variant="outline" size="sm" asChild>

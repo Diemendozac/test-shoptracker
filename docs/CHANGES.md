@@ -6,6 +6,15 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-061 — Botón "Ver producto" visible para tiendas de system@scout.internal
+
+**Fecha:** 2026-06-17
+**Archivos:** `app/(dashboard)/tracker/[candidateId]/page.tsx`, `app/(dashboard)/types/index.ts`
+**Por qué:** CHANGE-060 mostró el botón solo para Pro/Agency en Explorar testeos. Pero el pool incluye candidatos de todos los usuarios — no solo de `system@scout.internal`. El requisito correcto: mostrar "Ver producto" a cualquier plan cuando el candidato es de una tienda sistema (descubierta por el sistema, sin restricción de plan), y mantener el gate Pro/Agency para candidatos de tiendas de otros usuarios. El campo `isScoutStore` lo provee el backend (FIX-041). Condición final: `fromTracker || isPro || candidate.isScoutStore`.
+**Nivel:** con cuidado (toca contrato de API y lógica de gating de plan)
+
+---
+
 ### CHANGE-060 — Botón "Ver producto" en Explorar testeos visible para Pro/Agency
 
 **Fecha:** 2026-06-17
