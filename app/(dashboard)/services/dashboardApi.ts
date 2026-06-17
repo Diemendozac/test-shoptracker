@@ -50,7 +50,7 @@ export const dashboardApi = createApi({
           ...(q                && { q }),
           ...(niche?.length    && { niche }),    // TODO: backend pendiente
           ...(currency?.length && { currency }), // TODO: backend pendiente
-          ...(days             && { days }),      // TODO: backend pendiente
+          ...(days             && { days }),
           ...(scalable         && { scalable }),  // TODO: backend pendiente
           ...(country          && { country }),
         },

@@ -6,6 +6,15 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-063 — Filtro de fechas activado (days ya funciona en backend)
+
+**Fecha:** 2026-06-17
+**Archivos:** `app/(dashboard)/services/dashboardApi.ts`
+**Por qué:** el parámetro `days` se enviaba con un `// TODO: backend pendiente`. El backend ya implementa el filtro (FIX-043). Se elimina el comentario — el filtro "Últimos 7d / 15d / 30d" ahora funciona de verdad server-side.
+**Nivel:** solo (un comentario eliminado, no cambia la lógica)
+
+---
+
 ### CHANGE-062 — Fix buildProductUrl para candidatos de tiendas no propias
 
 **Fecha:** 2026-06-17
