@@ -6,6 +6,15 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-062 — Fix buildProductUrl para candidatos de tiendas no propias
+
+**Fecha:** 2026-06-17
+**Archivos:** `app/(dashboard)/tracker/[candidateId]/page.tsx`, `app/(dashboard)/types/index.ts`
+**Por qué:** `buildProductUrl` solo usaba `storeBaseUrl` derivado de la lista de tiendas del usuario. Para candidatos de tiendas sistema o de otros usuarios en el pool, ese valor era vacío y el botón no aparecía aunque la condición de plan fuera verdadera. El backend ahora devuelve `storeBaseUrl` en `candidateDetail` (FIX-042), y `buildProductUrl` lo usa como fallback (`baseOverride`). Además se corrigió el caso donde `productUrl` es null pero hay `handle` — ahora construye `{base}/products/{handle}`.
+**Nivel:** solo (frontend puro, no afecta Redux)
+
+---
+
 ### CHANGE-061 — Botón "Ver producto" visible para tiendas de system@scout.internal
 
 **Fecha:** 2026-06-17

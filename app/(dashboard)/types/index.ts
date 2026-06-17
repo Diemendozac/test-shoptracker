@@ -162,6 +162,7 @@ export interface CandidateDetail {
     productImage: string | null
     firstSeenDate: string
     currency: string | null
+    storeBaseUrl: string
     daysElapsed: number
     isScoutStore: boolean
   }

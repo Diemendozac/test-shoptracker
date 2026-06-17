@@ -316,10 +316,10 @@ function CandidateDetailContent() {
       year: 'numeric',
     })
 
-  const buildProductUrl = (rawUrl: string | null, handle: string) => {
-    if (!rawUrl) return null
+  const buildProductUrl = (rawUrl: string | null, handle: string, baseOverride?: string) => {
+    const base = (baseOverride || storeBaseUrl).replace(/\/$/, '')
+    if (!rawUrl) return base && handle ? `${base}/products/${handle}` : null
     if (rawUrl.startsWith('http')) return rawUrl
-    const base = storeBaseUrl.replace(/\/$/, '')
     return base ? `${base}${rawUrl}` : null
   }
 
@@ -513,7 +513,7 @@ function CandidateDetailContent() {
                 </div>
               )}
               {(fromTracker || isPro || candidate.isScoutStore) && (() => {
-                const url = buildProductUrl(candidate.productUrl, candidate.productHandle)
+                const url = buildProductUrl(candidate.productUrl, candidate.productHandle, candidate.storeBaseUrl)
                 return url ? (
                   <Button variant="outline" size="sm" asChild>
                     <a href={url} target="_blank" rel="noopener noreferrer" className="gap-2">
