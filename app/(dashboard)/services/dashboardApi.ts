@@ -51,7 +51,7 @@ export const dashboardApi = createApi({
           ...(niche?.length    && { niche }),    // TODO: backend pendiente
           ...(currency?.length && { currency }), // TODO: backend pendiente
           ...(days             && { days }),
-          ...(scalable         && { scalable }),  // TODO: backend pendiente
+          ...(scalable         && { scalable }),
           ...(country          && { country }),
         },
       }),

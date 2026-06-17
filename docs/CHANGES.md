@@ -6,6 +6,15 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-064 — Filtro "Escalar" activado (scalable ya funciona en backend)
+
+**Fecha:** 2026-06-17
+**Archivos:** `app/(dashboard)/services/dashboardApi.ts`
+**Por qué:** el parámetro `scalable` se enviaba con `// TODO: backend pendiente`. El backend ya implementa el filtro (FIX-044). Se elimina el comentario — el filtro "Escalar" en "Explorar testeos" ahora filtra server-side por `performanceScore ≥ 60 AND signalConfidence ≥ 0.5`.
+**Nivel:** solo (un comentario eliminado, no cambia la lógica)
+
+---
+
 ### CHANGE-063 — Filtro de fechas activado (days ya funciona en backend)
 
 **Fecha:** 2026-06-17
