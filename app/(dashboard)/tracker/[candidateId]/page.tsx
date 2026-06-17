@@ -13,6 +13,7 @@ import { useGetCandidateDetailQuery } from '@/app/(dashboard)/services/dashboard
 import { useGetStoresQuery } from '@/app/(dashboard)/stores/services/storeApi'
 import { useCurrency } from '@/store/hooks'
 import { ProductAdsSection } from '@/components/tracker/product-ads'
+import { usePlanTier } from '@/lib/view-as'
 import { FormattedPrice } from '@/components/ui/formatted-price'
 import {
   ArrowLeft, ExternalLink, Calendar, TrendingUp, Target,
@@ -271,6 +272,7 @@ function CandidateDetailContent() {
 
   const storeId = searchParams.get('storeId')
   const fromTracker = searchParams.get('from') !== 'pool'
+  const { isPro } = usePlanTier()
 
   const { data: stores } = useGetStoresQuery()
   const store = stores?.find(s => s.storeId === storeId)
@@ -510,7 +512,7 @@ function CandidateDetailContent() {
                   )}
                 </div>
               )}
-              {fromTracker && (() => {
+              {(fromTracker || isPro) && (() => {
                 const url = buildProductUrl(candidate.productUrl, candidate.productHandle)
                 return url ? (
                   <Button variant="outline" size="sm" asChild>

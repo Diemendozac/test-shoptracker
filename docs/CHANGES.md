@@ -6,6 +6,15 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-060 — Botón "Ver producto" en Explorar testeos visible para Pro/Agency
+
+**Fecha:** 2026-06-17
+**Archivos:** `app/(dashboard)/tracker/[candidateId]/page.tsx`
+**Por qué:** el botón "Ver producto" (link a la URL del producto en la tienda) solo aparecía cuando el usuario venía de "Mis testeos" (`fromTracker = true`). En "Explorar testeos" (`from=pool`) no aparecía para nadie. Se extiende la condición para mostrarlo también en el pool cuando el usuario es Pro o Agency, igual que ya funciona en "Mis testeos". Usuarios Starter o sin plan siguen sin verlo en el pool.
+**Nivel:** solo (frontend puro, lectura del contexto de plan ya existente)
+
+---
+
 ### CHANGE-059 — Revert a dual-pass en scraper de tiendas con >200 ads
 
 **Fecha:** 2026-06-17
