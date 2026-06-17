@@ -4,8 +4,7 @@ import { Suspense } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
-import { convertCurrency, currencySymbol } from '@/lib/currency'
-import { useCurrency } from '@/store/hooks'
+
 import { useGetStoresQuery } from '@/app/(dashboard)/stores/services/storeApi'
 import { useGetTrackerCandidatesQuery, useGetPoolWinnersQuery } from '@/app/(dashboard)/services/dashboardApi'
 import type { TrackerCandidate } from '@/app/(dashboard)/types'
@@ -33,9 +32,6 @@ export default function StoreDetailPage() {
 function StoreDetailContent() {
   const { storeId } = useParams<{ storeId: string }>()
   const router = useRouter()
-  const { currency: preferredCurrency } = useCurrency()
-  const sym = currencySymbol(preferredCurrency)
-
   const { data: stores } = useGetStoresQuery()
   const store = stores?.find(s => s.storeId === storeId)
 
@@ -61,9 +57,8 @@ function StoreDetailContent() {
     )
   }
 
-  const top5 = [...allCandidates]
-    .sort((a, b) => (b.performanceScore ?? 0) - (a.performanceScore ?? 0))
-    .slice(0, 5)
+  const sorted = [...allCandidates].sort((a, b) => (b.performanceScore ?? 0) - (a.performanceScore ?? 0))
+  const top5 = sorted.slice(0, 5)
 
   const domain = store?.baseUrl.replace(/^https?:\/\//, '').replace(/\/$/, '') ?? ''
   const faviconUrl = domain ? `https://icons.duckduckgo.com/ip3/${domain}.ico` : null
@@ -84,7 +79,7 @@ function StoreDetailContent() {
             <div className="flex items-start justify-between gap-6">
               <div className="flex items-center gap-4">
                 {/* Logo */}
-                <StoreLogo storeName={store.storeName} baseUrl={store.baseUrl} faviconUrl={faviconUrl} />
+                <StoreLogo storeName={store.storeName} faviconUrl={faviconUrl} />
 
                 {/* Info */}
                 <div>
@@ -217,11 +212,7 @@ function StoreDetailContent() {
           </div>
         ) : (
           <div className="overflow-hidden rounded-2xl border border-border bg-card">
-            {top5.map((c, idx) => {
-              const price = c.productPrice != null
-                ? convertCurrency(c.productPrice, c.currency ?? 'USD', preferredCurrency)
-                : null
-              return (
+            {top5.map((c, idx) => (
                 <div
                   key={c.candidateId}
                   role="button"
@@ -283,8 +274,7 @@ function StoreDetailContent() {
                   {/* Score */}
                   <ScoreRing score={c.performanceScore ?? 0} size="sm" showLabel={false} />
                 </div>
-              )
-            })}
+            ))}
           </div>
         )}
       </div>
@@ -298,44 +288,63 @@ function StoreDetailContent() {
           </div>
 
           <div className="overflow-hidden rounded-2xl border border-border bg-card">
-            {allCandidates.slice(5).map((c) => {
-              const price = c.productPrice != null
-                ? convertCurrency(c.productPrice, c.currency ?? 'USD', preferredCurrency)
-                : null
-              return (
-                <div
-                  key={c.candidateId}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => router.push(`/tracker/${c.candidateId}?storeId=${c.storeId}&from=tracker`)}
-                  onKeyDown={e => { if (e.key === 'Enter') router.push(`/tracker/${c.candidateId}?storeId=${c.storeId}&from=tracker`) }}
-                  className="flex cursor-pointer items-center gap-4 border-b border-border/50 px-5 py-3 transition-colors last:border-0 hover:bg-secondary/30"
-                >
-                  {c.productImage ? (
-                    <img src={c.productImage} alt="" className="h-9 w-9 shrink-0 rounded-lg object-cover" />
-                  ) : (
-                    <div className="h-9 w-9 shrink-0 rounded-lg bg-secondary" />
+            {sorted.slice(5).map((c, idx) => (
+              <div
+                key={c.candidateId}
+                role="button"
+                tabIndex={0}
+                onClick={() => router.push(`/tracker/${c.candidateId}?storeId=${c.storeId}&from=tracker`)}
+                onKeyDown={e => { if (e.key === 'Enter') router.push(`/tracker/${c.candidateId}?storeId=${c.storeId}&from=tracker`) }}
+                className="grid grid-cols-[28px_52px_1fr_100px_70px_140px_52px_52px] cursor-pointer items-center gap-4 border-b border-border/50 px-5 py-3 transition-colors last:border-0 hover:bg-secondary/30"
+              >
+                {/* Rank */}
+                <span className="text-center text-xs font-bold tabular-nums text-muted-foreground">
+                  #{idx + 6}
+                </span>
+
+                {/* Image */}
+                {c.productImage ? (
+                  <img src={c.productImage} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover" />
+                ) : (
+                  <div className="h-10 w-10 shrink-0 rounded-lg bg-secondary" />
+                )}
+
+                {/* Title */}
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-foreground">{c.productTitle}</p>
+                  {c.currentRank && (
+                    <p className="text-[10px] text-muted-foreground">Rank #{c.currentRank}</p>
                   )}
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-foreground">{c.productTitle}</p>
-                    <div className="flex items-center gap-2">
-                      {c.currentRank && <span className="text-[10px] text-muted-foreground">Rank #{c.currentRank}</span>}
-                      <PerformanceBadge label={resolveDisplayLabel(c.performanceLabel, c.performanceScore, c.growthPct, c.daysElapsed, c.scoreHistory, c.growthHistory)} size="sm" />
-                    </div>
-                  </div>
-                  {price != null && (
-                    <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                      {sym}{price.toLocaleString('es-CO', { maximumFractionDigits: 0 })}
-                    </span>
-                  )}
-                  {/* ADS — stopPropagation prevents row navigation on ad click */}
-                  <div onClick={e => e.stopPropagation()}>
-                    <AdsCell candidateId={c.candidateId} />
-                  </div>
-                  <ScoreRing score={c.performanceScore ?? 0} size="sm" showLabel={false} />
                 </div>
-              )
-            })}
+
+                {/* Performance badge */}
+                <div><PerformanceBadge label={resolveDisplayLabel(c.performanceLabel, c.performanceScore, c.growthPct, c.daysElapsed, c.scoreHistory, c.growthHistory)} size="sm" /></div>
+
+                {/* Sparkline */}
+                <div className="flex justify-center">
+                  {(c.growthHistory ?? []).length >= 2
+                    ? <Sparkline data={(c.growthHistory ?? []).slice(-7)} width={64} height={28} />
+                    : <span className="text-[10px] text-muted-foreground/30">—</span>
+                  }
+                </div>
+
+                {/* ADS — stopPropagation prevents row navigation on ad click */}
+                <div onClick={e => e.stopPropagation()}>
+                  <AdsCell candidateId={c.candidateId} />
+                </div>
+
+                {/* Growth */}
+                <span className={cn(
+                  'text-center text-xs font-bold tabular-nums',
+                  (c.growthPct ?? 0) >= 0 ? 'text-emerald-600' : 'text-rose-500',
+                )}>
+                  {c.growthPct != null ? `${c.growthPct > 0 ? '+' : ''}${c.growthPct.toFixed(1)}%` : '—'}
+                </span>
+
+                {/* Score */}
+                <ScoreRing score={c.performanceScore ?? 0} size="sm" showLabel={false} />
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -394,7 +403,7 @@ function formatLastScraped(dateStr: string) {
   return `Hace ${Math.floor(diffHours / 24)}d`
 }
 
-function StoreLogo({ storeName, baseUrl, faviconUrl }: { storeName: string; baseUrl: string; faviconUrl: string | null }) {
+function StoreLogo({ storeName, faviconUrl }: { storeName: string; faviconUrl: string | null }) {
   const initials = storeName.slice(0, 2).toUpperCase()
   if (!faviconUrl) {
     return (

@@ -6,6 +6,16 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-065 — Tabla "Todos los productos en testeo": diseño alineado con Top 5
+
+**Fecha:** 2026-06-17
+**Archivos:** `app/(dashboard)/stores/[storeId]/page.tsx`
+**Por qué:** la tabla inferior de la vista de tienda usaba un layout flex simple (imagen, título+badge, precio, ads, score) que era visualmente inconsistente con la tabla Top 5. Ambas secciones muestran los mismos datos — tenían que verse igual.
+**Qué cambió:** la tabla inferior ahora usa el mismo `grid-cols-[28px_52px_1fr_100px_70px_140px_52px_52px]` que el Top 5, agregando las columnas faltantes: rank (#6, #7…), sparkline, y porcentaje de growth con color. Se unificó el array fuente a `sorted` para que los números de posición sean consistentes entre ambas secciones. Se eliminaron imports y variables huérfanas (`convertCurrency`, `currencySymbol`, `useCurrency`, `sym`).
+**Nivel:** solo (frontend puro, sin lógica de negocio)
+
+---
+
 ### CHANGE-064 — Filtro "Escalar" activado (scalable ya funciona en backend)
 
 **Fecha:** 2026-06-17
