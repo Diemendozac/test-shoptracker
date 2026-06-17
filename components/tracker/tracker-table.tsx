@@ -252,6 +252,7 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
   const [countryFilter, setCountryFilter] = useState<string>('all')
   const [paFilter, setPaFilter] = useState<string>('all')
   const [spikeFilter, setSpikeFilter] = useState(false)
+  const [hideDormant, setHideDormant] = useState(true)
   const [page, setPage] = useState(0)
   const [spikes, setSpikes] = useState<Record<string, SpikeEntry>>({})
 
@@ -302,6 +303,7 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
     if (paFilter === 'yes') result = result.filter(c => !!c.pagoAnticipado)
     if (paFilter === 'no')  result = result.filter(c => !c.pagoAnticipado)
     if (spikeFilter)      result = result.filter(c => isScalable(c.performanceScore, c.signalConfidence))
+    if (hideDormant)      result = result.filter(c => !((c.performanceScore ?? 0) < 15 && c.daysElapsed > 14))
     if (sort.key) {
       const k = sort.key
       result.sort((a, b) => {
@@ -314,15 +316,15 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
       })
     }
     return result
-  }, [candidates, search, storeFilter, nicheFilter, currencyFilter, countryFilter, paFilter, spikeFilter, sort])
+  }, [candidates, search, storeFilter, nicheFilter, currencyFilter, countryFilter, paFilter, spikeFilter, hideDormant, sort])
 
   const hasActiveFilters =
     !!search || storeFilter !== 'all' || nicheFilter !== 'all' ||
-    currencyFilter !== 'all' || countryFilter !== 'all' || paFilter !== 'all' || spikeFilter
+    currencyFilter !== 'all' || countryFilter !== 'all' || paFilter !== 'all' || spikeFilter || !hideDormant
 
   function clearFilters() {
     setSearch(''); setStoreFilter('all'); setNicheFilter('all')
-    setCurrencyFilter('all'); setCountryFilter('all'); setPaFilter('all'); setSpikeFilter(false)
+    setCurrencyFilter('all'); setCountryFilter('all'); setPaFilter('all'); setSpikeFilter(false); setHideDormant(true)
     setSort({ key: 'performanceScore', dir: 'desc' })
     resetPage()
   }
@@ -403,6 +405,18 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
           )}
         >
           ↑ Spikear
+        </button>
+
+        <button
+          onClick={() => { setHideDormant(f => !f); resetPage() }}
+          className={cn(
+            'h-9 rounded-lg border px-3 text-xs font-medium transition-all',
+            hideDormant
+              ? 'border-amber-500 bg-amber-500/10 text-amber-600'
+              : 'border-border bg-secondary/40 text-muted-foreground hover:border-amber-500/50 hover:text-amber-600',
+          )}
+        >
+          Solo activos
         </button>
 
         <select

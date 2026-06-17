@@ -6,6 +6,16 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-058 — Filtro "Solo activos" en TrackerTable: oculta productos dormidos por defecto
+
+**Fecha:** 2026-06-17
+**Archivos:** `components/tracker/tracker-table.tsx`
+**Por qué:** la BD acumula candidatos con señal muerta que generan ruido en el dashboard. Mientras se implementa el archivado en backend (capas 2 y 3), este filtro frontend oculta los productos con `performanceScore < 15` y `daysElapsed > 14` — señal confirmada como plana después de 2 semanas de tracking. El botón "Solo activos" (ámbar) activa/desactiva el filtro; viene activo por defecto. El usuario puede desactivarlo para ver el histórico completo.
+**Nivel:** solo (solo frontend, sin tocar BD ni lógica de negocio)
+**Pendiente:** capas 2 y 3 requieren a Diego — campo `is_active` en `candidate_products` + tabla de archivo.
+
+---
+
 ### CHANGE-057 — Fix CHANGE-056: pasada única se quedaba pegada en el conteo del probe
 
 **Fecha:** 2026-06-16
