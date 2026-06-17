@@ -6,6 +6,16 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-059 — Revert a dual-pass en scraper de tiendas con >200 ads
+
+**Fecha:** 2026-06-17
+**Archivos:** `lib/scrapers/meta-ads.ts`
+**Por qué:** el single-pass de CHANGE-056/057 (cap=130, una sola navegación a "recientes") fue superado en calidad de datos en producción. En run9 (run 27631041144, CHANGE-057), 4 de 8 tiendas dual-sort perdieron todos sus matches vs run6/run7: chic-lucky 0/30 (antes 7-11/45), comprasmart 0/18 (antes 2/42), boniss 0/30 (antes 1-5/28), hogar-inteligente 0/28 (antes 1/53). La causa probable es throttling de Meta a la IP de datacenter de GitHub Actions: `scrollToLoadAll` se estanca a los 17-40 ads en ~30-45s en CI, sin alcanzar el cap=130 validado localmente. Dos navegaciones frescas de cap=50 cada una (dual-pass) extraen más ads crudos en ese entorno que una sola pasada de cap=130. Revertimos al dual-pass de CHANGE-054 hasta investigar el throttling.
+**Nivel:** con cuidado (afecta qué ads se pushean al backend)
+**Verificación:** próximo run debe recuperar matches en chic-lucky, comprasmart, boniss, hogar-inteligente (target: ≥1 candidato_con_ads cada una, como en run6/run7)
+
+---
+
 ### CHANGE-058 — Filtro "Solo activos" en TrackerTable: oculta productos dormidos por defecto
 
 **Fecha:** 2026-06-17

@@ -553,20 +553,48 @@ export async function scrapeAdsForStore(
       console.log(`  ✓ ${domain} — match detectado (${probe.count} ads cargados) → cargando todos...`)
     }
 
-    // ── Scroll y extracción ────────────────────────────────────────────────────
-    // ≤200 ads: un solo pase con el sort por defecto del probe (esaske necesita
-    // este default sin forzar nada).
-    // >200 ads: un solo pase forzado a "Más recientes" con scroll más profundo
-    // (cap=130 en vez de 50). CRÍTICO: requiere un page.goto FRESCO antes del
-    // reload — el sort por defecto del probe YA es "recientes" (ver CHANGE-052),
-    // así que forzar "recientes" con solo page.reload() no resetea el cursor de
-    // paginación de Meta (Meta no detecta cambio real de sort, sigue desde donde
-    // el probe ya había agotado). La navegación fresca sí resetea ese cursor.
-    // CHANGE-056 original no tenía este goto y se quedaba pegado exactamente en
-    // el conteo del probe en las 4 tiendas dual-sort de un run real — confirmado
-    // en producción (run 27626600525). Corregido en CHANGE-057.
+    // ── Pasada 2a: scroll con sort por defecto (impresiones) ─────────────────
+    // Meta ya cargó con el sort por defecto desde el probe — no forzamos nada
+    // para tiendas de un solo pase (esaske necesita este default sin forzar).
+    //
+    // CHANGE-058: revertido el single-pass de CHANGE-056/057. En producción
+    // (run 27631041144) el single-pass con cap=130 quedaba estancado a los
+    // 17-40 ads en 4 de 8 tiendas dual-sort (chic-lucky, comprasmart, boniss,
+    // hogar-inteligente fueron a 0 matches, vs 1-11 matches con dual-pass en
+    // run6/run7) — la verificación local (test-fix-single-pass.ts) había
+    // mostrado 130+ ads para esas mismas tiendas, pero no reprodujo el
+    // throttling que sufre la IP de datacenter de GitHub Actions contra Meta.
+    // Dos navegaciones frescas con cap=50 cada una superan en ads crudos a
+    // una sola navegación con cap=130 en ese entorno — revertimos al dual-pass
+    // probado en run6/run7 hasta investigar el throttling.
     const maxPerPass = 50
-    let ads: ScrapedAd[]
+    if (probe.totalAdsOnMeta > 200) {
+      // Dual-sort: el sort default de Meta ya no es "por impresiones" — es
+      // indistinguible del de "Más recientes" (runs 27587693514, 27589293246,
+      // 27592121043 muestran 0 nuevos en TODAS las tiendas dual-sort, con o sin
+      // reload). Sin forzar, pasada 2a y la pasada de recientes terminan viendo
+      // el mismo conjunto. Solo aquí forzamos "Impresiones" explícitamente para
+      // que las dos pasadas sean genuinamente distintas.
+      await fixSortOrder(page, 'impressions')
+      await page.reload({ waitUntil: 'domcontentloaded', timeout: 40_000 })
+      await page.waitForTimeout(2000)
+      await fixAdTypeFilter(page)
+      await Promise.race([
+        page.waitForSelector('[role="article"]', { timeout: 20_000 }).then(() => true),
+        page.waitForSelector('[class*="_7jyh"]',  { timeout: 20_000 }).then(() => true),
+      ]).catch(() => false)
+      // Pausa más larga que en el path de un solo pase — descartar que el scroll
+      // arranque antes de que Meta termine de aplicar "Impresiones" tras el reload.
+      await page.waitForTimeout(4000)
+    }
+    await scrollToLoadAll(page, probe.totalAdsOnMeta || maxPerPass, maxPerPass)
+    const adsByImpressions = await extractAllAds(page)
+    console.log(`  → ${adsByImpressions.length} ads (impresiones)`)
+
+    // ── Pasada 2b: recientes — solo si hay >200 ads ───────────────────────────
+    // Los productos en crecimiento tienen ads recientes, no de mayor impresión.
+    // 100 ads recientes son suficientes — son los últimos creados.
+    let ads = adsByImpressions
     if (probe.totalAdsOnMeta > 200) {
       await page.goto(buildSearchUrl(domain), { waitUntil: 'domcontentloaded', timeout: 40_000 })
       await page.waitForTimeout(3000)
@@ -584,14 +612,25 @@ export async function scrapeAdsForStore(
         page.waitForSelector('[role="article"]', { timeout: 20_000 }).then(() => true),
         page.waitForSelector('[class*="_7jyh"]',  { timeout: 20_000 }).then(() => true),
       ]).catch(() => false)
+      // Misma pausa larga que en la pasada de impresiones — descartar que el scroll
+      // arranque antes de que Meta termine de aplicar "Más recientes" tras el reload.
       await page.waitForTimeout(4000)
-      await scrollToLoadAll(page, 130, 130, 5)
-      ads = await extractAllAds(page)
-      console.log(`  → ${ads.length} ads (pasada única, recientes)`)
-    } else {
-      await scrollToLoadAll(page, probe.totalAdsOnMeta || maxPerPass, maxPerPass)
-      ads = await extractAllAds(page)
-      console.log(`  → ${ads.length} ads`)
+      // stagnantLimit más alto que la pasada de impresiones — el reload + cambio de sort
+      // necesita más tiempo para que Meta termine de aplicar "Más recientes" antes de
+      // que el scroll decida que no hay nada nuevo.
+      await scrollToLoadAll(page, 50, 50, 4)
+      const adsByRecent = await extractAllAds(page)
+      const seenUrls = new Set(adsByImpressions.map(a => a.adSnapshotUrl))
+      const freshAds  = adsByRecent.filter(a => !seenUrls.has(a.adSnapshotUrl))
+      ads = [...adsByImpressions, ...freshAds]
+      console.log(`  → ${adsByRecent.length} ads (recientes) | ${freshAds.length} nuevos | total ${ads.length}`)
+
+      // Log de matches por pasada — solo si hay candidatos para comparar
+      if (candidates.length > 0) {
+        const impMatches  = adsByImpressions.filter(a => matchAdToCandidate(a.productUrl, candidates)).length
+        const recMatches  = freshAds.filter(a => matchAdToCandidate(a.productUrl, candidates)).length
+        console.log(`  [F3-dual] impresiones: ${impMatches} matches | recientes únicos: ${recMatches} matches`)
+      }
     }
 
     if (ads.length === 0) {
