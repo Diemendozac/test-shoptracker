@@ -6,6 +6,44 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-066 — Link compartible para productos del pool
+
+**Fecha:** 2026-07-05
+**Archivos:**
+- `components/tracker/pool-winners.tsx` — botón "Link" en columna Acción de cada fila del pool
+- `app/share/[candidateId]/page.tsx` — página pública sin autenticación que muestra el producto
+
+**Por qué:** el operador necesita mostrarle un producto del pool a su editor (videos, datos) sin que el editor tenga cuenta en Dropspy. Se construyó un link compartible que cualquiera puede abrir sin login.
+
+**Qué cambió:**
+- Cada fila del pool tiene ahora un botón "Link" bajo el botón "Ver". Al hacer clic copia al portapapeles la URL `getdropspy.com/share/{candidateId}`. Muestra "Copiado" por 2 segundos.
+- La ruta `/share/[candidateId]` es pública (fuera del layout autenticado). Muestra imagen, título, precio, score, crecimiento, rank, tipo de pago, country, y ads/videos activos del producto.
+- La página consume `GET /api/public/candidates/{candidateId}` en el backend. **Este endpoint aún no existe — requiere FIX de Diego (ver spec abajo).**
+
+**Estado del backend:** PENDIENTE. Sin el endpoint del backend, la página muestra "Producto no disponible". La URL ya se puede copiar y compartir; la página funcionará completa cuando Diego implemente el endpoint.
+
+**Spec para Diego (FIX-XXX):**
+```
+GET /api/public/candidates/{candidateId}
+- No requiere Authorization header
+- Solo responde si el candidateId pertenece a un producto del pool global
+- Respuesta JSON:
+  {
+    candidateId, productTitle, productImage, productUrl,
+    productPrice, currency, performanceScore, performanceLabel,
+    growthPct, currentRank, storeName, storeCountry,
+    pagoAnticipado,
+    ads: [{ id, thumbnail_url, video_url_r2, ad_snapshot_url, status, days_running }]
+  }
+- SecurityConfig: agregar .requestMatchers("/api/public/**").permitAll()
+- Si candidateId no existe o no es del pool: 404
+```
+
+**Nivel:** solo (frontend puro, nuevo endpoint no toca lógica existente)
+**Relacionado con backend:** FIX pendiente (spec arriba)
+
+---
+
 ### CHANGE-065 — Tabla "Todos los productos en testeo": diseño alineado con Top 5
 
 **Fecha:** 2026-06-17

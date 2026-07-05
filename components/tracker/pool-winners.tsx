@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useRef, useCallback } from 'react'
 import Link from 'next/link'
-import { Lock, TrendingUp, Crown, ChevronLeft, ChevronRight, Globe, ExternalLink, ArrowUpDown, ArrowUp, ArrowDown, Search, X, Star } from 'lucide-react'
+import { Lock, TrendingUp, Crown, ChevronLeft, ChevronRight, Globe, ExternalLink, ArrowUpDown, ArrowUp, ArrowDown, Search, X, Star, Share2, Check } from 'lucide-react'
 import { ScoreRing } from '@/components/dashboard/score-ring'
 import { Sparkline } from '@/components/tracker/sparkline'
 import { Button } from '@/components/ui/button'
@@ -717,6 +717,37 @@ function LockedState() {
   )
 }
 
+function ShareButton({ candidateId }: { candidateId: string }) {
+  const [copied, setCopied] = useState(false)
+
+  function handleShare(e: React.MouseEvent) {
+    e.preventDefault()
+    const url = `${window.location.origin}/share/${candidateId}`
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  return (
+    <button
+      onClick={handleShare}
+      title="Copiar link para compartir"
+      className={cn(
+        'flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium transition-colors',
+        copied
+          ? 'bg-emerald-500/15 text-emerald-600'
+          : 'bg-secondary text-muted-foreground hover:bg-primary/10 hover:text-primary',
+      )}
+    >
+      {copied
+        ? <><Check className="h-3 w-3" /> Copiado</>
+        : <><Share2 className="h-3 w-3" /> Link</>
+      }
+    </button>
+  )
+}
+
 function PoolWinnerRow({ winner, position, preferredCurrency, isFavorite, onToggleFavorite }: {
   winner: PoolWinnerProduct
   position: number
@@ -898,13 +929,14 @@ function PoolWinnerRow({ winner, position, preferredCurrency, isFavorite, onTogg
       <AdsCell candidateId={winner.candidateId} />
 
       {/* Acción */}
-      <div className="flex items-center justify-center">
+      <div className="flex flex-col items-center gap-1">
         <Link
           href={`/tracker/${winner.candidateId}?storeId=${winner.storeId}&from=pool`}
           className="flex items-center gap-1 rounded-lg bg-secondary px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
         >
           Ver <ExternalLink className="h-3 w-3" />
         </Link>
+        <ShareButton candidateId={winner.candidateId} />
       </div>
     </div>
   )
