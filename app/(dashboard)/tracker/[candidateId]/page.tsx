@@ -21,6 +21,7 @@ import {
   ChevronUp, ChevronDown, ChevronLeft, ChevronRight, X, ZoomIn,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ShareButton } from '@/components/tracker/pool-winners'
 
 // ─── Smart label ─────────────────────────────────────────────────────────────
 // Single source of truth for the status label displayed anywhere in this page.
@@ -523,6 +524,7 @@ function CandidateDetailContent() {
                   </Button>
                 ) : null
               })()}
+              <ShareButton candidateId={candidateId} />
             </div>
           </div>
         </div>

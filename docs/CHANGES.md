@@ -6,6 +6,20 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-067 — ShareButton extendido a Mis testeos y páginas de detalle
+
+**Fecha:** 2026-07-06
+**Archivos:**
+- `components/tracker/pool-winners.tsx` — `ShareButton` exportado (antes era privado)
+- `components/tracker/tracker-table.tsx` — `ShareButton` importado y añadido en columna Acción (entre "Ver" y "Eliminar")
+- `app/(dashboard)/tracker/[candidateId]/page.tsx` — `ShareButton` añadido en header del producto, junto al botón "Ver producto"
+
+**Por qué:** el botón de compartir link solo aparecía en "Explorar testeos" (pool-winners). El operador también necesita compartir productos desde "Mis testeos" y desde la página de detalle del producto.
+
+**Qué cambió:** el componente `ShareButton` es ahora exportado y reutilizado en tres vistas. El link generado es siempre `origin/share/{candidateId}`.
+
+---
+
 ### CHANGE-066 — Link compartible para productos del pool
 
 **Fecha:** 2026-07-05

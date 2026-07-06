@@ -717,7 +717,7 @@ function LockedState() {
   )
 }
 
-function ShareButton({ candidateId }: { candidateId: string }) {
+export function ShareButton({ candidateId }: { candidateId: string }) {
   const [copied, setCopied] = useState(false)
 
   function handleShare(e: React.MouseEvent) {

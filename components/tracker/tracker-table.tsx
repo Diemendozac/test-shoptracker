@@ -13,6 +13,7 @@ import {
   ExternalLink, ArrowUpDown, ArrowUp, ArrowDown,
   Search, X, SlidersHorizontal, Trash2, ChevronLeft, ChevronRight, Star,
 } from 'lucide-react'
+import { ShareButton } from '@/components/tracker/pool-winners'
 import { useRemoveCandidateMutation } from '@/app/(dashboard)/services/candidateApi'
 import { dashboardApi, useGetProductAdsQuery } from '@/app/(dashboard)/services/dashboardApi'
 import { usePlanTier } from '@/lib/view-as'
@@ -699,6 +700,7 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
                       Ver
                       <ExternalLink className="h-3 w-3" />
                     </Link>
+                    <ShareButton candidateId={candidate.candidateId} />
                     <button
                       onClick={async () => {
                         if (confirm(`¿Eliminar "${candidate.productTitle}"?`)) {
