@@ -6,6 +6,17 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-068 — Logout automático al vencer el JWT (redirect a /login en 401)
+
+**Fecha:** 2026-07-12
+**Archivos:**
+- `lib/baseQuery.ts` — nuevo wrapper `makeAuthBaseQuery` compartido entre todas las APIs
+- `app/(dashboard)/services/dashboardApi.ts`, `candidateApi.ts`, `userApi.ts`, `adminApi.ts`, `stores/services/storeApi.ts` — usan makeAuthBaseQuery
+
+**Por qué:** cuando el JWT expiraba, el frontend mostraba "Error 500" genérico. Ahora cualquier 401 dispara `logout()` y redirige a `/login` automáticamente. Coordinado con backend (`fix/jwt-expiration`): JWT ahora dura 24h en vez de 7 días.
+
+---
+
 ### CHANGE-067 — ShareButton extendido a Mis testeos y páginas de detalle
 
 **Fecha:** 2026-07-06

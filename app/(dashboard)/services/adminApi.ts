@@ -1,5 +1,5 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import type { RootState } from '@/store'
+import { createApi } from '@reduxjs/toolkit/query/react'
+import { makeAuthBaseQuery } from '@/lib/baseQuery'
 
 export interface AdminUserRow {
   userId: string
@@ -22,14 +22,7 @@ export interface AdminUsersResponse {
 
 export const adminApi = createApi({
   reducerPath: 'adminApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl: process.env.NEXT_PUBLIC_API_URL + '/admin',
-    prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as RootState).auth.token
-      if (token) headers.set('Authorization', `Bearer ${token}`)
-      return headers
-    },
-  }),
+  baseQuery: makeAuthBaseQuery(process.env.NEXT_PUBLIC_API_URL + '/admin'),
   tagTypes: ['AdminUsers'],
   endpoints: (builder) => ({
     getAdminUsers: builder.query<AdminUsersResponse, void>({
