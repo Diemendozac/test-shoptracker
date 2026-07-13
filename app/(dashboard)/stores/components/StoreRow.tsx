@@ -205,7 +205,7 @@ export function StoreRow({ store, quality, qualityLoading, isSyncing, isDeleting
           className="h-7 w-7"
           disabled={!store.isActive || isSyncing}
           onClick={onSync}
-          title="Sync Now"
+          title="Sincronizar ahora"
         >
           <RefreshCw className={cn('h-3.5 w-3.5', isSyncing && 'animate-spin')} />
         </Button>

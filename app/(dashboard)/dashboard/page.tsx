@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { PageLayout } from '@/components/layout/page-layout'
 import { StatsCard } from '@/components/dashboard/stats-card'
 import { StoreCard } from '@/components/dashboard/store-card'
@@ -26,6 +27,7 @@ function sortByScore(items: DashboardItem[]): DashboardItem[] {
 }
 
 export default function DashboardPage() {
+  const t = useTranslations('Dashboard')
   const { overviewItems, stats, isOverviewLoading } = useDashboard()
   const [expanded, setExpanded] = useState(false)
 
@@ -34,22 +36,22 @@ export default function DashboardPage() {
   const hasMore = sorted.length > 3
 
   return (
-    <PageLayout title="Overview" description="Your competitive intelligence at a glance">
+    <PageLayout title={t('title')} description={t('description')}>
       <div className="mb-8 grid gap-4 md:grid-cols-3">
         <StatsCard
-          title="Active Stores"
+          title={t('stats.activeStores')}
           value={overviewItems.length}
           icon={Store}
           variant="primary"
         />
         <StatsCard
-          title="Tracking Candidates"
+          title={t('stats.trackingCandidates')}
           value={stats.totalCandidates}
           icon={Target}
           variant="success"
         />
         <StatsCard
-          title="Rising Products"
+          title={t('stats.risingProducts')}
           value={stats.risingCandidates}
           icon={TrendingUp}
           variant="success"
@@ -59,9 +61,9 @@ export default function DashboardPage() {
       <WinnerPodiumOverview />
 
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-foreground">Top Performers by Store</h2>
+        <h2 className="text-xl font-semibold text-foreground">{t('topPerformers.title')}</h2>
         <p className="text-sm text-muted-foreground">
-          Best performing new products detected in each tracked store
+          {t('topPerformers.subtitle')}
         </p>
       </div>
 
@@ -86,9 +88,9 @@ export default function DashboardPage() {
                 className="flex items-center gap-1.5 rounded-lg border border-border bg-secondary/50 px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
               >
                 {expanded ? (
-                  <><ChevronUp className="h-4 w-4" /> Ver menos</>
+                  <><ChevronUp className="h-4 w-4" /> {t('seeLess')}</>
                 ) : (
-                  <><ChevronDown className="h-4 w-4" /> Ver {sorted.length - 3} tiendas más</>
+                  <><ChevronDown className="h-4 w-4" /> {t('seeMore', { count: sorted.length - 3 })}</>
                 )}
               </button>
             </div>

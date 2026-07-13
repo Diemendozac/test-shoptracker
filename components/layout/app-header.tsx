@@ -248,7 +248,7 @@ export function AppHeader({ title, description }: AppHeaderProps) {
       <div className="flex items-center justify-end gap-2">
         <Button variant="ghost" size="icon" className="relative">
           <Search className="h-4 w-4" />
-          <span className="sr-only">Search</span>
+          <span className="sr-only">Buscar</span>
         </Button>
 
         <CurrencySelector />

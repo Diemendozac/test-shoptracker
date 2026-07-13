@@ -99,7 +99,7 @@ export function StoreCard({ item }: StoreCardProps) {
                 )}
               </div>
               <div className="flex items-center gap-1.5">
-                <p className="text-xs text-muted-foreground">Top candidate</p>
+                <p className="text-xs text-muted-foreground">Mejor candidato</p>
                 {pagoAnticipado && (
                   <span className="rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600">
                     Pago anticipado
@@ -153,8 +153,8 @@ export function StoreCard({ item }: StoreCardProps) {
             <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-secondary">
               <Package className="h-6 w-6 text-muted-foreground" />
             </div>
-            <p className="text-sm font-medium text-muted-foreground">No candidates yet</p>
-            <p className="text-xs text-muted-foreground/70">Waiting for new products</p>
+            <p className="text-sm font-medium text-muted-foreground">Aún no hay candidatos</p>
+            <p className="text-xs text-muted-foreground/70">Esperando productos nuevos</p>
           </div>
         )}
       </div>

@@ -30,14 +30,14 @@ interface FieldState {
 const makeField = (value = ''): FieldState => ({ value, touched: false, error: '' })
 
 function validateStoreName(v: string): string {
-  if (!v.trim()) return 'Store name is required'
-  if (v.trim().length < 2) return 'Must be at least 2 characters'
+  if (!v.trim()) return 'El nombre de la tienda es obligatorio'
+  if (v.trim().length < 2) return 'Debe tener al menos 2 caracteres'
   return ''
 }
 
 function validateUrl(v: string, label: string): string {
-  if (!v.trim()) return `${label} is required`
-  if (!isValidUrl(v.trim())) return 'Must be a valid URL (https://…)'
+  if (!v.trim()) return `${label} es obligatoria`
+  if (!isValidUrl(v.trim())) return 'Debe ser una URL válida (https://…)'
   return ''
 }
 
@@ -91,7 +91,7 @@ export function AddStoreModal() {
   const handleSubmit = async () => {
     setSubmitError(null)
     const snErr = validateStoreName(storeName.value)
-    const buErr = validateUrl(baseUrl.value, 'Base URL')
+    const buErr = validateUrl(baseUrl.value, 'URL base')
     setStoreName((f) => ({ ...f, touched: true, error: snErr }))
     setBaseUrl((f)   => ({ ...f, touched: true, error: buErr }))
     if (snErr || buErr) return
@@ -133,8 +133,8 @@ export function AddStoreModal() {
               <Store className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-foreground">Add New Store</h2>
-              <p className="text-xs text-muted-foreground">Track a Shopify competitor</p>
+              <h2 className="text-sm font-semibold text-foreground">Agregar nueva tienda</h2>
+              <p className="text-xs text-muted-foreground">Rastrea a un competidor de Shopify</p>
             </div>
           </div>
           <button
@@ -152,35 +152,35 @@ export function AddStoreModal() {
         <div className="space-y-4 px-6 py-5">
 
           <Field
-            label="Store Name"
-            hint="Display name"
+            label="Nombre de la tienda"
+            hint="Nombre para mostrar"
             icon={<Store className="h-3.5 w-3.5" />}
             value={storeName.value}
             error={storeName.touched ? storeName.error : ''}
             disabled={isCreating}
-            placeholder="e.g. Netviral"
+            placeholder="ej. Netviral"
             onChange={(v) => setStoreName((f) => ({ ...f, value: v, error: '' }))}
             onBlur={() => setStoreName((f) => ({ ...f, touched: true, error: validateStoreName(f.value) }))}
           />
 
           <Field
-            label="Store Base URL"
-            hint="Root domain only"
+            label="URL base de la tienda"
+            hint="Solo el dominio raíz"
             icon={<Link className="h-3.5 w-3.5" />}
             value={baseUrl.value}
             error={baseUrl.touched ? baseUrl.error : ''}
             disabled={isCreating}
             placeholder="https://netviral.shop"
             onChange={(v) => setBaseUrl((f) => ({ ...f, value: v, error: '' }))}
-            onBlur={() => setBaseUrl((f) => ({ ...f, touched: true, error: validateUrl(f.value, 'Base URL') }))}
+            onBlur={() => setBaseUrl((f) => ({ ...f, touched: true, error: validateUrl(f.value, 'URL base') }))}
           />
 
           {/* auto-generated preview */}
           <div className="rounded-lg border border-border/60 bg-secondary/30 px-3 py-3 space-y-2">
             <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-              Auto-generated paths
+              Rutas generadas automáticamente
             </p>
-            <PreviewRow label="Bestseller" value={baseUrl.value.trim().replace(/\/$/, '') + DEFAULT_BESTSELLER_PATH} />
+            <PreviewRow label="Más vendidos" value={baseUrl.value.trim().replace(/\/$/, '') + DEFAULT_BESTSELLER_PATH} />
           </div>
 
           {/* ── pago anticipado ── */}
@@ -231,12 +231,12 @@ export function AddStoreModal() {
             onClick={closeAddModal} disabled={isCreating}
             className="text-muted-foreground"
           >
-            Cancel
+            Cancelar
           </Button>
           <Button size="sm" className="gap-2" onClick={handleSubmit} disabled={isCreating}>
             {isCreating
-              ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Adding store…</>
-              : <>Add Store<ArrowRight className="h-3.5 w-3.5" /></>
+              ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Agregando tienda…</>
+              : <>Agregar tienda<ArrowRight className="h-3.5 w-3.5" /></>
             }
           </Button>
         </div>

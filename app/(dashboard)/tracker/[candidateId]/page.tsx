@@ -257,8 +257,8 @@ function ProductGallery({ images, productTitle }: { images: string[]; productTit
 export default function CandidateDetailPage() {
   return (
     <Suspense fallback={
-      <PageLayout title="Product Details" description="Deep dive into candidate performance">
-        <div className="flex items-center justify-center py-24 text-muted-foreground text-sm">Loading…</div>
+      <PageLayout title="Detalle del producto" description="Análisis profundo del rendimiento del candidato">
+        <div className="flex items-center justify-center py-24 text-muted-foreground text-sm">Cargando…</div>
       </PageLayout>
     }>
       <CandidateDetailContent />
@@ -311,7 +311,7 @@ function CandidateDetailContent() {
   const { currency: preferredCurrency } = useCurrency()
 
   const formatDate = (dateStr: string) =>
-    new Date(dateStr).toLocaleDateString('en-US', {
+    new Date(dateStr).toLocaleDateString('es-CO', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
@@ -327,12 +327,12 @@ function CandidateDetailContent() {
 
   if (!storeId) {
     return (
-      <PageLayout title="Product Details" description="Deep dive into candidate performance">
+      <PageLayout title="Detalle del producto" description="Análisis profundo del rendimiento del candidato">
         <div className="flex flex-col items-center justify-center gap-4 py-24 text-muted-foreground">
           <AlertCircle className="h-10 w-10 opacity-40" />
-          <p className="text-sm">Missing store context. Go back and open this product from the Tracker.</p>
+          <p className="text-sm">Falta el contexto de la tienda. Vuelve y abre este producto desde el Tracker.</p>
           <Button variant="outline" size="sm" onClick={() => router.push('/tracker')}>
-            Back to Tracker
+            Volver al Tracker
           </Button>
         </div>
       </PageLayout>
@@ -341,9 +341,9 @@ function CandidateDetailContent() {
 
   if (isLoading) {
     return (
-      <PageLayout title="Product Details" description="Deep dive into candidate performance">
+      <PageLayout title="Detalle del producto" description="Análisis profundo del rendimiento del candidato">
         <div className="flex items-center justify-center py-24 text-muted-foreground text-sm">
-          Loading…
+          Cargando…
         </div>
       </PageLayout>
     )
@@ -351,12 +351,12 @@ function CandidateDetailContent() {
 
   if (isError || !data) {
     return (
-      <PageLayout title="Product Details" description="Deep dive into candidate performance">
+      <PageLayout title="Detalle del producto" description="Análisis profundo del rendimiento del candidato">
         <div className="flex flex-col items-center justify-center gap-4 py-24 text-muted-foreground">
           <AlertCircle className="h-10 w-10 opacity-40" />
-          <p className="text-sm">Could not load product details.</p>
+          <p className="text-sm">No se pudieron cargar los detalles del producto.</p>
           <Button variant="outline" size="sm" onClick={() => router.push('/tracker')}>
-            Back to Tracker
+            Volver al Tracker
           </Button>
         </div>
       </PageLayout>
@@ -409,14 +409,14 @@ function CandidateDetailContent() {
   )
 
   return (
-    <PageLayout title="Product Details" description="Deep dive into candidate performance">
+    <PageLayout title="Detalle del producto" description="Análisis profundo del rendimiento del candidato">
       {/* Back Link */}
       <Link
         href="/tracker"
         className="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
-        Back to Tracker
+        Volver al Tracker
       </Link>
 
       {/* Header Card */}
@@ -467,11 +467,11 @@ function CandidateDetailContent() {
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1.5">
                     <Calendar className="h-4 w-4" />
-                    First seen: {formatDate(candidate.firstSeenDate)}
+                    Primera vez visto: {formatDate(candidate.firstSeenDate)}
                   </span>
                   <span className="flex items-center gap-1.5">
                     <Clock className="h-4 w-4" />
-                    Day {candidate.daysElapsed} of 30
+                    Día {candidate.daysElapsed} de 30
                   </span>
                 </div>
               </div>
@@ -534,7 +534,7 @@ function CandidateDetailContent() {
           <div className="p-4 text-center">
             <div className="mb-1 flex items-center justify-center gap-1.5 text-muted-foreground">
               <Target className="h-4 w-4" />
-              <span className="text-xs font-medium uppercase">Current Rank</span>
+              <span className="text-xs font-medium uppercase">Rank actual</span>
             </div>
             <p className="text-2xl font-bold text-foreground">
               {summary?.currentRank != null ? `#${summary.currentRank}` : '—'}
@@ -543,7 +543,7 @@ function CandidateDetailContent() {
           <div className="p-4 text-center">
             <div className="mb-1 flex items-center justify-center gap-1.5 text-muted-foreground">
               <Award className="h-4 w-4" />
-              <span className="text-xs font-medium uppercase">Best Rank</span>
+              <span className="text-xs font-medium uppercase">Mejor rank</span>
             </div>
             <p className="text-2xl font-bold text-rising">
               {summary?.bestRank != null ? `#${summary.bestRank}` : '—'}
@@ -552,7 +552,7 @@ function CandidateDetailContent() {
           <div className="p-4 text-center">
             <div className="mb-1 flex items-center justify-center gap-1.5 text-muted-foreground">
               <TrendingUp className="h-4 w-4" />
-              <span className="text-xs font-medium uppercase">Growth</span>
+              <span className="text-xs font-medium uppercase">Crecimiento</span>
             </div>
             {summary != null ? (
               <>
@@ -572,7 +572,7 @@ function CandidateDetailContent() {
           <div className="p-4 text-center">
             <div className="mb-1 flex items-center justify-center gap-1.5 text-muted-foreground">
               <Zap className="h-4 w-4" />
-              <span className="text-xs font-medium uppercase">Confidence</span>
+              <span className="text-xs font-medium uppercase">Confianza</span>
             </div>
             <p className="text-2xl font-bold text-primary">
               {summary != null ? `${Math.round(summary.signalConfidence * 100)}%` : '—'}
@@ -590,16 +590,16 @@ function CandidateDetailContent() {
         <div className="rounded-xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h3 className="font-semibold text-foreground">Rank Progression</h3>
+              <h3 className="font-semibold text-foreground">Progresión del rank</h3>
               <p className="text-sm text-muted-foreground">Posición en el ranking a lo largo del tiempo</p>
             </div>
             <div className="flex items-center gap-2 text-sm">
-              <span className="text-muted-foreground">Entry:</span>
+              <span className="text-muted-foreground">Entrada:</span>
               <span className="font-medium text-foreground">
                 {entryRankDisplay != null ? `#${entryRankDisplay}` : '—'}
               </span>
               <span className="text-muted-foreground mx-2">→</span>
-              <span className="text-muted-foreground">Now:</span>
+              <span className="text-muted-foreground">Ahora:</span>
               <span className="font-medium text-rising">
                 {summary?.currentRank != null ? `#${summary.currentRank}` : '—'}
               </span>
@@ -612,11 +612,11 @@ function CandidateDetailContent() {
         <div className="rounded-xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h3 className="font-semibold text-foreground">Performance Score</h3>
-              <p className="text-sm text-muted-foreground">Normalized performance over tracking window</p>
+              <h3 className="font-semibold text-foreground">Puntaje de rendimiento</h3>
+              <p className="text-sm text-muted-foreground">Rendimiento normalizado durante la ventana de seguimiento</p>
             </div>
             <div className="flex items-center gap-2 text-sm">
-              <span className="text-muted-foreground">Peak:</span>
+              <span className="text-muted-foreground">Pico:</span>
               <span className="font-medium text-rising">
                 {summary?.peakGrowthPct != null ? `${Math.round(summary.peakGrowthPct)}%` : '—'}
               </span>
@@ -656,26 +656,26 @@ function CandidateDetailContent() {
       {/* History Table */}
       <div className="mt-2 overflow-hidden rounded-xl border border-border bg-card">
         <div className="border-b border-border p-4">
-          <h3 className="font-semibold text-foreground">Tracking History</h3>
-          <p className="text-sm text-muted-foreground">Daily snapshots from the observation window</p>
+          <h3 className="font-semibold text-foreground">Historial de seguimiento</h3>
+          <p className="text-sm text-muted-foreground">Capturas diarias de la ventana de observación</p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-secondary/30">
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Day</th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Date</th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Día</th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Fecha</th>
                 <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">Rank</th>
-                <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">Growth</th>
+                <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">Crecimiento</th>
                 <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">Score</th>
-                <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">Status</th>
+                <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">Estado</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {history.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-10 text-center text-sm text-muted-foreground">
-                    No tracking data yet
+                    Aún no hay datos de seguimiento
                   </td>
                 </tr>
               ) : (
@@ -685,7 +685,7 @@ function CandidateDetailContent() {
                   const dayLabel = computeSmartLabel(entry, prev, prevPrev)
                   return (
                     <tr key={entry.trackingDay} className="transition-colors hover:bg-secondary/20">
-                      <td className="px-4 py-3 text-sm font-medium text-foreground">Day {entry.trackingDay}</td>
+                      <td className="px-4 py-3 text-sm font-medium text-foreground">Día {entry.trackingDay}</td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">{formatDate(entry.snapshotDate)}</td>
                       <td className="px-4 py-3 text-center text-sm font-medium text-foreground">
                         {entry.bestsellerRank ? `#${entry.bestsellerRank}` : '-'}

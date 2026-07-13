@@ -64,6 +64,19 @@ const labelConfig: Record<
 }
 
 /**
+ * Texto visible al usuario por label — el valor interno (Rising/Watching/...)
+ * se mantiene en inglés porque otro código lo compara por string exacto
+ * (ver resolveDisplayLabel en lib/label-utils y su uso en home/page.tsx).
+ */
+const labelText: Record<PerformanceLabel, string> = {
+  Rising: 'En alza',
+  Watching: 'En observación',
+  Declining: 'En baja',
+  Stable: 'Estable',
+  New: 'Nuevo',
+}
+
+/**
  * Mapper: API → UI
  */
 function mapPerformanceLabel(apiLabel: string): PerformanceLabel {
@@ -118,7 +131,7 @@ export function PerformanceBadge({
           )}
         />
       )}
-      {normalizedLabel}
+      {labelText[normalizedLabel]}
     </span>
   )
 }

@@ -358,7 +358,7 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
         <div className="relative">
           <select value={storeFilter} onChange={e => { setStoreFilter(e.target.value); resetPage() }}
             className="h-9 appearance-none rounded-lg border border-border bg-secondary/40 px-3 pr-8 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer">
-            {stores.map(s => <option key={s} value={s}>{s === 'all' ? 'All stores' : s}</option>)}
+            {stores.map(s => <option key={s} value={s}>{s === 'all' ? 'Todas las tiendas' : s}</option>)}
           </select>
           <SlidersHorizontal className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
         </div>
@@ -480,9 +480,9 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
           {processed.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 py-16 text-muted-foreground">
               <Search className="h-8 w-8 opacity-30" />
-              <p className="text-sm">No products match your filters</p>
+              <p className="text-sm">Ningún producto coincide con tus filtros</p>
               <button onClick={clearFilters} className="text-xs underline underline-offset-2 hover:text-foreground transition-colors">
-                Clear filters
+                Limpiar filtros
               </button>
             </div>
           ) : (

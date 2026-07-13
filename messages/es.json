@@ -165,5 +165,20 @@
       "finish": "Finalizar",
       "continueBtn": "Continuar"
     }
+  },
+  "Dashboard": {
+    "title": "Resumen",
+    "description": "Tu inteligencia competitiva de un vistazo",
+    "stats": {
+      "activeStores": "Tiendas activas",
+      "trackingCandidates": "Candidatos en seguimiento",
+      "risingProducts": "Productos en ascenso"
+    },
+    "topPerformers": {
+      "title": "Mejores por tienda",
+      "subtitle": "Los productos nuevos con mejor rendimiento detectados en cada tienda rastreada"
+    },
+    "seeLess": "Ver menos",
+    "seeMore": "Ver {count} tiendas más"
   }
 }

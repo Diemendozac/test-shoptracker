@@ -19,9 +19,9 @@ function formatLastScraped(dateStr: string) {
   const diffHours = Math.round(
     (Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60)
   )
-  if (diffHours < 1) return 'Just now'
-  if (diffHours < 24) return `${diffHours}h ago`
-  return `${Math.floor(diffHours / 24)}d ago`
+  if (diffHours < 1) return 'Justo ahora'
+  if (diffHours < 24) return `hace ${diffHours}h`
+  return `hace ${Math.floor(diffHours / 24)}d`
 }
 
 interface StoreCardProps {
@@ -108,10 +108,10 @@ export function StoreCard({ store, isSyncing, isDeleting, onSync, onDelete }: St
             </span>
           </div>
           <div className="flex items-center justify-between rounded-lg bg-secondary/50 px-3 py-2 text-sm">
-            <span className="text-muted-foreground">Last scraped</span>
+            <span className="text-muted-foreground">Última captura</span>
             <span className="flex items-center gap-1.5 text-foreground">
               <Clock className="h-3 w-3 text-muted-foreground" />
-              {store.lastScrapedAt ? formatLastScraped(store.lastScrapedAt) : 'Never'}
+              {store.lastScrapedAt ? formatLastScraped(store.lastScrapedAt) : 'Nunca'}
             </span>
           </div>
         </div>
@@ -126,7 +126,7 @@ export function StoreCard({ store, isSyncing, isDeleting, onSync, onDelete }: St
             onClick={onSync}
           >
             <RefreshCw className={cn('h-3 w-3', isSyncing && 'animate-spin')} />
-            {isSyncing ? 'Syncing...' : 'Sync Now'}
+            {isSyncing ? 'Sincronizando...' : 'Sincronizar ahora'}
           </Button>
 
           <DropdownMenu>
@@ -138,12 +138,12 @@ export function StoreCard({ store, isSyncing, isDeleting, onSync, onDelete }: St
             <DropdownMenuContent align="end">
               <DropdownMenuItem className="gap-2">
                 <Edit className="h-4 w-4" />
-                Edit Store
+                Editar tienda
               </DropdownMenuItem>
               <DropdownMenuItem className="gap-2">
                 {store.isActive
-                  ? <><XCircle className="h-4 w-4" />Pause Tracking</>
-                  : <><CheckCircle className="h-4 w-4" />Resume Tracking</>
+                  ? <><XCircle className="h-4 w-4" />Pausar seguimiento</>
+                  : <><CheckCircle className="h-4 w-4" />Reanudar seguimiento</>
                 }
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -152,7 +152,7 @@ export function StoreCard({ store, isSyncing, isDeleting, onSync, onDelete }: St
                 onClick={onDelete}
               >
                 <Trash2 className="h-4 w-4" />
-                {isDeleting ? 'Deleting...' : 'Delete Store'}
+                {isDeleting ? 'Eliminando...' : 'Eliminar tienda'}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

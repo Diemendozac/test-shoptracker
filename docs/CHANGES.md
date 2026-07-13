@@ -6,6 +6,33 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-072 — Traducción de la UI a español (bloque 2: dashboard, tracker, stores, settings)
+
+**Fecha:** 2026-07-13
+**Tipo:** i18n / bugfix
+
+**Por qué:** continuación de CHANGE-071. El dashboard, tracker y stores ya estaban mayormente en español (desarrollados después del template inicial en inglés), pero quedaban restos de texto en inglés sueltos, y un hallazgo importante: el badge de rendimiento (`PerformanceBadge`) mostraba literalmente "Rising", "Watching", "Declining", "Stable", "New" en inglés en toda la app (tracker table, store cards, detalle de candidato, pool de ganadores) — no se había traducido nunca.
+
+**Qué cambió:**
+- `components/dashboard/performance-badge.tsx`: se agregó un mapa `labelText` que traduce el label interno a texto visible (Rising→"En alza", Watching→"En observación", Declining→"En baja", Stable→"Estable", New→"Nuevo"). **El valor interno (`PerformanceLabel`) no cambió** — otro código lo compara por string exacto (`resolveDisplayLabel` en `lib/label-utils`, usado en `home/page.tsx`), así que cambiar solo el texto renderizado evita romper esas comparaciones.
+- `app/(dashboard)/tracker/[candidateId]/page.tsx`: título/descripción de página, "Current/Best Rank", "Growth", "Confidence", "Rank Progression", "Performance Score", "Tracking History", cabeceras de tabla (Day/Date/Rank/Growth/Score/Status), "Loading…", mensajes de error, "Back to Tracker", "First seen", "Day X of 30". También el formato de fecha `formatDate` usaba locale `en-US` (mostraba "Jan 15, 2026") → cambiado a `es-CO`.
+- Textos sueltos en inglés en: `app/(dashboard)/dashboard/page.tsx` (vía next-intl, namespace `Dashboard`), `app/(dashboard)/stores/components/AddStoreModal.tsx`, `StoreCard.tsx`, `StoreRow.tsx`, `components/dashboard/store-card.tsx`, `components/tracker/tracker-table.tsx`, `components/layout/app-header.tsx` (aria/sr-only "Search" → "Buscar").
+- `app/(dashboard)/settings/page.tsx`: título/descripción de `PageLayout`.
+
+**Qué NO se tradujo (dead code, verificado sin ningún import activo):** `components/ui/pagination.tsx`, `command.tsx`, `carousel.tsx`, `sidebar.tsx` (SidebarTrigger/SidebarRail), `dialog.tsx`, `sheet.tsx`, `spinner.tsx` — todos shadcn boilerplate sin ningún `import` en el resto del código. Si algún día se usan, quedan pendientes de traducir.
+
+**Archivos modificados:** ver lista arriba — ~15 archivos entre `app/(dashboard)` y `components/`.
+
+**Qué NO cambió:** Redux (`store/`, ningún slice tocado), lógica de negocio, endpoints, `PerformanceLabel` como tipo/valor interno.
+
+**Verificación:** `npx next build` sin errores. Grep dirigido sobre `app/` y `components/` para confirmar ausencia de strings en inglés user-facing (excluyendo dead code).
+
+**Riesgo:** solo (frontend puro).
+
+**Wiki actualizado:** No aplica.
+
+---
+
 ### CHANGE-071 — Traducción de la UI a español (bloque 1: base i18n + marketing + auth)
 
 **Fecha:** 2026-07-13

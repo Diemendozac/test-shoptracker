@@ -257,7 +257,7 @@ export default function SettingsPage() {
     : '—'
 
   return (
-    <PageLayout title="Settings" description="Manage your account and preferences">
+    <PageLayout title="Configuración" description="Administra tu cuenta y preferencias">
       <div className="mx-auto max-w-3xl space-y-6">
 
         {/* ── Profile ── */}
