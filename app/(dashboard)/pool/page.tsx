@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { PoolWinnersSection } from '@/components/tracker/pool-winners'
 import type { PagoFilter } from '@/components/tracker/pool-winners'
 import { useGetPoolWinnersQuery } from '@/app/(dashboard)/services/dashboardApi'
+import { useViewAs } from '@/lib/view-as'
 import { cn } from '@/lib/utils'
 import { LayoutGrid, TrendingUp, Star, Flame } from 'lucide-react'
 
@@ -18,6 +19,7 @@ const TABS: { id: PoolPreset; label: string; icon: React.ElementType }[] = [
 ]
 
 export default function PoolPage() {
+  const { isAdmin } = useViewAs()
   const [page, setPage] = useState(0)
   const [preset, setPreset] = useState<PoolPreset>('all')
 
@@ -78,6 +80,8 @@ export default function PoolPage() {
     days:     dateFilter > 0          ? dateFilter                  : undefined,
     scalable: escalarFilter            ? true                        : undefined,
     country:  countryFilter || undefined,
+    // Solo admin ve el pool completo; el resto solo ve productos con video (ads)
+    hasVideo: isAdmin ? undefined : true,
   })
 
   return (

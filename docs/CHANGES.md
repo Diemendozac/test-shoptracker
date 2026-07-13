@@ -6,6 +6,19 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-069 — Filtro "solo con video" en pool global, para usuarios no-admin
+
+**Fecha:** 2026-07-13
+**Archivos:**
+- `app/(dashboard)/services/dashboardApi.ts` — nuevo param `hasVideo` en `getPoolWinners`, forwardeado como query param `hasVideo` a `GET /dashboard/pool/winners`
+- `app/(dashboard)/pool/page.tsx` — usa `useViewAs().isAdmin`; pasa `hasVideo: true` cuando el usuario no es admin, `undefined` cuando sí lo es
+
+**Por qué:** en "Explorar testeos" los usuarios normales solo deben ver productos que tengan al menos un anuncio con video (ads). Admin sigue viendo el pool completo, sin filtrar, para poder auditar todo el catálogo.
+
+**Backend correspondiente:** ShopTracker SPEC-001 / FIX-048 (rama `feature/pool-has-video-filter`) — Diego autorizó verbalmente implementarlo. `ScoreSummaryRepository.java` agrega `hasVideo` a las 12 queries del pool con `EXISTS` contra `product_ads.video_url_r2`, aplicado antes de paginar. Pendiente: que Diego revise/compile (no se pudo compilar localmente, no hay Java instalado) y redeploye desde Easypanel.
+
+---
+
 ### CHANGE-068 — Logout automático al vencer el JWT (redirect a /login en 401)
 
 **Fecha:** 2026-07-12

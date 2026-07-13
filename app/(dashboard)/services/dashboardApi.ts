@@ -30,12 +30,13 @@ export const dashboardApi = createApi({
       providesTags: ['Winner'],
     }),
 
-    // GET /api/dashboard/pool/winners?page=&size=&pagoAnticipado=&q=&niche=&currency=&days=&scalable=&country=
+    // GET /api/dashboard/pool/winners?page=&size=&pagoAnticipado=&q=&niche=&currency=&days=&scalable=&country=&hasVideo=
     getPoolWinners: builder.query<PoolWinnersResponse, {
       page?: number; size?: number; pagoAnticipado?: boolean
       q?: string; niche?: string[]; currency?: string[]; days?: number; scalable?: boolean; country?: string
+      hasVideo?: boolean
     }>({
-      query: ({ page = 0, size = 20, pagoAnticipado, q, niche, currency, days, scalable, country } = {}) => ({
+      query: ({ page = 0, size = 20, pagoAnticipado, q, niche, currency, days, scalable, country, hasVideo } = {}) => ({
         url: '/pool/winners',
         params: {
           page, size,
@@ -46,6 +47,7 @@ export const dashboardApi = createApi({
           ...(days             && { days }),
           ...(scalable         && { scalable }),
           ...(country          && { country }),
+          ...(hasVideo         && { hasVideo }),
         },
       }),
       providesTags: ['Pool'],
