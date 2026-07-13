@@ -1,0 +1,169 @@
+{
+  "Landing": {
+    "nav": {
+      "features": "Funcionalidades",
+      "pricing": "Precios",
+      "docs": "Documentación",
+      "login": "Iniciar sesión",
+      "getStarted": "Empezar gratis"
+    },
+    "hero": {
+      "badge": "Inteligencia competitiva para Shopify",
+      "titleLine1": "Rastrea competidores.",
+      "titleHighlight": "Detecta tendencias.",
+      "titleLine2": "Gana mercados.",
+      "description": "Automatiza la inteligencia competitiva para tiendas Shopify. Detecta productos nuevos, sigue su ascenso en los rankings de la tienda e identifica ganadores antes que nadie.",
+      "ctaPrimary": "Empezar prueba gratis",
+      "ctaSecondary": "Ver cómo funciona"
+    },
+    "stats": {
+      "discovery": "descubrimiento de productos más rápido",
+      "stores": "tiendas por cuenta",
+      "window": "días de ventana de seguimiento",
+      "monitoring": "monitoreo automatizado"
+    },
+    "features": {
+      "title": "Todo lo que necesitas para ir un paso adelante",
+      "subtitle": "Herramientas poderosas para equipos de e-commerce que quieren insights competitivos basados en datos.",
+      "snapshots": {
+        "title": "Capturas automatizadas",
+        "description": "Capturas diarias de las colecciones de más vendidos y productos recientes de cualquier tienda Shopify."
+      },
+      "detection": {
+        "title": "Detección de productos nuevos",
+        "description": "Detecta al instante cuando la competencia lanza productos nuevos y empieza a rastrear su rendimiento."
+      },
+      "scoring": {
+        "title": "Puntaje de rendimiento",
+        "description": "Puntajes calculados por IA según cómo escalan los productos en los rankings de la tienda."
+      },
+      "alerts": {
+        "title": "Alertas inteligentes",
+        "description": "Recibe notificaciones cuando los productos que sigues alcanzan hitos clave o muestran potencial de despegue."
+      },
+      "trends": {
+        "title": "Análisis de tendencias",
+        "description": "Visualiza el historial de rank e identifica patrones en tu panorama competitivo."
+      },
+      "privacy": {
+        "title": "Aislamiento de datos",
+        "description": "Tus tiendas rastreadas e insights son completamente privados y nunca se comparten."
+      }
+    },
+    "howItWorks": {
+      "title": "Cómo funciona Dropspy",
+      "subtitle": "Tres pasos simples hacia la automatización de inteligencia competitiva.",
+      "step1": { "title": "Agrega tiendas", "description": "Ingresa la URL de cualquier tienda Shopify pública. Nosotros hacemos el resto." },
+      "step2": { "title": "Nosotros rastreamos", "description": "Capturas diarias registran productos nuevos y cambios de ranking automáticamente." },
+      "step3": { "title": "Tú ganas", "description": "Recibe insights sobre qué productos están en tendencia antes de que se vuelvan virales." }
+    },
+    "pricingSection": {
+      "title": "Precios simples y transparentes",
+      "subtitle": "Empieza gratis. Escala cuando necesites."
+    },
+    "cta": {
+      "title": "¿Listo para superar a tu competencia?",
+      "subtitle": "Únete a miles de equipos de e-commerce que usan Dropspy para ir un paso adelante.",
+      "button": "Empieza tu prueba gratis"
+    },
+    "footer": {
+      "privacy": "Privacidad",
+      "terms": "Términos",
+      "contact": "Contacto",
+      "rights": "2026 Dropspy. Todos los derechos reservados."
+    }
+  },
+  "Auth": {
+    "divider": {
+      "orContinueWith": "o continúa con"
+    },
+    "login": {
+      "title": "Bienvenido de nuevo",
+      "subtitle": "Ingresa tus credenciales para acceder a tu cuenta",
+      "emailLabel": "Correo electrónico",
+      "passwordLabel": "Contraseña",
+      "forgotPassword": "¿Olvidaste tu contraseña?",
+      "passwordPlaceholder": "Ingresa tu contraseña",
+      "submitLoading": "Iniciando sesión...",
+      "submit": "Iniciar sesión",
+      "genericError": "Credenciales inválidas. Intenta de nuevo."
+    },
+    "signup": {
+      "title": "Crea una cuenta",
+      "subtitle": "Empieza tu prueba gratis de 14 días. Sin tarjeta de crédito.",
+      "nameLabel": "Nombre completo",
+      "namePlaceholder": "Juan Pérez",
+      "emailLabel": "Correo electrónico",
+      "passwordLabel": "Contraseña",
+      "passwordPlaceholder": "Crea una contraseña segura",
+      "passwordHint": "Debe tener al menos 8 caracteres",
+      "submitLoading": "Creando cuenta...",
+      "submit": "Crear cuenta",
+      "genericError": "No se pudo crear la cuenta. Intenta de nuevo.",
+      "termsPrefix": "Al crear una cuenta, aceptas nuestros",
+      "termsLink": "Términos de servicio",
+      "and": "y",
+      "privacyLink": "Política de privacidad"
+    },
+    "page": {
+      "backToHome": "Volver al inicio",
+      "tabLogin": "Iniciar sesión",
+      "tabSignup": "Registrarse",
+      "trustBadge": "Con la confianza de más de 2.000 equipos de e-commerce"
+    }
+  },
+  "Onboarding": {
+    "steps": {
+      "country": "País",
+      "aboutYou": "Sobre ti",
+      "model": "Modelo",
+      "goals": "Objetivos",
+      "niches": "Nichos",
+      "platforms": "Plataformas"
+    },
+    "stepCountry": {
+      "countryLabel": "País",
+      "countryPlaceholder": "Selecciona tu país",
+      "phoneLabel": "Teléfono (obligatorio)",
+      "phonePlaceholder": "Tu número de teléfono",
+      "phoneHint": "Solo para notificarte alertas urgentes de productos. Nunca spam.",
+      "optIn": "Acepto que me contacten por teléfono o WhatsApp sobre oportunidades y ofertas de productos."
+    },
+    "stepAboutYou": {
+      "question": "¿Operas solo o con un equipo?",
+      "solo": "Solo",
+      "team": "Con un equipo"
+    },
+    "stepModel": {
+      "question": "¿Cómo vendes actualmente?",
+      "prepaid": "Pago anticipado (el cliente paga antes del envío)",
+      "cod": "Contra entrega"
+    },
+    "stepObjective": {
+      "question": "¿Cuál es tu objetivo principal ahora mismo?"
+    },
+    "objectives": {
+      "scale": "Escalar lo que ya funciona",
+      "reduce_losses": "Reducir pérdidas al testear productos malos",
+      "start": "Recién estoy empezando",
+      "diversify": "Diversificar hacia nuevos nichos"
+    },
+    "stepNiches": {
+      "title": "¿En qué nichos operas?"
+    },
+    "stepPlatforms": {
+      "title": "¿Qué plataformas usas?"
+    },
+    "other": "Otro",
+    "page": {
+      "title": "Configura tu cuenta",
+      "subtitle": "Menos de 2 minutos.",
+      "stepOf": "Paso {current} de {total}",
+      "genericError": "No se pudieron guardar tus respuestas. Intenta de nuevo.",
+      "back": "Atrás",
+      "saving": "Guardando...",
+      "finish": "Finalizar",
+      "continueBtn": "Continuar"
+    }
+  }
+}

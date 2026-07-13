@@ -159,7 +159,7 @@ export default function PricingPage() {
 
           <div className="hidden items-center gap-8 md:flex">
             <Link href="/#features" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-              Features
+              Funcionalidades
             </Link>
             <Link href="/pricing" className="text-sm font-medium text-foreground">
               Pricing
@@ -201,7 +201,7 @@ export default function PricingPage() {
                 'relative h-6 w-11 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                 annual ? 'bg-primary' : 'bg-border',
               )}
-              aria-label="Toggle annual billing"
+              aria-label="Alternar facturación anual"
             >
               <span
                 className={cn(

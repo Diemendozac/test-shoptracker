@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -27,13 +28,14 @@ function GoogleButton() {
 }
 
 function Divider() {
+  const t = useTranslations('Auth.divider')
   return (
     <div className="relative">
       <div className="absolute inset-0 flex items-center">
         <div className="w-full border-t border-border" />
       </div>
       <div className="relative flex justify-center text-xs">
-        <span className="bg-card px-2 text-muted-foreground">or continue with</span>
+        <span className="bg-card px-2 text-muted-foreground">{t('orContinueWith')}</span>
       </div>
     </div>
   )
@@ -42,6 +44,7 @@ function Divider() {
 // ─── Login Form ───────────────────────────────────────────────────────────────
 
 function LoginForm() {
+  const t = useTranslations('Auth.login')
   const { login, isLoginLoading, loginError } = useAuth()
 
   const [form, setForm] = useState({
@@ -59,15 +62,15 @@ function LoginForm() {
   const errorMessage = loginError
     ? 'error' in loginError
       ? (loginError as { error: string }).error
-      : 'Invalid credentials. Please try again.'
+      : t('genericError')
     : null
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-bold">Welcome back</h1>
+        <h1 className="text-2xl font-bold">{t('title')}</h1>
         <p className="text-sm text-muted-foreground">
-          Enter your credentials to access your account
+          {t('subtitle')}
         </p>
       </div>
 
@@ -79,14 +82,14 @@ function LoginForm() {
 
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="login-email">Email</Label>
+          <Label htmlFor="login-email">{t('emailLabel')}</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               id="login-email"
               type="email"
               value={form.email}
-              placeholder="you@company.com"
+              placeholder="tu@empresa.com"
               className="pl-10"
               onChange={(e) => setForm({ ...form, email: e.target.value })}
               required
@@ -96,9 +99,9 @@ function LoginForm() {
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="login-password">Password</Label>
+            <Label htmlFor="login-password">{t('passwordLabel')}</Label>
             <Link href="#" className="text-xs text-primary hover:underline">
-              Forgot password?
+              {t('forgotPassword')}
             </Link>
           </div>
 
@@ -109,7 +112,7 @@ function LoginForm() {
               id="login-password"
               type={showPassword ? 'text' : 'password'}
               value={form.password}
-              placeholder="Enter your password"
+              placeholder={t('passwordPlaceholder')}
               className="pl-10 pr-10"
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               required
@@ -131,7 +134,7 @@ function LoginForm() {
       </div>
 
       <Button type="submit" className="w-full gap-2" disabled={isLoginLoading}>
-        {isLoginLoading ? 'Signing in...' : 'Sign In'}
+        {isLoginLoading ? t('submitLoading') : t('submit')}
         {!isLoginLoading && <ArrowRight className="h-4 w-4" />}
       </Button>
 
@@ -144,6 +147,7 @@ function LoginForm() {
 // ─── Signup Form ──────────────────────────────────────────────────────────────
 
 function SignupForm() {
+  const t = useTranslations('Auth.signup')
   const { register, isRegisterLoading, registerError } = useAuth()
 
   const [form, setForm] = useState({
@@ -162,15 +166,15 @@ function SignupForm() {
   const errorMessage = registerError
     ? 'error' in registerError
       ? (registerError as { error: string }).error
-      : 'Could not create account. Please try again.'
+      : t('genericError')
     : null
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-bold">Create an account</h1>
+        <h1 className="text-2xl font-bold">{t('title')}</h1>
         <p className="text-sm text-muted-foreground">
-          Start your 14-day free trial. No credit card required.
+          {t('subtitle')}
         </p>
       </div>
 
@@ -182,13 +186,13 @@ function SignupForm() {
 
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="signup-name">Full Name</Label>
+          <Label htmlFor="signup-name">{t('nameLabel')}</Label>
           <div className="relative">
             <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               id="signup-name"
               type="text"
-              placeholder="John Doe"
+              placeholder={t('namePlaceholder')}
               className="pl-10"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -198,13 +202,13 @@ function SignupForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="signup-email">Email</Label>
+          <Label htmlFor="signup-email">{t('emailLabel')}</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               id="signup-email"
               type="email"
-              placeholder="you@company.com"
+              placeholder="tu@empresa.com"
               className="pl-10"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -214,14 +218,14 @@ function SignupForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="signup-password">Password</Label>
+          <Label htmlFor="signup-password">{t('passwordLabel')}</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 
             <Input
               id="signup-password"
               type={showPassword ? 'text' : 'password'}
-              placeholder="Create a strong password"
+              placeholder={t('passwordPlaceholder')}
               className="pl-10 pr-10"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
@@ -242,13 +246,13 @@ function SignupForm() {
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Must be at least 8 characters long
+            {t('passwordHint')}
           </p>
         </div>
       </div>
 
       <Button type="submit" className="w-full gap-2" disabled={isRegisterLoading}>
-        {isRegisterLoading ? 'Creating account...' : 'Create Account'}
+        {isRegisterLoading ? t('submitLoading') : t('submit')}
         {!isRegisterLoading && <ArrowRight className="h-4 w-4" />}
       </Button>
 
@@ -256,13 +260,13 @@ function SignupForm() {
       <GoogleButton />
 
       <p className="text-center text-xs text-muted-foreground">
-        By creating an account, you agree to our{' '}
+        {t('termsPrefix')}{' '}
         <Link href="#" className="text-primary hover:underline">
-          Terms of Service
+          {t('termsLink')}
         </Link>{' '}
-        and{' '}
+        {t('and')}{' '}
         <Link href="#" className="text-primary hover:underline">
-          Privacy Policy
+          {t('privacyLink')}
         </Link>
       </p>
     </form>
@@ -272,6 +276,7 @@ function SignupForm() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function LoginPage() {
+  const t = useTranslations('Auth.page')
   const searchParams = useSearchParams()
   const defaultTab = searchParams.get('tab') === 'signup' ? 'signup' : 'login'
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>(defaultTab)
@@ -295,7 +300,7 @@ export default function LoginPage() {
 
         <Link href="/">
           <Button variant="ghost" size="sm">
-            Back to Home
+            {t('backToHome')}
           </Button>
         </Link>
       </header>
@@ -315,7 +320,7 @@ export default function LoginPage() {
                       : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  {tab === 'login' ? 'Log In' : 'Sign Up'}
+                  {tab === 'login' ? t('tabLogin') : t('tabSignup')}
                 </button>
               ))}
             </div>
@@ -325,7 +330,7 @@ export default function LoginPage() {
           </div>
 
           <p className="mt-8 text-center text-sm text-muted-foreground">
-            Trusted by 2,000+ e-commerce teams worldwide
+            {t('trustBadge')}
           </p>
         </div>
       </main>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import {
@@ -21,43 +22,19 @@ import {
 import { DropspyIcon } from '@/components/ui/dropspy-logo'
 
 const stats = [
-  { value: '10x', label: 'faster product discovery' },
-  { value: '50+', label: 'stores per account' },
-  { value: '30', label: 'day tracking window' },
-  { value: '24/7', label: 'automated monitoring' },
+  { value: '10x', key: 'discovery' as const },
+  { value: '50+', key: 'stores' as const },
+  { value: '30', key: 'window' as const },
+  { value: '24/7', key: 'monitoring' as const },
 ]
 
 const features = [
-  {
-    icon: Eye,
-    title: 'Automated Snapshots',
-    description: 'Daily captures of best-selling and recent product collections from any Shopify store.',
-  },
-  {
-    icon: Target,
-    title: 'New Product Detection',
-    description: 'Instantly detect when competitors launch new products and start tracking their performance.',
-  },
-  {
-    icon: TrendingUp,
-    title: 'Performance Scoring',
-    description: 'AI-calculated scores based on how products climb through store rankings.',
-  },
-  {
-    icon: Bell,
-    title: 'Smart Alerts',
-    description: 'Get notified when tracked products hit key milestones or show breakout potential.',
-  },
-  {
-    icon: BarChart3,
-    title: 'Trend Analysis',
-    description: 'Visualize rank history and identify patterns across your competitive landscape.',
-  },
-  {
-    icon: Shield,
-    title: 'Data Isolation',
-    description: 'Your tracked stores and insights are completely private and never shared.',
-  },
+  { icon: Eye, key: 'snapshots' as const },
+  { icon: Target, key: 'detection' as const },
+  { icon: TrendingUp, key: 'scoring' as const },
+  { icon: Bell, key: 'alerts' as const },
+  { icon: BarChart3, key: 'trends' as const },
+  { icon: Shield, key: 'privacy' as const },
 ]
 
 const PLANS = [
@@ -149,6 +126,7 @@ const PLANS = [
 
 export default function LandingPage() {
   const [annual, setAnnual] = useState(false)
+  const t = useTranslations('Landing')
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -162,25 +140,25 @@ export default function LandingPage() {
               dropspy
             </span>
           </Link>
-          
+
           <div className="hidden items-center gap-8 md:flex">
             <Link href="#features" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-              Features
+              {t('nav.features')}
             </Link>
             <Link href="/pricing" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-              Pricing
+              {t('nav.pricing')}
             </Link>
             <Link href="#" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-              Documentation
+              {t('nav.docs')}
             </Link>
           </div>
 
           <div className="flex items-center gap-3">
             <Link href="/login">
-              <Button variant="ghost" size="sm">Log in</Button>
+              <Button variant="ghost" size="sm">{t('nav.login')}</Button>
             </Link>
             <Link href="/login?tab=signup">
-              <Button size="sm">Get Started</Button>
+              <Button size="sm">{t('nav.getStarted')}</Button>
             </Link>
           </div>
         </div>
@@ -197,31 +175,29 @@ export default function LandingPage() {
           <div className="mx-auto max-w-3xl text-center">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-secondary/50 px-4 py-1.5 text-sm">
               <Zap className="h-4 w-4 text-primary" />
-              <span className="text-muted-foreground">Competitive Intelligence for Shopify</span>
+              <span className="text-muted-foreground">{t('hero.badge')}</span>
             </div>
-            
+
             <h1 className="text-balance text-4xl font-bold tracking-tight md:text-6xl lg:text-7xl">
-              Track competitors.{' '}
-              <span className="text-primary">Spot trends.</span>{' '}
-              Win markets.
+              {t('hero.titleLine1')}{' '}
+              <span className="text-primary">{t('hero.titleHighlight')}</span>{' '}
+              {t('hero.titleLine2')}
             </h1>
-            
+
             <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg text-muted-foreground md:text-xl">
-              Automate competitive intelligence for Shopify stores. Detect new products, 
-              track their climb through store rankings, and identify breakout winners
-              before anyone else.
+              {t('hero.description')}
             </p>
 
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link href="/login?tab=signup">
                 <Button size="lg" className="gap-2">
-                  Start Free Trial
+                  {t('hero.ctaPrimary')}
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
               <Link href="#features">
                 <Button variant="outline" size="lg">
-                  See How It Works
+                  {t('hero.ctaSecondary')}
                 </Button>
               </Link>
             </div>
@@ -230,9 +206,9 @@ export default function LandingPage() {
           {/* Stats */}
           <div className="mx-auto mt-20 grid max-w-4xl grid-cols-2 gap-8 md:grid-cols-4">
             {stats.map((stat) => (
-              <div key={stat.label} className="text-center">
+              <div key={stat.key} className="text-center">
                 <div className="text-3xl font-bold text-primary md:text-4xl">{stat.value}</div>
-                <div className="mt-1 text-sm text-muted-foreground">{stat.label}</div>
+                <div className="mt-1 text-sm text-muted-foreground">{t(`stats.${stat.key}`)}</div>
               </div>
             ))}
           </div>
@@ -244,25 +220,25 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-6">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
-              Everything you need to stay ahead
+              {t('features.title')}
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Powerful tools for e-commerce teams who want data-driven competitive insights.
+              {t('features.subtitle')}
             </p>
           </div>
 
           <div className="mx-auto mt-16 grid max-w-5xl gap-8 md:grid-cols-2 lg:grid-cols-3">
             {features.map((feature) => (
               <div
-                key={feature.title}
+                key={feature.key}
                 className="group rounded-xl border border-border bg-card p-6 transition-all hover:border-primary/50 hover:bg-card/80"
               >
                 <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
                   <feature.icon className="h-5 w-5" />
                 </div>
-                <h3 className="text-lg font-semibold">{feature.title}</h3>
+                <h3 className="text-lg font-semibold">{t(`features.${feature.key}.title`)}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  {feature.description}
+                  {t(`features.${feature.key}.description`)}
                 </p>
               </div>
             ))}
@@ -275,37 +251,21 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-6">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
-              How Dropspy works
+              {t('howItWorks.title')}
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Three simple steps to competitive intelligence automation.
+              {t('howItWorks.subtitle')}
             </p>
           </div>
 
           <div className="mx-auto mt-16 grid max-w-4xl gap-12 md:grid-cols-3">
-            {[
-              {
-                step: '01',
-                title: 'Add Stores',
-                description: 'Enter any public Shopify store URL. We handle the rest.',
-              },
-              {
-                step: '02',
-                title: 'We Track',
-                description: 'Daily snapshots capture new products and ranking changes automatically.',
-              },
-              {
-                step: '03',
-                title: 'You Win',
-                description: 'Get insights on which products are trending before they go viral.',
-              },
-            ].map((item) => (
-              <div key={item.step} className="relative text-center">
+            {(['step1', 'step2', 'step3'] as const).map((stepKey, i) => (
+              <div key={stepKey} className="relative text-center">
                 <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border-2 border-primary text-lg font-bold text-primary">
-                  {item.step}
+                  {String(i + 1).padStart(2, '0')}
                 </div>
-                <h3 className="text-xl font-semibold">{item.title}</h3>
-                <p className="mt-2 text-muted-foreground">{item.description}</p>
+                <h3 className="text-xl font-semibold">{t(`howItWorks.${stepKey}.title`)}</h3>
+                <p className="mt-2 text-muted-foreground">{t(`howItWorks.${stepKey}.description`)}</p>
               </div>
             ))}
           </div>
@@ -317,7 +277,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-6">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
-              Precios simples y transparentes
+              {t('pricingSection.title')}
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
               Empieza gratis. Escala cuando necesites.
@@ -335,7 +295,7 @@ export default function LandingPage() {
                 'relative h-6 w-11 rounded-full transition-colors',
                 annual ? 'bg-primary' : 'bg-border',
               )}
-              aria-label="Toggle annual billing"
+              aria-label="Alternar facturación anual"
             >
               <span className={cn(
                 'absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform',
@@ -443,15 +403,15 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-6">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
-              Ready to outsmart your competition?
+              {t('cta.title')}
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Join thousands of e-commerce teams using Dropspy to stay ahead.
+              {t('cta.subtitle')}
             </p>
             <div className="mt-8">
               <Link href="/login?tab=signup">
                 <Button size="lg" className="gap-2">
-                  Start Your Free Trial
+                  {t('cta.button')}
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
@@ -471,15 +431,15 @@ export default function LandingPage() {
                 dropspy
               </span>
             </div>
-            
+
             <div className="flex items-center gap-6 text-sm text-muted-foreground">
-              <Link href="#" className="hover:text-foreground">Privacy</Link>
-              <Link href="#" className="hover:text-foreground">Terms</Link>
-              <Link href="#" className="hover:text-foreground">Contact</Link>
+              <Link href="#" className="hover:text-foreground">{t('footer.privacy')}</Link>
+              <Link href="#" className="hover:text-foreground">{t('footer.terms')}</Link>
+              <Link href="#" className="hover:text-foreground">{t('footer.contact')}</Link>
             </div>
 
             <div className="text-sm text-muted-foreground">
-              2026 Dropspy. All rights reserved.
+              {t('footer.rights')}
             </div>
           </div>
         </div>

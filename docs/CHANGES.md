@@ -6,6 +6,39 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-071 — Traducción de la UI a español (bloque 1: base i18n + marketing + auth)
+
+**Fecha:** 2026-07-13
+**Tipo:** i18n
+
+**Por qué:** la mayoría de usuarios actuales de SCOUT/Dropspy son de Colombia. El landing, pricing, login/signup y onboarding tenían texto hardcodeado en inglés (herencia del template v0.app original), inconsistente con el resto de la app que ya estaba en español.
+
+**Qué cambió:**
+- Se instaló `next-intl` como sistema de traducción (en vez de hardcodear español directo) para dejar la puerta abierta a otros idiomas sin rehacer el trabajo — decisión del usuario, ver spec de la sesión.
+- Configuración **sin routing por URL** (un solo locale `es`, sin prefijo `/es/` en las rutas) — no rompe links ni SEO existente.
+- Todo el texto de usuario en `app/(marketing)/page.tsx`, `app/(marketing)/pricing/page.tsx`, `app/(auth)/login/page.tsx` y `app/(auth)/onboarding/page.tsx` se extrajo a `messages/es.json` y se reemplazó por `useTranslations()`.
+
+**Archivos modificados:**
+- `package.json` / `pnpm-lock.yaml` — nueva dependencia `next-intl`
+- `next.config.mjs` — plugin de next-intl
+- `i18n/request.ts` (nuevo) — config de locale único `es`
+- `messages/es.json` (nuevo) — diccionario de traducción (namespaces `Landing`, `Auth`, `Onboarding`)
+- `app/layout.tsx` — `NextIntlClientProvider`, `lang="es"`, metadata traducida
+- `app/(marketing)/page.tsx`, `app/(marketing)/pricing/page.tsx`
+- `app/(auth)/login/page.tsx`, `app/(auth)/onboarding/page.tsx`
+
+**Qué NO cambió:** lógica de negocio, Redux (`store/`, `authSlice`, `onboardingSlice` no se tocaron — solo se leen igual que antes), rutas, nombres de archivos/componentes.
+
+**Verificación:** `npx next build` sin errores tras cada archivo. Nota: `pnpm build` falla por un problema de pnpm ajeno a este cambio (bloqueo por "ignored build scripts" de `@parcel/watcher`/`@swc/core`) — usar `npx next build` o correr `pnpm approve-builds` una vez.
+
+**Riesgo:** solo (frontend puro, sin tocar Redux/DB/APIs).
+
+**Pendiente en esta misma sesión:** dashboard, tracker, stores, settings y `components/ui` — bloques 2 y 3, cada uno con su propio CHANGE-NNN.
+
+**Wiki actualizado:** No aplica (cambio de UI, sin impacto en lógica documentada).
+
+---
+
 ### CHANGE-070 — Wizard de onboarding post-registro (6 pasos)
 
 **Fecha:** 2026-07-13

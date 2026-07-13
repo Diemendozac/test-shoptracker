@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter, Geist_Mono, Outfit } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { NextIntlClientProvider } from 'next-intl'
+import { getMessages } from 'next-intl/server'
 import './globals.css'
 import { StoreProvider } from '@/store/providers/StoreProvider';
 
@@ -21,7 +23,7 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: 'Dropspy - Competitive Intelligence for Dropshippers',
+  title: 'Dropspy - Inteligencia Competitiva para Dropshippers',
   description: 'Detecta productos ganadores antes que la competencia. Rastrea tiendas Shopify, detecta tendencias y mide el rendimiento en tiempo real.',
   generator: 'v0.app',
 }
@@ -32,17 +34,21 @@ export const viewport: Viewport = {
   initialScale: 1,
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const messages = await getMessages()
+
   return (
-    <html lang="en">
+    <html lang="es">
       <body className={`${inter.variable} ${geistMono.variable} ${outfit.variable} font-sans antialiased overflow-x-hidden`}>
-        <StoreProvider>
-          {children}
-        </StoreProvider>
+        <NextIntlClientProvider messages={messages}>
+          <StoreProvider>
+            {children}
+          </StoreProvider>
+        </NextIntlClientProvider>
         <Analytics />
       </body>
     </html>

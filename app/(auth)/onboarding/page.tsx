@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -22,14 +23,9 @@ import { useSubmitOnboardingMutation } from '@/app/(dashboard)/services/userApi'
 
 // ─── Static option catalogs ─────────────────────────────────────────────────
 
-const COUNTRIES = ['Colombia', 'México', 'Chile', 'Perú', 'Ecuador', 'Paraguay', 'Panamá', 'Other']
+const COUNTRIES = ['Colombia', 'México', 'Chile', 'Perú', 'Ecuador', 'Paraguay', 'Panamá', 'Otro']
 
-const OBJECTIVES = [
-  { value: 'scale', label: 'Scale what already works' },
-  { value: 'reduce_losses', label: 'Reduce losses from testing bad products' },
-  { value: 'start', label: 'Just getting started' },
-  { value: 'diversify', label: 'Diversify into new niches' },
-]
+const OBJECTIVE_VALUES = ['scale', 'reduce_losses', 'start', 'diversify'] as const
 
 // Must match the product_niche taxonomy used by NicheClassificationService (see scout-clasificacion-nicho wiki page) —
 // same 13 categories, so onboarding answers can join against classified candidates later.
@@ -39,9 +35,7 @@ const NICHES = [
   'Herramientas & Auto', 'Salud & Bienestar', 'Joyería & Relojes', 'Juguetes & Entretenimiento', 'Otro',
 ]
 
-const PLATFORMS = ['Shopify', 'TikTok Shop', 'WooCommerce', 'Amazon', 'Other']
-
-const STEP_LABELS = ['Country', 'About you', 'Model', 'Goals', 'Niches', 'Platforms']
+const PLATFORMS = ['Shopify', 'TikTok Shop', 'WooCommerce', 'Amazon', 'Otro']
 
 // ─── Step components ────────────────────────────────────────────────────────
 
@@ -51,13 +45,14 @@ function StepCountry({ value, phone, phoneOptIn, onChange }: {
   phoneOptIn: boolean
   onChange: (fields: { country?: string; phone?: string; phoneOptIn?: boolean }) => void
 }) {
+  const t = useTranslations('Onboarding.stepCountry')
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <Label>Country</Label>
+        <Label>{t('countryLabel')}</Label>
         <Select value={value} onValueChange={(v) => onChange({ country: v })}>
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select your country" />
+            <SelectValue placeholder={t('countryPlaceholder')} />
           </SelectTrigger>
           <SelectContent>
             {COUNTRIES.map((c) => (
@@ -68,17 +63,17 @@ function StepCountry({ value, phone, phoneOptIn, onChange }: {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="onboarding-phone">Phone (required)</Label>
+        <Label htmlFor="onboarding-phone">{t('phoneLabel')}</Label>
         <Input
           id="onboarding-phone"
           type="tel"
-          placeholder="Your phone number"
+          placeholder={t('phonePlaceholder')}
           value={phone}
           onChange={(e) => onChange({ phone: e.target.value })}
           required
         />
         <p className="text-xs text-muted-foreground">
-          Only to notify you about urgent product alerts. Never spam.
+          {t('phoneHint')}
         </p>
       </div>
 
@@ -88,7 +83,7 @@ function StepCountry({ value, phone, phoneOptIn, onChange }: {
           onCheckedChange={(checked) => onChange({ phoneOptIn: checked === true })}
         />
         <span className="text-muted-foreground">
-          I agree to be contacted by phone or WhatsApp about product opportunities and offers.
+          {t('optIn')}
         </span>
       </label>
     </div>
@@ -96,14 +91,15 @@ function StepCountry({ value, phone, phoneOptIn, onChange }: {
 }
 
 function StepAboutYou({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const t = useTranslations('Onboarding.stepAboutYou')
   return (
     <div className="space-y-2">
-      <Label>Do you operate solo or with a team?</Label>
+      <Label>{t('question')}</Label>
       <RadioGroup value={value} onValueChange={onChange} className="pt-2">
         {['solo', 'equipo'].map((opt) => (
           <label key={opt} className="flex items-center gap-2 text-sm capitalize">
             <RadioGroupItem value={opt} />
-            {opt === 'solo' ? 'Solo' : 'With a team'}
+            {opt === 'solo' ? t('solo') : t('team')}
           </label>
         ))}
       </RadioGroup>
@@ -112,17 +108,18 @@ function StepAboutYou({ value, onChange }: { value: string; onChange: (v: string
 }
 
 function StepModel({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const t = useTranslations('Onboarding.stepModel')
   return (
     <div className="space-y-2">
-      <Label>How do you currently sell?</Label>
+      <Label>{t('question')}</Label>
       <RadioGroup value={value} onValueChange={onChange} className="pt-2">
         <label className="flex items-center gap-2 text-sm">
           <RadioGroupItem value="pago_anticipado" />
-          Prepaid (customer pays before shipping)
+          {t('prepaid')}
         </label>
         <label className="flex items-center gap-2 text-sm">
           <RadioGroupItem value="contra_entrega" />
-          Cash on delivery
+          {t('cod')}
         </label>
       </RadioGroup>
     </div>
@@ -130,14 +127,15 @@ function StepModel({ value, onChange }: { value: string; onChange: (v: string) =
 }
 
 function StepObjective({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const t = useTranslations('Onboarding')
   return (
     <div className="space-y-2">
-      <Label>What's your main goal right now?</Label>
+      <Label>{t('stepObjective.question')}</Label>
       <RadioGroup value={value} onValueChange={onChange} className="pt-2">
-        {OBJECTIVES.map((o) => (
-          <label key={o.value} className="flex items-center gap-2 text-sm">
-            <RadioGroupItem value={o.value} />
-            {o.label}
+        {OBJECTIVE_VALUES.map((v) => (
+          <label key={v} className="flex items-center gap-2 text-sm">
+            <RadioGroupItem value={v} />
+            {t(`objectives.${v}`)}
           </label>
         ))}
       </RadioGroup>
@@ -173,6 +171,11 @@ function StepMultiSelect({ title, options, value, onChange }: {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function OnboardingPage() {
+  const t = useTranslations('Onboarding')
+  const STEP_LABELS = [
+    t('steps.country'), t('steps.aboutYou'), t('steps.model'),
+    t('steps.goals'), t('steps.niches'), t('steps.platforms'),
+  ]
   const dispatch = useAppDispatch()
   const router = useRouter()
   const { step, answers } = useAppSelector((s) => s.onboarding)
@@ -206,7 +209,7 @@ export default function OnboardingPage() {
       dispatch(resetOnboarding())
       router.push('/dashboard')
     } catch {
-      setLocalError('Could not save your answers. Please try again.')
+      setLocalError(t('page.genericError'))
     }
   }
 
@@ -233,7 +236,7 @@ export default function OnboardingPage() {
 
             <div className="mb-8 flex items-center justify-between">
               <span className="text-sm font-medium text-muted-foreground">
-                Step {step + 1} of {STEP_LABELS.length}
+                {t('page.stepOf', { current: step + 1, total: STEP_LABELS.length })}
               </span>
               <span className="text-sm font-medium">{STEP_LABELS[step]}</span>
             </div>
@@ -246,13 +249,13 @@ export default function OnboardingPage() {
             </div>
 
             <div className="space-y-2 text-center mb-6">
-              <h1 className="text-xl font-bold">Set up your account</h1>
-              <p className="text-sm text-muted-foreground">Less than 2 minutes.</p>
+              <h1 className="text-xl font-bold">{t('page.title')}</h1>
+              <p className="text-sm text-muted-foreground">{t('page.subtitle')}</p>
             </div>
 
             {(localError || error) && (
               <p className="mb-4 rounded-md bg-destructive/10 px-3 py-2 text-center text-sm text-destructive">
-                {localError ?? 'Could not save your answers. Please try again.'}
+                {localError ?? t('page.genericError')}
               </p>
             )}
 
@@ -276,7 +279,7 @@ export default function OnboardingPage() {
               )}
               {step === 4 && (
                 <StepMultiSelect
-                  title="Which niches do you operate in?"
+                  title={t('stepNiches.title')}
                   options={NICHES}
                   value={answers.niches}
                   onChange={(v) => update({ niches: v })}
@@ -284,7 +287,7 @@ export default function OnboardingPage() {
               )}
               {step === 5 && (
                 <StepMultiSelect
-                  title="Which platforms do you use?"
+                  title={t('stepPlatforms.title')}
                   options={PLATFORMS}
                   value={answers.platforms}
                   onChange={(v) => update({ platforms: v })}
@@ -301,7 +304,7 @@ export default function OnboardingPage() {
                 className="gap-2"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Back
+                {t('page.back')}
               </Button>
               <Button
                 type="button"
@@ -309,7 +312,7 @@ export default function OnboardingPage() {
                 disabled={!canContinue || isLoading}
                 className="gap-2"
               >
-                {isLastStep ? (isLoading ? 'Saving...' : 'Finish') : 'Continue'}
+                {isLastStep ? (isLoading ? t('page.saving') : t('page.finish')) : t('page.continueBtn')}
                 {!isLoading && <ArrowRight className="h-4 w-4" />}
               </Button>
             </div>
