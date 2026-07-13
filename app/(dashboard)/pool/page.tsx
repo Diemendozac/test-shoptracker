@@ -19,7 +19,10 @@ const TABS: { id: PoolPreset; label: string; icon: React.ElementType }[] = [
 ]
 
 export default function PoolPage() {
-  const { isAdmin } = useViewAs()
+  // effectivePlan, no isAdmin: si un admin está simulando "ver como Pro/Starter"
+  // desde la ViewAsBar, debe ver el pool filtrado igual que ese plan lo vería.
+  const { effectivePlan } = useViewAs()
+  const isAdminView = effectivePlan === 'admin'
   const [page, setPage] = useState(0)
   const [preset, setPreset] = useState<PoolPreset>('all')
 
@@ -80,8 +83,8 @@ export default function PoolPage() {
     days:     dateFilter > 0          ? dateFilter                  : undefined,
     scalable: escalarFilter            ? true                        : undefined,
     country:  countryFilter || undefined,
-    // Solo admin ve el pool completo; el resto solo ve productos con video (ads)
-    hasVideo: isAdmin ? undefined : true,
+    // Solo admin (vista real, sin simular otro plan) ve el pool completo
+    hasVideo: isAdminView ? undefined : true,
   })
 
   return (

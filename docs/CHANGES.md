@@ -11,9 +11,11 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 **Fecha:** 2026-07-13
 **Archivos:**
 - `app/(dashboard)/services/dashboardApi.ts` — nuevo param `hasVideo` en `getPoolWinners`, forwardeado como query param `hasVideo` a `GET /dashboard/pool/winners`
-- `app/(dashboard)/pool/page.tsx` — usa `useViewAs().isAdmin`; pasa `hasVideo: true` cuando el usuario no es admin, `undefined` cuando sí lo es
+- `app/(dashboard)/pool/page.tsx` — usa `useViewAs().effectivePlan`; pasa `hasVideo: true` salvo que `effectivePlan === 'admin'`
 
 **Por qué:** en "Explorar testeos" los usuarios normales solo deben ver productos que tengan al menos un anuncio con video (ads). Admin sigue viendo el pool completo, sin filtrar, para poder auditar todo el catálogo.
+
+**Fix 2026-07-13 (mismo día):** la primera versión usaba `isAdmin` (plan real) en vez de `effectivePlan`. Bug: si un admin usaba la ViewAsBar para simular "Pro"/"Starter", el filtro no se activaba porque `isAdmin` seguía en `true` — el admin veía el pool sin filtrar aunque estuviera simulando otro plan. Corregido a `effectivePlan === 'admin'`, que sí respeta la simulación.
 
 **Backend correspondiente:** ShopTracker SPEC-001 / FIX-048 (rama `feature/pool-has-video-filter`) — Diego autorizó verbalmente implementarlo. `ScoreSummaryRepository.java` agrega `hasVideo` a las 12 queries del pool con `EXISTS` contra `product_ads.video_url_r2`, aplicado antes de paginar. Pendiente: que Diego revise/compile (no se pudo compilar localmente, no hay Java instalado) y redeploye desde Easypanel.
 
