@@ -1,6 +1,7 @@
 // src/store/index.ts
 import { configureStore } from '@reduxjs/toolkit'
 import authReducer from '../app/(auth)/store/authSlice'
+import onboardingReducer from '../app/(auth)/store/onboardingSlice'
 import currencyReducer from './currencySlice'
 import { authApi } from '@/app/(auth)/services/authApi'
 import { dashboardApi } from '@/app/(dashboard)/services/dashboardApi';
@@ -14,6 +15,7 @@ import storeReducer from '@/app/(dashboard)/stores/store/storesSlice';
 export const store = configureStore({
   reducer: {
     auth: authReducer,
+    onboarding: onboardingReducer,
     currency: currencyReducer,
     stores: storeReducer,
     dashboard: dashboardReducer,

@@ -6,6 +6,24 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-070 — Wizard de onboarding post-registro (6 pasos)
+
+**Fecha:** 2026-07-13
+**Archivos:**
+- `app/(auth)/store/onboardingSlice.ts` (nuevo) — Redux slice para las respuestas del wizard, persistido a localStorage entre pasos/recargas
+- `store/index.ts` — registra `onboardingReducer`
+- `app/(dashboard)/services/userApi.ts` — nueva mutación `submitOnboarding` → `PATCH /users/me/onboarding` (endpoint aún no existe en el backend, ver más abajo)
+- `app/(auth)/onboarding/page.tsx` (nuevo) — wizard de 6 pasos: País + Teléfono, Sobre ti, Modelo, Objetivos, Nichos, Plataformas
+- `app/(auth)/hooks/useAuth.ts` — `register()` redirige a `/onboarding` en vez de `/dashboard`. `login()` no cambia.
+
+**Por qué:** SCOUT no capturaba ningún dato del usuario al registrarse más allá de email/password — sin país, teléfono, modelo de negocio, ni nichos. Diseño inspirado en el patrón de Dropkiller (onboarding post-signup sin gate, ver wiki `benchmark-dropkiller-onboarding`), pero adaptado a lo que SCOUT necesita, no copiado — en particular el paso "Modelo" usa el filtro pago-anticipado/contra-entrega que es la pregunta de calificación #1 de SCOUT, no la taxonomía de tipo de negocio de Dropkiller. Las categorías del paso "Nichos" reusan la taxonomía de 13 categorías ya usada por `NicheClassificationService` (`product_niche`) para que los datos del onboarding puedan cruzarse con productos clasificados más adelante.
+
+**Bloqueado en backend:** el endpoint `PATCH /users/me/onboarding` no existe todavía — `User.java` no tiene ningún campo para esta data. Propuesta técnica completa (schema `user_onboarding`, endpoint, y fix del bug donde `name` se manda en el registro pero el backend lo descarta) redactada en la wiki del proyecto (`scout-onboarding-propuesta-tecnica`) y flageada a Diego vía issue en GitHub — no implementada acá, requiere su revisión (cambio de schema de DB).
+
+**Pendiente relacionado, también flageado a Diego:** botón de "Sign in with Google" — hoy 100% decorativo en `login/page.tsx`, sin backend OAuth. Propuesta técnica separada (`scout-google-oauth-propuesta`), bloqueada en que Daniel cree las credenciales OAuth en Google Cloud Console primero.
+
+---
+
 ### CHANGE-069 — Filtro "solo con video" en pool global, para usuarios no-admin
 
 **Fecha:** 2026-07-13

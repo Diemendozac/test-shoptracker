@@ -36,6 +36,17 @@ export interface NotificationsResponse {
   alerts: NotificationAlert[]
 }
 
+export interface OnboardingRequest {
+  country: string
+  phone: string
+  phoneOptIn: boolean
+  soloOrTeam: string
+  businessModel: string
+  objective: string
+  niches: string[]
+  platforms: string[]
+}
+
 export const userApi = createApi({
   reducerPath: 'userApi',
   baseQuery: makeAuthBaseQuery(process.env.NEXT_PUBLIC_API_URL + '/users'),
@@ -61,7 +72,18 @@ export const userApi = createApi({
       providesTags: ['Me'],
     }),
 
+    submitOnboarding: builder.mutation<void, OnboardingRequest>({
+      query: (body) => ({ url: '/me/onboarding', method: 'PATCH', body }),
+      invalidatesTags: ['Me'],
+    }),
+
   }),
 })
 
-export const { useGetMeQuery, useChangePasswordMutation, useGetNotificationsQuery, useUpdatePreferencesMutation } = userApi
+export const {
+  useGetMeQuery,
+  useChangePasswordMutation,
+  useGetNotificationsQuery,
+  useUpdatePreferencesMutation,
+  useSubmitOnboardingMutation,
+} = userApi
