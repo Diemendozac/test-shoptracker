@@ -10,6 +10,7 @@ import { useAppSelector } from '@/store/hooks'
 import { ViewAsProvider } from '@/lib/view-as'
 import { ViewAsBar } from '@/components/admin/ViewAsBar'
 import { OnboardingModal } from '@/components/onboarding/onboarding-modal'
+import { TrialExpiredGate } from '@/components/dashboard/trial-expired-gate'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -42,7 +43,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <AppSidebar pinned={true} />
           <main className="flex flex-1 flex-col transition-all duration-300 pl-64">
             <AppHeader />
-            <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden">{children}</div>
+            <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden">
+              <TrialExpiredGate>{children}</TrialExpiredGate>
+            </div>
           </main>
         </div>
         <ViewAsBar />

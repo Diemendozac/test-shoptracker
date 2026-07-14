@@ -17,6 +17,26 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-076 — Expiración de la prueba gratis a los 7 días (aproximación solo-frontend)
+
+**Fecha:** 2026-07-14
+**Tipo:** feature / pricing
+
+**Por qué:** el usuario pidió repetidamente que la prueba gratis expire a los 7 días de verdad, no solo que existan las restricciones de UI (CHANGE-074). Se confirmó con el panel de admin real que el backend sí asigna `plan='free'` a los usuarios nuevos (5 usuarios FREE visibles en producción), pero el backend **no tiene ningún campo ni lógica de expiración** — `UserProfile` (`app/(dashboard)/services/userApi.ts`) solo expone `plan`, `createdAt`, `maxStores`, etc. No existe `trialEndsAt` ni `subscriptionStatus`.
+
+**Qué cambió (aproximación de frontend, no reemplaza trabajo de backend):**
+- `lib/view-as.tsx` — nuevo hook `useTrialStatus()`: calcula días transcurridos como `Date.now() - me.createdAt`, usando `realPlan` (no el override de ViewAs, para no bloquear a un admin haciendo QA). Si `realPlan === 'free'` y pasaron ≥7 días, `isExpired = true`.
+- `components/dashboard/trial-expired-gate.tsx` (nuevo) — si `isExpired`, reemplaza el contenido de cualquier página dentro de `(dashboard)` por una pantalla de bloqueo con CTA a `/pricing` y opción de cerrar sesión.
+- `app/(dashboard)/layout.tsx` — envuelve `{children}` con `<TrialExpiredGate>`.
+
+**Limitación importante — esto NO es un límite de seguridad real:** el cálculo se hace en el cliente a partir de `createdAt`, que el usuario nunca puede modificar directamente, pero el bloqueo en sí es solo una pantalla de React — cualquier persona con herramientas de desarrollador podría inspeccionar la respuesta de `/users/me` o llamar a los endpoints de la API directamente sin pasar por esta pantalla. **La API en sí no rechaza nada.** Para un bloqueo real hace falta que el backend rechace las peticiones de un usuario `free` con más de 7 días desde `createdAt` (o un campo de expiración explícito) — eso sigue pendiente para Diego, igual que se documentó en CHANGE-074.
+
+**Verificación:** `npx next build` sin errores. No se puede verificar el comportamiento real en producción sin esperar 7 días o sin que Diego cree un usuario de prueba con `createdAt` manipulado en la base de datos.
+
+**Riesgo:** con cuidado (nuevo gate en el layout raíz de `(dashboard)`, afecta todas las páginas del panel).
+
+---
+
 ### CHANGE-075 — Fix: subtítulo de signup decía "14 días" en vez de "7 días"
 
 **Fecha:** 2026-07-14

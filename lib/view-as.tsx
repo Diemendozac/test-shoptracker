@@ -11,6 +11,7 @@ interface ViewAsContextValue {
   viewAs: PlanOverride
   setViewAs: (plan: PlanOverride) => void
   isAdmin: boolean
+  signupDate: string | null
 }
 
 const ViewAsContext = createContext<ViewAsContextValue>({
@@ -19,6 +20,7 @@ const ViewAsContext = createContext<ViewAsContextValue>({
   viewAs: 'real',
   setViewAs: () => {},
   isAdmin: false,
+  signupDate: null,
 })
 
 export function ViewAsProvider({ children }: { children: React.ReactNode }) {
@@ -27,6 +29,7 @@ export function ViewAsProvider({ children }: { children: React.ReactNode }) {
 
   const realPlan = me?.plan ?? 'starter'
   const isAdmin = realPlan === 'admin'
+  const signupDate = me?.createdAt ?? null
 
   // Restore persisted override on mount (admin only)
   useEffect(() => {
@@ -44,7 +47,7 @@ export function ViewAsProvider({ children }: { children: React.ReactNode }) {
   const effectivePlan = isAdmin && viewAs !== 'real' ? viewAs : realPlan
 
   return (
-    <ViewAsContext.Provider value={{ effectivePlan, realPlan, viewAs, setViewAs, isAdmin }}>
+    <ViewAsContext.Provider value={{ effectivePlan, realPlan, viewAs, setViewAs, isAdmin, signupDate }}>
       {children}
     </ViewAsContext.Provider>
   )
@@ -67,6 +70,25 @@ const MAX_POOL_PAGE: Record<string, number> = {
   pro:     999,
   agency:  Infinity,
   admin:   Infinity,
+}
+
+const TRIAL_DAYS = 7
+
+// Aproximación solo-frontend: no hay campo de expiración en el backend todavía
+// (ver docs/CHANGES.md CHANGE-074 y CHANGE-076). Se calcula sobre createdAt del
+// plan real (no el override de ViewAs, para no bloquear al admin haciendo QA).
+export function useTrialStatus() {
+  const { realPlan, signupDate } = useViewAs()
+  const isFreePlan = realPlan === 'free'
+
+  if (!isFreePlan || !signupDate) {
+    return { isTrial: isFreePlan, isExpired: false, daysLeft: TRIAL_DAYS }
+  }
+
+  const daysElapsed = Math.floor((Date.now() - new Date(signupDate).getTime()) / (1000 * 60 * 60 * 24))
+  const daysLeft = Math.max(0, TRIAL_DAYS - daysElapsed)
+
+  return { isTrial: true, isExpired: daysElapsed >= TRIAL_DAYS, daysLeft }
 }
 
 export function usePlanTier() {
