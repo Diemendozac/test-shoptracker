@@ -13,42 +13,15 @@ function cop(n: number) {
 
 const PLANS = [
   {
-    id: 'free',
-    name: 'Free',
-    monthly: 0,
-    annual: 0,
-    annualTotal: 0,
-    description: 'Para explorar la plataforma',
-    limits: {
-      stores: '3 tiendas',
-      candidates: '30 candidatos',
-      history: '7 días de historial',
-      niches: '2 nichos',
-    },
-    features: [
-      { label: 'Pool global de productos', included: true },
-      { label: 'Alertas', included: false },
-      { label: 'Exportar datos', included: false },
-      { label: 'Datos privados', included: false },
-      { label: 'Seats múltiples', included: false },
-    ],
-    privacy: 'community',
-    cta: 'Empezar gratis',
-    ctaHref: '/login?tab=signup',
-    ctaVariant: 'outline' as const,
-    trial: null,
-    highlighted: false,
-  },
-  {
     id: 'starter',
-    name: 'Starter',
-    monthly: 99900,
-    annual: 79900,
-    annualTotal: 959000,
+    name: 'Básico',
+    monthly: 59900,
+    annual: 49900,
+    annualTotal: 598800,
     description: 'Para marcas en crecimiento',
     limits: {
       stores: '15 tiendas',
-      candidates: '150 candidatos',
+      candidates: '150 testeos',
       history: '30 días de historial',
       niches: 'Todos los nichos',
     },
@@ -69,13 +42,13 @@ const PLANS = [
   {
     id: 'pro',
     name: 'Pro',
-    monthly: 199900,
-    annual: 159900,
-    annualTotal: 1919000,
+    monthly: 119900,
+    annual: 99900,
+    annualTotal: 1198800,
     description: 'Para equipos que escalan',
     limits: {
       stores: '40 tiendas',
-      candidates: '500 candidatos',
+      candidates: '500 testeos',
       history: '90 días de historial',
       niches: 'Todos los nichos',
     },
@@ -96,13 +69,13 @@ const PLANS = [
   {
     id: 'agency',
     name: 'Agency',
-    monthly: 399900,
-    annual: 319900,
-    annualTotal: 3839000,
+    monthly: 239900,
+    annual: 199900,
+    annualTotal: 2398800,
     description: 'Para agencias y operaciones grandes',
     limits: {
       stores: '100 tiendas',
-      candidates: 'Candidatos ilimitados',
+      candidates: 'Testeos ilimitados',
       history: '1 año de historial',
       niches: 'Todos los nichos',
     },
@@ -162,7 +135,7 @@ export default function PricingPage() {
               Funcionalidades
             </Link>
             <Link href="/pricing" className="text-sm font-medium text-foreground">
-              Pricing
+              Precios
             </Link>
           </div>
 
@@ -171,7 +144,7 @@ export default function PricingPage() {
               <Button variant="ghost" size="sm">Iniciar sesión</Button>
             </Link>
             <Link href="/login?tab=signup">
-              <Button size="sm">Empezar gratis</Button>
+              <Button size="sm">Empezar prueba gratis</Button>
             </Link>
           </div>
         </div>
@@ -186,7 +159,7 @@ export default function PricingPage() {
               Precios simples y transparentes
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
-              Empieza gratis. Escala cuando necesites.
+              Elige el plan que se ajuste a tu operación.
             </p>
           </div>
 
@@ -223,7 +196,6 @@ export default function PricingPage() {
             {PLANS.map((plan) => {
               const price = annual && plan.annual > 0 ? plan.annual : plan.monthly
               const monthlySavings = plan.monthly * 12 - plan.annualTotal
-              const isFree = plan.monthly === 0
 
               return (
                 <div
@@ -252,23 +224,15 @@ export default function PricingPage() {
 
                   {/* Price */}
                   <div className="mt-4">
-                    {isFree ? (
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-4xl font-bold">Gratis</span>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-sm font-semibold text-muted-foreground">COP</span>
-                          <span className="text-4xl font-bold">${cop(price)}</span>
-                          <span className="text-sm text-muted-foreground">/mes</span>
-                        </div>
-                        {annual && (
-                          <p className="mt-1 text-xs text-muted-foreground tabular-nums">
-                            ${cop(plan.annualTotal)}/año · ahorras ${cop(monthlySavings)}
-                          </p>
-                        )}
-                      </>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-sm font-semibold text-muted-foreground">COP</span>
+                      <span className="text-4xl font-bold">${cop(price)}</span>
+                      <span className="text-sm text-muted-foreground">/mes</span>
+                    </div>
+                    {annual && (
+                      <p className="mt-1 text-xs text-muted-foreground tabular-nums">
+                        ${cop(plan.annualTotal)}/año · ahorras ${cop(monthlySavings)}
+                      </p>
                     )}
                     <p className="mt-2 text-sm text-muted-foreground">{plan.description}</p>
                   </div>
@@ -325,7 +289,7 @@ export default function PricingPage() {
                   <Globe className="h-4 w-4 text-amber-600" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-foreground">Pool comunitario — Free y Starter</p>
+                  <p className="text-sm font-semibold text-foreground">Pool comunitario — Básico</p>
                   <p className="mt-1 text-sm text-muted-foreground">
                     Los productos que testeas alimentan el pool global visible para todos los usuarios de Dropspy.
                     Contribuyes al ecosistema a cambio de acceso a la inteligencia colectiva.

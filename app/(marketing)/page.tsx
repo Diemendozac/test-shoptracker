@@ -1,10 +1,8 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
 import {
   ArrowRight,
   Zap,
@@ -14,10 +12,6 @@ import {
   Eye,
   Bell,
   Shield,
-  Check,
-  X,
-  Globe,
-  Lock,
 } from 'lucide-react'
 import { DropspyIcon } from '@/components/ui/dropspy-logo'
 
@@ -37,95 +31,7 @@ const features = [
   { icon: Shield, key: 'privacy' as const },
 ]
 
-const PLANS = [
-  {
-    id: 'free',
-    name: 'Free',
-    monthly: 0,
-    annual: 0,
-    annualTotal: 0,
-    description: 'Para explorar la plataforma',
-    limits: ['3 tiendas', '30 candidatos', '7d historial', '2 nichos'],
-    features: [
-      { label: 'Pool global de productos', included: true },
-      { label: 'Alertas', included: false },
-      { label: 'Exportar datos', included: false },
-      { label: 'Datos privados', included: false },
-    ],
-    privacy: 'community' as const,
-    cta: 'Empezar gratis',
-    ctaHref: '/login?tab=signup',
-    ctaVariant: 'outline' as const,
-    trial: null,
-    highlighted: false,
-  },
-  {
-    id: 'starter',
-    name: 'Starter',
-    monthly: 49,
-    annual: 39,
-    annualTotal: 468,
-    description: 'Para marcas en crecimiento',
-    limits: ['15 tiendas', '150 candidatos', '30d historial', 'Todos los nichos'],
-    features: [
-      { label: 'Pool global de productos', included: true },
-      { label: 'Alertas por email', included: true },
-      { label: 'Exportar datos', included: false },
-      { label: 'Datos privados', included: false },
-    ],
-    privacy: 'community' as const,
-    cta: 'Probar 7 días gratis',
-    ctaHref: '/login?tab=signup&plan=starter',
-    ctaVariant: 'outline' as const,
-    trial: 'Incluye Pro desbloqueado durante el trial · Con tarjeta',
-    highlighted: false,
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    monthly: 99,
-    annual: 79,
-    annualTotal: 948,
-    description: 'Para equipos que escalan',
-    limits: ['40 tiendas', '500 candidatos', '90d historial', 'Todos los nichos'],
-    features: [
-      { label: 'Pool global de productos', included: true },
-      { label: 'Alertas por email', included: true },
-      { label: 'Exportar CSV', included: true },
-      { label: 'Datos privados', included: true },
-    ],
-    privacy: 'private' as const,
-    cta: 'Suscribirse',
-    ctaHref: '/login?tab=signup&plan=pro',
-    ctaVariant: 'default' as const,
-    trial: null,
-    highlighted: true,
-  },
-  {
-    id: 'agency',
-    name: 'Agency',
-    monthly: 199,
-    annual: 159,
-    annualTotal: 1908,
-    description: 'Para agencias y operaciones grandes',
-    limits: ['100 tiendas', 'Candidatos ilimitados', '1 año historial', 'Todos los nichos'],
-    features: [
-      { label: 'Pool global de productos', included: true },
-      { label: 'Alertas email + Slack', included: true },
-      { label: 'Exportar CSV + API', included: true },
-      { label: 'Datos privados', included: true },
-    ],
-    privacy: 'private' as const,
-    cta: 'Suscribirse',
-    ctaHref: '/login?tab=signup&plan=agency',
-    ctaVariant: 'outline' as const,
-    trial: null,
-    highlighted: false,
-  },
-]
-
 export default function LandingPage() {
-  const [annual, setAnnual] = useState(false)
   const t = useTranslations('Landing')
 
   return (
@@ -144,9 +50,6 @@ export default function LandingPage() {
           <div className="hidden items-center gap-8 md:flex">
             <Link href="#features" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
               {t('nav.features')}
-            </Link>
-            <Link href="/pricing" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-              {t('nav.pricing')}
             </Link>
             <Link href="#" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
               {t('nav.docs')}
@@ -268,132 +171,6 @@ export default function LandingPage() {
                 <p className="mt-2 text-muted-foreground">{t(`howItWorks.${stepKey}.description`)}</p>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing Section */}
-      <section id="pricing" className="border-t border-border bg-card/30 py-20 md:py-32">
-        <div className="mx-auto max-w-7xl px-6">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
-              {t('pricingSection.title')}
-            </h2>
-            <p className="mt-4 text-lg text-muted-foreground">
-              Empieza gratis. Escala cuando necesites.
-            </p>
-          </div>
-
-          {/* Toggle */}
-          <div className="mt-8 flex items-center justify-center gap-3">
-            <span className={cn('text-sm font-medium', !annual ? 'text-foreground' : 'text-muted-foreground')}>
-              Mensual
-            </span>
-            <button
-              onClick={() => setAnnual((v) => !v)}
-              className={cn(
-                'relative h-6 w-11 rounded-full transition-colors',
-                annual ? 'bg-primary' : 'bg-border',
-              )}
-              aria-label="Alternar facturación anual"
-            >
-              <span className={cn(
-                'absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform',
-                annual ? 'translate-x-5' : 'translate-x-0',
-              )} />
-            </button>
-            <span className={cn('text-sm font-medium', annual ? 'text-foreground' : 'text-muted-foreground')}>
-              Anual
-            </span>
-            <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-600">
-              Ahorra 20%
-            </span>
-          </div>
-
-          <div className="mx-auto mt-10 grid max-w-6xl gap-5 md:grid-cols-2 xl:grid-cols-4">
-            {PLANS.map((plan) => {
-              const price = annual && plan.annual > 0 ? plan.annual : plan.monthly
-              const monthlySavings = plan.monthly * 12 - plan.annualTotal
-              const isFree = plan.monthly === 0
-
-              return (
-                <div
-                  key={plan.id}
-                  className={cn(
-                    'relative flex flex-col rounded-2xl border p-6',
-                    plan.highlighted
-                      ? 'border-primary bg-card shadow-xl shadow-primary/10 ring-1 ring-primary/20 scale-[1.02]'
-                      : 'border-border bg-card/50',
-                  )}
-                >
-                  {plan.highlighted && (
-                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-primary px-3.5 py-1 text-[11px] font-semibold text-primary-foreground">
-                      Más popular
-                    </div>
-                  )}
-
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{plan.name}</p>
-                    {plan.privacy === 'private' ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-600">
-                        <Lock className="h-2.5 w-2.5" />Datos privados
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-600">
-                        <Globe className="h-2.5 w-2.5" />Pool comunitario
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="mt-4">
-                    {isFree ? (
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-4xl font-bold">Gratis</span>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-4xl font-bold">${price}</span>
-                          <span className="text-sm text-muted-foreground">/mes</span>
-                        </div>
-                        {annual && (
-                          <p className="mt-1 text-xs text-muted-foreground tabular-nums">
-                            ${plan.annualTotal}/año · ahorras ${monthlySavings}
-                          </p>
-                        )}
-                      </>
-                    )}
-                    <p className="mt-2 text-sm text-muted-foreground">{plan.description}</p>
-                  </div>
-
-                  <div className="mt-4 space-y-1 rounded-xl bg-secondary/40 px-3 py-2.5">
-                    {plan.limits.map((l) => (
-                      <p key={l} className="text-xs text-foreground/80">{l}</p>
-                    ))}
-                  </div>
-
-                  <ul className="mt-4 flex-1 space-y-2">
-                    {plan.features.map((f) => (
-                      <li key={f.label} className="flex items-center gap-2 text-sm">
-                        {f.included
-                          ? <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
-                          : <X className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40" />}
-                        <span className={f.included ? 'text-foreground' : 'text-muted-foreground/60'}>{f.label}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <div className="mt-5 space-y-1.5">
-                    <Link href={plan.ctaHref} className="block">
-                      <Button variant={plan.ctaVariant} className="w-full">{plan.cta}</Button>
-                    </Link>
-                    {plan.trial && (
-                      <p className="text-center text-[10px] leading-snug text-muted-foreground">{plan.trial}</p>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
           </div>
         </div>
       </section>

@@ -5,7 +5,8 @@ import { useViewAs, type PlanOverride } from '@/lib/view-as'
 
 const OPTIONS: { value: PlanOverride; label: string }[] = [
   { value: 'real',    label: 'Real' },
-  { value: 'starter', label: 'Starter' },
+  { value: 'free',    label: 'Prueba gratis' },
+  { value: 'starter', label: 'Básico' },
   { value: 'pro',     label: 'Pro' },
   { value: 'agency',  label: 'Agency' },
 ]

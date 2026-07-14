@@ -225,7 +225,7 @@ export function PoolWinnersSection({
   countryFilter, onCountryFilterChange,
 }: PoolWinnersSectionProps) {
   const { currency: preferredCurrency } = useCurrency()
-  const { isStarter } = usePlanTier()
+  const { maxPoolPage } = usePlanTier()
   const [sort, setSort] = useState<SortState>({ key: 'performanceScore', dir: 'desc' })
 
   function toggleSet(prev: Set<string>, value: string): Set<string> {
@@ -308,15 +308,15 @@ export function PoolWinnersSection({
     return <LockedState />
   }
 
-  if (isStarter && page > 0) {
-    return <PageLockedForStarter />
+  if (page > maxPoolPage) {
+    return <PoolPageLocked />
   }
 
   if (data.winners.length === 0) {
     return (
       <div className="mb-6 rounded-2xl border border-border bg-card p-6">
         <p className="text-sm text-muted-foreground">
-          El pool aún no tiene candidatos suficientes. Vuelve mañana después del sync automático.
+          El pool aún no tiene testeos suficientes. Vuelve mañana después del sync automático.
         </p>
       </div>
     )
@@ -583,7 +583,7 @@ export function PoolWinnersSection({
             {getPageRange(page, data.totalPages ?? 1).map((p, idx) =>
               p === 'ellipsis' ? (
                 <span key={`e${idx}`} className="flex h-7 w-5 items-center justify-center text-xs text-muted-foreground select-none">…</span>
-              ) : isStarter && p > 0 ? (
+              ) : p > maxPoolPage ? (
                 <span
                   key={p}
                   className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/40 text-muted-foreground/30"
@@ -607,7 +607,7 @@ export function PoolWinnersSection({
             )}
             <button
               onClick={() => onPageChange(page + 1)}
-              disabled={page >= (data.totalPages ?? 1) - 1 || isStarter}
+              disabled={page >= (data.totalPages ?? 1) - 1 || page >= maxPoolPage}
               className="flex h-7 w-7 items-center justify-center rounded-lg border border-border text-muted-foreground hover:border-primary/40 hover:text-foreground disabled:opacity-30 disabled:pointer-events-none transition-colors"
             >
               <ChevronRight className="h-3.5 w-3.5" />
@@ -627,7 +627,13 @@ export function PoolWinnersSection({
 // ─── sub-components ───────────────────────────────────────────────────────────
 
 
-function PageLockedForStarter() {
+function PoolPageLocked() {
+  const { isTrial } = usePlanTier()
+  const message = isTrial
+    ? 'La prueba gratis solo accede a la primera página. Suscríbete a un plan para ver todos los productos.'
+    : 'Alcanzaste el límite de páginas de tu plan. Actualiza de plan para ver más resultados.'
+  const cta = isTrial ? 'Ver planes' : 'Actualizar plan'
+
   return (
     <div className="mb-6 overflow-hidden rounded-2xl border border-border bg-card">
       <div className="relative">
@@ -651,13 +657,13 @@ function PageLockedForStarter() {
           <div className="text-center">
             <p className="text-sm font-semibold text-foreground">Página bloqueada</p>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              El plan Starter solo accede a la primera página. Actualiza a Pro para ver todos los productos.
+              {message}
             </p>
           </div>
-          <Link href="/settings">
+          <Link href={isTrial ? '/pricing' : '/settings'}>
             <Button size="sm" className="mt-1 gap-1.5">
               <Crown className="h-3.5 w-3.5" />
-              Actualizar a Pro
+              {cta}
             </Button>
           </Link>
         </div>

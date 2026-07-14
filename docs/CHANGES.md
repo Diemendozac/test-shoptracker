@@ -6,6 +6,41 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-074 — Modelo de precios: prueba gratis de 7 días reemplaza al plan Free, renombre Starter→Básico, precios reales, gating por plan
+
+**Fecha:** 2026-07-13
+**Tipo:** feature / pricing
+
+**Por qué:** el plan Free permanente se reemplaza por una prueba gratis de 7 días con límites — el gancho de conversión es el trial, no un tier gratuito indefinido (referencia: modelo de Kalodata). Los precios mostrados no coincidían con los reales (el usuario los confirmó a mano). El plan "Starter" se renombra a "Básico" para coincidir con el nombre real usado en la pasarela de pago. Además, la página de precios no debe ser pública — el flujo es: CTA de trial en la landing → signup → límites dentro de la app → upgrade linkeado a `/pricing`.
+
+**Qué cambió:**
+- **Precios reales** (COP, mensual/anual) en `app/(marketing)/pricing/page.tsx`:
+  - Básico (antes Starter): $59.900/mes · $49.900/mes anual ($598.800/año)
+  - Pro: $119.900/mes · $99.900/mes anual ($1.198.800/año)
+  - Agency: $239.900/mes · $199.900/mes anual ($2.398.800/año)
+  - Se eliminó la tarjeta "Free" de `/pricing` y de la landing.
+- **`app/(marketing)/page.tsx`:** se quitó el link "Pricing" del nav público y toda la sección de precios embebida (`id="pricing"`, toggle mensual/anual, tarjetas). El único CTA público ahora es "Empezar prueba gratis" → signup. `/pricing` queda como página solo accesible desde dentro de la app (links de upgrade), no linkeada públicamente.
+- **`lib/view-as.tsx` (`usePlanTier`)** — nuevos campos, ninguno existía antes:
+  - `maxPoolPage`: última página del pool visible por plan. Trial: solo página 1 (índice 0). Básico: hasta 500. Pro: hasta 1000. Agency/Admin: sin límite.
+  - `canTrackStores`: `false` solo en trial — sin rastreador de tiendas.
+  - `canViewAds` corregido: antes estaba hardcodeado en `true` para todos los planes (ningún plan ocultaba video ads pese a la intención del producto). Ahora es `false` solo en trial; Básico/Pro/Agency ven los thumbnails de video sin blur (antes el candado estaba mal atado a `isStarter`, bloqueando a Básico en vez de al trial).
+- **`components/tracker/pool-winners.tsx`** — el candado de "solo página 1" (antes atado a `isStarter`) ahora usa `maxPoolPage`, aplicable a cualquier plan. Mensaje de bloqueo diferenciado: trial → "Ver planes" (link a `/pricing`); plan pago que alcanza su tope → "Actualizar plan" (link a `/settings`).
+- **`app/(dashboard)/stores/page.tsx`** — los 3 botones de "Agregar tienda" quedan bloqueados (ícono de candado + redirigen a `/pricing`) cuando `canTrackStores` es `false`.
+- **`app/(dashboard)/settings/page.tsx`** — label del plan `free` pasa de "Free" a "Prueba gratis"; `starter`/`basic` (alias legacy) pasan de "Starter" a "Básico"; texto de upgrade actualizado.
+- **`components/admin/ViewAsBar.tsx`** — se agregó la opción "Prueba gratis" al simulador de planes de admin (antes no existía forma de previsualizar el trial); `PlanOverride` ahora incluye `'free'`.
+
+**Qué NO cambió:** el valor interno del plan `starter`/`free` en la API y en `PlanOverride`/`LsPlan` no se renombró (solo el texto mostrado) — evita tocar contrato de backend. Ningún endpoint ni el modelo de datos de Redux se modificó.
+
+**Pendiente — requiere revisor técnico (Diego):** el trial de 7 días no expira automáticamente. Hoy solo existen las restricciones de UI (página 1 del pool, sin rastreador de tiendas, sin video ads); no hay lógica de backend que bloquee el acceso al día 8 o fuerce elegir un plan. El usuario confirmó que esto es un pendiente conocido, no un requisito de esta sesión.
+
+**Verificación:** `npx next build` sin errores.
+
+**Riesgo:** con cuidado (toca `lib/view-as.tsx`, hook compartido por 5+ componentes).
+
+**Wiki actualizado:** No aplica en esta sesión — pendiente registrar en el vault (scout-permisos-plan.md queda desactualizado con estos cambios, ver discrepancia).
+
+---
+
 ### CHANGE-072 — Traducción de la UI a español (bloque 2: dashboard, tracker, stores, settings)
 
 **Fecha:** 2026-07-13

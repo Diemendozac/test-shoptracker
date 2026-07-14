@@ -15,9 +15,9 @@ import { lsCheckoutUrl, lsVariantId } from '@/lib/lemonsqueezy'
 // ─── Plan badge ───────────────────────────────────────────────────────────────
 
 const PLAN_LABELS: Record<string, { label: string; color: string }> = {
-  free:    { label: 'Free',    color: 'bg-secondary text-muted-foreground' },
-  starter: { label: 'Starter', color: 'bg-blue-500/20 text-blue-400' },
-  basic:   { label: 'Starter', color: 'bg-blue-500/20 text-blue-400' }, // alias legacy
+  free:    { label: 'Prueba gratis', color: 'bg-secondary text-muted-foreground' },
+  starter: { label: 'Básico',  color: 'bg-blue-500/20 text-blue-400' },
+  basic:   { label: 'Básico',  color: 'bg-blue-500/20 text-blue-400' }, // alias legacy
   pro:     { label: 'Pro',     color: 'bg-primary/20 text-primary' },
   agency:  { label: 'Agency',  color: 'bg-violet-500/20 text-violet-400' },
   admin:   { label: 'Admin',   color: 'bg-amber-500/20 text-amber-400' },
@@ -171,7 +171,7 @@ function PasswordSection() {
 // ─── Billing section ─────────────────────────────────────────────────────────
 
 const UPGRADE_OPTIONS: Record<string, { nextPlan: string; label: string; desc: string } | null> = {
-  free:    { nextPlan: 'starter', label: 'Empieza con Starter', desc: '15 tiendas · Pool global · Alertas por email' },
+  free:    { nextPlan: 'starter', label: 'Suscríbete a Básico', desc: '15 tiendas · Pool global · Alertas por email' },
   starter: { nextPlan: 'pro',     label: 'Actualizar a Pro',    desc: '40 tiendas · Datos privados · Exportar CSV' },
   basic:   { nextPlan: 'pro',     label: 'Actualizar a Pro',    desc: '40 tiendas · Datos privados · Exportar CSV' },
   pro:     { nextPlan: 'agency',  label: 'Actualizar a Agency', desc: '100 tiendas · Seats múltiples · API access' },

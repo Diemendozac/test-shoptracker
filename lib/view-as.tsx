@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { useGetMeQuery } from '@/app/(dashboard)/services/userApi'
 
-export type PlanOverride = 'real' | 'starter' | 'pro' | 'agency'
+export type PlanOverride = 'real' | 'free' | 'starter' | 'pro' | 'agency'
 
 interface ViewAsContextValue {
   effectivePlan: string
@@ -59,11 +59,24 @@ export function useIsPro(): boolean {
   return effectivePlan === 'pro' || effectivePlan === 'agency' || effectivePlan === 'admin'
 }
 
+// maxPoolPage: última página (0-indexed) visible en el pool global antes de bloquear.
+// 'free' = prueba gratis de 7 días — solo página 1. Ver docs/CHANGES.md CHANGE-074.
+const MAX_POOL_PAGE: Record<string, number> = {
+  free:    0,
+  starter: 499,
+  pro:     999,
+  agency:  Infinity,
+  admin:   Infinity,
+}
+
 export function usePlanTier() {
   const { effectivePlan } = useViewAs()
   const isPro     = effectivePlan === 'pro' || effectivePlan === 'agency' || effectivePlan === 'admin'
   const isStarter = effectivePlan === 'starter'
-  const canViewAds   = true                 // all plans: thumbnails + hover; only Pro gets Meta link
-  const allowMetaLink = isPro               // badge clickable + Meta link
-  return { isPro, isStarter, canViewAds, allowMetaLink }
+  const isTrial   = effectivePlan === 'free'
+  const maxPoolPage    = MAX_POOL_PAGE[effectivePlan] ?? MAX_POOL_PAGE.free
+  const canViewAds     = !isTrial           // trial: sin video ads; el resto ve thumbnail + hover
+  const allowMetaLink  = isPro              // badge clickable + link a Meta Ads Library
+  const canTrackStores = !isTrial           // trial: sin rastreador de tiendas
+  return { isPro, isStarter, isTrial, maxPoolPage, canViewAds, allowMetaLink, canTrackStores }
 }
