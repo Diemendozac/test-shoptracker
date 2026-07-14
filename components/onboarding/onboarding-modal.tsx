@@ -146,6 +146,7 @@ export function OnboardingModal() {
             <Checkbox
               checked={answers.phoneOptIn}
               onCheckedChange={(checked) => update({ phoneOptIn: checked === true })}
+              className="mt-0.5 border-muted-foreground"
             />
             {t('optIn')}
           </label>

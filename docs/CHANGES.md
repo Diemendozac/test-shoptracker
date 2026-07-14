@@ -6,6 +6,19 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-075 — Fix: checkbox de opt-in invisible en el modal de onboarding
+
+**Fecha:** 2026-07-14
+**Archivos:** `components/onboarding/onboarding-modal.tsx` — checkbox de opt-in de teléfono, agrega `border-muted-foreground`
+
+**Por qué:** reportado en QA manual — el checkbox de "Acepto que me contacten..." era prácticamente invisible sobre el fondo blanco del modal. Causa: el `Checkbox` compartido (`components/ui/checkbox.tsx`) usa `border-input`, y ese token en `app/globals.css` es `oklch(0.97 0.006 240)` — casi blanco, sin contraste contra `bg-background`. No se tocó el componente `Checkbox` compartido (se usa en toda la app, cambiar su default ahí tendría blast radius mayor) — se sobreescribió el borde solo en esta instancia con `border-muted-foreground` (token con más contraste, `oklch(0.50...)`).
+
+**Riesgo:** solo (una clase CSS, sin lógica).
+
+**Pendiente relacionado, no resuelto acá:** si el mismo `Checkbox` se usa en otro lado de la app sobre fondo blanco, probablemente tenga el mismo problema de contraste — no se auditó el resto de la app en este fix.
+
+---
+
 ### CHANGE-074 — Fix: registro redirige a /home en vez de /dashboard
 
 **Fecha:** 2026-07-14
