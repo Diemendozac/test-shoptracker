@@ -28,6 +28,25 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 **Riesgo:** solo (una línea, sin tocar Redux ni lógica de negocio).
 
+### CHANGE-078 — Prueba gratis: se permite agregar tiendas, se bloquea "Testear" en Pendientes
+
+**Fecha:** 2026-07-14
+**Tipo:** cambio de modelo de negocio (pricing/gating)
+
+**Por qué:** corrección del modelo de CHANGE-074/077 — la prueba gratis SÍ puede agregar tiendas y usar el rastreador con normalidad. Lo que queda bloqueado es la acción de "Testear" (activar) un candidato detectado en Pendientes — ese es el gancho de upgrade, no el acceso a tiendas.
+
+**Qué cambió:**
+- `lib/view-as.tsx` — se quita `canTrackStores`, se agrega `canActivateCandidates` (`false` solo en trial).
+- `app/(dashboard)/stores/page.tsx` — revertido a su comportamiento normal, sin bloqueo (agregar tienda funciona igual para todos los planes).
+- `app/(dashboard)/tracker/page.tsx` y `app/(dashboard)/pendientes/page.tsx` — revertidos, ya no muestran un bloqueo de página completa.
+- `components/tracker/pending-candidates.tsx` — los botones "Testear" (individual y en bulk) quedan bloqueados en trial: ícono de candado, llevan a `/pricing` en vez de activar el candidato. Se agregó un banner explícito ("Tu prueba gratis detecta productos pero no puede testearlos...") que incita a suscribirse, en vez de solo deshabilitar el botón en silencio.
+
+**Qué NO cambió:** `maxPoolPage`, `canViewAds` (video ads) — siguen igual que CHANGE-074/077.
+
+**Verificación:** `npx next build` sin errores.
+
+**Riesgo:** solo (frontend puro).
+
 ---
 
 ### CHANGE-077 — Bloquear Mis testeos/Pendientes en la prueba gratis; fallback de plan más seguro

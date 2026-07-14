@@ -100,6 +100,8 @@ export function usePlanTier() {
   const maxPoolPage    = MAX_POOL_PAGE[effectivePlan] ?? MAX_POOL_PAGE.free
   const canViewAds     = !isTrial           // trial: sin video ads; el resto ve thumbnail + hover
   const allowMetaLink  = isPro              // badge clickable + link a Meta Ads Library
-  const canTrackStores = !isTrial           // trial: sin rastreador de tiendas
-  return { isPro, isStarter, isTrial, maxPoolPage, canViewAds, allowMetaLink, canTrackStores }
+  // La prueba SÍ puede agregar tiendas y usar el rastreador; lo que queda
+  // bloqueado es activar/testear un candidato detectado — ese es el gancho de upgrade.
+  const canActivateCandidates = !isTrial
+  return { isPro, isStarter, isTrial, maxPoolPage, canViewAds, allowMetaLink, canActivateCandidates }
 }

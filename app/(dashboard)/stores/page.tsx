@@ -1,11 +1,9 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { PageLayout } from '@/components/layout/page-layout'
-import { Plus, Search, X, ChevronUp, ChevronDown, Lock } from 'lucide-react'
+import { Plus, Search, X, ChevronUp, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { usePlanTier } from '@/lib/view-as'
 import { useStores } from './hooks/useStores'
 import { AddStoreModal } from './components/AddStoreModal'
 import { EditStoreModal } from './components/EditStoreModal'
@@ -30,17 +28,12 @@ function getStatusOrder(store: StoreResponse): number {
 }
 
 export default function StoresPage() {
-  const router = useRouter()
-  const { canTrackStores } = usePlanTier()
   const {
     stores, isLoading,
     deleteStore, deletingStoreId,
     syncStore, syncingStoreId,
     openAddModal,
   } = useStores()
-
-  // Trial de 7 días: sin rastreador de tiendas — el CTA lleva a elegir plan en vez de abrir el modal
-  const handleAddStore = canTrackStores ? openAddModal : () => router.push('/pricing')
 
   const { data: allCandidates = [], isLoading: isCandidatesLoading } = useGetTrackerCandidatesQuery({})
 
@@ -187,8 +180,8 @@ export default function StoresPage() {
           ))}
         </div>
 
-        <Button className="gap-2 shrink-0" onClick={handleAddStore}>
-          {canTrackStores ? <Plus className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+        <Button className="gap-2 shrink-0" onClick={openAddModal}>
+          <Plus className="h-4 w-4" />
           Agregar tienda
         </Button>
       </div>
@@ -231,9 +224,9 @@ export default function StoresPage() {
             ) : (
               <>
                 <p className="text-sm">No tienes tiendas registradas aún.</p>
-                <Button variant="outline" className="gap-2" onClick={handleAddStore}>
-                  {canTrackStores ? <Plus className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
-                  {canTrackStores ? 'Agregar primera tienda' : 'Suscríbete para agregar tiendas'}
+                <Button variant="outline" className="gap-2" onClick={openAddModal}>
+                  <Plus className="h-4 w-4" />
+                  Agregar primera tienda
                 </Button>
               </>
             )}
@@ -259,13 +252,13 @@ export default function StoresPage() {
         {/* Add row at bottom */}
         {!isLoading && (
           <button
-            onClick={handleAddStore}
+            onClick={openAddModal}
             className="flex w-full items-center gap-3 border-t border-dashed border-border px-4 py-3 text-sm text-muted-foreground transition-colors hover:bg-secondary/20 hover:text-foreground"
           >
             <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-dashed border-border">
-              {canTrackStores ? <Plus className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+              <Plus className="h-4 w-4" />
             </div>
-            <span>{canTrackStores ? 'Agregar nueva tienda' : 'Suscríbete para agregar tiendas'}</span>
+            <span>Agregar nueva tienda</span>
           </button>
         )}
       </div>
