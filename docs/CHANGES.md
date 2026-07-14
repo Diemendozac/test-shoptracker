@@ -6,6 +6,17 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-074 — Fix: registro redirige a /home en vez de /dashboard
+
+**Fecha:** 2026-07-14
+**Archivos:** `app/(auth)/hooks/useAuth.ts` — `register()` ahora hace `router.push('/home')` en vez de `/dashboard`
+
+**Por qué:** reportado en QA manual — el modal de onboarding (CHANGE-073) aparecía de fondo sobre `/dashboard` ("Overview", stats en cero para una cuenta nueva), pero el logo de Dropspy y la experiencia de entrada real de la app apuntan a `/home` (`app-sidebar.tsx:81`) — página de bienvenida con buscador y accesos rápidos, mejor primera impresión para un usuario recién registrado. `login()` no se tocó, sigue yendo a `/dashboard` — cambio de comportamiento solo para cuentas nuevas.
+
+**Riesgo:** solo (una línea, sin tocar Redux ni lógica de negocio).
+
+---
+
 ### CHANGE-075 — Fix: subtítulo de signup decía "14 días" en vez de "7 días"
 
 **Fecha:** 2026-07-14

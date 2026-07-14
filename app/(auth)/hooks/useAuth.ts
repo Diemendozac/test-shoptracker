@@ -26,7 +26,7 @@ export function useAuth() {
     const result = await registerMutation(data).unwrap()
     dispatch(setCredentials(result))
     dispatch(markJustRegistered())
-    router.push('/dashboard')
+    router.push('/home')
   }
 
   const signOut = () => {
