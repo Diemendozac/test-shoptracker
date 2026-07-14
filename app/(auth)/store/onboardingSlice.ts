@@ -13,7 +13,10 @@ export interface OnboardingAnswers {
 }
 
 interface OnboardingState {
-  step: number
+  // True only right after a fresh register() this session — the modal gate reads this,
+  // never `!completed` alone, so existing users who just log in never see it.
+  justRegistered: boolean
+  completed: boolean
   answers: OnboardingAnswers
 }
 
@@ -30,13 +33,19 @@ const emptyAnswers: OnboardingAnswers = {
   platforms: [],
 }
 
+const emptyState: OnboardingState = {
+  justRegistered: false,
+  completed: false,
+  answers: emptyAnswers,
+}
+
 const getInitialState = (): OnboardingState => {
-  if (typeof window === 'undefined') return { step: 0, answers: emptyAnswers }
+  if (typeof window === 'undefined') return emptyState
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) return JSON.parse(raw)
+    if (raw) return { ...emptyState, ...JSON.parse(raw) }
   } catch { /* ignore */ }
-  return { step: 0, answers: emptyAnswers }
+  return emptyState
 }
 
 const persist = (state: OnboardingState) => {
@@ -52,21 +61,21 @@ const onboardingSlice = createSlice({
       state.answers = { ...state.answers, ...action.payload }
       persist(state)
     },
-    nextStep: (state) => {
-      state.step += 1
+    markJustRegistered: (state) => {
+      state.justRegistered = true
       persist(state)
     },
-    prevStep: (state) => {
-      state.step = Math.max(0, state.step - 1)
+    markOnboardingCompleted: (state) => {
+      state.completed = true
+      state.justRegistered = false
       persist(state)
     },
-    resetOnboarding: (state) => {
-      state.step = 0
-      state.answers = emptyAnswers
+    resetOnboarding: () => {
       if (typeof window !== 'undefined') localStorage.removeItem(STORAGE_KEY)
+      return emptyState
     },
   },
 })
 
-export const { setAnswer, nextStep, prevStep, resetOnboarding } = onboardingSlice.actions
+export const { setAnswer, markJustRegistered, markOnboardingCompleted, resetOnboarding } = onboardingSlice.actions
 export default onboardingSlice.reducer

@@ -9,6 +9,7 @@ import { AppHeader } from '@/components/layout/app-header'
 import { useAppSelector } from '@/store/hooks'
 import { ViewAsProvider } from '@/lib/view-as'
 import { ViewAsBar } from '@/components/admin/ViewAsBar'
+import { OnboardingModal } from '@/components/onboarding/onboarding-modal'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -45,6 +46,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </main>
         </div>
         <ViewAsBar />
+        <OnboardingModal />
       </SidebarProvider>
     </ViewAsProvider>
   )

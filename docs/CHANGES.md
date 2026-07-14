@@ -66,7 +66,28 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
-### CHANGE-070 — Wizard de onboarding post-registro (6 pasos)
+### CHANGE-073 — Onboarding rediseñado: de wizard de página completa a modal compacto sobre /dashboard
+
+**Fecha:** 2026-07-13
+**Archivos:**
+- `app/(auth)/onboarding/page.tsx` — **eliminado**. Reemplazado por modal.
+- `components/onboarding/onboarding-modal.tsx` (nuevo) — mismos 6 grupos de datos que CHANGE-070, comprimidos en un solo modal con dropdowns e inputs chicos + chips multi-select para nichos/plataformas, en vez de 6 pantallas con cards grandes y barra de progreso.
+- `app/(dashboard)/layout.tsx` — monta `<OnboardingModal />`, superpuesto al dashboard (no bloquea via ruta, bloquea via `Dialog` no descartable — sin botón de cerrar, `onInteractOutside`/`onEscapeKeyDown` deshabilitados).
+- `app/(auth)/store/onboardingSlice.ts` — reescrito: sin `step`/`nextStep`/`prevStep` (ya no hay multi-step). Nuevo campo `justRegistered` + acción `markJustRegistered`, y `completed` + `markOnboardingCompleted` (antes era un simple reset).
+- `app/(auth)/hooks/useAuth.ts` — `register()` ahora despacha `markJustRegistered()` y redirige a `/dashboard` (ya no a `/onboarding`, esa ruta no existe más).
+- `messages/es.json` — namespace `Onboarding` reescrito: se eliminaron las claves de wizard multi-paso (`steps`, `page.stepOf`, `page.back`, etc., huérfanas tras borrar la página) y se adaptaron las traducciones reales (ya existían en español desde CHANGE-071) a la estructura plana del modal.
+
+**Por qué:** pedido explícito de rediseño — referencia visual de Kalodata (modal "Welcome back!" con 4 campos, dropdowns, "Can't skip"). Se mantienen los mismos datos que CHANGE-070 (nada se recortó), solo cambia la densidad/presentación.
+
+**Riesgo encontrado y resuelto — no afectar a usuarios existentes:** si el modal se mostrara simplemente cuando `!completed`, cualquier usuario ya registrado vería el modal bloqueante la próxima vez que cargue `/dashboard`, porque nadie tiene ese flag en `true` todavía (no hay backend). Se resolvió con `justRegistered`, seteado únicamente dentro de `register()` — `login()` nunca lo setea, así que el modal solo aparece en la sesión inmediatamente posterior a un registro nuevo. Es una solución client-side temporal: cuando Diego implemente el endpoint (`scout-onboarding-propuesta-tecnica`), `GET /users/me` debería devolver un campo `onboardingCompleted` real para que el gate sea robusto entre dispositivos/sesiones, no solo dentro del mismo browser.
+
+**Conflicto detectado y resuelto durante la implementación:** al momento de este cambio, otra sesión ya había corrido CHANGE-071/072 (traducción completa de la app a `next-intl`), incluyendo una traducción completa del wizard de página que este commit elimina. Se reaprovecharon esas traducciones (ya en español, ya revisadas) reestructurándolas para el modal en vez de descartarlas. También se encontraron cambios de precios sin commitear y sin `CHANGE-NNN` en `app/(marketing)/page.tsx` y `pricing/page.tsx` (ajenos a este cambio) — se descartaron por indicación explícita del usuario, no se tocó nada más de esos archivos.
+
+**Sigue bloqueado en backend:** igual que CHANGE-070 — `PATCH /users/me/onboarding` no existe, issue #1 en `ShopTracker` sin resolver.
+
+---
+
+### CHANGE-070 — Wizard de onboarding post-registro (6 pasos, superseded por CHANGE-073)
 
 **Fecha:** 2026-07-13
 **Archivos:**

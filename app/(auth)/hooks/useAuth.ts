@@ -4,6 +4,7 @@
 import { useRouter } from 'next/navigation'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { setCredentials, logout } from '../store/authSlice'
+import { markJustRegistered } from '../store/onboardingSlice'
 import { useLoginMutation, useRegisterMutation } from '../services/authApi'
 import type { LoginRequest, RegisterRequest } from '../services/authApi'
 
@@ -24,7 +25,8 @@ export function useAuth() {
   const register = async (data: RegisterRequest) => {
     const result = await registerMutation(data).unwrap()
     dispatch(setCredentials(result))
-    router.push('/onboarding')
+    dispatch(markJustRegistered())
+    router.push('/dashboard')
   }
 
   const signOut = () => {
