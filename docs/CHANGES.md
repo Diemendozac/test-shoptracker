@@ -6,6 +6,15 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-075 — Fix: subtítulo de signup decía "14 días" en vez de "7 días"
+
+**Fecha:** 2026-07-14
+**Tipo:** fix (typo/consistencia)
+
+Quedó de un texto genérico al escribir las traducciones en CHANGE-071, antes de que el modelo de trial de 7 días quedara definido en CHANGE-074. Corregido en `messages/es.json` (`Auth.signup.subtitle`).
+
+---
+
 ### CHANGE-074 — Modelo de precios: prueba gratis de 7 días reemplaza al plan Free, renombre Starter→Básico, precios reales, gating por plan
 
 **Fecha:** 2026-07-13
