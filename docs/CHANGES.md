@@ -30,6 +30,25 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-077 — Bloquear Mis testeos/Pendientes en la prueba gratis; fallback de plan más seguro
+
+**Fecha:** 2026-07-14
+**Tipo:** fix / UX
+
+**Por qué:** reportado en QA manual con la cuenta real `dropspycol@gmail.com` (plan free): "Mis testeos" y "Pendientes" mostraban tablas vacías sin explicación (0 candidatos, 0 tiendas) en vez de un bloqueo claro — confuso, porque la prueba gratis no puede rastrear tiendas (`canTrackStores=false`, CHANGE-074), así que esas páginas nunca tendrían contenido real para un usuario en trial.
+
+**Qué cambió:**
+- `app/(dashboard)/tracker/page.tsx` y `app/(dashboard)/pendientes/page.tsx` — si `!canTrackStores`, se muestra una pantalla de bloqueo con CTA a `/pricing` en vez de la tabla vacía.
+- `lib/view-as.tsx` — el fallback de `realPlan` cuando `/users/me` no ha cargado (o falla) cambia de `'starter'` (plan pago) a `'free'` (el más restrictivo). Antes, mientras la cuenta cargaba, el código asumía por defecto un plan pago — fail-open en vez de fail-closed. No confirmado como causa raíz de un bug específico, pero es la dirección correcta de todas formas.
+
+**Relacionado:** ver también FIX-049 en el backend (`ShopTracker`) — el endpoint de ads devolvía `ads: []` para plan `free`, dejando sin nada que difuminar en el pool (se esperaba ver el thumbnail borroso, no la ausencia total).
+
+**Verificación:** `npx next build` sin errores.
+
+**Riesgo:** solo (frontend puro, no toca Redux/DB/APIs — el fallback de plan es más restrictivo, no más permisivo).
+
+---
+
 ### CHANGE-076 — Expiración de la prueba gratis a los 7 días (aproximación solo-frontend)
 
 **Fecha:** 2026-07-14

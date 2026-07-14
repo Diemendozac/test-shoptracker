@@ -15,8 +15,8 @@ interface ViewAsContextValue {
 }
 
 const ViewAsContext = createContext<ViewAsContextValue>({
-  effectivePlan: 'starter',
-  realPlan: 'starter',
+  effectivePlan: 'free',
+  realPlan: 'free',
   viewAs: 'real',
   setViewAs: () => {},
   isAdmin: false,
@@ -27,7 +27,8 @@ export function ViewAsProvider({ children }: { children: React.ReactNode }) {
   const { data: me } = useGetMeQuery()
   const [viewAs, setViewAsState] = useState<PlanOverride>('real')
 
-  const realPlan = me?.plan ?? 'starter'
+  // Fallback restrictivo mientras /users/me carga o falla — nunca asumir un plan pago por defecto.
+  const realPlan = me?.plan ?? 'free'
   const isAdmin = realPlan === 'admin'
   const signupDate = me?.createdAt ?? null
 
