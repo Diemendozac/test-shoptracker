@@ -1,12 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
-import { FlaskConical, Lock, X, Trash2 } from 'lucide-react'
+import { FlaskConical, X, Trash2 } from 'lucide-react'
 import { FormattedPrice } from '@/components/ui/formatted-price'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
-import { usePlanTier } from '@/lib/view-as'
 import {
   useGetPendingCandidatesQuery,
   useActivateCandidateMutation,
@@ -19,7 +17,6 @@ import { useGetStoresQuery } from '@/app/(dashboard)/stores/services/storeApi'
 import { useCurrency } from '@/store/hooks'
 
 export function PendingCandidatesSection() {
-  const { canActivateCandidates } = usePlanTier()
   const { data: candidates, isLoading } = useGetPendingCandidatesQuery()
   const [activate, { isLoading: activating }] = useActivateCandidateMutation()
   const [cancel] = useCancelCandidateMutation()
@@ -109,41 +106,20 @@ export function PendingCandidatesSection() {
               <Trash2 className="h-3 w-3" />
               Descartar
             </Button>
-            {canActivateCandidates ? (
-              <Button
-                size="sm"
-                className="h-7 gap-1.5 bg-amber-500 px-2.5 text-xs text-white hover:bg-amber-600"
-                onClick={handleBulkActivate}
-                disabled={bulkActivating || bulkCancelling}
-              >
-                <FlaskConical className="h-3 w-3" />
-                Testear {selected.size}
-              </Button>
-            ) : (
-              <Link href="/pricing">
-                <Button size="sm" className="h-7 gap-1.5 px-2.5 text-xs">
-                  <Lock className="h-3 w-3" />
-                  Suscríbete para testear
-                </Button>
-              </Link>
-            )}
+            <Button
+              size="sm"
+              className="h-7 gap-1.5 bg-amber-500 px-2.5 text-xs text-white hover:bg-amber-600"
+              onClick={handleBulkActivate}
+              disabled={bulkActivating || bulkCancelling}
+            >
+              <FlaskConical className="h-3 w-3" />
+              Testear {selected.size}
+            </Button>
           </div>
         ) : (
           <span className="text-[10px] text-muted-foreground">Detectados en la última sincronización</span>
         )}
       </div>
-
-      {!canActivateCandidates && (
-        <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-2.5">
-          <p className="text-xs text-foreground">
-            <Lock className="mr-1.5 inline h-3 w-3 text-primary" />
-            Tu prueba gratis detecta productos pero no puede testearlos. Suscríbete para empezar a testear estos {candidates.length} candidato{candidates.length !== 1 ? 's' : ''}.
-          </p>
-          <Link href="/pricing" className="shrink-0">
-            <Button size="sm">Ver planes</Button>
-          </Link>
-        </div>
-      )}
 
       <div className="space-y-3">
         {candidates.map((c) => (
@@ -153,7 +129,6 @@ export function PendingCandidatesSection() {
             storeBaseUrl={storeBaseUrlMap[c.storeId] ?? ''}
             preferredCurrency={preferredCurrency}
             selected={selected.has(c.candidateId)}
-            canActivate={canActivateCandidates}
             onToggle={() => toggleOne(c.candidateId)}
             onActivate={() => activate(c.candidateId)}
             onCancel={() => cancel(c.candidateId)}
@@ -170,7 +145,6 @@ function PendingRow({
   storeBaseUrl,
   preferredCurrency,
   selected,
-  canActivate,
   onToggle,
   onActivate,
   onCancel,
@@ -180,7 +154,6 @@ function PendingRow({
   storeBaseUrl: string
   preferredCurrency: string
   selected: boolean
-  canActivate: boolean
   onToggle: () => void
   onActivate: () => void
   onCancel: () => void
@@ -266,24 +239,15 @@ function PendingRow({
             <X className="h-3 w-3" />
             Descartar
           </Button>
-          {canActivate ? (
-            <Button
-              size="sm"
-              className="h-7 gap-1.5 bg-amber-500 px-2.5 text-xs text-white hover:bg-amber-600"
-              onClick={onActivate}
-              disabled={isActivating}
-            >
-              <FlaskConical className="h-3 w-3" />
-              Testear
-            </Button>
-          ) : (
-            <Link href="/pricing">
-              <Button size="sm" className="h-7 gap-1.5 px-2.5 text-xs">
-                <Lock className="h-3 w-3" />
-                Testear
-              </Button>
-            </Link>
-          )}
+          <Button
+            size="sm"
+            className="h-7 gap-1.5 bg-amber-500 px-2.5 text-xs text-white hover:bg-amber-600"
+            onClick={onActivate}
+            disabled={isActivating}
+          >
+            <FlaskConical className="h-3 w-3" />
+            Testear
+          </Button>
         </div>
       </div>
     </div>

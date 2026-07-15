@@ -11,7 +11,7 @@ import type { TrackerCandidate } from '@/app/(dashboard)/types'
 import type { Ad } from '@/components/tracker/product-ads'
 import {
   ExternalLink, ArrowUpDown, ArrowUp, ArrowDown,
-  Search, X, SlidersHorizontal, Trash2, ChevronLeft, ChevronRight, Star,
+  Search, X, SlidersHorizontal, Trash2, ChevronLeft, ChevronRight, Star, Lock,
 } from 'lucide-react'
 import { ShareButton } from '@/components/tracker/pool-winners'
 import { useRemoveCandidateMutation } from '@/app/(dashboard)/services/candidateApi'
@@ -235,12 +235,24 @@ function ContextBar({ rank, total }: { rank: number | null; total?: number | nul
   )
 }
 
+// Prueba gratis: puede testear candidatos, pero no ve la data calculada
+// (score, tendencia, % crecimiento) — ese es el gancho de upgrade en Mis testeos.
+function LockedMetric({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="relative inline-flex items-center justify-center">
+      <div className="pointer-events-none select-none blur-[3px] opacity-60">{children}</div>
+      <Lock className="absolute h-3 w-3 text-muted-foreground" />
+    </div>
+  )
+}
+
 const PAGE_SIZE = 20
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFavorite }: TrackerTableProps) {
   const { currency: preferredCurrency } = useCurrency()
+  const { canViewTrackerMetrics } = usePlanTier()
   const dispatch = useDispatch()
   const [removeCandidate] = useRemoveCandidateMutation()
   const displayDays = windowDays === 30 ? 30 : 7
@@ -648,41 +660,52 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
 
                   {/* Score */}
                   <div className="flex items-center justify-center">
-                    {score > 0 ? (
-                      <ScoreRing
-                        score={score}
-                        label={resolveDisplayLabel(candidate.performanceLabel, candidate.performanceScore, candidate.growthPct, candidate.daysElapsed, candidate.scoreHistory, candidate.growthHistory)}
-                        size="sm"
-                        showLabel={false}
-                      />
-                    ) : (
-                      <span className="text-[10px] text-muted-foreground/40">—</span>
-                    )}
+                    {(() => {
+                      const content = score > 0 ? (
+                        <ScoreRing
+                          score={score}
+                          label={resolveDisplayLabel(candidate.performanceLabel, candidate.performanceScore, candidate.growthPct, candidate.daysElapsed, candidate.scoreHistory, candidate.growthHistory)}
+                          size="sm"
+                          showLabel={false}
+                        />
+                      ) : (
+                        <span className="text-[10px] text-muted-foreground/40">—</span>
+                      )
+                      return canViewTrackerMetrics ? content : <LockedMetric>{content}</LockedMetric>
+                    })()}
                   </div>
 
                   {/* Tendencia */}
                   <div className="flex justify-center">
                     {(() => {
                       const history = (candidate.growthHistory ?? candidate.scoreHistory ?? []).slice(-displayDays)
-                      return history.length >= 2
+                      const content = history.length >= 2
                         ? <Sparkline data={history} width={80} height={32} />
                         : <span className="text-[10px] text-muted-foreground/35">—</span>
+                      return canViewTrackerMetrics ? content : <LockedMetric>{content}</LockedMetric>
                     })()}
                   </div>
 
                   {/* Crecimiento */}
                   <div>
-                    <span className={cn(
-                      'block text-sm font-bold tabular-nums',
-                      gp != null && gp >= 0 ? 'text-emerald-600' : 'text-rose-500',
-                    )}>
-                      {gp != null ? `${gp >= 0 ? '+' : ''}${gp.toFixed(1)}%` : '—'}
-                    </span>
-                    {subText && (
-                      <span className={cn('mt-0.5 block text-[10px] leading-tight', subText.color)}>
-                        {subText.text}
-                      </span>
-                    )}
+                    {(() => {
+                      const content = (
+                        <>
+                          <span className={cn(
+                            'block text-sm font-bold tabular-nums',
+                            gp != null && gp >= 0 ? 'text-emerald-600' : 'text-rose-500',
+                          )}>
+                            {gp != null ? `${gp >= 0 ? '+' : ''}${gp.toFixed(1)}%` : '—'}
+                          </span>
+                          {subText && (
+                            <span className={cn('mt-0.5 block text-[10px] leading-tight', subText.color)}>
+                              {subText.text}
+                            </span>
+                          )}
+                        </>
+                      )
+                      return canViewTrackerMetrics ? content : <LockedMetric>{content}</LockedMetric>
+                    })()}
                   </div>
 
                   {/* Contexto */}

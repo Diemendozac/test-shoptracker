@@ -28,6 +28,26 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 **Riesgo:** solo (una línea, sin tocar Redux ni lógica de negocio).
 
+### CHANGE-079 — Revierte bloqueo de "Testear"; bloquea la data calculada en Mis testeos
+
+**Fecha:** 2026-07-14
+**Tipo:** cambio de modelo de negocio (pricing/gating) — corrige CHANGE-078
+
+**Por qué:** el flujo correcto (confirmado con el usuario) es: agregar tienda → detectar candidato → **testearlo sin restricción** → verlo en "Mis testeos" con la imagen y el nombre visibles, pero el **score, tendencia y % de crecimiento bloqueados** (borrosos con candado). El gancho de upgrade no es la acción de testear, es ver los números calculados.
+
+**Qué cambió:**
+- `components/tracker/pending-candidates.tsx` — revertido a su versión sin restricción (CHANGE-078 deshecho): "Testear" funciona igual para todos los planes, individual y en bulk.
+- `lib/view-as.tsx` — se quita `canActivateCandidates`, se agrega `canViewTrackerMetrics` (`false` solo en trial).
+- `components/tracker/tracker-table.tsx` — nuevo componente `LockedMetric` (blur + candado) envolviendo las columnas Score, Tendencia y Crecimiento cuando `!canViewTrackerMetrics`. Producto, imagen, tienda, precio, contexto y ads quedan visibles sin cambios.
+
+**Qué NO cambió:** `maxPoolPage`, `canViewAds` (video ads en el pool global) — siguen igual que CHANGE-074/077.
+
+**Verificación:** `npx next build` sin errores.
+
+**Riesgo:** solo (frontend puro).
+
+---
+
 ### CHANGE-078 — Prueba gratis: se permite agregar tiendas, se bloquea "Testear" en Pendientes
 
 **Fecha:** 2026-07-14
