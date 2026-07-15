@@ -6,6 +6,24 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-082 — Fix: botones Ver/Link/Eliminar desbordaban sobre la columna de Ads en Mis testeos
+
+**Fecha:** 2026-07-14
+**Tipo:** fix (UI)
+
+**Por qué:** reportado por el usuario con captura de `/tracker` — en la columna "Acción" los botones "Ver", "Link" (`ShareButton`) y el ícono de eliminar (~160px de contenido mínimo combinado) estaban forzados dentro de una columna de `60px` en un `flex` sin wrap y `justify-center`. Al no poder encogerse por debajo de su contenido mínimo, se desbordaban simétricamente hacia ambos lados de la columna, invadiendo visualmente la columna "Ads" contigua (thumbnails de video + badges de anunciante de Facebook).
+
+**Qué cambió:**
+- `components/tracker/tracker-table.tsx` — última columna del `grid-cols` (header línea ~466 y fila de datos línea ~549) ampliada de `60px` a `150px`, suficiente para los 3 elementos en una sola línea sin desbordar.
+
+**Qué NO cambió:** no se tocó `ShareButton` (compartido con `pool-winners.tsx`) ni el layout de la columna "Ads" — el fix es solo el ancho de la columna contigua.
+
+**Riesgo:** solo (una clase CSS, sin lógica ni Redux).
+
+**Pendiente:** no se verificó visualmente en navegador (no había `.env.local`/`NEXT_PUBLIC_API_URL` configurado localmente para levantar el dev server con datos reales) — el diagnóstico se hizo por cálculo de anchos mínimos de contenido vs. el track fijo del grid. Correr `pnpm build` y confirmar visualmente en `/tracker` antes de dar el fix por cerrado.
+
+---
+
 ### CHANGE-075 — Fix: checkbox de opt-in invisible en el modal de onboarding
 
 **Fecha:** 2026-07-14
@@ -27,6 +45,23 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 **Por qué:** reportado en QA manual — el modal de onboarding (CHANGE-073) aparecía de fondo sobre `/dashboard` ("Overview", stats en cero para una cuenta nueva), pero el logo de Dropspy y la experiencia de entrada real de la app apuntan a `/home` (`app-sidebar.tsx:81`) — página de bienvenida con buscador y accesos rápidos, mejor primera impresión para un usuario recién registrado. `login()` no se tocó, sigue yendo a `/dashboard` — cambio de comportamiento solo para cuentas nuevas.
 
 **Riesgo:** solo (una línea, sin tocar Redux ni lógica de negocio).
+
+### CHANGE-082 — Corrige CHANGE-081: video ads solo visibles sin blur en el pool global, no en Mis testeos
+
+**Fecha:** 2026-07-14
+**Tipo:** cambio de modelo de negocio (pricing/gating) — corrige CHANGE-081
+
+**Por qué:** CHANGE-081 quitó el blur de video ads para todos los planes en TODAS partes (`canViewAds = true` incondicional en el hook compartido). El usuario corrigió: el video sin blur es solo para "Explorar testeos" (pool global); en "Mis testeos" la prueba gratis sigue viendo los ads borrosos.
+
+**Qué cambió:**
+- `lib/view-as.tsx` — `canViewAds` vuelve a ser `!isTrial` (como en CHANGE-074/077), afecta `tracker-table.tsx` (Mis testeos) y `product-ads.tsx` (detalle de candidato).
+- `components/tracker/pool-winners.tsx` — `AdsCell` ya no usa `canViewAds` del hook; queda hardcodeado en `true` — el pool global siempre muestra los video ads sin blur, sin importar el plan.
+
+**Verificación:** `npx next build` sin errores.
+
+**Riesgo:** solo (frontend puro).
+
+---
 
 ### CHANGE-081 — Video ads visibles para todos los planes, incluida la prueba gratis
 

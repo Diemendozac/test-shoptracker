@@ -83,7 +83,10 @@ function AdThumb({
 function AdsCell({ candidateId }: { candidateId: string }) {
   const { data } = useGetProductAdsQuery(candidateId)
   const { hoveredAd, hoverPos, handleHover, handleLeave, handlePanelEnter, handlePanelLeave } = useHoverPanel()
-  const { canViewAds, allowMetaLink } = usePlanTier()
+  const { allowMetaLink } = usePlanTier()
+  // El pool global (Explorar testeos) siempre muestra los video ads sin blur,
+  // incluida la prueba gratis — a diferencia de Mis testeos. Ver CHANGE-082.
+  const canViewAds = true
 
   const active = data?.ads.filter(a => a.status === 'active') ?? []
   if (active.length === 0) return (
