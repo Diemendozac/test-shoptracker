@@ -28,6 +28,24 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 **Riesgo:** solo (una línea, sin tocar Redux ni lógica de negocio).
 
+### CHANGE-080 — Mis testeos: sin candidatos, guiar a agregar tienda en vez de tabla vacía
+
+**Fecha:** 2026-07-14
+**Tipo:** UX
+
+**Por qué:** cuando un usuario nuevo (sin tiendas o sin candidatos aún) entraba a "Mis testeos", veía la tabla vacía con el mensaje "Ningún producto coincide con tus filtros" — como si el problema fuera un filtro mal puesto, cuando en realidad es que no tiene ninguna tienda agregada. Confuso para alguien que recién empieza.
+
+**Qué cambió:**
+- `app/(dashboard)/tracker/page.tsx` — si `allCandidates.length === 0` (sin filtros, el total real es cero), se muestra un estado dedicado ("Todavía no tienes testeos" + botón "Agregar tienda" → `/stores`) en vez de pasar a la tabla y su mensaje de "sin resultados por filtro".
+
+**Qué NO cambió:** si ya hay candidatos pero los filtros activos no arrojan resultados, sigue mostrando el mensaje de "Ningún producto coincide con tus filtros" (ese caso sí es correcto).
+
+**Verificación:** `npx next build` sin errores.
+
+**Riesgo:** solo (frontend puro).
+
+---
+
 ### CHANGE-079 — Revierte bloqueo de "Testear"; bloquea la data calculada en Mis testeos
 
 **Fecha:** 2026-07-14

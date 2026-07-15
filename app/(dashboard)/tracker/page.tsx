@@ -1,7 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { PageLayout } from '@/components/layout/page-layout'
+import { Button } from '@/components/ui/button'
 import { TrackerTable } from '@/components/tracker/tracker-table'
 import { HeroSignalCard } from '@/components/tracker/hero-signal-card'
 import { ShootingStars } from '@/components/tracker/shooting-stars'
@@ -10,7 +12,7 @@ import type { TrackerCandidate } from '../types'
 import { cn } from '@/lib/utils'
 import { useDashboard } from '../hooks/useDashboard'
 import { KpiCards } from '@/components/tracker/kpi-cards'
-import { Star } from 'lucide-react'
+import { Star, Store } from 'lucide-react'
 
 const WINDOW_OPTIONS = [
   { label: 'Todos', days: 0 },
@@ -82,6 +84,32 @@ export default function TrackerPage() {
   const tableCandidates = trackerPreset === 'favorites'
     ? baseTableCandidates.filter(c => favorites.has(c.candidateId))
     : baseTableCandidates
+
+  // Sin ningún testeo (nunca se agregó una tienda, o ninguna tiene candidatos aún):
+  // guiar a agregar tienda en vez de mostrar la tabla vacía como si fuera un filtro sin resultados.
+  if (!isTrackerLoading && allCandidates.length === 0) {
+    return (
+      <PageLayout>
+        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-card py-24 text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+            <Store className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-foreground">Todavía no tienes testeos</p>
+            <p className="mt-1 max-w-sm text-xs text-muted-foreground">
+              Agrega una tienda para empezar a detectar productos nuevos y testearlos aquí.
+            </p>
+          </div>
+          <Link href="/stores">
+            <Button size="sm" className="mt-1 gap-2">
+              <Store className="h-3.5 w-3.5" />
+              Agregar tienda
+            </Button>
+          </Link>
+        </div>
+      </PageLayout>
+    )
+  }
 
   return (
     <PageLayout>
