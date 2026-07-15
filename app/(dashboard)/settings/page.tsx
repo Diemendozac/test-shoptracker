@@ -10,7 +10,7 @@ import { logout } from '@/app/(auth)/store/authSlice'
 import { useGetMeQuery, useChangePasswordMutation, useUpdatePreferencesMutation } from '@/app/(dashboard)/services/userApi'
 import { User, Mail, Bell, Shield, CreditCard, LogOut, Eye, EyeOff, Check, X, Zap, ArrowUpRight, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { lsCheckoutUrl, lsVariantId } from '@/lib/lemonsqueezy'
+import { mpCheckoutUrl } from '@/lib/mercadopago'
 
 // ─── Plan badge ───────────────────────────────────────────────────────────────
 
@@ -178,12 +178,12 @@ const UPGRADE_OPTIONS: Record<string, { nextPlan: string; label: string; desc: s
   agency:  null,
 }
 
-function BillingSection({ plan, email, userId }: { plan: string; email?: string; userId?: string }) {
+function BillingSection({ plan }: { plan: string; email?: string; userId?: string }) {
   const upgrade = UPGRADE_OPTIONS[plan] ?? null
 
-  const checkoutHref = upgrade
-    ? lsCheckoutUrl(lsVariantId(upgrade.nextPlan as 'starter' | 'pro' | 'agency', 'monthly'), email, userId)
-    : '#'
+  // Mercado Pago: links estáticos de suscripción (no llevan user_id) — la activación
+  // se concilia manualmente por el email con el que se paga. Ver lib/mercadopago.ts.
+  const checkoutHref = upgrade ? mpCheckoutUrl(upgrade.nextPlan, 'monthly') ?? '#' : '#'
 
   return (
     <div className="space-y-3">
@@ -205,11 +205,16 @@ function BillingSection({ plan, email, userId }: { plan: string; email?: string;
             <p className="font-semibold text-foreground">{upgrade.label}</p>
             <p className="text-sm text-muted-foreground">{upgrade.desc}</p>
           </div>
-          <a href={checkoutHref} target="_blank" rel="noopener noreferrer">
-            <Button size="sm" className="shrink-0">
-              Actualizar <ExternalLink className="ml-1.5 h-3 w-3" />
-            </Button>
-          </a>
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            <a href={checkoutHref} target="_blank" rel="noopener noreferrer">
+              <Button size="sm">
+                Actualizar <ExternalLink className="ml-1.5 h-3 w-3" />
+              </Button>
+            </a>
+            <p className="text-right text-[10px] text-muted-foreground">
+              Paga con el mismo correo de tu cuenta
+            </p>
+          </div>
         </div>
       )}
 

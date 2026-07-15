@@ -6,6 +6,26 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-085 — /pricing detecta sesión activa; checkout real vía Mercado Pago (Lemon Squeezy descartado)
+
+**Fecha:** 2026-07-14
+**Tipo:** fix / cambio de integración de pagos
+
+**Por qué:** reportado por el usuario — todos los CTAs de upgrade agregados durante esta sesión (pool, Mis testeos, Pendientes) apuntan a `/pricing`, pero esa página no sabía que el usuario ya tenía sesión activa: mostraba el nav público ("Iniciar sesión" / "Empezar prueba gratis") como si lo hubiera desconectado, y el botón "Suscribirse" de cada plan llevaba al flujo de signup (`/login?tab=signup&plan=X`) en vez de a un checkout real — para un usuario que ya tiene cuenta, eso es un callejón sin salida. Además, Lemon Squeezy nunca tuvo webhook de activación (ver wiki `scout-pasarela-mercadopago`) y el usuario confirmó que está descartado a favor de Mercado Pago, que sí tiene 6 links de suscripción reales y verificados (cuenta Dropspy, 2026-07-08).
+
+**Qué cambió:**
+- `lib/mercadopago.ts` (nuevo) — reemplaza `lib/lemonsqueezy.ts` (eliminado). Expone `mpCheckoutUrl(plan, billing)` con los 6 links reales de MP (Básico/Pro/Agency × mensual/anual) documentados en la wiki.
+- `app/(marketing)/pricing/page.tsx` — el nav ahora detecta `isAuthenticated` (Redux `auth`): si hay sesión, oculta el nav público y muestra "Sesión activa — {email}" + botón "Volver a la app" en vez de "Iniciar sesión"/"Empezar prueba gratis". El CTA de cada plan va directo al link de MP (nueva pestaña) cuando hay sesión; si no, sigue yendo a signup.
+- `app/(dashboard)/settings/page.tsx` (`BillingSection`) — mismo cambio: el botón "Actualizar" usa `mpCheckoutUrl` en vez de Lemon Squeezy.
+
+**Importante — no confundir con activación automática:** los links de MP son estáticos, no llevan `user_id` ni webhook. La activación del plan sigue siendo manual (Diego/admin revisa el pago y activa via el endpoint admin) — se agregó el aviso "Paga con el mismo correo de tu cuenta" en ambos lugares para que la conciliación por email funcione. Esto sigue pendiente de automatizar (Fase 2 en la wiki `scout-pasarela-mercadopago`, requiere-revisor-técnico).
+
+**Verificación:** `npx next build` sin errores.
+
+**Riesgo:** solo (frontend puro, sin tocar backend ni Redux más allá de leer `state.auth`).
+
+---
+
 ### CHANGE-083 — Bloquea Top productos/salud del seguimiento/estadísticas en Mis testeos para la prueba gratis
 
 **Fecha:** 2026-07-14

@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { Check, X, Users, Globe, Lock } from 'lucide-react'
 import { DropspyIcon } from '@/components/ui/dropspy-logo'
+import { useAppSelector } from '@/store/hooks'
+import { mpCheckoutUrl } from '@/lib/mercadopago'
 
 function cop(n: number) {
   return n.toLocaleString('es-CO')
@@ -114,6 +116,10 @@ function PrivacyBadge({ type }: { type: 'community' | 'private' }) {
 
 export default function PricingPage() {
   const [annual, setAnnual] = useState(false)
+  const { isAuthenticated, user } = useAppSelector((s) => s.auth)
+  // Si ya hay sesión (llegó aquí desde un CTA de upgrade dentro de la app), el botón
+  // de cada plan va directo al link real de Mercado Pago — no al flujo de signup.
+  // Anónimo: primero debe crear cuenta (la activación se concilia por email).
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -130,22 +136,37 @@ export default function PricingPage() {
             </span>
           </Link>
 
-          <div className="hidden items-center gap-8 md:flex">
-            <Link href="/#features" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-              Funcionalidades
-            </Link>
-            <Link href="/pricing" className="text-sm font-medium text-foreground">
-              Precios
-            </Link>
-          </div>
+          {!isAuthenticated && (
+            <div className="hidden items-center gap-8 md:flex">
+              <Link href="/#features" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                Funcionalidades
+              </Link>
+              <Link href="/pricing" className="text-sm font-medium text-foreground">
+                Precios
+              </Link>
+            </div>
+          )}
 
           <div className="flex items-center gap-3">
-            <Link href="/login">
-              <Button variant="ghost" size="sm">Iniciar sesión</Button>
-            </Link>
-            <Link href="/login?tab=signup">
-              <Button size="sm">Empezar prueba gratis</Button>
-            </Link>
+            {isAuthenticated ? (
+              <>
+                <span className="hidden text-sm text-muted-foreground sm:inline">
+                  Sesión activa{user?.email ? ` — ${user.email}` : ''}
+                </span>
+                <Link href="/dashboard">
+                  <Button variant="outline" size="sm">Volver a la app</Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/login">
+                  <Button variant="ghost" size="sm">Iniciar sesión</Button>
+                </Link>
+                <Link href="/login?tab=signup">
+                  <Button size="sm">Empezar prueba gratis</Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
@@ -262,14 +283,30 @@ export default function PricingPage() {
 
                   {/* CTA */}
                   <div className="mt-6 space-y-2">
-                    <Link href={plan.ctaHref} className="block">
-                      <Button
-                        variant={plan.ctaVariant}
-                        className="w-full"
-                      >
-                        {plan.cta}
-                      </Button>
-                    </Link>
+                    {(() => {
+                      const mpHref = isAuthenticated ? mpCheckoutUrl(plan.id, annual ? 'annual' : 'monthly') : null
+                      return mpHref ? (
+                        <a href={mpHref} target="_blank" rel="noopener noreferrer" className="block">
+                          <Button variant={plan.ctaVariant} className="w-full">
+                            {plan.cta}
+                          </Button>
+                        </a>
+                      ) : (
+                        <Link href={plan.ctaHref} className="block">
+                          <Button
+                            variant={plan.ctaVariant}
+                            className="w-full"
+                          >
+                            {plan.cta}
+                          </Button>
+                        </Link>
+                      )
+                    })()}
+                    {isAuthenticated && mpCheckoutUrl(plan.id) && (
+                      <p className="text-center text-[10px] leading-snug text-muted-foreground">
+                        Paga con el mismo correo de tu cuenta — activamos tu plan en menos de 24h.
+                      </p>
+                    )}
                     {plan.trial && (
                       <p className="text-center text-[10px] leading-snug text-muted-foreground">
                         {plan.trial}
