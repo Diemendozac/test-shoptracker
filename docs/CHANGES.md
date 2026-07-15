@@ -4,6 +4,25 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-091 — Sidebar: click en el usuario despliega acceso a Settings
+
+**Fecha:** 2026-07-14
+**Tipo:** feature (UI)
+
+**Por qué:** pedido del usuario — en el bloque de cuenta al fondo del sidebar (avatar + nombre + email), no había forma de entrar a Settings desde ahí; solo era texto estático. Quería poder hacer clic sobre el nombre de usuario y que se despliegue un menú desde el cual entrar a Settings.
+
+**Qué cambió:**
+- `components/layout/app-sidebar.tsx`: la sección de usuario (antes un `<div>` estático) ahora es el trigger de un `DropdownMenu` (mismo componente ya usado en `StoreRow.tsx`). Al hacer clic se despliega hacia arriba (`side="top"`, por estar al fondo del sidebar) con dos ítems: "Configuración" (enlaza a `/settings`) y, tras separador, "Cerrar sesión" — mismo patrón que ya usaba `app/(dashboard)/settings/page.tsx` (`dispatch(logout())` + `router.push('/login')`).
+- Segunda ronda de feedback: se quita `Settings` de `BOTTOM_NAV` — ahora el único acceso a `/settings` en el sidebar es a través de este dropdown del usuario, no como ítem de navegación duplicado.
+
+**Fuera de alcance (a propósito):** ninguno — ambos pedidos del usuario quedaron cubiertos en esta entrada.
+
+**Verificación:** `next build` sin errores; `tsc --noEmit` sin errores en el archivo tocado.
+
+**Riesgo:** solo (frontend puro, sin lógica de negocio ni endpoints nuevos).
+
+---
+
 ### CHANGE-090 — /stores: columna "Testeos" muestra la foto de los mejores testeos por tienda
 
 **Fecha:** 2026-07-14

@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname, useSearchParams } from 'next/navigation'
+import { usePathname, useSearchParams, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { useAppSelector } from '@/store/hooks'
+import { useAppSelector, useAppDispatch } from '@/store/hooks'
+import { logout } from '@/app/(auth)/store/authSlice'
 import { useGetPendingCandidatesQuery } from '@/app/(dashboard)/services/candidateApi'
 import {
   LayoutDashboard,
@@ -16,9 +17,14 @@ import {
   Globe,
   Clock,
   ShieldCheck,
+  LogOut,
 } from 'lucide-react'
 import { DropspyIcon } from '@/components/ui/dropspy-logo'
 import { useGetMeQuery } from '@/app/(dashboard)/services/userApi'
+import {
+  DropdownMenu, DropdownMenuContent,
+  DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 const TOP_NAV = [
   { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
@@ -26,7 +32,6 @@ const TOP_NAV = [
 
 const BOTTOM_NAV = [
   { name: 'Stores', href: '/stores', icon: Store },
-  { name: 'Settings', href: '/settings', icon: Settings },
 ]
 
 const TESTEOS_ITEMS = [
@@ -41,11 +46,18 @@ interface AppSidebarProps {
 
 export function AppSidebar({ pinned }: AppSidebarProps) {
   const pathname = usePathname()
+  const router = useRouter()
+  const dispatch = useAppDispatch()
   const searchParams = useSearchParams()
   const fromParam = searchParams.get('from')
   const { user } = useAppSelector((s) => s.auth)
   const displayName = user?.email?.split('@')[0] ?? '—'
   const avatarLetter = displayName[0]?.toUpperCase() ?? '?'
+
+  function handleLogout() {
+    dispatch(logout())
+    router.push('/login')
+  }
 
   const { data: pending } = useGetPendingCandidatesQuery()
   const { data: me } = useGetMeQuery()
@@ -246,23 +258,46 @@ export function AppSidebar({ pinned }: AppSidebarProps) {
         )
       })()}
 
-      {/* User Section */}
+      {/* User Section — click para desplegar acceso a Settings */}
       <div className="border-t border-border p-3">
-        <div className={cn(
-          'flex items-center rounded-lg bg-secondary/50 transition-all duration-300',
-          expanded ? 'gap-3 px-3 py-2.5' : 'justify-center py-2',
-        )}>
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/20 text-sm font-medium text-primary">
-            {avatarLetter}
-          </div>
-          <div className={cn(
-            'flex min-w-0 flex-col overflow-hidden transition-all duration-300',
-            expanded ? 'max-w-[160px] opacity-100' : 'max-w-0 opacity-0',
-          )}>
-            <span className="truncate whitespace-nowrap text-sm font-medium text-foreground">{displayName}</span>
-            <span className="whitespace-nowrap text-xs text-muted-foreground">{user?.email ?? ''}</span>
-          </div>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className={cn(
+                'flex w-full items-center rounded-lg bg-secondary/50 text-left transition-all duration-300 hover:bg-secondary',
+                expanded ? 'gap-3 px-3 py-2.5' : 'justify-center py-2',
+              )}
+            >
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/20 text-sm font-medium text-primary">
+                {avatarLetter}
+              </div>
+              <div className={cn(
+                'flex min-w-0 flex-1 flex-col overflow-hidden transition-all duration-300',
+                expanded ? 'max-w-[160px] opacity-100' : 'max-w-0 opacity-0',
+              )}>
+                <span className="truncate whitespace-nowrap text-sm font-medium text-foreground">{displayName}</span>
+                <span className="whitespace-nowrap text-xs text-muted-foreground">{user?.email ?? ''}</span>
+              </div>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" side="top" className="w-56">
+            <DropdownMenuItem asChild>
+              <Link href="/settings" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Configuración
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="gap-2 text-destructive focus:text-destructive"
+              onClick={handleLogout}
+            >
+              <LogOut className="h-4 w-4" />
+              Cerrar sesión
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </aside>
   )
