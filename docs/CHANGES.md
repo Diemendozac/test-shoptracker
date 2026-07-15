@@ -6,6 +6,24 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-083 — Bloquea Top productos/salud del seguimiento/estadísticas en Mis testeos para la prueba gratis
+
+**Fecha:** 2026-07-14
+**Tipo:** cambio de modelo de negocio (pricing/gating)
+
+**Por qué:** reportado en QA (vista "Prueba gratis" simulada desde admin) — `HeroSignalCard`, `ShootingStars` ("Top productos") y `KpiCards` ("Mayor salto hoy", "Salud del seguimiento", "Nuevos despegando", "En crecimiento", etc.) se renderizaban sin ninguna restricción de plan en `app/(dashboard)/tracker/page.tsx`. La restricción de CHANGE-079 solo cubría las columnas de la tabla (Score/Tendencia/Crecimiento), no estos tres componentes de resumen que muestran la misma clase de data calculada a nivel agregado.
+
+**Qué cambió:**
+- `app/(dashboard)/tracker/page.tsx` — `HeroSignalCard` se oculta por completo en trial. `ShootingStars` + `KpiCards` se reemplazan por un único banner de bloqueo ("Analíticas bloqueadas en la prueba gratis" + botón "Ver planes") en vez de intentar difuminar cada uno individualmente (son layouts complejos, blur por separado se veía desordenado).
+
+**Qué NO se revisó todavía:** `app/(dashboard)/dashboard/page.tsx` (Overview) tiene tarjetas de resumen similares (Tiendas activas, Candidatos en seguimiento, etc.) que podrían tener el mismo problema — no se tocó en este cambio, pendiente de que el usuario confirme si también debe bloquearse.
+
+**Verificación:** `npx next build` sin errores.
+
+**Riesgo:** solo (frontend puro).
+
+---
+
 ### CHANGE-082 — Fix: botones Ver/Link/Eliminar desbordaban sobre la columna de Ads en Mis testeos
 
 **Fecha:** 2026-07-14

@@ -12,7 +12,8 @@ import type { TrackerCandidate } from '../types'
 import { cn } from '@/lib/utils'
 import { useDashboard } from '../hooks/useDashboard'
 import { KpiCards } from '@/components/tracker/kpi-cards'
-import { Star, Store } from 'lucide-react'
+import { usePlanTier } from '@/lib/view-as'
+import { Star, Store, Lock } from 'lucide-react'
 
 const WINDOW_OPTIONS = [
   { label: 'Todos', days: 0 },
@@ -22,6 +23,7 @@ const WINDOW_OPTIONS = [
 ] as const
 
 export default function TrackerPage() {
+  const { canViewTrackerMetrics } = usePlanTier()
   const [windowDays, setWindowDays] = useState(0)
   const [trackerPreset, setTrackerPreset] = useState<'all' | 'favorites'>('all')
   const [favorites, setFavorites] = useState<Set<string>>(() => {
@@ -114,7 +116,7 @@ export default function TrackerPage() {
   return (
     <PageLayout>
       {/* Hero signal — best candidate across all tracked products */}
-      {!isTrackerLoading && <HeroSignalCard candidates={allCandidates} />}
+      {!isTrackerLoading && canViewTrackerMetrics && <HeroSignalCard candidates={allCandidates} />}
 
       {/* Window selector */}
       <div className="mb-4 flex items-center gap-2">
@@ -142,23 +144,41 @@ export default function TrackerPage() {
         )}
       </div>
 
-      {/* Shooting stars — top 5 */}
-      {isTrackerLoading || (windowDays > 0 && isWindowFetching) ? (
-        <div className="mb-6 space-y-2">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-14 animate-pulse rounded-lg bg-secondary" />
-          ))}
+      {/* Shooting stars — top 5 / KPI cards: bloqueados en la prueba gratis */}
+      {!canViewTrackerMetrics ? (
+        <div className="mb-6 flex flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-card py-16 text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+            <Lock className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-foreground">Analíticas bloqueadas en la prueba gratis</p>
+            <p className="mt-1 max-w-sm text-xs text-muted-foreground">
+              Top productos, salud del seguimiento y estadísticas se desbloquean al suscribirte.
+            </p>
+          </div>
+          <Link href="/pricing">
+            <Button size="sm" className="mt-1">Ver planes</Button>
+          </Link>
         </div>
       ) : (
-        <ShootingStars
-          candidates={raceTrackCandidates}
-          onRequestFullTable={() => {}}
-          showFullTable={false}
-        />
-      )}
+        <>
+          {isTrackerLoading || (windowDays > 0 && isWindowFetching) ? (
+            <div className="mb-6 space-y-2">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-14 animate-pulse rounded-lg bg-secondary" />
+              ))}
+            </div>
+          ) : (
+            <ShootingStars
+              candidates={raceTrackCandidates}
+              onRequestFullTable={() => {}}
+              showFullTable={false}
+            />
+          )}
 
-      {/* KPI cards */}
-      {!isTrackerLoading && <KpiCards candidates={allCandidates} />}
+          {!isTrackerLoading && <KpiCards candidates={allCandidates} />}
+        </>
+      )}
 
       {/* Product Leaderboard */}
       <div className="mb-3 flex items-center justify-between">
