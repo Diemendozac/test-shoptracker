@@ -4,6 +4,31 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-088 — Home: ranking de productos más vendidos arriba, imagen grande + carrusel de video (top 5)
+
+**Fecha:** 2026-07-14
+**Tipo:** feature (UI)
+
+**Por qué:** pedido del usuario — quería la sección "Ranking de productos más vendidos" más visible (arriba del todo, antes de KPIs/Acceso rápido) y con más peso visual: imagen de producto grande y, para los primeros 5, un carrusel horizontal con los video-ads que ya tiene Dropspy para ese candidato (mismo dato que usan `/pool` y el detalle de candidato vía `/candidates/{id}/ads`).
+
+**Qué cambió:**
+- `app/(dashboard)/home/page.tsx`:
+  - Reordena el layout: "Ranking de productos más vendidos" pasa a ser la primera sección del contenido (antes del strip de KPIs y de "Acceso rápido"). El panel "Qué hacer ahora" se separa del grid de dos columnas y queda como sección propia más abajo.
+  - El ranking se recorta a los primeros 5 productos, y **solo se muestran productos con video-ads activo** — pedido explícito del usuario ("si no tiene video no mostrar el producto"). Se logra en dos capas: (1) el query a `/dashboard/pool/winners` ahora pasa `hasVideo: true` (el backend ya soporta este filtro, usado también en `/pool`) en una query separada (`useGetPoolWinnersQuery({ page: 0, size: 5, hasVideo: true })`, variable `topVideoProducts`) para no vaciar las sugerencias del buscador, que siguen usando el query original de `topProducts`; (2) defensa en cliente — si tras cargar `/candidates/{id}/ads` el candidato no tiene ads activos reales, el componente de la card retorna `null` y el producto directamente no se renderiza (no solo el carrusel).
+  - Layout de card rediseñado tras feedback visual del usuario: columna izquierda angosta y fija (168px) con rank + imagen (80px) + título/tienda/precio/score, y a la derecha un carrusel de video mucho más grande (135×240px por thumbnail, antes 64×110px) que ocupa el resto del ancho de la card.
+  - Nuevo componente local `RankedVideoProductCard` (+ `ProductVideoThumb`): reutiliza `useGetProductAdsQuery`, `Ad`, `FloatingVideoPanel`, `useHoverPanel`, `isTestAd` de `components/tracker/product-ads.tsx`. Sigue el mismo criterio que `pool-winners.tsx` (CHANGE-082): en este contexto de pool/ranking global, los videos se muestran sin blur para todos los planes — solo el clic para abrir el anuncio en Meta queda gateado por `allowMetaLink` (plan Pro/Agency/Admin), vía `usePlanTier()`.
+  - Segunda ronda de feedback visual: el título de la sección pasa de "Ranking de productos más vendidos" a **"Mejores testeos"**. Se elimina por completo el strip de KPIs (Tiendas activas / En testeo / En alza) — variables `trackingCount` y `risingCount` quedaron sin uso y se removieron (`activeStores` se conserva, sigue usándose en el subtítulo del Hero). "Acceso rápido" pasa a ser la primera sección del contenido, antes de "Mejores testeos" (antes iba después del strip de KPIs). Dentro de cada card, el bloque de texto (título, nombre de tienda, precio) ahora queda centrado horizontalmente, en línea con la imagen que ya iba centrada.
+
+**Fuera de alcance (a propósito):** no se tocó el store de Redux ni se creó ningún endpoint nuevo — todo corre sobre RTK Query ya existente. Los productos #6-8 del ranking anterior ya no se muestran en home (decisión del usuario); siguen disponibles vía el link "Ver todos" → `/pool`.
+
+**Verificación:** `next build` sin errores; `tsc --noEmit` sin errores en los archivos tocados. No se pudo probar visualmente en el navegador headless porque `/home` requiere sesión autenticada (token Bearer en Redux, no cookie) — el dev server quedó corriendo en `localhost:3000` para que el usuario lo revise con su sesión real.
+
+**Nota de entorno (no relacionada con este cambio):** en esta sesión, este clon de `/tmp/scout-frontend` no tenía `.env.local` — `NEXT_PUBLIC_API_URL` llegaba `undefined` y **toda** la app (home, pool, tracker, dashboard) devolvía 404 en cada llamada al backend (`GET /undefined/dashboard/...`). Se creó `.env.local` (gitignorado, nunca se commitea) con `NEXT_PUBLIC_API_URL=https://mujertrendy-shoptracker-api.agb62a.easypanel.host/api` para desbloquear la verificación local. No es un bug de este CHANGE.
+
+**Riesgo:** solo (frontend puro, sin lógica de negocio/DB/API nuevas).
+
+---
+
 ### CHANGE-087 — Quita el toggle manual "Pago anticipado" del modal Agregar tienda
 
 **Fecha:** 2026-07-14

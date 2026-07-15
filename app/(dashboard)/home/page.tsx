@@ -6,15 +6,180 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { convertCurrency, currencySymbol } from '@/lib/currency'
 import { useCurrency } from '@/store/hooks'
-import { useGetStoreOverviewQuery, useGetTrackerCandidatesQuery, useGetPoolWinnersQuery } from '../services/dashboardApi'
+import { useGetStoreOverviewQuery, useGetTrackerCandidatesQuery, useGetPoolWinnersQuery, useGetProductAdsQuery } from '../services/dashboardApi'
 import { ScoreRing } from '@/components/dashboard/score-ring'
 import { PerformanceBadge } from '@/components/dashboard/performance-badge'
+import { FloatingVideoPanel, useHoverPanel, isTestAd, type Ad } from '@/components/tracker/product-ads'
+import { usePlanTier } from '@/lib/view-as'
+import type { PoolWinnerProduct } from '../types'
 import {
-  Search, Store, Target, Zap, Info,
+  Search, Store, Target, Zap,
   ArrowRight, Flame, BarChart3, Globe, FlaskConical, Clock, Package, TrendingUp, TrendingDown,
 } from 'lucide-react'
 import { DropspyIcon } from '@/components/ui/dropspy-logo'
 import { resolveDisplayLabel } from '@/lib/label-utils'
+
+// ─── Ranked video product card — imagen+info a la izquierda, carrusel de video
+// grande a la derecha. Si el candidato no tiene video-ads activos no se
+// renderiza nada (ni la card): "si no tiene video no mostrar el producto".
+// Mirrors the "siempre sin blur en contexto pool" rule from pool-winners.tsx
+// (CHANGE-082): en Ranking de productos más vendidos los videos se muestran sin
+// blur para todos los planes; solo el clic a Meta queda gateado por allowMetaLink.
+
+function ProductVideoThumb({
+  ad, allowMetaLink, onHover, onLeave,
+}: {
+  ad: Ad
+  allowMetaLink: boolean
+  onHover: (ad: Ad, rect: DOMRect) => void
+  onLeave: () => void
+}) {
+  const thumbRef = useRef<HTMLDivElement>(null)
+  const hasVideo = !!ad.video_url_r2
+  return (
+    <div
+      ref={thumbRef}
+      role="button"
+      tabIndex={0}
+      className={cn(
+        'relative h-[240px] w-[135px] shrink-0 overflow-hidden rounded-xl bg-secondary',
+        allowMetaLink ? 'cursor-pointer' : 'cursor-default',
+      )}
+      onMouseEnter={() => { if (thumbRef.current) onHover(ad, thumbRef.current.getBoundingClientRect()) }}
+      onMouseLeave={onLeave}
+      onClick={() => allowMetaLink && window.open(ad.ad_snapshot_url, '_blank', 'noopener,noreferrer')}
+      onKeyDown={e => { if (e.key === 'Enter' && allowMetaLink) window.open(ad.ad_snapshot_url, '_blank', 'noopener,noreferrer') }}
+    >
+      <img
+        src={ad.thumbnail_url || 'https://picsum.photos/seed/placeholder/400/700'}
+        alt=""
+        className="h-full w-full object-cover"
+      />
+      {hasVideo && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-black/50 backdrop-blur-sm">
+            <svg className="h-5 w-5 translate-x-0.5 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </div>
+        </div>
+      )}
+      {ad.days_running > 0 && (
+        <span className="absolute right-1.5 top-1.5 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
+          {ad.days_running}d
+        </span>
+      )}
+    </div>
+  )
+}
+
+function RankedVideoProductCard({
+  product, idx, sym, preferredCurrency, trackerPriceMap,
+}: {
+  product: PoolWinnerProduct
+  idx: number
+  sym: string
+  preferredCurrency: string
+  trackerPriceMap: Map<string, { price: number | null; currency: string | null }>
+}) {
+  const { data } = useGetProductAdsQuery(product.candidateId)
+  const { allowMetaLink } = usePlanTier()
+  const { hoveredAd, hoverPos, handleHover, handleLeave, handlePanelEnter, handlePanelLeave } = useHoverPanel()
+
+  const active = (data?.ads ?? []).filter(a => a.status === 'active' && !isTestAd(a))
+
+  // Todavía cargando — skeleton para no saltar de posición cuando resuelva
+  if (!data) {
+    return <div className="h-[266px] animate-pulse rounded-2xl border border-border bg-card" />
+  }
+  // Sin video activo — no se muestra el producto (además del filtro hasVideo del backend)
+  if (active.length === 0) return null
+
+  // Dedup by creative — same key pattern used in product-ads.tsx / pool-winners.tsx
+  const seen = new Set<string>()
+  const deduped = active.filter(ad => {
+    const key = (ad.thumbnail_url ?? ad.video_url_r2 ?? ad.id).split('?')[0]
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+
+  const tracked = trackerPriceMap.get(product.candidateId)
+  const rawPrice = tracked?.price ?? product.productPrice
+  const rawCurrency = tracked?.currency ?? product.currency ?? 'USD'
+  const displayPrice = rawPrice != null
+    ? convertCurrency(rawPrice, rawCurrency, preferredCurrency)
+    : null
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-border bg-card">
+      <div className="flex items-stretch gap-3 p-3">
+        {/* Left — rank + imagen + info, compacto */}
+        <Link
+          href={`/tracker/${product.candidateId}?storeId=${product.storeId}&from=home`}
+          className="flex w-[168px] shrink-0 flex-col gap-2 rounded-xl p-1.5 transition-colors hover:bg-secondary/40"
+        >
+          <div className="flex items-center justify-between">
+            <span className={cn(
+              'text-sm font-bold tabular-nums',
+              idx === 0 && 'text-yellow-500',
+              idx === 1 && 'text-slate-400',
+              idx === 2 && 'text-orange-500',
+              idx > 2 && 'text-muted-foreground',
+            )}>
+              #{idx + 1}
+            </span>
+            <ScoreRing score={product.performanceScore} size="sm" showLabel={false} />
+          </div>
+
+          {product.productImage ? (
+            <img src={product.productImage} alt="" className="h-20 w-20 self-center rounded-xl object-cover" />
+          ) : (
+            <div className="h-20 w-20 self-center rounded-xl bg-secondary" />
+          )}
+
+          <div className="min-w-0 text-center">
+            <p className="line-clamp-2 text-xs font-semibold leading-snug text-foreground">
+              {product.productTitle}
+            </p>
+            <div className="mt-1 flex justify-center">
+              <span className="max-w-full truncate rounded-md bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                {product.storeName}
+              </span>
+            </div>
+            {displayPrice != null && (
+              <p className="mt-1 text-xs font-medium text-muted-foreground tabular-nums">
+                {sym}{displayPrice.toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+              </p>
+            )}
+          </div>
+        </Link>
+
+        {/* Right — carrusel de video, grande */}
+        <div className="min-w-0 flex-1">
+          <div className="flex h-full gap-2 overflow-x-auto pb-1 scrollbar-thin">
+            {deduped.map(ad => (
+              <ProductVideoThumb
+                key={ad.id}
+                ad={ad}
+                allowMetaLink={allowMetaLink}
+                onHover={handleHover}
+                onLeave={handleLeave}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {hoveredAd && (
+        <FloatingVideoPanel
+          ad={hoveredAd} top={hoverPos.top} left={hoverPos.left}
+          onMouseEnter={handlePanelEnter} onMouseLeave={handlePanelLeave}
+        />
+      )}
+    </div>
+  )
+}
 
 // ─── Search result types ──────────────────────────────────────────────────────
 
@@ -46,11 +211,14 @@ export default function HomePage() {
   const { data: overview = [] } = useGetStoreOverviewQuery()
   const { data: tracker = [] } = useGetTrackerCandidatesQuery({})
   const { data: poolData } = useGetPoolWinnersQuery({ page: 0, size: 10 })
+  // Ranking de productos más vendidos: solo candidatos con video-ads activo
+  // (filtro hasVideo del backend, ya usado en /pool) — "si no tiene video no
+  // mostrar el producto". Query aparte para no vaciar las sugerencias del buscador.
+  const { data: videoPoolData } = useGetPoolWinnersQuery({ page: 0, size: 5, hasVideo: true })
 
   const topProducts = poolData?.locked ? [] : (poolData?.winners ?? [])
+  const topVideoProducts = videoPoolData?.locked ? [] : (videoPoolData?.winners ?? [])
   const activeStores = overview.length
-  const trackingCount = tracker.length
-  const risingCount = tracker.filter(c => (c.growthPct ?? 0) > 10).length
 
   // Tracker price is more current than pool snapshot — prefer it when available
   const trackerPriceMap = useMemo(() => {
@@ -311,35 +479,6 @@ export default function HomePage() {
 
       <div className="mx-auto max-w-6xl space-y-8 px-6 py-8">
 
-        {/* ── KPI strip ───────────────────────────────────────────────── */}
-        <div className="grid grid-cols-3 gap-4">
-          {[
-            { icon: Store,   label: 'Tiendas activas', value: activeStores,  color: 'text-blue-600 bg-blue-500/10',   tooltip: null },
-            { icon: Target,  label: 'En testeo',       value: trackingCount, color: 'text-violet-600 bg-violet-500/10', tooltip: null },
-            { icon: Zap,     label: 'En alza',         value: risingCount,   color: 'text-emerald-600 bg-emerald-500/10', tooltip: 'Productos de tus testeos cuyo rank mejoró más de un 10% en los últimos días' },
-          ].map(({ icon: Icon, label, value, color, tooltip }) => (
-            <div key={label} className="flex items-center gap-4 rounded-2xl border border-border bg-card px-5 py-4">
-              <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl', color)}>
-                <Icon className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground tabular-nums">{value}</p>
-                <div className="flex items-center gap-1">
-                  <p className="text-xs text-muted-foreground">{label}</p>
-                  {tooltip && (
-                    <div className="group relative">
-                      <Info className="h-3 w-3 cursor-default text-muted-foreground/50 hover:text-muted-foreground" />
-                      <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 w-52 -translate-x-1/2 rounded-lg border border-border bg-popover px-2.5 py-1.5 text-[11px] leading-snug text-muted-foreground opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                        {tooltip}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
         {/* ── Quick actions ────────────────────────────────────────────── */}
         <div>
           <h2 className="mb-3 text-sm font-semibold text-foreground">Acceso rápido</h2>
@@ -359,139 +498,83 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* ── Two-column: top products + insights ─────────────────────── */}
-        <div className="grid grid-cols-[1fr_320px] gap-6">
-
-          {/* Top productos del pool */}
-          <div className="min-w-0">
-            <div className="mb-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Flame className="h-4 w-4 text-orange-500" />
-                <h2 className="text-sm font-semibold text-foreground">Ranking de productos más vendidos</h2>
-              </div>
-              <Link href="/pool" className="flex items-center gap-1 text-xs text-primary hover:underline">
-                Ver todos <ArrowRight className="h-3 w-3" />
-              </Link>
+        {/* ── Mejores testeos — top 5, imagen grande + carrusel de video ── */}
+        <div>
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Flame className="h-4 w-4 text-orange-500" />
+              <h2 className="text-sm font-semibold text-foreground">Mejores testeos</h2>
             </div>
-
-            <div className="overflow-hidden rounded-2xl border border-border bg-card">
-              {topProducts.length === 0 ? (
-                <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-                  <BarChart3 className="h-8 w-8 text-muted-foreground/30" />
-                  <p className="text-sm text-muted-foreground">Los top productos aparecerán aquí</p>
-                  <Link href="/pool" className="text-xs text-primary hover:underline">Explorar pool →</Link>
-                </div>
-              ) : (
-                <div className="divide-y divide-border/50">
-                  {topProducts.slice(0, 8).map((product, idx) => (
-                      <Link
-                        key={product.candidateId}
-                        href={`/tracker/${product.candidateId}?storeId=${product.storeId}&from=home`}
-                        className="flex h-[72px] items-center gap-3 overflow-hidden px-4 transition-colors hover:bg-secondary/30"
-                      >
-                        {/* Rank — 32px */}
-                        <span className={cn(
-                          'w-8 shrink-0 text-center text-xs font-bold tabular-nums',
-                          idx === 0 && 'text-yellow-500',
-                          idx === 1 && 'text-slate-400',
-                          idx === 2 && 'text-orange-500',
-                          idx > 2 && 'text-muted-foreground',
-                        )}>
-                          #{idx + 1}
-                        </span>
-
-                        {/* Image — 48px */}
-                        {product.productImage ? (
-                          <img src={product.productImage} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" />
-                        ) : (
-                          <div className="h-12 w-12 shrink-0 rounded-lg bg-secondary" />
-                        )}
-
-                        {/* Info — flex-1 */}
-                        <div className="min-w-0 flex-1 overflow-hidden">
-                          <p className="truncate whitespace-nowrap text-sm font-medium text-foreground">
-                            {product.productTitle.length > 55 ? product.productTitle.slice(0, 55) + '…' : product.productTitle}
-                          </p>
-                          <div className="mt-0.5 flex items-center gap-2">
-                            <span className="max-w-[120px] truncate rounded-md bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                              {product.storeName}
-                            </span>
-                            {product.currentRank && (
-                              <span className="shrink-0 text-[10px] text-muted-foreground">#{product.currentRank}</span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Price — use tracker price if available (more current than pool snapshot) */}
-                        {(() => {
-                          const tracked = trackerPriceMap.get(product.candidateId)
-                          const rawPrice = tracked?.price ?? product.productPrice
-                          const rawCurrency = tracked?.currency ?? product.currency ?? 'USD'
-                          const displayPrice = rawPrice != null
-                            ? convertCurrency(rawPrice, rawCurrency, preferredCurrency)
-                            : null
-                          return (
-                            <span className="w-[100px] shrink-0 text-right text-xs font-medium text-muted-foreground tabular-nums">
-                              {displayPrice != null ? `${sym}${displayPrice.toLocaleString('es-CO', { maximumFractionDigits: 0 })}` : ''}
-                            </span>
-                          )
-                        })()}
-
-                        {/* Score ring — 48px */}
-                        <div className="flex w-12 shrink-0 items-center justify-center">
-                          <ScoreRing score={product.performanceScore} size="sm" showLabel={false} />
-                        </div>
-                      </Link>
-                  ))}
-                </div>
-              )}
-            </div>
+            <Link href="/pool" className="flex items-center gap-1 text-xs text-primary hover:underline">
+              Ver todos <ArrowRight className="h-3 w-3" />
+            </Link>
           </div>
 
-          {/* Insights panel */}
-          <div>
-            <div className="mb-3 flex items-center gap-2">
-              <Zap className="h-4 w-4 text-primary" />
-              <h2 className="text-sm font-semibold text-foreground">Qué hacer ahora</h2>
+          {topVideoProducts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-card py-12 text-center">
+              <BarChart3 className="h-8 w-8 text-muted-foreground/30" />
+              <p className="text-sm text-muted-foreground">Los top productos aparecerán aquí</p>
+              <Link href="/pool" className="text-xs text-primary hover:underline">Explorar pool →</Link>
             </div>
+          ) : (
+            <div className="space-y-3">
+              {topVideoProducts.slice(0, 5).map((product, idx) => (
+                <RankedVideoProductCard
+                  key={product.candidateId}
+                  product={product}
+                  idx={idx}
+                  sym={sym}
+                  preferredCurrency={preferredCurrency}
+                  trackerPriceMap={trackerPriceMap}
+                />
+              ))}
+            </div>
+          )}
+        </div>
 
-            <div className="space-y-2">
-              {trackerInsights.length === 0 ? (
-                <div className="rounded-2xl border border-border bg-card px-4 py-6 text-center">
-                  <Clock className="mx-auto mb-2 h-6 w-6 text-muted-foreground/30" />
-                  <p className="text-xs text-muted-foreground">Los insights aparecen después de algunos días de tracking</p>
-                </div>
-              ) : (
-                trackerInsights.slice(0, 6).map((insight, i) => {
-                  const iconColor =
-                    insight.variant === 'success' ? 'text-emerald-500' :
-                    insight.variant === 'danger'  ? 'text-red-500' :
-                    'text-primary'
-                  return (
-                    <Link
-                      key={i}
-                      href={insight.ctaPath}
-                      className="flex h-[72px] items-center gap-3 overflow-hidden rounded-xl border border-border bg-card px-4 transition-colors hover:bg-secondary/60"
-                    >
-                      <insight.icon className={`h-4 w-4 shrink-0 ${iconColor}`} />
-                      <div className="min-w-0 flex-1 overflow-hidden">
-                        <p className="text-xs leading-snug text-foreground"
-                          style={{
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden',
-                          }}
-                        >
-                          {insight.message}
-                        </p>
-                        <p className="mt-1 text-[10px] font-medium text-primary">{insight.cta} →</p>
-                      </div>
-                    </Link>
-                  )
-                })
-              )}
-            </div>
+        {/* ── Insights panel ───────────────────────────────────────────── */}
+        <div>
+          <div className="mb-3 flex items-center gap-2">
+            <Zap className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-semibold text-foreground">Qué hacer ahora</h2>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            {trackerInsights.length === 0 ? (
+              <div className="col-span-2 rounded-2xl border border-border bg-card px-4 py-6 text-center">
+                <Clock className="mx-auto mb-2 h-6 w-6 text-muted-foreground/30" />
+                <p className="text-xs text-muted-foreground">Los insights aparecen después de algunos días de tracking</p>
+              </div>
+            ) : (
+              trackerInsights.slice(0, 6).map((insight, i) => {
+                const iconColor =
+                  insight.variant === 'success' ? 'text-emerald-500' :
+                  insight.variant === 'danger'  ? 'text-red-500' :
+                  'text-primary'
+                return (
+                  <Link
+                    key={i}
+                    href={insight.ctaPath}
+                    className="flex h-[72px] items-center gap-3 overflow-hidden rounded-xl border border-border bg-card px-4 transition-colors hover:bg-secondary/60"
+                  >
+                    <insight.icon className={`h-4 w-4 shrink-0 ${iconColor}`} />
+                    <div className="min-w-0 flex-1 overflow-hidden">
+                      <p className="text-xs leading-snug text-foreground"
+                        style={{
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        {insight.message}
+                      </p>
+                      <p className="mt-1 text-[10px] font-medium text-primary">{insight.cta} →</p>
+                    </div>
+                  </Link>
+                )
+              })
+            )}
           </div>
         </div>
 
