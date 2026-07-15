@@ -135,14 +135,19 @@ export function AdsCell({ candidateId }: { candidateId: string }) {
         )}
       </div>
       {uniqueAdvertisers.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {uniqueAdvertisers.map(name => (
+        <div className="flex flex-wrap items-center gap-1">
+          {uniqueAdvertisers.slice(0, 2).map(name => (
             <AdvertiserBadge
               key={name}
               advertiserName={name}
               allowMetaLink={allowMetaLink}
             />
           ))}
+          {uniqueAdvertisers.length > 2 && (
+            <span className="text-[10px] font-semibold tabular-nums text-muted-foreground">
+              +{uniqueAdvertisers.length - 2}
+            </span>
+          )}
         </div>
       )}
       {hoveredAd && canViewAds && (
@@ -463,7 +468,7 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
       {/* ── Table ── */}
       <div className="overflow-hidden rounded-xl border border-border bg-card">
         {/* Header */}
-        <div className="grid grid-cols-[32px_64px_minmax(0,1fr)_110px_60px_48px_72px_110px_90px_140px_60px] items-center gap-3 border-b border-border bg-secondary/30 px-4 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        <div className="grid grid-cols-[32px_64px_minmax(0,1fr)_110px_60px_48px_72px_110px_90px_140px_150px] items-center gap-3 border-b border-border bg-secondary/30 px-4 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           <div>#</div>
           <div />
           <button onClick={() => handleSort('productTitle')} className="group/th flex items-center gap-1.5 text-left hover:text-foreground transition-colors">
@@ -546,7 +551,7 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
                   key={candidate.candidateId}
                   className="transition-colors hover:bg-secondary/30"
                 >
-                <div className="grid grid-cols-[32px_64px_minmax(0,1fr)_110px_60px_48px_72px_110px_90px_140px_60px] items-center gap-3 px-4 py-3">
+                <div className="grid grid-cols-[32px_64px_minmax(0,1fr)_110px_60px_48px_72px_110px_90px_140px_150px] items-center gap-3 px-4 py-3">
                   {/* # */}
                   <button
                     onClick={() => onToggleFavorite(candidate.candidateId)}
@@ -712,10 +717,12 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
                   <ContextBar rank={candidate.currentRank} total={candidate.storeProductCount} />
 
                   {/* Ads */}
-                  <AdsCell candidateId={candidate.candidateId} />
+                  <div className="self-start">
+                    <AdsCell candidateId={candidate.candidateId} />
+                  </div>
 
                   {/* Acción */}
-                  <div className="flex items-center justify-center gap-1.5">
+                  <div className="flex items-center justify-center gap-1.5 self-start">
                     <Link
                       href={`/tracker/${candidate.candidateId}?storeId=${candidate.storeId}`}
                       className="flex items-center gap-1 rounded-lg bg-secondary px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"

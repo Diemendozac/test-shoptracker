@@ -24,6 +24,25 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 ---
 
+### CHANGE-084 — Fix real de la superposición Acción/Ads en Mis testeos (CHANGE-082 no era suficiente)
+
+**Fecha:** 2026-07-14
+**Tipo:** fix (UI)
+
+**Por qué:** reportado de nuevo por el usuario con captura — el fix anterior (CHANGE-082, ampliar la columna Acción de 60px a 150px) no resolvía el problema real. La causa raíz era otra: `AdsCell` renderiza los badges de anunciante (`uniqueAdvertisers`) sin ningún límite, con `flex-wrap` — cuando un candidato tiene varios anunciantes distintos, esa celda crece varias líneas de alto (visto en captura: una fila con 5 badges apilados). Como la fila usa `items-center`, las columnas de contenido corto (Score, Acción) quedaban centradas verticalmente dentro de esa fila anormalmente alta, generando la superposición visual.
+
+**Qué cambió:**
+- `components/tracker/tracker-table.tsx` — `AdsCell` ahora limita los badges de anunciante a 2 visibles + contador "+N", igual que ya se hacía con los thumbnails de video (3 + "+N"). Esto evita que la celda de Ads crezca sin límite.
+- Las celdas de Ads y Acción se anclan con `self-start` en vez de heredar el `items-center` de la fila, como defensa adicional si alguna fila crece por otra razón (ej. título de producto muy largo).
+
+**Qué NO cambió:** no se tocó el ancho de columnas del grid (el de CHANGE-082 se mantiene, era una mejora válida, solo insuficiente por sí sola).
+
+**Verificación:** `npx next build` sin errores.
+
+**Riesgo:** solo (CSS/JSX, sin lógica de negocio).
+
+---
+
 ### CHANGE-082 — Fix: botones Ver/Link/Eliminar desbordaban sobre la columna de Ads en Mis testeos
 
 **Fecha:** 2026-07-14
