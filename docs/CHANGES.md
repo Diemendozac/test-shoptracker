@@ -4,6 +4,24 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-087 — Quita el toggle manual "Pago anticipado" del modal Agregar tienda
+
+**Fecha:** 2026-07-14
+**Tipo:** fix (UX / redundancia)
+
+**Por qué:** reportado por el usuario — el modal "Agregar nueva tienda" tenía un toggle para marcar manualmente si la tienda usa pago anticipado, pero el backend ya lo detecta solo. Se confirmó en `StoreService.java:99-100` (repo `ShopTracker`): en la creación, si `pagoAnticipado` llega `null` en el request, cae a `detectPagoAnticipado(baseUrl)`. El toggle manual era redundante y podía introducir un valor incorrecto que el backend ya no sobreescribe automáticamente en syncs posteriores (`StoreSyncService.java:124-125` solo re-detecta si el valor actual no es `true`).
+
+**Qué cambió:**
+- `app/(dashboard)/stores/components/AddStoreModal.tsx` — elimina el estado local `pagoAnticipado`/`setPagoAnticipado`, el toggle UI, y deja de enviar el campo `pagoAnticipado` en el `CreateStoreRequest` al crear una tienda.
+
+**Fuera de alcance (a propósito):** el toggle de `EditStoreModal.tsx` para tiendas ya existentes no se tocó — el usuario solo pidió el flujo de creación.
+
+**Verificación:** `next build` sin errores (tras el cambio, sin referencias sueltas a `pagoAnticipado` en el archivo).
+
+**Riesgo:** solo (frontend puro, campo opcional en un tipo compartido; backend ya soporta su ausencia).
+
+---
+
 ### CHANGE-086 — Fix: tarjetas de precios descentradas (grid reservaba una 4ta columna que ya no existe)
 
 **Fecha:** 2026-07-14

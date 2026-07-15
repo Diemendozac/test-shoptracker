@@ -70,7 +70,6 @@ export function AddStoreModal() {
 
   const [storeName, setStoreName]           = useState<FieldState>(makeField())
   const [baseUrl, setBaseUrl]               = useState<FieldState>(makeField())
-  const [pagoAnticipado, setPagoAnticipado] = useState(false)
   const [submitError, setSubmitError]       = useState<string | null>(null)
   const [subscribedInfo, setSubscribedInfo] = useState(false)
 
@@ -79,7 +78,6 @@ export function AddStoreModal() {
     if (!isAddModalOpen) {
       setStoreName(makeField())
       setBaseUrl(makeField())
-      setPagoAnticipado(false)
       setSubmitError(null)
       setSubscribedInfo(false)
     }
@@ -99,10 +97,9 @@ export function AddStoreModal() {
     try {
       const parsed = new URL(baseUrl.value.trim())
       const result = await addStore({
-        storeName:      storeName.value.trim(),
-        baseUrl:        parsed.origin,
-        bestsellerUrl:  parsed.origin + DEFAULT_BESTSELLER_PATH,
-        pagoAnticipado: pagoAnticipado || undefined,
+        storeName:     storeName.value.trim(),
+        baseUrl:       parsed.origin,
+        bestsellerUrl: parsed.origin + DEFAULT_BESTSELLER_PATH,
       })
       if (result?.subscribedToExisting) {
         setSubscribedInfo(true)
@@ -182,30 +179,6 @@ export function AddStoreModal() {
             </p>
             <PreviewRow label="Más vendidos" value={baseUrl.value.trim().replace(/\/$/, '') + DEFAULT_BESTSELLER_PATH} />
           </div>
-
-          {/* ── pago anticipado ── */}
-          <label className="flex cursor-pointer items-center justify-between rounded-lg border border-border bg-secondary/30 px-3 py-2.5">
-            <div>
-              <p className="text-xs font-medium text-foreground">Pago anticipado</p>
-              <p className="text-[10px] text-muted-foreground">La tienda usa modelo de pago antes del envío</p>
-            </div>
-            <button
-              type="button"
-              disabled={isCreating}
-              onClick={() => setPagoAnticipado((v) => !v)}
-              className={cn(
-                'relative h-5 w-9 rounded-full transition-colors focus:outline-none disabled:opacity-50',
-                pagoAnticipado ? 'bg-primary' : 'bg-secondary'
-              )}
-            >
-              <span
-                className={cn(
-                  'absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform',
-                  pagoAnticipado && 'translate-x-4'
-                )}
-              />
-            </button>
-          </label>
 
           {/* subscribed to existing store */}
           {subscribedInfo && (
