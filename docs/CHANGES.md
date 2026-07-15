@@ -28,6 +28,26 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 **Riesgo:** solo (una línea, sin tocar Redux ni lógica de negocio).
 
+### CHANGE-081 — Video ads visibles para todos los planes, incluida la prueba gratis
+
+**Fecha:** 2026-07-14
+**Tipo:** cambio de modelo de negocio (pricing/gating) — corrige CHANGE-074/077
+
+**Por qué:** reportado en QA sobre "Explorar testeos" (pool global) — la prueba gratis veía los thumbnails de video ads borrosos con candado. El usuario decidió que el video sí debe verse desde la prueba; ya no es parte de las restricciones del trial.
+
+**Qué cambió:**
+- `lib/view-as.tsx` — `canViewAds` pasa de `!isTrial` a `true` incondicional. Afecta tanto `components/tracker/pool-winners.tsx` (Explorar testeos) como `components/tracker/tracker-table.tsx` (Mis testeos) y `components/tracker/product-ads.tsx`, que ya consumían este mismo flag.
+
+**Qué NO cambió:** `allowMetaLink` (`isPro`) sigue igual — el link para abrir el ad en Meta Ads Library sigue siendo exclusivo de Pro/Agency/Admin. `maxPoolPage` y `canViewTrackerMetrics` (score/tendencia/crecimiento bloqueados en Mis testeos) tampoco cambiaron.
+
+**Restricciones vigentes de la prueba gratis, actualizado:** solo página 1 del pool + score/tendencia/crecimiento bloqueados en Mis testeos + expiración a los 7 días (aproximación frontend). Ya no incluye: bloqueo de agregar tiendas, bloqueo de testear candidatos, ni bloqueo de video ads.
+
+**Verificación:** `npx next build` sin errores.
+
+**Riesgo:** solo (frontend puro).
+
+---
+
 ### CHANGE-080 — Mis testeos: sin candidatos, guiar a agregar tienda en vez de tabla vacía
 
 **Fecha:** 2026-07-14
