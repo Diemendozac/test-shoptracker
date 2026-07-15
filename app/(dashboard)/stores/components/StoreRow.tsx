@@ -13,6 +13,7 @@ import {
   DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import type { StoreResponse } from '../types'
+import type { TrackerCandidate } from '@/app/(dashboard)/types'
 import { getStoreStatus } from '../utils/storeStatus'
 import type { StoreQuality } from '@/lib/store-quality'
 import { useGetStoreAdsCountQuery } from '@/app/(dashboard)/services/dashboardApi'
@@ -91,6 +92,7 @@ interface StoreRowProps {
   store: StoreResponse
   quality: StoreQuality | null
   qualityLoading?: boolean
+  topCandidates: TrackerCandidate[]
   isSyncing: boolean
   isDeleting: boolean
   onSync: () => void
@@ -98,10 +100,10 @@ interface StoreRowProps {
   onEdit: () => void
 }
 
-export function StoreRow({ store, quality, qualityLoading, isSyncing, isDeleting, onSync, onDelete, onEdit }: StoreRowProps) {
+export function StoreRow({ store, quality, qualityLoading, topCandidates, isSyncing, isDeleting, onSync, onDelete, onEdit }: StoreRowProps) {
   return (
     <div className={cn(
-      'grid grid-cols-[40px_1fr_96px_72px_96px_80px_96px_80px] items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/30',
+      'grid grid-cols-[40px_1fr_96px_140px_96px_80px_96px_80px] items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/30',
       !store.isActive && 'opacity-50',
     )}>
       {/* Logo */}
@@ -142,14 +144,34 @@ export function StoreRow({ store, quality, qualityLoading, isSyncing, isDeleting
         }
       </div>
 
-      {/* Testeados */}
-      <div className="flex flex-col items-center justify-center gap-0.5">
+      {/* Testeos — círculos con la foto de los mejores testeos de la tienda */}
+      <div className="flex items-center justify-center gap-1">
         {qualityLoading ? (
-          <div className="h-3 w-6 animate-pulse rounded bg-secondary" />
-        ) : quality ? (
-          <span className="text-sm font-semibold tabular-nums text-foreground">
-            {quality.candidateCount}
-          </span>
+          <div className="flex gap-1">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-[30px] w-[30px] shrink-0 animate-pulse rounded-full bg-secondary" />
+            ))}
+          </div>
+        ) : topCandidates.length > 0 ? (
+          topCandidates.map(c => (
+            <Link
+              key={c.candidateId}
+              href={`/tracker/${c.candidateId}?storeId=${store.storeId}`}
+              title={c.productTitle}
+              onClick={e => e.stopPropagation()}
+              className="shrink-0 transition-transform hover:scale-110"
+            >
+              {c.productImage ? (
+                <img
+                  src={c.productImage}
+                  alt=""
+                  className="h-[30px] w-[30px] rounded-full border border-border object-cover"
+                />
+              ) : (
+                <div className="h-[30px] w-[30px] rounded-full border border-border bg-secondary" />
+              )}
+            </Link>
+          ))
         ) : (
           <span className="text-xs text-muted-foreground/40">—</span>
         )}

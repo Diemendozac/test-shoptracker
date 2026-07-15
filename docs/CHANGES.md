@@ -4,6 +4,45 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-090 — /stores: columna "Testeos" muestra la foto de los mejores testeos por tienda
+
+**Fecha:** 2026-07-14
+**Tipo:** feature (UI)
+
+**Por qué:** pedido del usuario — en "Mis tiendas" (`/stores`), la columna "Testeos" solo mostraba un número (cantidad de candidatos testeados). Quería ver, en círculos, los mejores testeos de cada tienda. Primer intento con `ScoreRing` (círculo de score, como en el ranking de home/pool); el usuario corrigió: quería la **foto del producto**, no el score.
+
+**Qué cambió:**
+- `app/(dashboard)/stores/page.tsx`: nuevo `useMemo` `topCandidatesByStore` — agrupa `allCandidates` (ya cargados vía `useGetTrackerCandidatesQuery({})`, usado también para `qualityMap`) por `storeId`, ordena por `performanceScore` descendente y toma los primeros 3. Se pasa como prop `topCandidates` a `StoreRow`. Columna "Testeos" del grid pasa de 72px a 140px para que quepan los círculos.
+- `app/(dashboard)/stores/components/StoreRow.tsx`: la columna "Testeados" (antes un número) ahora renderiza hasta 3 círculos de 30px con `productImage` (`object-cover rounded-full`, fallback a círculo gris si no hay imagen), cada uno un link a `/tracker/{candidateId}` con el título del producto como tooltip nativo (`title`). Si la tienda no tiene candidatos, se mantiene el `—` de antes.
+- `components/dashboard/score-ring.tsx`: el tamaño `xs` agregado en el primer intento se revirtió al no usarse (evitar código muerto en un componente compartido).
+
+**Fuera de alcance (a propósito):** el conteo total de testeados (`quality.candidateCount`) ya no se muestra en esta columna — sigue disponible en el tooltip de la columna "Calidad" (`QualityStars`), que no se tocó.
+
+**Verificación:** `next build` sin errores; `tsc --noEmit` sin errores en los archivos tocados.
+
+**Riesgo:** solo (frontend puro; cambio aditivo en un componente compartido, sin tocar lógica de negocio ni endpoints).
+
+---
+
+### CHANGE-089 — Quita "Podio de Winners" de Overview (/dashboard)
+
+**Fecha:** 2026-07-14
+**Tipo:** feature (UI / limpieza)
+
+**Por qué:** pedido del usuario tras revisar `/dashboard` (Overview) en producción — quería quitar la sección "Podio de Winners" de esa vista.
+
+**Qué cambió:**
+- `app/(dashboard)/dashboard/page.tsx` — quita el import y el uso de `<WinnerPodiumOverview />` (iba entre el strip de stats y "Top performers").
+- `components/dashboard/winner-podium-overview.tsx` — eliminado. Se confirmó por grep que no tenía ninguna otra referencia en el repo antes de borrarlo.
+
+**Fuera de alcance (a propósito):** `components/tracker/winner-podium.tsx` es un componente distinto (mismo nombre de sección, `WinnerPodium` con selector de período 7d/14d/30d/50d) — no se tocó porque el usuario solo pidió quitarlo de Overview. **Hallazgo aparte (no accionado):** al verificar, ese componente no tiene ningún importador en todo el repo — parece código muerto ya, de antes de esta sesión. Se deja registrado para que el usuario decida si vale la pena limpiarlo; no se tocó por estar fuera del pedido de esta sesión.
+
+**Verificación:** `next build` sin errores; `tsc --noEmit` sin errores en el archivo tocado.
+
+**Riesgo:** solo (frontend puro, elimina una sección de UI ya no deseada).
+
+---
+
 ### CHANGE-088 — Home: ranking de productos más vendidos arriba, imagen grande + carrusel de video (top 5)
 
 **Fecha:** 2026-07-14

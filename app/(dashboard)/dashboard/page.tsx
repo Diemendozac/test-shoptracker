@@ -8,7 +8,6 @@ import { StoreCard } from '@/components/dashboard/store-card'
 import { Store, Target, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react'
 import { useDashboard } from '../hooks/useDashboard'
 import type { DashboardItem } from '@/lib/types'
-import { WinnerPodiumOverview } from '@/components/dashboard/winner-podium-overview'
 
 const TEST_KEYWORDS = /prueba|test|scout|demo|ejemplo/i
 
@@ -57,8 +56,6 @@ export default function DashboardPage() {
           variant="success"
         />
       </div>
-
-      <WinnerPodiumOverview />
 
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-foreground">{t('topPerformers.title')}</h2>
