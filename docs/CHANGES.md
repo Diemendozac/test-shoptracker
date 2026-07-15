@@ -4,6 +4,20 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-086 — Fix: tarjetas de precios descentradas (grid reservaba una 4ta columna que ya no existe)
+
+**Fecha:** 2026-07-14
+**Tipo:** fix (UI)
+
+**Por qué:** desde que se quitó el plan Free (CHANGE-074), `PLANS` en `/pricing` tiene 3 elementos, pero el grid seguía en `xl:grid-cols-4` — las 3 tarjetas quedaban alineadas a la izquierda con una columna vacía a la derecha, en vez de centradas.
+
+**Qué cambió:**
+- `app/(marketing)/pricing/page.tsx` — grid de tarjetas pasa de `md:grid-cols-2 xl:grid-cols-4` a `md:grid-cols-3` con `mx-auto max-w-4xl` para no quedar demasiado ancho con solo 3 columnas.
+
+**Verificación:** `npx next build` sin errores.
+
+**Riesgo:** solo (una clase CSS).
+
 ---
 
 ### CHANGE-085 — /pricing detecta sesión activa; checkout real vía Mercado Pago (Lemon Squeezy descartado)

@@ -213,7 +213,7 @@ export default function PricingPage() {
           </div>
 
           {/* Cards */}
-          <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3 mx-auto max-w-4xl">
             {PLANS.map((plan) => {
               const price = annual && plan.annual > 0 ? plan.annual : plan.monthly
               const monthlySavings = plan.monthly * 12 - plan.annualTotal
