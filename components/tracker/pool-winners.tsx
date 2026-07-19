@@ -315,7 +315,11 @@ export function PoolWinnersSection({
     return <PoolPageLocked />
   }
 
-  if (data.winners.length === 0) {
+  // Solo el pool "de verdad" vacío (sin búsqueda ni filtros) se queda sin barra de búsqueda —
+  // si el usuario tiene un filtro/búsqueda activa y no hay resultados, se sigue de largo hasta
+  // el render principal: la barra queda visible y el mensaje de "sin resultados" (más abajo,
+  // filtered.length === 0) es específico en vez de sugerir que el pool entero está vacío.
+  if (data.winners.length === 0 && !hasActiveFilters) {
     return (
       <div className="mb-6 rounded-2xl border border-border bg-card p-6">
         <p className="text-sm text-muted-foreground">
@@ -552,7 +556,9 @@ export function PoolWinnersSection({
             </div>
           ) : (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              No hay productos que coincidan con los filtros.
+              {search
+                ? <>No encontramos productos relacionados con &ldquo;{search}&rdquo;.</>
+                : 'No hay productos que coincidan con los filtros.'}
             </p>
           )
         ) : (

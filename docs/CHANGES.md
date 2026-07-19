@@ -4,6 +4,29 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-094 — Pool: una búsqueda sin resultados ya no esconde la barra de búsqueda
+
+**Fecha:** 2026-07-19
+**Tipo:** bug fix (UI)
+
+**Por qué:** Daniel reportó en producción (`getdropspy.com/pool`) que al no haber resultados, la página mostraba "El pool aún no tiene testeos suficientes. Vuelve mañana después del sync automático." — un mensaje que sugiere que el pool entero está vacío, y de paso hace desaparecer la barra de búsqueda y los filtros, dejando al usuario sin forma de intentar otra búsqueda sin recargar. Su pedido: "si no hay [resultados] no tiene por qué eliminar todo de golpe, solo decir que no hay productos que se relacionen con esa palabra."
+
+**Causa raíz:** `PoolWinnersSection` tenía un `return` temprano en `data.winners.length === 0` (línea ~318) que reemplazaba TODO el árbol de render — incluyendo la barra de búsqueda, que vive más abajo en el mismo componente — por el mensaje genérico de "pool vacío". Ese mensaje tiene sentido cuando de verdad no hay datos (pool recién creado, sin sync todavía), pero no cuando el usuario tiene una búsqueda/filtro activo y simplemente no hay coincidencias — ahí ya existía un mensaje mejor (`filtered.length === 0`, línea ~544, "No hay productos que coincidan con los filtros.") que nunca se alcanzaba a mostrar porque el return temprano cortaba antes.
+
+**Qué cambió:**
+- `components/tracker/pool-winners.tsx`: el return temprano del mensaje genérico ahora es `data.winners.length === 0 && !hasActiveFilters` — solo se activa cuando de verdad no hay ningún filtro/búsqueda puesto. Con un filtro activo, el render sigue de largo: la barra de búsqueda y los filtros quedan visibles, y cae en el mensaje ya existente de "sin resultados".
+- Se hizo ese mensaje específico para búsquedas: si `search` tiene texto, dice `No encontramos productos relacionados con "{search}".` en vez del genérico "No hay productos que coincidan con los filtros." (que se mantiene para cuando el filtro activo es de categoría/moneda/fecha sin texto de búsqueda).
+
+**Verificado en navegador real** (no solo `tsc`): con el backend local corriendo, se probó `/pool` logueado — una búsqueda sin coincidencias mantiene la barra de búsqueda, los filtros y el header de la tabla visibles, con el mensaje "No encontramos productos relacionados con 'zzzznoexiste'." y un link "Limpiar" a mano. Una búsqueda con coincidencias (`sonic`) sigue funcionando igual que antes, y de paso se confirmó visualmente que la sección del archivo (CHANGE-093) renderiza correctamente debajo.
+
+**Fuera de alcance:** no se tocó el mensaje de "Aún no tienes favoritos" (otro caso de `filtered.length === 0`, ya estaba bien).
+
+**Verificación:** `tsc --noEmit` sin errores nuevos en el archivo tocado.
+
+**Riesgo:** solo (frontend puro, un cambio de condición + copy).
+
+---
+
 ### CHANGE-093 — Pool: cablear la búsqueda al archivo (`/pool/search`, FIX-053 backend)
 
 **Fecha:** 2026-07-19
