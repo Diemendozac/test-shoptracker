@@ -336,7 +336,7 @@ export function PoolWinnersSection({
           <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Buscar producto…"
+            placeholder="Busca por palabra clave (IA)…"
             value={search}
             onChange={e => onSearchChange(e.target.value)}
             className="h-8 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"

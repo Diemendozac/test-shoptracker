@@ -4,6 +4,26 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-092 — Pool: placeholder de búsqueda insinúa que entiende IA/keywords
+
+**Fecha:** 2026-07-19
+**Tipo:** copy (UI, sin lógica)
+
+**Por qué:** pedido del usuario — quiere que la gente entienda por intuición, con solo mirar la barra de búsqueda del pool, que puede escribir una palabra clave/concepto (no el nombre exacto del producto) y el sistema lo va a encontrar. Es la contraparte de frontend de FIX-053 del backend (`GET /pool/search`, expansión de query vía Claude Haiku) — **solo el texto cambió en esta entrada, la barra todavía no está cableada al endpoint nuevo**, eso queda para una siguiente entrada cuando se decida cablearlo.
+
+**Qué cambió:**
+- `components/tracker/pool-winners.tsx:339`: placeholder del input de búsqueda del pool, de `"Buscar producto…"` a `"Busca por palabra clave (IA)…"`.
+
+**Fuera de alcance (a propósito):**
+- `components/tracker/tracker-table.tsx:363` tiene el mismo placeholder `"Buscar producto…"` pero es la tabla de "Mis testeos" (candidatos propios del usuario, no el pool/archivo) — no se tocó porque FIX-053 es específico del pool, no de esta vista.
+- No se cableó `onSearchChange` a `/pool/search` — la barra sigue llamando al `q` de `/pool/winners` como antes. Cablear el endpoint de archivo es un cambio de lógica, no de copy, y queda pendiente de que se decida el diseño (¿se combina con `/pool/winners` en un solo fetch, o es una sección aparte cuando no hay resultados en el pool activo?).
+
+**Verificación:** `pnpm install` limpio en clon fresco (el clon anterior de `/tmp/scout-frontend` se corrompió — mismo patrón que le pasó a `/tmp/scout-backend` el 2026-07-17, ver `log.md` del vault), `tsc --noEmit` sin errores nuevos en `pool-winners.tsx`.
+
+**Riesgo:** solo (frontend puro, un string, sin lógica de negocio ni endpoints).
+
+---
+
 ### CHANGE-091 — Sidebar: click en el usuario despliega acceso a Settings
 
 **Fecha:** 2026-07-14
