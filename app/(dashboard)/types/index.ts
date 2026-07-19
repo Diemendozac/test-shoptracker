@@ -131,6 +131,9 @@ export interface PoolWinnersResponse {
   total?: number
   page?: number
   totalPages?: number
+  // Solo presente en la respuesta de /pool/search (FIX-053) — términos que la IA usó
+  // para expandir la búsqueda del usuario, además del literal que escribió.
+  searchTermsUsed?: string[]
 }
 
 export interface CandidateHistory {

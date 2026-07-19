@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { PoolWinnersSection } from '@/components/tracker/pool-winners'
 import type { PagoFilter } from '@/components/tracker/pool-winners'
-import { useGetPoolWinnersQuery } from '@/app/(dashboard)/services/dashboardApi'
+import { PoolArchiveHint } from '@/components/tracker/pool-archive-hint'
+import { useGetPoolWinnersQuery, useGetPoolSearchQuery } from '@/app/(dashboard)/services/dashboardApi'
 import { useViewAs } from '@/lib/view-as'
 import { cn } from '@/lib/utils'
 import { LayoutGrid, TrendingUp, Star, Flame } from 'lucide-react'
@@ -87,6 +88,15 @@ export default function PoolPage() {
     hasVideo: isAdminView ? undefined : true,
   })
 
+  // Archivo (FIX-053): candidatos que ya salieron del tracking activo, buscables por IA.
+  // Solo se dispara cuando hay una búsqueda real — sin query no tiene sentido "listar todo
+  // el archivo" (para eso está el pool activo de arriba), y así no se gasta una llamada a
+  // la API de Anthropic por cada render sin búsqueda.
+  const { data: archiveData, isLoading: archiveLoading } = useGetPoolSearchQuery(
+    { q: searchDebounced, country: countryFilter || undefined },
+    { skip: !searchDebounced },
+  )
+
   return (
     <>
       {/* ── Tab header ── */}
@@ -148,6 +158,7 @@ export default function PoolPage() {
           countryFilter={countryFilter}
           onCountryFilterChange={handleCountryFilterChange}
         />
+        <PoolArchiveHint data={archiveData} isLoading={archiveLoading} />
       </div>
     </>
   )

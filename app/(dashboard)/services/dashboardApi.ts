@@ -53,6 +53,22 @@ export const dashboardApi = createApi({
       providesTags: ['Pool'],
     }),
 
+    // GET /api/dashboard/pool/search?q=&page=&size=&country= — archivo: candidatos que ya
+    // salieron del tracking activo (completed/winner) pero siguen siendo buscables por keyword,
+    // con expansión de sinónimos por IA en el backend (FIX-053). q es obligatorio.
+    getPoolSearch: builder.query<PoolWinnersResponse, {
+      q: string; page?: number; size?: number; country?: string
+    }>({
+      query: ({ q, page = 0, size = 20, country }) => ({
+        url: '/pool/search',
+        params: {
+          q, page, size,
+          ...(country && { country }),
+        },
+      }),
+      providesTags: ['Pool'],
+    }),
+
     // GET /api/dashboard/pool/countries — países distintos en todo el pool (no paginado)
     getPoolCountries: builder.query<{ countries: string[] }, void>({
       query: () => '/pool/countries',
@@ -105,6 +121,7 @@ export const {
   useGetCandidateDetailQuery,
   useGetWeeklyWinnerQuery,
   useGetPoolWinnersQuery,
+  useGetPoolSearchQuery,
   useGetPoolCountriesQuery,
   useGetInsightsQuery,
   useGetPodiumQuery,

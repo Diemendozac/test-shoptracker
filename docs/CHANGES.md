@@ -4,6 +4,32 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-093 — Pool: cablear la búsqueda al archivo (`/pool/search`, FIX-053 backend)
+
+**Fecha:** 2026-07-19
+**Tipo:** feature (consume endpoint nuevo del backend)
+
+**Por qué:** continuación de CHANGE-092 (que solo cambió el texto del placeholder). Ahora la barra de búsqueda del pool también consulta el archivo de candidatos que ya salieron del tracking activo (`completed`/`winner`, backend FIX-052/FIX-053) — antes esos productos eran invisibles desde el pool en cuanto salían del tracking, aunque el usuario supiera el nombre exacto.
+
+**Qué cambió:**
+- `app/(dashboard)/services/dashboardApi.ts`: nuevo endpoint RTK Query `getPoolSearch` → `GET /pool/search?q=&page=&size=&country=`, mismo patrón que `getPoolWinners` ya existente. No agrega reducers ni slices nuevos, solo un endpoint más en el `dashboardApi` que ya estaba.
+- `app/(dashboard)/types/index.ts`: `PoolWinnersResponse` gana `searchTermsUsed?: string[]` (opcional, solo lo devuelve `/pool/search`).
+- `components/tracker/pool-archive-hint.tsx` (nuevo): sección compacta — thumbnail, título, precio, score — que se muestra debajo de la tabla principal del pool solo cuando hay resultados del archivo. A propósito no reutiliza la tabla completa de `pool-winners.tsx` (esa tiene ads, favoritos y paginación pesada; el archivo es solo "también encontramos esto").
+- `app/(dashboard)/pool/page.tsx`: dispara `useGetPoolSearchQuery` en paralelo a `useGetPoolWinnersQuery`, con `skip: !searchDebounced` — nunca llama al endpoint (ni gasta la llamada a la API de Anthropic del backend) si no hay una búsqueda real. Renderiza `<PoolArchiveHint>` debajo de `<PoolWinnersSection>`.
+
+**Fuera de alcance (a propósito):**
+- No se tocó `pool-winners.tsx` — la tabla principal del pool activo sigue exactamente igual.
+- El resultado del archivo no tiene paginación propia todavía (siempre trae la página 1, `size=20`) — si hace falta paginar el archivo, es un cambio aparte.
+- No se muestra `searchTermsUsed` en la UI (los sinónimos que la IA usó) — el campo ya viaja en la respuesta por si se quiere exponer más adelante para transparencia/debug.
+
+**Depende de:** backend FIX-052 (PR #3) y FIX-053 (PR #4), ninguno mergeado ni revisado por Diego todavía — el endpoint `/pool/search` no existe en producción hasta que se mergeen. Este cambio de frontend queda funcional pero sin datos reales hasta entonces (la query fallará con 404 en prod, RTK Query lo maneja como error silencioso — no rompe el resto de la página).
+
+**Verificación:** `tsc --noEmit` sin errores nuevos (los 8 errores de `lib/mock-data.ts` son preexistentes en `main`, confirmado con `git stash`).
+
+**Riesgo:** con cuidado (nuevo endpoint consumido, toca el store de RTK Query — sin reducers/slices nuevos, mismo patrón que los 10 endpoints ya existentes en `dashboardApi`).
+
+---
+
 ### CHANGE-092 — Pool: placeholder de búsqueda insinúa que entiende IA/keywords
 
 **Fecha:** 2026-07-19
