@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useRef, useCallback } from 'react'
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import Link from 'next/link'
 import { Lock, TrendingUp, Crown, ChevronLeft, ChevronRight, Globe, ExternalLink, ArrowUpDown, ArrowUp, ArrowDown, Search, X, Star, Share2, Check } from 'lucide-react'
 import { ScoreRing } from '@/components/dashboard/score-ring'
@@ -231,6 +231,27 @@ export function PoolWinnersSection({
   const { maxPoolPage } = usePlanTier()
   const [sort, setSort] = useState<SortState>({ key: 'performanceScore', dir: 'desc' })
 
+  // Dropdown de sugerencias en vivo (tipo Kalodata) — se cierra al hacer click afuera o Escape
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const searchBoxRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (searchBoxRef.current && !searchBoxRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false)
+      }
+    }
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === 'Escape') setShowSuggestions(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleEscape)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [])
+
   function toggleSet(prev: Set<string>, value: string): Set<string> {
     const next = new Set(prev)
     next.has(value) ? next.delete(value) : next.add(value)
@@ -329,28 +350,73 @@ export function PoolWinnersSection({
     )
   }
 
+  // Sugerencias del dropdown — reusa los resultados ya cargados (misma query debounced
+  // de /pool/winners), sin fetch extra. Si no hay match literal para resaltar (la IA
+  // pudo haber matcheado por sinónimo), se muestra el título plano sin resaltar.
+  const suggestions = search.trim() ? filtered.slice(0, 6) : []
+
+  function highlightMatch(title: string, term: string) {
+    const idx = title.toLowerCase().indexOf(term.trim().toLowerCase())
+    if (idx === -1) return title
+    return (
+      <>
+        {title.slice(0, idx)}
+        <span className="text-primary font-semibold">{title.slice(idx, idx + term.trim().length)}</span>
+        {title.slice(idx + term.trim().length)}
+      </>
+    )
+  }
+
   return (
     <div className="mb-6 overflow-hidden rounded-2xl border border-border bg-card">
 
-      {/* ── Filter bar ── */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 border-b border-border">
-
-        {/* Búsqueda */}
-        <div className="relative w-full sm:w-56">
+      {/* ── Búsqueda — línea propia, con dropdown de sugerencias en vivo ── */}
+      <div className="border-b border-border px-4 py-3">
+        <div ref={searchBoxRef} className="relative w-full sm:max-w-md">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
             placeholder="Busca por palabra clave (IA)…"
             value={search}
-            onChange={e => onSearchChange(e.target.value)}
-            className="h-8 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+            onChange={e => { onSearchChange(e.target.value); setShowSuggestions(true) }}
+            onFocus={() => setShowSuggestions(true)}
+            className="h-9 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
           />
           {search && (
-            <button onClick={() => onSearchChange('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+            <button onClick={() => { onSearchChange(''); setShowSuggestions(false) }} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
               <X className="h-3.5 w-3.5" />
             </button>
           )}
+
+          {showSuggestions && suggestions.length > 0 && (
+            <div className="absolute z-20 mt-1.5 w-full overflow-hidden rounded-xl border border-border bg-card shadow-lg">
+              <div className="divide-y divide-border/50">
+                {suggestions.map((w) => (
+                  <Link
+                    key={w.candidateId}
+                    href={`/tracker/${w.candidateId}?storeId=${w.storeId}&from=pool`}
+                    onClick={() => setShowSuggestions(false)}
+                    className="flex items-center gap-3 px-3 py-2 transition-colors hover:bg-secondary/50"
+                  >
+                    <img
+                      src={w.productImage || 'https://picsum.photos/seed/placeholder/60/60'}
+                      alt=""
+                      className="h-8 w-8 shrink-0 rounded-md object-cover"
+                    />
+                    <span className="min-w-0 flex-1 truncate text-sm text-foreground">
+                      {highlightMatch(w.productTitle, search)}
+                    </span>
+                    <span className="shrink-0 text-xs text-muted-foreground">{Math.round(w.performanceScore)}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
+      </div>
+
+      {/* ── Filter bar ── */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 border-b border-border">
 
         {/* Fechas */}
         <div className="flex items-center gap-1.5">

@@ -4,6 +4,28 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-095 — Pool: la búsqueda tiene su propia línea + dropdown de sugerencias en vivo (tipo Kalodata)
+
+**Fecha:** 2026-07-19
+**Tipo:** feature (UI)
+
+**Por qué:** pedido de Daniel viendo el pool en producción — la barra de búsqueda compartía fila con los chips de fecha (`w-56` dentro del mismo `flex-wrap` que "Fechas"), y faltaban las sugerencias en vivo mientras escribes, como las que mostró el ejemplo de Kalodata semanas atrás (ver [[scout-pool-archivo-busqueda-ia]] en la wiki del vault — en ese momento se había descartado construir eso porque el ejemplo de Kalodata usa fuzzy matching por trigramas, `pg_trgm`, no implementado. Esta vez el pedido es más simple: mostrar como dropdown los resultados que la búsqueda con IA ya trae, no agregar tolerancia a typos).
+
+**Qué cambió (`components/tracker/pool-winners.tsx`):**
+- La barra de búsqueda se sacó del `flex-wrap` que comparte con Fechas/Categoría/Moneda/País — ahora vive en su propia fila arriba, con `sm:max-w-md` (antes `sm:w-56`).
+- Nuevo dropdown de sugerencias: aparece al enfocar el input si hay texto y resultados. Reusa `filtered` (los resultados que ya trae la query debounced de `/pool/winners` — la que ya tiene expansión de IA desde CHANGE-093/FIX-054) — **sin fetch adicional, sin llamar de nuevo a la API de Anthropic**. Muestra hasta 6 sugerencias: miniatura, título con el término buscado resaltado en azul (si hay match literal — si la IA matcheó por sinónimo y no hay substring literal, se muestra el título sin resaltar, sin romper nada), y el score. Click navega directo al detalle del producto.
+- Cierra con click afuera (`mousedown` + ref) o `Escape`.
+
+**Fuera de alcance (a propósito):** no incluye resultados del archivo (`PoolArchiveHint`/`/pool/search`) en el dropdown — esos se fetchean en `pool/page.tsx`, un nivel arriba, y traerlos acá requeriría pasarlos como prop nuevo. El dropdown de hoy es solo del pool activo. Tampoco se implementó tolerancia a typos (`pg_trgm`) — sigue pendiente, documentado en la wiki, requiere-revisor-técnico por tocar schema de DB.
+
+**Verificado en navegador real con `/browse`** (no solo `tsc`): logueado con backend local, se confirmó que la barra quedó en su propia línea, que el dropdown aparece al escribir "camiseta" con "Camiseta" resaltado y el score visible, y que cierra correctamente al hacer click afuera.
+
+**Verificación:** `tsc --noEmit` sin errores nuevos en el archivo tocado.
+
+**Riesgo:** solo (frontend puro, reusa datos ya cargados, sin fetch ni endpoint nuevo).
+
+---
+
 ### CHANGE-094 — Pool: una búsqueda sin resultados ya no esconde la barra de búsqueda
 
 **Fecha:** 2026-07-19
