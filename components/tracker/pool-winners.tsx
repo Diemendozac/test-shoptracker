@@ -551,7 +551,8 @@ export function PoolWinnersSection({
           ))}
         </div>
 
-        {/* Escalar */}
+        {/* Spikear — mismo nombre que en Mis testeos (tracker-table.tsx); acá es solo un
+            filtro pasivo (isScalable), no la mecánica interactiva de floor/thorns de Spikear. */}
         <button
           onClick={() => onEscalarFilterChange(!escalarFilter)}
           className={cn(
@@ -561,7 +562,7 @@ export function PoolWinnersSection({
               : 'border-border bg-background text-muted-foreground hover:border-emerald-500/50 hover:text-emerald-600',
           )}
         >
-          ↑ Escalar
+          ↑ Spikear
         </button>
 
         {/* País — dropdown con todos los países del pool, no solo los de esta página */}
@@ -957,7 +958,7 @@ function PoolWinnerRow({ winner, position, preferredCurrency, isFavorite, onTogg
           </Link>
           {isScalable(winner.performanceScore, winner.signalConfidence) && (
             <span className="mt-0.5 shrink-0 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-600">
-              Escalar
+              Spikear
             </span>
           )}
         </div>

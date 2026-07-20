@@ -4,6 +4,23 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-097 — Pool: el badge/filtro "Escalar" pasa a decir "Spikear" (consistencia de marca)
+
+**Fecha:** 2026-07-19
+**Tipo:** copy (UI, sin lógica)
+
+**Por qué:** Daniel notó la inconsistencia comparando dos capturas — en "Mis testeos" (`tracker-table.tsx`) el filtro y el badge dicen "Spikear" (el verbo propietario de la marca, ver [[scout-spikear]] en la wiki del vault), pero en "Explorar testeos" (`pool-winners.tsx`) el equivalente todavía decía "Escalar". Pidió que "Explorar testeos" use el mismo término.
+
+**Qué cambió (`components/tracker/pool-winners.tsx`):** dos textos, sin tocar lógica — el chip de filtro "↑ Escalar" → "↑ Spikear", y el badge junto al título del producto "Escalar" → "Spikear" (aparece cuando `isScalable(score, confidence)` es true).
+
+**Qué NO cambió (a propósito):** los nombres internos (`escalarFilter`, `onEscalarFilterChange`, etc. en `pool-winners.tsx` y `pool/page.tsx`) se dejaron igual — es una variable interna, no texto visible, cambiarla no aporta nada al pedido y agranda el diff sin necesidad. Tampoco se portó la mecánica interactiva de Spikear (floor score, thorns, toggle "Spikeando ✕") que sí existe en Mis testeos — acá sigue siendo solo un badge pasivo informativo, coherente con que "Explorar testeos" muestra candidatos de otros usuarios, no los propios.
+
+**Verificación:** `tsc --noEmit` sin errores nuevos. Cambio de solo dos strings, sin lógica ni estado nuevo — no se levantó el entorno completo de prueba visual para este, a diferencia de los cambios anteriores de la sesión.
+
+**Riesgo:** solo (dos textos estáticos).
+
+---
+
 ### CHANGE-096 — Pool: la tabla solo se actualiza con Enter + slider de "días en testeo" exactos
 
 **Fecha:** 2026-07-19
