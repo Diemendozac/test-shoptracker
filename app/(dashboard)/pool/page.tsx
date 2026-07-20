@@ -29,9 +29,15 @@ export default function PoolPage() {
 
   // All filter state lives here so every change triggers a fresh server fetch
   const [pagoFilter, setPagoFilter] = useState<PagoFilter>('all')
+  // searchInput: lo que el usuario está tecleando ahora mismo — value del input, y fuente
+  // del dropdown de sugerencias (debounced 300ms, "en vivo", CHANGE-095).
+  // searchSubmitted: lo que de verdad filtra la tabla principal — solo cambia con Enter,
+  // para que la tabla no salte con cada tecla mientras el dropdown ya da feedback inmediato.
   const [searchInput, setSearchInput] = useState('')
   const [searchDebounced, setSearchDebounced] = useState('')
+  const [searchSubmitted, setSearchSubmitted] = useState('')
   const [dateFilter, setDateFilter] = useState<7 | 15 | 30 | 0>(0)
+  const [daysExactFilter, setDaysExactFilter] = useState<number | null>(null)
   const [nicheFilter, setNicheFilter] = useState<Set<string>>(new Set())
   const [currencyFilter, setCurrencyFilter] = useState<Set<string>>(new Set())
   const [escalarFilter, setEscalarFilter] = useState(false)
@@ -45,7 +51,8 @@ export default function PoolPage() {
     } catch { return new Set() }
   })
 
-  // Debounce search — waits 300 ms after the user stops typing before fetching
+  // Debounce solo para el dropdown de sugerencias en vivo — 300ms después de dejar de escribir.
+  // La tabla principal NO escucha esto; escucha searchSubmitted (solo cambia con Enter).
   useEffect(() => {
     const t = setTimeout(() => setSearchDebounced(searchInput), 300)
     return () => clearTimeout(t)
@@ -54,8 +61,15 @@ export default function PoolPage() {
   // Every filter handler resets to page 1 before the new fetch
   function handleTab(id: PoolPreset) { setPreset(id); setPage(0) }
   function handlePagoFilter(f: PagoFilter) { setPagoFilter(f); setPage(0) }
-  function handleSearchChange(v: string) { setSearchInput(v); setPage(0) }
+  function handleSearchInputChange(v: string) {
+    setSearchInput(v)
+    // Al borrar el texto, la tabla se limpia de inmediato — no tiene sentido esperar un Enter
+    // para "buscar nada". Mientras haya texto, la tabla espera al Enter (handleSearchSubmit).
+    if (v === '') { setSearchSubmitted(''); setPage(0) }
+  }
+  function handleSearchSubmit() { setSearchSubmitted(searchInput); setPage(0) }
   function handleDateFilterChange(v: 7 | 15 | 30 | 0) { setDateFilter(v); setPage(0) }
+  function handleDaysExactFilterChange(v: number | null) { setDaysExactFilter(v); setPage(0) }
   function handleNicheFilterChange(v: Set<string>) { setNicheFilter(v); setPage(0) }
   function handleCurrencyFilterChange(v: Set<string>) { setCurrencyFilter(v); setPage(0) }
   function handleEscalarFilterChange(v: boolean) { setEscalarFilter(v); setPage(0) }
@@ -71,30 +85,44 @@ export default function PoolPage() {
     })
   }
 
-  const { data, isLoading, error } = useGetPoolWinnersQuery({
-    page,
-    size: 20,
+  // Params compartidos entre la tabla principal y la query de sugerencias del dropdown —
+  // ambas deben respetar los mismos filtros de categoría/moneda/pago/fecha/país/ads,
+  // solo difieren en qué término de búsqueda usan y cuántos resultados piden.
+  const sharedParams = {
     pagoAnticipado: pagoFilter === 'anticipado' ? true
       : pagoFilter === 'contraentrega' ? false
       : undefined,
-    // TODO: backend pendiente — implementar en GET /dashboard/pool/winners
-    q:        searchDebounced || undefined,
-    niche:    nicheFilter.size > 0    ? Array.from(nicheFilter)    : undefined,
-    currency: currencyFilter.size > 0 ? Array.from(currencyFilter) : undefined,
-    days:     dateFilter > 0          ? dateFilter                  : undefined,
-    scalable: escalarFilter            ? true                        : undefined,
-    country:  countryFilter || undefined,
+    niche:     nicheFilter.size > 0    ? Array.from(nicheFilter)    : undefined,
+    currency:  currencyFilter.size > 0 ? Array.from(currencyFilter) : undefined,
+    days:      dateFilter > 0          ? dateFilter                  : undefined,
+    daysExact: daysExactFilter ?? undefined,
+    scalable:  escalarFilter            ? true                        : undefined,
+    country:   countryFilter || undefined,
     // Solo admin (vista real, sin simular otro plan) ve el pool completo
-    hasVideo: isAdminView ? undefined : true,
+    hasVideo:  isAdminView ? undefined : true,
+  }
+
+  // Tabla principal — solo reacciona a searchSubmitted (Enter), no a cada tecla.
+  const { data, isLoading, error } = useGetPoolWinnersQuery({
+    ...sharedParams,
+    page,
+    size: 20,
+    q: searchSubmitted || undefined,
   })
 
-  // Archivo (FIX-053): candidatos que ya salieron del tracking activo, buscables por IA.
-  // Solo se dispara cuando hay una búsqueda real — sin query no tiene sentido "listar todo
-  // el archivo" (para eso está el pool activo de arriba), y así no se gasta una llamada a
-  // la API de Anthropic por cada render sin búsqueda.
-  const { data: archiveData, isLoading: archiveLoading } = useGetPoolSearchQuery(
-    { q: searchDebounced, country: countryFilter || undefined },
+  // Sugerencias del dropdown (CHANGE-095) — reacciona a searchDebounced (en vivo, 300ms),
+  // pedido chico y aparte para no forzar a la tabla a refrescarse con cada tecla.
+  const { data: suggestData } = useGetPoolWinnersQuery(
+    { ...sharedParams, page: 0, size: 6, q: searchDebounced },
     { skip: !searchDebounced },
+  )
+
+  // Archivo (FIX-053): candidatos que ya salieron del tracking activo, buscables por IA.
+  // Sigue la búsqueda CONFIRMADA (Enter), igual que la tabla principal — no tiene sentido
+  // gastar una llamada a la API de Anthropic por cada tecla mientras el usuario escribe.
+  const { data: archiveData, isLoading: archiveLoading } = useGetPoolSearchQuery(
+    { q: searchSubmitted, country: countryFilter || undefined },
+    { skip: !searchSubmitted },
   )
 
   return (
@@ -145,10 +173,15 @@ export default function PoolPage() {
           onPagoFilterChange={handlePagoFilter}
           favorites={favorites}
           onToggleFavorite={toggleFavorite}
-          search={searchInput}
-          onSearchChange={handleSearchChange}
+          search={searchSubmitted}
+          searchInput={searchInput}
+          onSearchInputChange={handleSearchInputChange}
+          onSearchSubmit={handleSearchSubmit}
+          suggestions={suggestData?.winners ?? []}
           dateFilter={dateFilter}
           onDateFilterChange={handleDateFilterChange}
+          daysExactFilter={daysExactFilter}
+          onDaysExactFilterChange={handleDaysExactFilterChange}
           nicheFilter={nicheFilter}
           onNicheFilterChange={handleNicheFilterChange}
           currencyFilter={currencyFilter}

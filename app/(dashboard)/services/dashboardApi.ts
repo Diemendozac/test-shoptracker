@@ -33,10 +33,10 @@ export const dashboardApi = createApi({
     // GET /api/dashboard/pool/winners?page=&size=&pagoAnticipado=&q=&niche=&currency=&days=&scalable=&country=&hasVideo=
     getPoolWinners: builder.query<PoolWinnersResponse, {
       page?: number; size?: number; pagoAnticipado?: boolean
-      q?: string; niche?: string[]; currency?: string[]; days?: number; scalable?: boolean; country?: string
+      q?: string; niche?: string[]; currency?: string[]; days?: number; daysExact?: number; scalable?: boolean; country?: string
       hasVideo?: boolean
     }>({
-      query: ({ page = 0, size = 20, pagoAnticipado, q, niche, currency, days, scalable, country, hasVideo } = {}) => ({
+      query: ({ page = 0, size = 20, pagoAnticipado, q, niche, currency, days, daysExact, scalable, country, hasVideo } = {}) => ({
         url: '/pool/winners',
         params: {
           page, size,
@@ -45,6 +45,7 @@ export const dashboardApi = createApi({
           ...(niche?.length    && { niche }),    // TODO: backend pendiente
           ...(currency?.length && { currency }), // TODO: backend pendiente
           ...(days             && { days }),
+          ...(daysExact        && { daysExact }), // FIX-055: días en testeo exactos (slider 1-30), distinto de "days"
           ...(scalable         && { scalable }),
           ...(country          && { country }),
           ...(hasVideo         && { hasVideo }),

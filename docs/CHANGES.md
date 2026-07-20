@@ -4,6 +4,28 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-096 — Pool: la tabla solo se actualiza con Enter + slider de "días en testeo" exactos
+
+**Fecha:** 2026-07-19
+**Tipo:** feature (UI) + consume nuevo parámetro de backend (FIX-055)
+
+**Por qué:** dos pedidos seguidos de Daniel viendo el pool en producción. (1) "que el buscador del pool solo cambie al dar enter, no solo por escribir la palabra" — la tabla principal se refiltraba en cada tecla (vía el debounce de 300ms que ya alimentaba el dropdown de CHANGE-095), lo cual causaba saltos de layout mientras el usuario todavía estaba escribiendo. (2) "necesito poner un rango de días para filtrar por días en testeo, debe ser del 1 al 30, si se pone en uno los de 1 día de testeo y así" — confirmado con Daniel que es coincidencia exacta (`daysElapsed = N`), no acumulada como el filtro "Fechas" que ya existía.
+
+**Qué cambió:**
+- `app/(dashboard)/pool/page.tsx`: se separó el estado de búsqueda en dos — `searchInput` (lo que se teclea, alimenta el dropdown vía `searchDebounced`, 300ms) y `searchSubmitted` (solo cambia con Enter, alimenta la tabla principal Y el archivo de `/pool/search`). Efecto lateral bueno: el archivo (FIX-053, que paga una llamada a Anthropic por búsqueda) ahora también dispara solo con Enter en vez de cada 300ms mientras se escribe — menos costo de API, no solo mejor UX. Nuevo estado `daysExactFilter` (1-30 o `null`), enviado como `daysExact` al backend (FIX-055).
+- `app/(dashboard)/services/dashboardApi.ts`: `getPoolWinners` gana el parámetro `daysExact`.
+- `components/tracker/pool-winners.tsx`: el `<input>` de búsqueda ahora tiene `onKeyDown` (Enter → `onSearchSubmit()`) y usa `searchInput`/`onSearchInputChange` para su valor en vivo; las sugerencias del dropdown llegan como prop `suggestions` (query aparte en `pool/page.tsx`) en vez de derivarse de los resultados de la tabla. Nuevo slider `<input type="range" min={1} max={30}>` al lado de la barra de búsqueda ("DÍAS EN TESTEO: N"), con botón para quitarlo. El botón "Limpiar" global también lo resetea.
+
+**Verificado en navegador real con `/browse`** (no solo `tsc`): escribir "camiseta" sin Enter mostró el dropdown con la sugerencia resaltada mientras la tabla seguía mostrando los 4 productos sin filtrar; al presionar Enter la tabla bajó a 1 producto. El slider en 5 mostró exactamente los 2 productos con `daysElapsed = 5` ("Wireless Bluetooth Earbuds Pro", "Camisa Oxford Rayas"), ninguno de más ni de menos.
+
+**Depende de:** FIX-055 en el backend (misma sesión, rama `fix/pool-lock-and-ads-por-plan`) — sin ese fix, `daysExact` no tiene efecto en el servidor (se ignora silenciosamente, RTK Query no rompe, pero el slider no filtraría nada hasta que el backend se despliegue).
+
+**Verificación:** `tsc --noEmit` sin errores nuevos en los archivos tocados.
+
+**Riesgo:** solo (frontend puro) + con cuidado en la parte que ya está en producción del backend (FIX-055 aún no desplegado en el momento de este commit).
+
+---
+
 ### CHANGE-095 — Pool: la búsqueda tiene su propia línea + dropdown de sugerencias en vivo (tipo Kalodata)
 
 **Fecha:** 2026-07-19

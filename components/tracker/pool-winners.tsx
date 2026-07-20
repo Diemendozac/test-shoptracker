@@ -202,10 +202,18 @@ interface PoolWinnersSectionProps {
   favorites: Set<string>
   onToggleFavorite: (id: string) => void
   // Server-side filter props — state lives in pool/page.tsx
+  // search: término CONFIRMADO (Enter) — el que realmente filtra `data`/la tabla.
+  // searchInput: lo que el usuario está tecleando ahora mismo — value del <input>.
+  // suggestions: resultados del dropdown en vivo (query aparte, debounced, ver pool/page.tsx).
   search: string
-  onSearchChange: (v: string) => void
+  searchInput: string
+  onSearchInputChange: (v: string) => void
+  onSearchSubmit: () => void
+  suggestions: PoolWinnerProduct[]
   dateFilter: 7 | 15 | 30 | 0
   onDateFilterChange: (v: 7 | 15 | 30 | 0) => void
+  daysExactFilter: number | null
+  onDaysExactFilterChange: (v: number | null) => void
   nicheFilter: Set<string>
   onNicheFilterChange: (v: Set<string>) => void
   currencyFilter: Set<string>
@@ -220,8 +228,9 @@ export function PoolWinnersSection({
   data, isLoading, page = 0, onPageChange, preset = 'all',
   pagoFilter = 'all', onPagoFilterChange,
   favorites, onToggleFavorite,
-  search, onSearchChange,
+  search, searchInput, onSearchInputChange, onSearchSubmit, suggestions,
   dateFilter, onDateFilterChange,
+  daysExactFilter, onDaysExactFilterChange,
   nicheFilter, onNicheFilterChange,
   currencyFilter, onCurrencyFilterChange,
   escalarFilter, onEscalarFilterChange,
@@ -307,7 +316,7 @@ export function PoolWinnersSection({
     return r
   }, [winners, preset, favorites, sort])
 
-  const hasActiveFilters = !!search || nicheFilter.size > 0 || currencyFilter.size > 0 || dateFilter > 0 || pagoFilter !== 'all' || escalarFilter || !!countryFilter
+  const hasActiveFilters = !!search || nicheFilter.size > 0 || currencyFilter.size > 0 || dateFilter > 0 || daysExactFilter != null || pagoFilter !== 'all' || escalarFilter || !!countryFilter
 
   if (isLoading) {
     return (
@@ -350,11 +359,9 @@ export function PoolWinnersSection({
     )
   }
 
-  // Sugerencias del dropdown — reusa los resultados ya cargados (misma query debounced
-  // de /pool/winners), sin fetch extra. Si no hay match literal para resaltar (la IA
-  // pudo haber matcheado por sinónimo), se muestra el título plano sin resaltar.
-  const suggestions = search.trim() ? filtered.slice(0, 6) : []
-
+  // Las sugerencias llegan como prop (query aparte, en vivo, ver pool/page.tsx) — si no hay
+  // match literal para resaltar (la IA pudo haber matcheado por sinónimo), se muestra el
+  // título plano sin resaltar.
   function highlightMatch(title: string, term: string) {
     const idx = title.toLowerCase().indexOf(term.trim().toLowerCase())
     if (idx === -1) return title
@@ -370,20 +377,23 @@ export function PoolWinnersSection({
   return (
     <div className="mb-6 overflow-hidden rounded-2xl border border-border bg-card">
 
-      {/* ── Búsqueda — línea propia, con dropdown de sugerencias en vivo ── */}
-      <div className="border-b border-border px-4 py-3">
+      {/* ── Búsqueda — línea propia, con dropdown de sugerencias en vivo — + días en testeo al lado ── */}
+      <div className="flex flex-wrap items-center gap-4 border-b border-border px-4 py-3">
         <div ref={searchBoxRef} className="relative w-full sm:max-w-md">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Busca por palabra clave (IA)…"
-            value={search}
-            onChange={e => { onSearchChange(e.target.value); setShowSuggestions(true) }}
+            placeholder="Busca por palabra clave (IA) — Enter para buscar…"
+            value={searchInput}
+            onChange={e => { onSearchInputChange(e.target.value); setShowSuggestions(true) }}
             onFocus={() => setShowSuggestions(true)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') { onSearchSubmit(); setShowSuggestions(false) }
+            }}
             className="h-9 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
           />
-          {search && (
-            <button onClick={() => { onSearchChange(''); setShowSuggestions(false) }} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+          {searchInput && (
+            <button onClick={() => { onSearchInputChange(''); setShowSuggestions(false) }} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
               <X className="h-3.5 w-3.5" />
             </button>
           )}
@@ -404,13 +414,38 @@ export function PoolWinnersSection({
                       className="h-8 w-8 shrink-0 rounded-md object-cover"
                     />
                     <span className="min-w-0 flex-1 truncate text-sm text-foreground">
-                      {highlightMatch(w.productTitle, search)}
+                      {highlightMatch(w.productTitle, searchInput)}
                     </span>
                     <span className="shrink-0 text-xs text-muted-foreground">{Math.round(w.performanceScore)}</span>
                   </Link>
                 ))}
               </div>
             </div>
+          )}
+        </div>
+
+        {/* Días en testeo — filtro exacto (FIX-055), no acumulado como "Fechas" de abajo */}
+        <div className="flex items-center gap-2 sm:w-64">
+          <span className="shrink-0 text-[10px] font-medium uppercase tracking-wider text-muted-foreground whitespace-nowrap">
+            Días en testeo{daysExactFilter != null ? `: ${daysExactFilter}` : ''}
+          </span>
+          <input
+            type="range"
+            min={1}
+            max={30}
+            value={daysExactFilter ?? 1}
+            onChange={e => onDaysExactFilterChange(Number(e.target.value))}
+            className="h-1.5 flex-1 accent-primary"
+            aria-label="Filtrar por días exactos en testeo"
+          />
+          {daysExactFilter != null && (
+            <button
+              onClick={() => onDaysExactFilterChange(null)}
+              className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Quitar filtro de días en testeo"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
           )}
         </div>
       </div>
@@ -556,10 +591,11 @@ export function PoolWinnersSection({
           {hasActiveFilters && (
             <button
               onClick={() => {
-                onSearchChange('')
+                onSearchInputChange('')
                 onNicheFilterChange(new Set())
                 onCurrencyFilterChange(new Set())
                 onDateFilterChange(0)
+                onDaysExactFilterChange(null)
                 onPagoFilterChange?.('all')
                 onEscalarFilterChange(false)
                 onCountryFilterChange('')
