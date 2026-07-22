@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
-import { setAnswer, markOnboardingCompleted } from '@/app/(auth)/store/onboardingSlice'
+import { setAnswer, markOnboardingCompleted, dismissOnboarding } from '@/app/(auth)/store/onboardingSlice'
 import { useSubmitOnboardingMutation } from '@/app/(dashboard)/services/userApi'
 
 const COUNTRIES = ['Colombia', 'México', 'Chile', 'Perú', 'Ecuador', 'Paraguay', 'Panamá', 'Otro']
@@ -79,6 +79,7 @@ export function OnboardingModal() {
   const open = isAuthenticated && justRegistered && !completed
 
   const update = (fields: Partial<typeof answers>) => dispatch(setAnswer(fields))
+  const handleDismiss = () => dispatch(dismissOnboarding())
 
   const isValid =
     !!answers.country &&
@@ -100,13 +101,8 @@ export function OnboardingModal() {
   }
 
   return (
-    <Dialog open={open}>
-      <DialogContent
-        showCloseButton={false}
-        className="sm:max-w-md"
-        onInteractOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
-      >
+    <Dialog open={open} onOpenChange={(next) => { if (!next) handleDismiss() }}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{tModal('title')}</DialogTitle>
           <DialogDescription>{tModal('subtitle')}</DialogDescription>

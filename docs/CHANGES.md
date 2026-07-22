@@ -4,6 +4,27 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-098 — Onboarding: modal descartable (hotfix de incidente de producción, usuarios nuevos bloqueados)
+
+**Fecha:** 2026-07-22
+**Tipo:** hotfix (UX de bloqueo, sin tocar backend/DB)
+
+**Por qué:** incidente activo confirmado en producción con una cuenta de prueba real (`claude-test-onboarding-verify-20260722@mailinator.com`, ver [[scout-onboarding-propuesta-tecnica]] en la wiki del vault) — desde CHANGE-073 (2026-07-14), el modal de onboarding no era descartable (sin botón cerrar, sin click afuera, sin Escape) y su único botón de salida (`PATCH /api/users/me/onboarding`) responde 500 en producción. Resultado: todo usuario que se registró desde esa fecha quedaba atrapado sin poder llegar al dashboard. Causa raíz del 500 (probable falta de migración `user_onboarding` en la DB de prod) queda pendiente de Diego — "requiere-revisor-técnico" por tocar schema de base de datos, no se toca en este commit.
+
+**Qué cambió:**
+- `app/(auth)/store/onboardingSlice.ts` — nueva acción `dismissOnboarding`: pone `justRegistered = false` (cierra el modal) sin marcar `completed = true` (no miente que el usuario terminó el onboarding). Las respuestas ya escritas se quedan en `localStorage` por si en el futuro se agrega un reintento.
+- `components/onboarding/onboarding-modal.tsx` — se quitó `showCloseButton={false}` y los handlers que bloqueaban `onInteractOutside`/`onEscapeKeyDown`. Se agregó `onOpenChange` en el `Dialog` que dispara `dismissOnboarding()` al cerrar (X, click afuera, o Escape) — sin esto, el `Dialog` de Radix es controlado y no se cierra solo con quitar las props de bloqueo.
+
+**Qué NO cambió (a propósito):** el endpoint backend, la DB, el flujo de submit exitoso, ni la lógica de validación de campos — el modal se sigue abriendo igual tras `register()` y el submit exitoso se sigue comportando igual. Este cambio solo agrega una salida de emergencia cuando el submit falla.
+
+**Riesgo:** con cuidado (toca el slice de Redux de onboarding con una acción nueva, pero no modifica lógica de negocio existente ni contratos de API).
+
+**Nota de protocolo:** se saltó la confirmación archivo-por-archivo del nivel "con cuidado" — el plan completo (2 archivos, diff exacto) se aprobó de una sola vez dado el carácter de incidente activo en producción, con acuerdo explícito de Daniel.
+
+**Verificación:** `pnpm build` compila sin errores. `tsc --noEmit` sin errores nuevos en los archivos tocados (hay errores preexistentes en `lib/mock-data.ts`, no relacionados). Pendiente: confirmar en producción tras el deploy que un registro nuevo puede cerrar el modal y llegar al dashboard.
+
+---
+
 ### CHANGE-097 — Pool: el badge/filtro "Escalar" pasa a decir "Spikear" (consistencia de marca)
 
 **Fecha:** 2026-07-19

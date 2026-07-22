@@ -70,6 +70,13 @@ const onboardingSlice = createSlice({
       state.justRegistered = false
       persist(state)
     },
+    // Closes the modal (X / Escape / click outside) without claiming the
+    // onboarding was actually completed — answers stay in localStorage so a
+    // future retry can pick them up once the backend endpoint works.
+    dismissOnboarding: (state) => {
+      state.justRegistered = false
+      persist(state)
+    },
     resetOnboarding: () => {
       if (typeof window !== 'undefined') localStorage.removeItem(STORAGE_KEY)
       return emptyState
@@ -77,5 +84,5 @@ const onboardingSlice = createSlice({
   },
 })
 
-export const { setAnswer, markJustRegistered, markOnboardingCompleted, resetOnboarding } = onboardingSlice.actions
+export const { setAnswer, markJustRegistered, markOnboardingCompleted, dismissOnboarding, resetOnboarding } = onboardingSlice.actions
 export default onboardingSlice.reducer
