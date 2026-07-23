@@ -4,6 +4,26 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-099 — Onboarding: corrección de CHANGE-098 — vuelve a ser obligatorio, pero ya no atrapa a nadie
+
+**Fecha:** 2026-07-22
+**Tipo:** corrección de hotfix (mismo incidente que CHANGE-098)
+
+**Por qué:** CHANGE-098 (mismo día) hizo el modal descartable con X/click-afuera/Escape para resolver el bloqueo de usuarios nuevos. Daniel señaló correctamente que eso rompe el propósito del onboarding: si es saltable sin llenar nada, se pierde la captura de teléfono/calificación de lead que es el punto real del flujo (ver [[scout-flujo-activacion-leads]], [[scout-calificacion-leads]]). El requisito real es distinto: **obligatorio llenarlo, pero nunca debe impedir usar la app** — si el guardado en backend falla, eso se resuelve después con Diego, pero la persona ya debe poder entrar.
+
+**Qué cambió (`components/onboarding/onboarding-modal.tsx`):**
+- Se revierte la descartabilidad de CHANGE-098: vuelve `showCloseButton={false}` y los handlers que bloquean `onInteractOutside`/`onEscapeKeyDown`. El modal es 100% obligatorio otra vez — no hay forma de cerrarlo sin llenar los 6 campos y tocar "Continuar".
+- `handleSubmit` ya no distingue éxito de fallo para decidir si cierra el modal: en ambos casos se cierra (éxito → `markOnboardingCompleted()`, igual que siempre; fallo → `dismissOnboarding()`, la acción agregada en CHANGE-098, que cierra sin mentir que quedó guardado). Las respuestas quedan en `localStorage` en el caso de fallo, listas para un futuro mecanismo de reintento.
+- Se quita el estado local `error` y el mensaje de error inline — ya no tiene función: el modal se cierra igual haya fallado o no, así que mostrar un error que desaparece al instante no aporta nada. La clave de traducción `Onboarding.modal.genericError` queda sin uso (no se tocó `es.json`, riesgo/beneficio no lo amerita).
+
+**Qué NO cambió:** la validación de campos obligatorios (`isValid`) sigue igual — nadie llega al botón "Continuar" sin completar el formulario. El endpoint backend y la causa del 500 siguen sin tocarse, pendiente de Diego.
+
+**Verificación:** `pnpm build` y `tsc --noEmit` sin errores nuevos en los archivos tocados.
+
+**Riesgo:** con cuidado (misma superficie que CHANGE-098, corrige su comportamiento).
+
+---
+
 ### CHANGE-098 — Onboarding: modal descartable (hotfix de incidente de producción, usuarios nuevos bloqueados)
 
 **Fecha:** 2026-07-22

@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import {
   Dialog,
@@ -74,12 +73,10 @@ export function OnboardingModal() {
   const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated)
   const { justRegistered, completed, answers } = useAppSelector((s) => s.onboarding)
   const [submitOnboarding, { isLoading }] = useSubmitOnboardingMutation()
-  const [error, setError] = useState<string | null>(null)
 
   const open = isAuthenticated && justRegistered && !completed
 
   const update = (fields: Partial<typeof answers>) => dispatch(setAnswer(fields))
-  const handleDismiss = () => dispatch(dismissOnboarding())
 
   const isValid =
     !!answers.country &&
@@ -91,28 +88,30 @@ export function OnboardingModal() {
     answers.platforms.length > 0
 
   const handleSubmit = async () => {
-    setError(null)
     try {
       await submitOnboarding(answers).unwrap()
       dispatch(markOnboardingCompleted())
     } catch {
-      setError(tModal('genericError'))
+      // Backend save failed (e.g. the prod 500 in scout-onboarding-propuesta-tecnica) —
+      // the answers already passed validation, so let the user into the app anyway
+      // instead of trapping them behind a broken endpoint. They stay in localStorage
+      // for a future retry once the backend is fixed.
+      dispatch(dismissOnboarding())
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={(next) => { if (!next) handleDismiss() }}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={open}>
+      <DialogContent
+        showCloseButton={false}
+        className="sm:max-w-md"
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>{tModal('title')}</DialogTitle>
           <DialogDescription>{tModal('subtitle')}</DialogDescription>
         </DialogHeader>
-
-        {error && (
-          <p className="rounded-md bg-destructive/10 px-3 py-2 text-center text-sm text-destructive">
-            {error}
-          </p>
-        )}
 
         <div className="max-h-[60vh] space-y-4 overflow-y-auto pr-1">
           <div className="grid grid-cols-2 gap-3">
