@@ -42,10 +42,10 @@ export const dashboardApi = createApi({
           page, size,
           ...(pagoAnticipado != null && { pagoAnticipado }),
           ...(q                && { q }),
-          ...(niche?.length    && { niche }),    // TODO: backend pendiente
-          ...(currency?.length && { currency }), // TODO: backend pendiente
+          ...(niche?.length    && { niche }),
+          ...(currency?.length && { currency }),
           ...(days             && { days }),
-          ...(daysExact        && { daysExact }), // FIX-055: días en testeo exactos (slider 1-30), distinto de "days"
+          ...(daysExact        && { daysExact }), // días en testeo exactos (slider 1-30), distinto de "days"
           ...(scalable         && { scalable }),
           ...(country          && { country }),
           ...(hasVideo         && { hasVideo }),
