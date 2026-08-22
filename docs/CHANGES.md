@@ -4,6 +4,23 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-100 — Sync Ads: timeout subido de 60 a 180min (workflow llevaba 15+ días cancelándose sin terminar)
+
+**Fecha:** 2026-08-22
+**Tipo:** infraestructura/CI, parte de FIX-068 (ver `docs/FIXES.md` del backend para la causa raíz completa)
+
+**Por qué:** el workflow `Sync Ads` (GitHub Actions, diario 8am UTC) se venía cancelando por timeout todos los días desde el 2026-08-08 — el pool de tiendas creció a 724 (plan `admin`) vs. 12 tiendas `pro` reales, y el job nunca alcanzaba a procesar todas antes de los 60 minutos. El fix principal (backend, FIX-068) garantiza que `pro`/`agency` se procesen siempre primero; este cambio de timeout es complementario — le da al resto del pool una chance real de avanzar en vez de quedar sistemáticamente sin tocar. Sin riesgo de solapar con el cron del día siguiente (180min deja margen de sobra antes de las 8:00 UTC del día siguiente).
+
+**Qué cambió (`.github/workflows/sync-ads.yml`):** `timeout-minutes: 60` → `180`.
+
+**Qué NO cambió:** la lógica de `sync-ads.ts` no se tocó — confirmado que ya procesa el array de tiendas en el orden exacto que manda el backend (`for...of` secuencial, sin reordenar), así que la prioridad de FIX-068 se respeta sin cambios acá.
+
+**Archivos modificados:** `.github/workflows/sync-ads.yml`.
+
+**Verificación pendiente:** confirmar en el próximo run que el job termina antes de las 180min y que las tiendas pro/agency se procesan primero.
+
+---
+
 ### CHANGE-099 — Onboarding: corrección de CHANGE-098 — vuelve a ser obligatorio, pero ya no atrapa a nadie
 
 **Fecha:** 2026-07-22

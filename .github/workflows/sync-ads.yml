@@ -9,7 +9,12 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # FIX-068 (2026-08-22): 60min se quedaba corto — el job llevaba 15+ días seguidos
+    # cancelado antes de terminar (pool creció a 700+ tiendas admin). Subido a 180min.
+    # Con la prioridad pro/agency-primero (backend, misma fecha) las tiendas que pagan
+    # ya no dependen de este margen para completarse, pero más tiempo deja que el pool
+    # también avance en vez de quedar sistemáticamente sin tocar.
+    timeout-minutes: 180
 
     steps:
       - uses: actions/checkout@v4
