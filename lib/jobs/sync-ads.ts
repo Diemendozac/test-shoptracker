@@ -308,6 +308,40 @@ async function syncStore(store: Store): Promise<StoreOutcome> {
   return { status: 'synced', adsSaved: totalAdsSaved, matches: pushed }
 }
 
+// FIX-069: reporta el resumen de la corrida al dashboard de salud de scrapers en /admin.
+// Best-effort — un fallo acá nunca debe afectar el exit code real del job.
+async function reportScraperRun(
+  startedAt: Date,
+  status: 'success' | 'partial' | 'failure',
+  itemsTotal: number,
+  itemsOk: number,
+  itemsError: number,
+  errorSample?: string,
+): Promise<void> {
+  try {
+    await fetch(`${API_URL}/internal/scraper-runs`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Webhook-Secret': WEBHOOK_SECRET,
+      },
+      body: JSON.stringify({
+        scraperName: 'sync_ads',
+        startedAt: startedAt.toISOString(),
+        finishedAt: new Date().toISOString(),
+        status,
+        itemsTotal,
+        itemsOk,
+        itemsError,
+        errorSample: errorSample?.slice(0, 500),
+      }),
+      signal: AbortSignal.timeout(10000),
+    })
+  } catch (e: any) {
+    console.warn(`⚠ No se pudo reportar a scraper_runs: ${e.message}`)
+  }
+}
+
 async function main(): Promise<void> {
   const startedAt = new Date()
   console.log('🚀 sync-ads: starting\n')
@@ -357,9 +391,19 @@ async function main(): Promise<void> {
   console.log('\n✅ sync-ads: done')
   console.log(`   ${storesProcessed} procesadas / ${storesSkipped} skipped / ${totalAdsSaved} ads / ${durationSeconds}s`)
   if (errors.length > 0) console.log(`   ⚠ ${errors.length} errores: ${errors.join(', ')}`)
+
+  await reportScraperRun(
+    startedAt,
+    errors.length === 0 ? 'success' : (storesProcessed > errors.length ? 'partial' : 'failure'),
+    stores.length,
+    storesProcessed - errors.length,
+    errors.length,
+    errors[0],
+  )
 }
 
-main().catch(err => {
+main().catch(async err => {
   console.error('\n❌ Fatal:', err.message)
+  await reportScraperRun(new Date(), 'failure', 0, 0, 1, err.message)
   process.exit(1)
 })

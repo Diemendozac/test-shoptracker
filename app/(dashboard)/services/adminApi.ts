@@ -20,10 +20,27 @@ export interface AdminUsersResponse {
   users: AdminUserRow[]
 }
 
+export interface ScraperRunRow {
+  id: string
+  startedAt: string
+  finishedAt: string | null
+  status: 'success' | 'partial' | 'failure'
+  itemsTotal: number | null
+  itemsOk: number | null
+  itemsError: number | null
+  errorSample: string | null
+  metadata: string | null
+}
+
+export interface ScraperRunsResponse {
+  days: number
+  scrapers: Record<string, ScraperRunRow[]>
+}
+
 export const adminApi = createApi({
   reducerPath: 'adminApi',
   baseQuery: makeAuthBaseQuery(process.env.NEXT_PUBLIC_API_URL + '/admin'),
-  tagTypes: ['AdminUsers'],
+  tagTypes: ['AdminUsers', 'ScraperRuns'],
   endpoints: (builder) => ({
     getAdminUsers: builder.query<AdminUsersResponse, void>({
       query: () => '/users',
@@ -37,7 +54,11 @@ export const adminApi = createApi({
       }),
       invalidatesTags: ['AdminUsers'],
     }),
+    getScraperRuns: builder.query<ScraperRunsResponse, { days?: number } | void>({
+      query: (arg) => `/scraper-runs?days=${arg?.days ?? 30}`,
+      providesTags: ['ScraperRuns'],
+    }),
   }),
 })
 
-export const { useGetAdminUsersQuery, useUpdateUserPlanMutation } = adminApi
+export const { useGetAdminUsersQuery, useUpdateUserPlanMutation, useGetScraperRunsQuery } = adminApi

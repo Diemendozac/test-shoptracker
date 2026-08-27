@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAppSelector } from '@/store/hooks'
 import { useGetMeQuery } from '@/app/(dashboard)/services/userApi'
 import { useGetAdminUsersQuery, useUpdateUserPlanMutation } from '@/app/(dashboard)/services/adminApi'
+import { ScraperHealthDashboard } from '@/components/admin/ScraperHealthDashboard'
 import { cn } from '@/lib/utils'
 
 const PLAN_COLORS: Record<string, string> = {
@@ -127,6 +128,9 @@ export default function AdminPage() {
           ))}
         </div>
       )}
+
+      {/* Salud de scrapers */}
+      <ScraperHealthDashboard />
 
       {/* Table */}
       <div className="overflow-hidden rounded-2xl border border-border bg-card">
