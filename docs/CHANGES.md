@@ -4,6 +4,25 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-101 — Dashboard de salud de scrapers en /admin (FIX-069, backend)
+
+**Fecha:** 2026-08-26
+**Tipo:** feature nueva, observabilidad interna — pedido explícito de Daniel
+
+**Por qué:** ver `docs/FIXES.md` FIX-069 (backend) para el detalle completo. En corto: los 3 scrapers de SCOUT no se hablan entre sí y auditar su salud requería SSH/GitHub Actions/logs locales cada vez — se pidió un dashboard gráfico centralizado en el mismo panel Admin.
+
+**Qué cambió:**
+- `lib/jobs/sync-ads.ts`: al terminar (éxito o fallo fatal), reporta el resumen vía `POST /api/internal/scraper-runs` — reutiliza las mismas variables (`storesProcessed`, `errors`, etc.) que ya se usaban para `sync-results.json`, no se duplica tracking.
+- `services/adminApi.ts`: nuevo endpoint RTK Query `getScraperRuns`.
+- `components/admin/ScraperHealthDashboard.tsx` (nuevo): un card por scraper con badge de estado, tasa de éxito, y gráfico de barras apiladas OK/error por corrida — mismo lenguaje visual que `score-chart.tsx` (recharts, OKLCH).
+- `app/(dashboard)/admin/page.tsx`: sección nueva.
+
+**Qué NO cambió:** ningún scraper cambia su comportamiento principal — el reporte es aditivo y best-effort (nunca puede tumbar el scraping real).
+
+**Archivos modificados:** `lib/jobs/sync-ads.ts`, `app/(dashboard)/services/adminApi.ts`, `components/admin/ScraperHealthDashboard.tsx` (nuevo), `app/(dashboard)/admin/page.tsx`.
+
+---
+
 ### CHANGE-100 — Sync Ads: timeout subido de 60 a 180min (workflow llevaba 15+ días cancelándose sin terminar)
 
 **Fecha:** 2026-08-22
