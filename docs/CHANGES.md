@@ -4,6 +4,25 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-102 — Descripción del producto (texto + imágenes) en el detalle de candidatos con video (FIX-070, backend)
+
+**Fecha:** 2026-08-29
+**Tipo:** feature nueva, pedido directo de Daniel
+
+**Por qué:** ver `docs/FIXES.md` FIX-070 (backend). En corto: el detalle de un candidato con video de ads no mostraba la descripción real del producto — ahora sí, tomada de Shopify.
+
+**Qué cambió:**
+- `lib/jobs/sync-ads.ts`: `pushAds()` ahora devuelve si el backend fetcheó descripción para ese candidato; se acumula y se reporta como `descriptionsFetched` en el mismo `reportScraperRun` de siempre (nuevo parámetro `metadata` opcional).
+- `components/tracker/product-description.tsx` (nuevo): sección de descripción + galería de imágenes. Texto siempre como texto plano — nunca `dangerouslySetInnerHTML`, ni aunque el backend ya lo limpie primero.
+- `app/(dashboard)/types/index.ts`: campos `descriptionText`/`descriptionImages` en `CandidateDetail`.
+- `app/(dashboard)/tracker/[candidateId]/page.tsx`: sección nueva, debajo de "Anuncios activos". No renderiza nada si el candidato no tiene descripción (no deja una card vacía).
+
+**Qué NO cambió:** ningún endpoint existente cambia de forma — solo se agregan campos.
+
+**Archivos modificados:** `lib/jobs/sync-ads.ts`, `components/tracker/product-description.tsx` (nuevo), `app/(dashboard)/types/index.ts`, `app/(dashboard)/tracker/[candidateId]/page.tsx`.
+
+---
+
 ### CHANGE-101 — Dashboard de salud de scrapers en /admin (FIX-069, backend)
 
 **Fecha:** 2026-08-26
