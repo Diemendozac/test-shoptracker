@@ -4,6 +4,24 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-103 — Descripción como popup con bloques en orden, reemplaza a CHANGE-102 (FIX-070 rediseño)
+
+**Fecha:** 2026-08-29
+**Tipo:** rediseño tras feedback directo de Daniel viendo datos reales
+
+**Por qué:** ver `docs/FIXES.md` FIX-070 addendum 3 (backend). En corto: CHANGE-102 mostraba imágenes y texto como dos bloques separados sin relación — no servía para tiendas que intercalan texto entre imágenes tipo landing page, y la mayoría de las tiendas resultaron no tener texto real en absoluto (verificado, no era bug).
+
+**Qué cambió:**
+- `components/tracker/product-description.tsx`: `ProductDescriptionSection` (sección inline) → `ProductDescriptionModal` (popup con `Dialog` de shadcn, ya existía en el proyecto — no se agregó dependencia nueva). El trigger es una card chica con botón "Ver completa"; el popup muestra los bloques (texto/imagen) apilados en el orden real de la landing.
+- `app/(dashboard)/types/index.ts`: `descriptionText`/`descriptionImages` → `descriptionBlocks` (JSON array `{type,value}` ordenado).
+- `app/(dashboard)/tracker/[candidateId]/page.tsx`: usa el componente nuevo.
+
+**Qué NO cambió:** el texto se sigue renderizando siempre como texto plano, nunca `dangerouslySetInnerHTML`.
+
+**Archivos modificados:** `components/tracker/product-description.tsx`, `app/(dashboard)/types/index.ts`, `app/(dashboard)/tracker/[candidateId]/page.tsx`.
+
+---
+
 ### CHANGE-102 — Descripción del producto (texto + imágenes) en el detalle de candidatos con video (FIX-070, backend)
 
 **Fecha:** 2026-08-29
