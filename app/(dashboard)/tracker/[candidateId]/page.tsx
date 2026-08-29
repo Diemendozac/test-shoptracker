@@ -13,7 +13,7 @@ import { useGetCandidateDetailQuery } from '@/app/(dashboard)/services/dashboard
 import { useGetStoresQuery } from '@/app/(dashboard)/stores/services/storeApi'
 import { useCurrency } from '@/store/hooks'
 import { ProductAdsSection } from '@/components/tracker/product-ads'
-import { ProductDescriptionSection } from '@/components/tracker/product-description'
+import { ProductDescriptionModal } from '@/components/tracker/product-description'
 import { usePlanTier } from '@/lib/view-as'
 import { FormattedPrice } from '@/components/ui/formatted-price'
 import {
@@ -586,10 +586,7 @@ function CandidateDetailContent() {
       <ProductAdsSection candidateId={candidateId} />
 
       {/* Descripción del producto (FIX-070) */}
-      <ProductDescriptionSection
-        descriptionText={data?.candidate.descriptionText ?? null}
-        descriptionImages={data?.candidate.descriptionImages ?? null}
-      />
+      <ProductDescriptionModal descriptionBlocks={data?.candidate.descriptionBlocks ?? null} />
 
       {/* Charts Grid */}
       <div className="grid gap-6 lg:grid-cols-2">

@@ -168,8 +168,7 @@ export interface CandidateDetail {
     storeBaseUrl: string
     daysElapsed: number
     isScoutStore: boolean
-    descriptionText: string | null
-    descriptionImages: string | null // JSON array de URLs, sin parsear — ver ProductDescriptionSection
+    descriptionBlocks: string | null // JSON array de {type,value} en orden — ver ProductDescriptionModal
   }
   summary: {
     performanceScore: number

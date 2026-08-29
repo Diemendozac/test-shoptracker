@@ -1,77 +1,99 @@
 'use client'
 
-// FIX-070: descripción real del producto (texto + imágenes), tomada de Shopify products.json.
-// Solo existe para candidatos con video de ads — si no hay nada, el componente no renderiza
-// nada (no hay una sección vacía confundiendo al usuario).
+// FIX-070 (rediseño): descripción real del producto como popup, con los bloques (texto/imagen)
+// en el mismo orden en que aparecen en la tienda de origen — la mayoría son solo imágenes
+// (la "landing" completa subida como galería de fotos), algunas intercalan texto real.
 //
 // El texto SIEMPRE se renderiza como texto plano (nunca dangerouslySetInnerHTML) — el backend
-// ya lo limpia con Jsoup antes de guardarlo, pero esta es la segunda capa de seguridad: aunque
-// llegara HTML crudo por algún motivo, acá nunca se interpreta como markup.
+// ya lo limpia con Jsoup antes de guardarlo, pero esta es la segunda capa de seguridad.
 
 import { useState } from 'react'
-import { cn } from '@/lib/utils'
+import { Eye } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog'
 
-interface ProductDescriptionSectionProps {
-  descriptionText: string | null
-  descriptionImages: string | null // JSON array de URLs, sin parsear
+interface DescriptionBlock {
+  type: 'text' | 'image'
+  value: string
 }
 
-function parseImages(raw: string | null): string[] {
+interface ProductDescriptionModalProps {
+  descriptionBlocks: string | null // JSON crudo, sin parsear
+}
+
+function parseBlocks(raw: string | null): DescriptionBlock[] {
   if (!raw) return []
   try {
     const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed.filter((u): u is string => typeof u === 'string') : []
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter(
+      (b): b is DescriptionBlock =>
+        b && (b.type === 'text' || b.type === 'image') && typeof b.value === 'string',
+    )
   } catch {
     return []
   }
 }
 
-export function ProductDescriptionSection({ descriptionText, descriptionImages }: ProductDescriptionSectionProps) {
-  const images = parseImages(descriptionImages)
-  const [activeImage, setActiveImage] = useState(0)
+export function ProductDescriptionModal({ descriptionBlocks }: ProductDescriptionModalProps) {
+  const [open, setOpen] = useState(false)
+  const blocks = parseBlocks(descriptionBlocks)
 
-  if (!descriptionText && images.length === 0) return null
+  if (blocks.length === 0) return null
+
+  const imageCount = blocks.filter(b => b.type === 'image').length
 
   return (
-    <div className="rounded-xl border border-border bg-card p-6">
-      <div className="mb-4">
-        <h3 className="font-semibold text-foreground">Descripción del producto</h3>
-        <p className="text-sm text-muted-foreground">Tal como aparece en la tienda de origen</p>
-      </div>
-
-      <div className={cn('grid gap-6', images.length > 0 && 'md:grid-cols-[minmax(0,280px)_1fr]')}>
-        {images.length > 0 && (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <div className="rounded-xl border border-border bg-card p-4">
+        <button
+          onClick={() => setOpen(true)}
+          className="flex w-full items-center justify-between text-left"
+        >
           <div>
-            <div className="aspect-square overflow-hidden rounded-lg border border-border bg-secondary/30">
-              {/* eslint-disable-next-line @next/next/no-img-element -- imágenes externas de dominios de tiendas arbitrarios, no vale la pena configurar next/image por dominio */}
-              <img src={images[activeImage]} alt="Imagen del producto" className="h-full w-full object-cover" />
-            </div>
-            {images.length > 1 && (
-              <div className="mt-2 flex gap-2 overflow-x-auto">
-                {images.map((src, i) => (
-                  <button
-                    key={src}
-                    onClick={() => setActiveImage(i)}
-                    className={cn(
-                      'h-14 w-14 flex-shrink-0 overflow-hidden rounded-md border-2 transition-colors',
-                      i === activeImage ? 'border-primary' : 'border-transparent opacity-70 hover:opacity-100',
-                    )}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={src} alt="" className="h-full w-full object-cover" />
-                  </button>
-                ))}
-              </div>
-            )}
+            <h3 className="font-semibold text-foreground">Descripción del producto</h3>
+            <p className="text-sm text-muted-foreground">
+              {imageCount > 0 ? `${imageCount} imagen${imageCount === 1 ? '' : 'es'} · ` : ''}
+              Tal como aparece en la tienda de origen
+            </p>
           </div>
-        )}
-
-        {descriptionText && (
-          <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
-            {descriptionText}
-          </p>
-        )}
+          <Button variant="outline" size="sm" className="gap-1.5 flex-shrink-0">
+            <Eye className="h-3.5 w-3.5" />
+            Ver completa
+          </Button>
+        </button>
       </div>
-    </div>
+
+      <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Descripción del producto</DialogTitle>
+          <DialogDescription>Tal como aparece en la tienda de origen, en orden</DialogDescription>
+        </DialogHeader>
+
+        <div className="flex flex-col gap-4">
+          {blocks.map((block, i) =>
+            block.type === 'image' ? (
+              // eslint-disable-next-line @next/next/no-img-element -- imágenes externas de dominios de tiendas arbitrarios
+              <img
+                key={i}
+                src={block.value}
+                alt=""
+                className="w-full rounded-lg border border-border"
+              />
+            ) : (
+              <p key={i} className="whitespace-pre-line text-sm leading-relaxed text-foreground">
+                {block.value}
+              </p>
+            ),
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }
