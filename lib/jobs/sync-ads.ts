@@ -165,7 +165,7 @@ async function pushAdvertiserPages(storeId: string, pages: AdvertiserPagePayload
   if (!res.ok) throw new Error(`advertiser-pages push failed: ${res.status}`)
 }
 
-async function pushAds(candidateId: string, storeDomain: string, ads: ScrapedAd[]): Promise<void> {
+async function pushAds(candidateId: string, storeDomain: string, ads: ScrapedAd[]): Promise<boolean> {
   const res = await fetch(`${API_URL}/internal/webhook/ads`, {
     method: 'POST',
     headers: {
@@ -190,6 +190,9 @@ async function pushAds(candidateId: string, storeDomain: string, ads: ScrapedAd[
     }),
   })
   if (!res.ok) throw new Error(`Failed to push ads: ${res.status}`)
+  // FIX-070: el backend fetchea la descripción del producto cuando corresponde y nos avisa acá.
+  const body = await res.json().catch(() => ({}))
+  return body?.descriptionFetched === true
 }
 
 // ── Core sync logic ────────────────────────────────────────────────────────────
@@ -197,7 +200,7 @@ async function pushAds(candidateId: string, storeDomain: string, ads: ScrapedAd[
 type StoreOutcome =
   | { status: 'skipped'; reason: string }
   | { status: 'error';   error: string }
-  | { status: 'synced';  adsSaved: number; matches: number }
+  | { status: 'synced';  adsSaved: number; matches: number; descriptionsFetched: number }
 
 async function syncStore(store: Store): Promise<StoreOutcome> {
   let domain = new URL(store.baseUrl).hostname.replace(/^www\./, '')
@@ -290,6 +293,7 @@ async function syncStore(store: Store): Promise<StoreOutcome> {
   let pushed = 0
   let skipped = 0
   let totalAdsSaved = 0
+  let descriptionsFetched = 0
   for (const candidate of candidates) {
     const matched = ads.filter(a => a.matchedCandidateId === candidate.candidateId)
     const handle  = candidate.productUrl?.match(/\/products\/([^/?#]+)/)?.[1] ?? candidate.candidateId.slice(0, 8)
@@ -298,14 +302,15 @@ async function syncStore(store: Store): Promise<StoreOutcome> {
       skipped++
       continue
     }
-    await pushAds(candidate.candidateId, domain, matched)
-    console.log(`  ✅ ${handle} → ${matched.length} ads`)
+    const gotDescription = await pushAds(candidate.candidateId, domain, matched)
+    if (gotDescription) descriptionsFetched++
+    console.log(`  ✅ ${handle} → ${matched.length} ads${gotDescription ? ' + descripción' : ''}`)
     pushed++
     totalAdsSaved += matched.length
   }
-  console.log(`  [F3] Resultado: ${pushed} candidatos con ads / ${skipped} sin match / ${ads.length - totalMatched} ads descartados`)
+  console.log(`  [F3] Resultado: ${pushed} candidatos con ads / ${skipped} sin match / ${ads.length - totalMatched} ads descartados / ${descriptionsFetched} descripciones nuevas`)
 
-  return { status: 'synced', adsSaved: totalAdsSaved, matches: pushed }
+  return { status: 'synced', adsSaved: totalAdsSaved, matches: pushed, descriptionsFetched }
 }
 
 // FIX-069: reporta el resumen de la corrida al dashboard de salud de scrapers en /admin.
@@ -317,6 +322,7 @@ async function reportScraperRun(
   itemsOk: number,
   itemsError: number,
   errorSample?: string,
+  metadata?: Record<string, unknown>,
 ): Promise<void> {
   try {
     await fetch(`${API_URL}/internal/scraper-runs`, {
@@ -334,6 +340,7 @@ async function reportScraperRun(
         itemsOk,
         itemsError,
         errorSample: errorSample?.slice(0, 500),
+        metadata: metadata ? JSON.stringify(metadata) : undefined,
       }),
       signal: AbortSignal.timeout(10000),
     })
@@ -353,6 +360,7 @@ async function main(): Promise<void> {
   let storesSkipped   = 0
   let totalAdsSaved   = 0
   let totalMatches    = 0
+  let totalDescriptionsFetched = 0 // FIX-070
   const errors: string[] = []
 
   for (const store of stores) {
@@ -369,6 +377,7 @@ async function main(): Promise<void> {
       storesProcessed++
       totalAdsSaved += result.adsSaved
       totalMatches  += result.matches
+      totalDescriptionsFetched += result.descriptionsFetched
     }
 
     await new Promise(r => setTimeout(r, 3000)) // rate-limit between stores
@@ -383,6 +392,7 @@ async function main(): Promise<void> {
     stores_skipped:   storesSkipped,
     total_ads_saved:  totalAdsSaved,
     matches:          totalMatches,
+    descriptions_fetched: totalDescriptionsFetched,
     errors,
   }
 
@@ -399,6 +409,7 @@ async function main(): Promise<void> {
     storesProcessed - errors.length,
     errors.length,
     errors[0],
+    { descriptionsFetched: totalDescriptionsFetched }, // FIX-070
   )
 }
 
