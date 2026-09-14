@@ -289,7 +289,14 @@ async function syncStore(store: Store): Promise<StoreOutcome> {
     }
   }
 
-  // ── 5. Push only ads with a real F3 match — no fallback ──────────────────
+  // ── 5. Push ads with a real F3 match — no fallback ────────────────────────
+  // CHANGE — status real de ads (propuesta 2026-09-13, wiki scout-ads-status-real-propuesta):
+  // antes esta rama hacía `continue` y nunca llamaba a pushAds cuando matched=0, así que el
+  // backend nunca se enteraba de que un candidato con ads previos dejó de tenerlos — el caso
+  // más importante para detectar que un anuncio terminó. Ahora se llama igual con ads:[] para
+  // que WebhookController pueda reconciliar (marcar 'inactive' lo que ya no vino). El candidato
+  // sigue contando como "sin match" en el resumen — no es un push con contenido, es la señal de
+  // ausencia.
   let pushed = 0
   let skipped = 0
   let totalAdsSaved = 0
@@ -297,13 +304,13 @@ async function syncStore(store: Store): Promise<StoreOutcome> {
   for (const candidate of candidates) {
     const matched = ads.filter(a => a.matchedCandidateId === candidate.candidateId)
     const handle  = candidate.productUrl?.match(/\/products\/([^/?#]+)/)?.[1] ?? candidate.candidateId.slice(0, 8)
+    const gotDescription = await pushAds(candidate.candidateId, domain, matched)
+    if (gotDescription) descriptionsFetched++
     if (matched.length === 0) {
-      console.log(`  - ${handle} → sin ads con match`)
+      console.log(`  - ${handle} → sin ads con match (reconciliación de status enviada)`)
       skipped++
       continue
     }
-    const gotDescription = await pushAds(candidate.candidateId, domain, matched)
-    if (gotDescription) descriptionsFetched++
     console.log(`  ✅ ${handle} → ${matched.length} ads${gotDescription ? ' + descripción' : ''}`)
     pushed++
     totalAdsSaved += matched.length

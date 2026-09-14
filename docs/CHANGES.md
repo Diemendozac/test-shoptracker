@@ -4,6 +4,26 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-104 — sync-ads.ts manda pushAds igual con 0 matches (FIX-071, backend)
+
+**Fecha:** 2026-09-13
+**Tipo:** fix, parte del cambio de status real de ads
+
+**Por qué:** ver `docs/FIXES.md` FIX-071 (backend) para el detalle completo. En corto: el backend necesita saber cuándo un candidato que antes tenía ads dejó de tener — pero `sync-ads.ts` hacía `continue` sin avisar nada cuando `matched.length === 0`, así que el caso más importante (anuncio que terminó) nunca llegaba al backend.
+
+**Qué cambió:**
+- `lib/jobs/sync-ads.ts`: el loop de candidatos ya no hace `continue` antes de llamar `pushAds()` — ahora se llama siempre, con `ads: []` cuando no hubo match. El candidato se sigue contando como "sin match" en el resumen de logs; no es un push con contenido, es la señal de ausencia que el backend usa para reconciliar `status` (ver FIX-071).
+
+**Qué NO cambió:** el contrato de `pushAds`/`POST /internal/webhook/ads` es el mismo payload de siempre (`candidateId`, `storeDomain`, `ads[]`) — solo cambia cuándo se llama, no su forma.
+
+**Archivos modificados:** `lib/jobs/sync-ads.ts`.
+
+**Verificación:** `npx tsc --noEmit -p tsconfig.json` no agrega errores nuevos sobre este archivo (el único error existente en `sync-ads.ts`, línea 272, es preexistente y no relacionado).
+
+**Nota:** parte del mismo cambio que FIX-071 (backend) — no tiene efecto observable por sí solo hasta que ese fix esté deployado. Sin merge a `main` todavía, misma cadena de aprobación que FIX-071 (relayada por Daniel, pendiente confirmación directa de Diego).
+
+---
+
 ### CHANGE-103 — Descripción como popup con bloques en orden, reemplaza a CHANGE-102 (FIX-070 rediseño)
 
 **Fecha:** 2026-08-29
