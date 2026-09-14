@@ -195,6 +195,20 @@ async function pushAds(candidateId: string, storeDomain: string, ads: ScrapedAd[
   return body?.descriptionFetched === true
 }
 
+// Complemento a FIX-071 (2026-09-13): barrido global, una vez por corrida completa — no por
+// tienda. Cubre candidatos que ya no se vuelven a scrapear (tracking_status ya no es 'active')
+// y cuyos product_ads quedarían congelados en 'active' para siempre sin esto. Ver
+// WebhookController.reconcileStaleAds en el backend.
+async function reconcileStaleAds(): Promise<number> {
+  const res = await fetch(`${API_URL}/internal/webhook/ads/reconcile-stale`, {
+    method: 'POST',
+    headers: { 'X-Webhook-Secret': WEBHOOK_SECRET },
+  })
+  if (!res.ok) throw new Error(`reconcile-stale failed: ${res.status}`)
+  const body = await res.json().catch(() => ({}))
+  return typeof body?.inactivated === 'number' ? body.inactivated : 0
+}
+
 // ── Core sync logic ────────────────────────────────────────────────────────────
 
 type StoreOutcome =
@@ -390,6 +404,16 @@ async function main(): Promise<void> {
     await new Promise(r => setTimeout(r, 3000)) // rate-limit between stores
   }
 
+  // Complemento a FIX-071 (2026-09-13): una sola vez por corrida completa, no por tienda.
+  // Best-effort — un fallo acá nunca debe tumbar el resumen ni el resto del reporte.
+  let staleInactivated = 0
+  try {
+    staleInactivated = await reconcileStaleAds()
+    console.log(`\n🧹 Barrido de ads stale: ${staleInactivated} marcados inactive`)
+  } catch (e) {
+    console.warn(`\n⚠ Barrido de ads stale falló: ${(e as Error).message}`)
+  }
+
   const durationSeconds = Math.round((Date.now() - startedAt.getTime()) / 1000)
 
   const summary = {
@@ -400,6 +424,7 @@ async function main(): Promise<void> {
     total_ads_saved:  totalAdsSaved,
     matches:          totalMatches,
     descriptions_fetched: totalDescriptionsFetched,
+    stale_ads_inactivated: staleInactivated,
     errors,
   }
 

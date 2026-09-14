@@ -4,6 +4,26 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-105 — sync-ads.ts llama al barrido de ads stale una vez por corrida (FIX-072, backend)
+
+**Fecha:** 2026-09-14
+**Tipo:** fix, complemento a CHANGE-104/FIX-071
+
+**Por qué:** ver `docs/FIXES.md` FIX-072 (backend). En corto: FIX-071 solo reconcilia ads de candidatos que se vuelven a scrapear — candidatos con tracking ya terminado (completed/expired/stale/winner) nunca se vuelven a pedir, así que sus ads quedaban congelados en `'active'` para siempre.
+
+**Qué cambió:**
+- `lib/jobs/sync-ads.ts`: nueva función `reconcileStaleAds()` que llama a `POST /internal/webhook/ads/reconcile-stale` **una sola vez al final de la corrida completa**, no por tienda. Best-effort (try/catch, nunca tumba el resto del reporte). El conteo se agrega a `sync-results.json` como `stale_ads_inactivated`.
+
+**Qué NO cambió:** el loop por tienda y `pushAds()` siguen exactamente igual que en CHANGE-104.
+
+**Archivos modificados:** `lib/jobs/sync-ads.ts`.
+
+**Verificación:** `tsc --noEmit -p tsconfig.json` no agrega errores nuevos (mismo error preexistente de siempre, sin relación).
+
+**Nota:** parte nueva, no estaba en lo revisado originalmente por Diego — mismo draft/no-merge que CHANGE-104 hasta confirmación.
+
+---
+
 ### CHANGE-104 — sync-ads.ts manda pushAds igual con 0 matches (FIX-071, backend)
 
 **Fecha:** 2026-09-13
