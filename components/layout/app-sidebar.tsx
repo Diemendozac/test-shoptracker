@@ -18,6 +18,7 @@ import {
   Clock,
   ShieldCheck,
   LogOut,
+  Video,
 } from 'lucide-react'
 import { DropspyIcon } from '@/components/ui/dropspy-logo'
 import { useGetMeQuery } from '@/app/(dashboard)/services/userApi'
@@ -35,8 +36,12 @@ const BOTTOM_NAV = [
 ]
 
 const TESTEOS_ITEMS = [
-  { name: 'Mis testeos',      href: '/tracker',    icon: Building2 },
-  { name: 'Explorar testeos', href: '/pool',       icon: Globe },
+  { name: 'Mis testeos',      href: '/tracker',      icon: Building2 },
+  { name: 'Explorar testeos', href: '/pool',         icon: Globe },
+  // Biblioteca de anuncios (2026-09-15, wiki scout-biblioteca-anuncios-propuesta) — pantalla
+  // nueva, anuncios en sí (no candidatos), sin depender de tracking_status. Ver FIX-074/
+  // ads-library en el backend.
+  { name: 'Biblioteca de anuncios', href: '/ads-library', icon: Video },
   { name: 'Pendientes',       href: '/pendientes', icon: Clock },
 ]
 
@@ -166,7 +171,8 @@ export function AppSidebar({ pinned }: AppSidebarProps) {
 
           <div className={cn(
             'overflow-hidden transition-all duration-200',
-            (open && expanded) ? 'max-h-36 opacity-100' : 'max-h-0 opacity-0',
+            // max-h subido de 36 a 44 — se agregó un 4to item (Biblioteca de anuncios, 2026-09-15)
+            (open && expanded) ? 'max-h-44 opacity-100' : 'max-h-0 opacity-0',
           )}>
             <div className="ml-3 mt-0.5 space-y-0.5 border-l border-border pl-3">
               {TESTEOS_ITEMS.map((item) => {

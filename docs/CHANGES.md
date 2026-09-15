@@ -4,6 +4,30 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-107 — Biblioteca de anuncios: pantalla nueva (FIX-075, backend)
+
+**Fecha:** 2026-09-15
+**Tipo:** feature nueva, pedido directo de Daniel
+
+**Por qué:** ver `docs/FIXES.md` FIX-075 (backend). En corto: pantalla nueva para navegar anuncios filtrables por status/runtime/categoría, separada de "Explorar testeos" — cubre anuncios de candidatos que ya no están en tracking activo, que hoy no aparecen en ningún lado.
+
+**Qué cambió:**
+- `app/(dashboard)/ads-library/page.tsx` (nuevo): filtros de Status (activo/inactivo/todos), Runtime (presets 7+/30+/90+ días — la premisa de "más tiempo activo = más ganador"), Categoría (las 13 de `scout-clasificacion-nicho`, multi-select). Grid de cards reusando `AdSlide` tal cual, con paginación simple prev/next.
+- `components/tracker/product-ads.tsx`: `AdSlide` pasa de función interna a exportada — se reusa acá sin duplicar el componente ni su lógica de status ya corregida en CHANGE-106.
+- `app/(dashboard)/services/dashboardApi.ts`: nuevo `getAdsLibrary` (`GET /dashboard/ads-library`).
+- `app/(dashboard)/types/index.ts`: `AdLibraryItem` (extiende `Ad` con candidato/nicho/país), `AdsLibraryResponse`.
+- `components/layout/app-sidebar.tsx`: nueva entrada "Biblioteca de anuncios" en el grupo de Testeos, ícono `Video`. `max-h` del contenedor expandible subido de 36 a 44 para el 4to item.
+
+**Discrepancia encontrada, no corregida acá (fuera de alcance):** el `NICHES` de `pool-winners.tsx` solo tiene 9 de las 13 categorías (le faltan Deportes & Fitness, Tecnología & Gadgets, Bebés & Niños, Otro). Para esta pantalla se usa una lista propia completa, porque Daniel pidió explícitamente que ningún anuncio quede sin categoría — no se tocó el filtro de Explorar testeos, queda señalado por si alguien lo revisa después.
+
+**Qué NO cambió:** ningún endpoint ni componente existente cambia de comportamiento — todo es aditivo.
+
+**Archivos modificados:** `app/(dashboard)/ads-library/page.tsx` (nuevo), `app/(dashboard)/services/dashboardApi.ts`, `app/(dashboard)/types/index.ts`, `components/layout/app-sidebar.tsx`, `components/tracker/product-ads.tsx`.
+
+**Verificación:** `tsc --noEmit -p tsconfig.json` no agrega errores nuevos (mismos preexistentes de siempre, `sync-ads.ts` y `lib/mock-data.ts`).
+
+---
+
 ### CHANGE-106 — mostrar ads inactivos con label en vez de ocultarlos (FIX-074, backend)
 
 **Fecha:** 2026-09-15

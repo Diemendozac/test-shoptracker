@@ -1,6 +1,6 @@
 
 import { createApi } from '@reduxjs/toolkit/query/react'
-import type { StoreOverviewItem, TrackerCandidate, WindowCandidate, CandidateDetail, WeeklyWinnerResponse, PoolWinnersResponse, DashboardInsight, PodiumResponse, ProductAdsResponse } from '../types'
+import type { StoreOverviewItem, TrackerCandidate, WindowCandidate, CandidateDetail, WeeklyWinnerResponse, PoolWinnersResponse, DashboardInsight, PodiumResponse, ProductAdsResponse, AdsLibraryResponse } from '../types'
 import { makeAuthBaseQuery } from '@/lib/baseQuery'
 
 export const dashboardApi = createApi({
@@ -112,6 +112,29 @@ export const dashboardApi = createApi({
       query: (storeId) => `/stores/${storeId}/ads/count`,
     }),
 
+    // GET /api/dashboard/ads-library?page=&size=&status=&minDaysRunning=&maxDaysRunning=&niche=&country=
+    // Biblioteca de anuncios (2026-09-15, wiki scout-biblioteca-anuncios-propuesta) — a
+    // diferencia de getPoolWinners, no filtra por tracking_status del candidato.
+    getAdsLibrary: builder.query<AdsLibraryResponse, {
+      page?: number; size?: number
+      status?: 'active' | 'inactive'
+      minDaysRunning?: number; maxDaysRunning?: number
+      niche?: string[]; country?: string
+    }>({
+      query: ({ page = 0, size = 24, status, minDaysRunning, maxDaysRunning, niche, country } = {}) => ({
+        url: '/ads-library',
+        params: {
+          page, size,
+          ...(status              && { status }),
+          ...(minDaysRunning != null && { minDaysRunning }),
+          ...(maxDaysRunning != null && { maxDaysRunning }),
+          ...(niche?.length       && { niche }),
+          ...(country              && { country }),
+        },
+      }),
+      providesTags: ['Ads'],
+    }),
+
   }),
 })
 
@@ -128,4 +151,5 @@ export const {
   useGetPodiumQuery,
   useGetProductAdsQuery,
   useGetStoreAdsCountQuery,
+  useGetAdsLibraryQuery,
 } = dashboardApi

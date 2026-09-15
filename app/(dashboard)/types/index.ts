@@ -204,3 +204,22 @@ export interface ProductAdsResponse {
   isPro: boolean
   lastUpdated: string
 }
+
+// Biblioteca de anuncios (2026-09-15, wiki scout-biblioteca-anuncios-propuesta) — extiende Ad
+// con lo que hace falta para listar anuncios sueltos, fuera del contexto de un candidato ya
+// abierto en detalle: a qué producto pertenece, en qué nicho/país. Depende de FIX-074.
+export interface AdLibraryItem extends Ad {
+  candidateId: string
+  productTitle: string
+  productImage: string | null
+  productNiche: string | null
+  country: string | null
+}
+
+export interface AdsLibraryResponse {
+  ads: AdLibraryItem[]
+  isPro: boolean
+  total: number
+  page: number
+  totalPages: number
+}
