@@ -137,7 +137,9 @@ export function useHoverPanel() {
 
 // ─── AdSlide — card 9:16 para carrusel de anuncios ────────────────────────────
 
-function AdSlide({
+// Exportado para reuso en la Biblioteca de anuncios (2026-09-15) — misma card, mismo
+// tratamiento de status ya corregido, sin duplicar el componente.
+export function AdSlide({
   ad,
   index,
   count = 1,
