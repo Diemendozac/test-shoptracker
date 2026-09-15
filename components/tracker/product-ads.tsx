@@ -66,7 +66,12 @@ export function FloatingVideoPanel({
         left,
         width: 200,
         height: 356,
-        zIndex: 50,
+        // z-60, no 50 (2026-09-15) — ViewAsBar (components/admin/ViewAsBar.tsx) también usa
+        // z-50, fixed en el borde inferior. Con el mismo nivel, gana el que esté después en el
+        // DOM — inconsistente, y ViewAsBar termina tapando el panel cuando el hover abre cerca
+        // del borde inferior. Encontrado en la Biblioteca de anuncios (grid más alto = más
+        // frecuente ahí), pero afecta a cualquier pantalla que use este panel.
+        zIndex: 60,
         borderRadius: 8,
         overflow: 'hidden',
         boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
