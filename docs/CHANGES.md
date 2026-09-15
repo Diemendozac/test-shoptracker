@@ -4,6 +4,26 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-108 — Biblioteca de anuncios: diversificar por marca (evita marcas repetidas en la misma fila)
+
+**Fecha:** 2026-09-15
+**Tipo:** fix de UX, feedback de Daniel viendo datos reales en producción
+
+**Por qué:** con el orden por defecto (`days_running` desc), una marca con varios anuncios de duración parecida terminaba ocupando varias columnas seguidas de la misma fila — visualmente repetitivo, malo para "explorar" que es el propósito de la pantalla.
+
+**Qué cambió:**
+- `app/(dashboard)/ads-library/page.tsx`: nueva función `diversifyByAdvertiser` — agrupa por `advertiser_name` (fallback `candidateId`) y arma el orden final por round-robin, priorizando siempre el bucket con más anuncios restantes, evitando que el ítem anterior y el siguiente compartan advertiser cuando es matemáticamente posible. No reordena por relevancia — el orden por `days_running` sigue siendo la base, esto solo intercala.
+
+**Qué NO cambió:** el backend sigue devolviendo `days_running` desc puro — el intercalado es puramente de presentación, en el cliente.
+
+**Límite conocido, no resuelto:** si una sola marca domina más de la mitad de los 24 resultados de una página, no es matemáticamente posible evitar toda repetición — se minimiza, no se garantiza al 100%. No se consideró necesario resolver eso ahora.
+
+**Archivos modificados:** `app/(dashboard)/ads-library/page.tsx`.
+
+**Verificación:** `tsc --noEmit -p tsconfig.json` no agrega errores nuevos.
+
+---
+
 ### CHANGE-107 — Biblioteca de anuncios: pantalla nueva (FIX-075, backend)
 
 **Fecha:** 2026-09-15

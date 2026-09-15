@@ -5,13 +5,40 @@
 // que el candidato siga en tracking activo. Depende de FIX-074 (status/days_running reales) —
 // ver docs/FIXES.md en el backend para el detalle de esa parte.
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Lock, Video } from 'lucide-react'
 import { useGetAdsLibraryQuery } from '@/app/(dashboard)/services/dashboardApi'
 import { AdSlide, FloatingVideoPanel, useHoverPanel } from '@/components/tracker/product-ads'
 import { usePlanTier } from '@/lib/view-as'
 import { cn } from '@/lib/utils'
 import { Checkbox } from '@/components/ui/checkbox'
+import type { AdLibraryItem } from '@/app/(dashboard)/types'
+
+// Feedback de Daniel viendo datos reales (2026-09-15): al ordenar por days_running desc, una
+// sola marca con varios anuncios de duración parecida terminaba ocupando varias columnas
+// seguidas de la misma fila. Esto no reordena por relevancia — solo intercala por advertiser
+// (round-robin, priorizando siempre el bucket con más anuncios restantes) para que la misma
+// marca no quede pegada. Cuando una marca domina más de la mitad de la página, no es
+// matemáticamente posible evitar toda repetición — se minimiza, no se garantiza al 100%.
+function diversifyByAdvertiser(items: AdLibraryItem[]): AdLibraryItem[] {
+  const buckets = new Map<string, AdLibraryItem[]>()
+  for (const item of items) {
+    const key = item.advertiser_name || item.candidateId
+    if (!buckets.has(key)) buckets.set(key, [])
+    buckets.get(key)!.push(item)
+  }
+  const result: AdLibraryItem[] = []
+  let lastKey: string | null = null
+  while (result.length < items.length) {
+    const candidates = [...buckets.entries()].filter(([, arr]) => arr.length > 0)
+    if (candidates.length === 0) break
+    candidates.sort((a, b) => b[1].length - a[1].length)
+    const [key, arr] = candidates.find(([k]) => k !== lastKey) ?? candidates[0]
+    result.push(arr.shift()!)
+    lastKey = key
+  }
+  return result
+}
 
 // Las 13 categorías completas de scout-clasificacion-nicho, incluido el catch-all "Otro" —
 // a diferencia del NICHES de pool-winners.tsx (que solo tiene 9, discrepancia preexistente sin
@@ -51,6 +78,12 @@ export default function AdsLibraryPage() {
     ...(minDaysRunning != null && { minDaysRunning }),
     ...(niches.length > 0 && { niche: niches }),
   })
+
+  // Diversificar por marca (2026-09-15) — ver comentario en diversifyByAdvertiser arriba.
+  const diversifiedAds = useMemo(
+    () => data ? diversifyByAdvertiser(data.ads) : [],
+    [data],
+  )
 
   function toggleNiche(n: string) {
     setPage(0)
@@ -147,7 +180,7 @@ export default function AdsLibraryPage() {
       ) : (
         <>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-            {data.ads.map((ad, i) => (
+            {diversifiedAds.map((ad, i) => (
               <AdSlide
                 key={ad.id}
                 ad={ad}
