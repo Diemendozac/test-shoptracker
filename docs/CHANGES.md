@@ -4,6 +4,21 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-109 — z-index del video flotante sube de 50 a 60 (tapado por ViewAsBar)
+
+**Fecha:** 2026-09-15
+**Tipo:** fix, encontrado por Daniel probando la Biblioteca de anuncios como admin
+
+**Por qué:** `FloatingVideoPanel` (el video que aparece al hacer hover sobre un anuncio) y `ViewAsBar` (barra fija de "Vista: Real/Prueba gratis/..." que solo ven admins) tenían el mismo `z-50`. Empatados, gana el que esté después en el DOM — inconsistente, y en la práctica `ViewAsBar` terminaba tapando el panel cuando el hover se abría cerca del borde inferior. Se notó en la Biblioteca de anuncios (grid más alto, más probable que pase ahí) pero afecta a cualquier pantalla que use este panel — no es un bug de la feature nueva, es del componente compartido.
+
+**Qué cambió:** `FloatingVideoPanel` sube de `zIndex: 50` a `zIndex: 60`.
+
+**Archivos modificados:** `components/tracker/product-ads.tsx`.
+
+**Verificación:** `tsc --noEmit` sin errores nuevos.
+
+---
+
 ### CHANGE-108 — Biblioteca de anuncios: diversificar por marca (evita marcas repetidas en la misma fila)
 
 **Fecha:** 2026-09-15
