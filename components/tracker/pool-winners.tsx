@@ -52,12 +52,17 @@ function AdThumb({
 }) {
   const thumbRef = useRef<HTMLDivElement>(null)
   const hasVideo = !!ad.video_url_r2
+  // status real de ads v2 (2026-09-15) — antes esta card ni se mostraba si el ad no era
+  // 'active' (AdsCell filtraba antes de llegar acá). Ahora sí llega, así que se marca en vez
+  // de ocultarse: grayscale + label. Ver wiki scout-ads-status-real-propuesta, incidente FIX-073.
+  const isInactive = ad.status !== 'active'
   return (
     <div
       ref={thumbRef}
       className={cn(
         'relative h-[56px] w-[40px] shrink-0 overflow-hidden rounded-md bg-secondary',
         canViewAds ? 'cursor-pointer' : 'pointer-events-none blur-sm',
+        isInactive && 'opacity-60 grayscale',
       )}
       onMouseEnter={() => {
         if (canViewAds && thumbRef.current)
@@ -67,13 +72,18 @@ function AdThumb({
       onClick={() => allowMetaLink && window.open(ad.ad_snapshot_url, '_blank', 'noopener,noreferrer')}
     >
       <img src={ad.thumbnail_url || PLACEHOLDER} alt="" className="h-full w-full object-cover" />
-      {hasVideo && canViewAds && (
+      {hasVideo && canViewAds && !isInactive && (
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="flex h-5 w-5 items-center justify-center rounded-full bg-black/50">
             <svg className="h-2.5 w-2.5 translate-x-px text-white" fill="currentColor" viewBox="0 0 24 24">
               <path d="M8 5v14l11-7z" />
             </svg>
           </div>
+        </div>
+      )}
+      {isInactive && (
+        <div className="absolute bottom-0 left-0 right-0 bg-black/75 py-[1px] text-center">
+          <span className="text-[6px] font-bold uppercase tracking-wide text-white">Inactivo</span>
         </div>
       )}
     </div>
@@ -88,8 +98,12 @@ function AdsCell({ candidateId }: { candidateId: string }) {
   // incluida la prueba gratis — a diferencia de Mis testeos. Ver CHANGE-082.
   const canViewAds = true
 
-  const active = data?.ads.filter(a => a.status === 'active') ?? []
-  if (active.length === 0) return (
+  // status real de ads v2 (2026-09-15) — antes filtraba status==='active' acá, lo que sacaba
+  // al candidato entero de esta card (y, peor, de la paginación de hasVideo en el backend —
+  // ver ScoreSummaryRepository). Ahora se muestran todos los ads, activos primero, para que
+  // los que siguen corriendo aparezcan antes que los que ya terminaron. Incidente: FIX-073.
+  const allAds = data?.ads ?? []
+  if (allAds.length === 0) return (
     <div style={{ display: 'flex', gap: 3 }}>
       {[0, 1, 2].map(i => (
         <div key={i} style={{
@@ -101,9 +115,12 @@ function AdsCell({ candidateId }: { candidateId: string }) {
     </div>
   )
 
-  const previews          = active.slice(0, 3)
-  const remaining         = active.length - 3
-  const uniqueAdvertisers = uniqueAdvertisersFromAds(active)
+  const sorted = [...allAds].sort(
+    (a, b) => Number(a.status !== 'active') - Number(b.status !== 'active'),
+  )
+  const previews          = sorted.slice(0, 3)
+  const remaining         = sorted.length - 3
+  const uniqueAdvertisers = uniqueAdvertisersFromAds(allAds)
 
   return (
     <div className="flex flex-col gap-1.5">

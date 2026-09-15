@@ -159,6 +159,10 @@ function AdSlide({
     : ad.product_url
       ? ad.product_url.replace(/^https?:\/\//, '').split('/')[0]
       : `Anuncio ${index}`
+  // status real de ads v2 (2026-09-15) — antes esta card asumía 'Activo' hardcodeado sin mirar
+  // ad.status, porque nada en el sistema podía escribir 'inactive'. Ahora sí puede, y esta card
+  // ya no se oculta cuando pasa (ver ProductAdsSection abajo) — se relabelea. Incidente FIX-073.
+  const isInactive = ad.status !== 'active'
 
   return (
     <div className="flex w-full flex-col">
@@ -171,6 +175,7 @@ function AdSlide({
         className={cn(
           'relative w-full overflow-hidden rounded-xl bg-secondary aspect-[9/16]',
           allowMetaLink ? 'cursor-pointer' : 'cursor-default',
+          isInactive && 'grayscale',
         )}
         onMouseEnter={() => {
           if (thumbRef.current) onHover(ad, thumbRef.current.getBoundingClientRect())
@@ -208,7 +213,7 @@ function AdSlide({
           ) : <span />}
           <span className={cn(
             'rounded-md px-1.5 py-0.5 text-[10px] font-bold leading-none text-white backdrop-blur-sm',
-            ad.days_running >= 30 ? 'bg-emerald-500/80' : 'bg-black/60',
+            isInactive ? 'bg-muted-foreground/70' : ad.days_running >= 30 ? 'bg-emerald-500/80' : 'bg-black/60',
           )}>
             {ad.days_running}d
           </span>
@@ -234,10 +239,17 @@ function AdSlide({
           <p className="text-[11px] text-muted-foreground">
             Desde {formatDate(ad.first_seen)}
           </p>
-          <span className="flex shrink-0 items-center gap-1 text-[10px] font-medium text-emerald-600">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            Activo
-          </span>
+          {isInactive ? (
+            <span className="flex shrink-0 items-center gap-1 text-[10px] font-medium text-muted-foreground">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/60" />
+              Terminó · corrió {ad.days_running}d
+            </span>
+          ) : (
+            <span className="flex shrink-0 items-center gap-1 text-[10px] font-medium text-emerald-600">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              Activo
+            </span>
+          )}
         </div>
         {allowMetaLink ? (
           <a
@@ -321,7 +333,7 @@ export function ProductAdsSection({ candidateId }: ProductAdsSectionProps) {
     return (
       <div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
         <div className="flex items-center gap-3 border-b border-border px-6 py-4">
-          <h3 className="font-semibold text-foreground">Anuncios activos</h3>
+          <h3 className="font-semibold text-foreground">Anuncios</h3>
         </div>
         <AdsSkeleton />
       </div>
@@ -332,15 +344,26 @@ export function ProductAdsSection({ candidateId }: ProductAdsSectionProps) {
     ? (process.env.NODE_ENV === 'development' ? mockAds : [])
     : data.ads
 
-  const activeAds = rawAds.filter(a => a.status === 'active' && !isTestAd(a))
-  if (activeAds.length === 0) return null
+  // status real de ads v2 (2026-09-15) — antes esta sección filtraba solo-activos y ocultaba
+  // el resto por completo. Ahora se muestran todos (activos primero), cada uno con su status
+  // real en vez de ocultarse. Incidente FIX-073, wiki scout-ads-status-real-propuesta.
+  const allAds = rawAds.filter(a => !isTestAd(a))
+  if (allAds.length === 0) return null
+  const activeAds = allAds.filter(a => a.status === 'active')
 
   const lastUpdated = data?.lastUpdated ? formatRelative(data.lastUpdated) : ''
-  const uniqueAdvertisers = uniqueAdvertisersFromAds(activeAds)
+  const uniqueAdvertisers = uniqueAdvertisersFromAds(allAds)
 
-  const sorted = [...activeAds]
-  if (sortBy === 'recent') sorted.sort((a, b) => new Date(b.first_seen).getTime() - new Date(a.first_seen).getTime())
-  else if (sortBy === 'oldest') sorted.sort((a, b) => b.days_running - a.days_running)
+  const sortFn = (a: Ad, b: Ad) => {
+    if (sortBy === 'recent') return new Date(b.first_seen).getTime() - new Date(a.first_seen).getTime()
+    if (sortBy === 'oldest') return b.days_running - a.days_running
+    return 0 // 'impressions' — orden que ya viene del backend
+  }
+  // Activos primero siempre, inactivos después — dentro de cada grupo se respeta el sort elegido.
+  const sorted = [...allAds].sort((a, b) => {
+    const activeDiff = Number(a.status !== 'active') - Number(b.status !== 'active')
+    return activeDiff !== 0 ? activeDiff : sortFn(a, b)
+  })
 
   // Dedup by video: same thumbnail = same creative. Badge shows count.
   const dedupedMap = new Map<string, { ad: Ad; count: number }>()
@@ -364,10 +387,15 @@ export function ProductAdsSection({ candidateId }: ProductAdsSectionProps) {
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border px-6 py-4">
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className="font-semibold text-foreground">Anuncios activos</h3>
+          <h3 className="font-semibold text-foreground">Anuncios</h3>
           <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-600">
             {activeAds.length} activos
           </span>
+          {allAds.length > activeAds.length && (
+            <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
+              {allAds.length - activeAds.length} terminados
+            </span>
+          )}
           {uniqueAdvertisers.map(name => (
             <AdvertiserBadge
               key={name}

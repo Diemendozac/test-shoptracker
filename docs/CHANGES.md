@@ -4,6 +4,28 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-106 — mostrar ads inactivos con label en vez de ocultarlos (FIX-074, backend)
+
+**Fecha:** 2026-09-15
+**Tipo:** fix, Parte B de status real de ads v2 — reintento tras incidente FIX-073
+
+**Por qué:** ver `docs/FIXES.md` FIX-074 (backend) para el detalle completo. En corto: la v1 de esta feature (FIX-071/072) se mergeó sin esta parte — un ad marcado inactivo desaparecía en vez de relabelearse, que era el pedido original de Daniel desde el principio. Causó el incidente FIX-073. Esta vez las dos partes van juntas.
+
+**Qué cambió:**
+- `components/tracker/product-ads.tsx` (`ProductAdsSection`/`AdSlide`, panel de detalle de candidato): ya no filtra solo-activos — muestra todos los ads (activos primero), cada card con su status real: pill verde "Activo" o gris "Terminó · corrió Nd" (antes hardcodeado "Activo" sin mirar `ad.status`). Thumbnail en grayscale cuando está inactivo. Header cambia de "Anuncios activos" a "Anuncios" + badge secundario "N terminados" si aplica. Título del panel deja de decir "Anuncios activos" a secas.
+- `components/tracker/pool-winners.tsx` (`AdsCell`/`AdThumb`, la pantalla "Explorar testeos"): mismo criterio — ya no oculta candidatos cuyo único ad esté inactivo (antes mostraba 3 placeholders vacíos). Thumbs inactivos en grayscale con label "INACTIVO" superpuesto, ordenados después de los activos.
+- `AdStripPreview` y `StoreVideosGrid`/`StoreVideoCard`: **no tocados** — confirmado que no están conectados a ninguna página real (sin imports que los usen).
+
+**Qué NO cambió:** el contrato de `useGetProductAdsQuery` es el mismo — esto es puramente de render, el dato ya viene completo (activos e inactivos) desde antes.
+
+**Archivos modificados:** `components/tracker/product-ads.tsx`, `components/tracker/pool-winners.tsx`.
+
+**Verificación:** `tsc --noEmit -p tsconfig.json` no agrega errores nuevos (los preexistentes son de `sync-ads.ts` y `lib/mock-data.ts`, sin relación).
+
+**Nota:** implementado por decisión explícita de Daniel como dueño del proyecto, avanzando sin revisión directa de Diego — ver FIX-074 para la cadena de aprobación completa.
+
+---
+
 ### CHANGE-105 — sync-ads.ts llama al barrido de ads stale una vez por corrida (FIX-072, backend)
 
 **Fecha:** 2026-09-14
