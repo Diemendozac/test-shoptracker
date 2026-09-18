@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { PoolWinnersSection } from '@/components/tracker/pool-winners'
 import type { PagoFilter } from '@/components/tracker/pool-winners'
+import { PoolDetailPanel } from '@/components/tracker/pool-detail-panel'
 import { PoolArchiveHint } from '@/components/tracker/pool-archive-hint'
 import { useGetPoolWinnersQuery, useGetPoolSearchQuery } from '@/app/(dashboard)/services/dashboardApi'
 import { useViewAs } from '@/lib/view-as'
@@ -42,6 +43,14 @@ export default function PoolPage() {
   const [currencyFilter, setCurrencyFilter] = useState<Set<string>>(new Set())
   const [escalarFilter, setEscalarFilter] = useState(false)
   const [countryFilter, setCountryFilter] = useState<string>('')
+
+  // Split-view: producto seleccionado para el panel de detalle al lado de la tabla,
+  // en vez de navegar a /tracker/[candidateId].
+  const [selectedWinner, setSelectedWinner] = useState<{ candidateId: string; storeId: string } | null>(null)
+  function handleSelectWinner(candidateId: string, storeId: string) {
+    setSelectedWinner({ candidateId, storeId })
+  }
+  function handleClosePanel() { setSelectedWinner(null) }
 
   const [favorites, setFavorites] = useState<Set<string>>(() => {
     if (typeof window === 'undefined') return new Set()
@@ -163,34 +172,45 @@ export default function PoolPage() {
             </p>
           </div>
         )}
-        <PoolWinnersSection
-          data={data}
-          isLoading={isLoading}
-          page={page}
-          onPageChange={setPage}
-          preset={preset}
-          pagoFilter={pagoFilter}
-          onPagoFilterChange={handlePagoFilter}
-          favorites={favorites}
-          onToggleFavorite={toggleFavorite}
-          search={searchSubmitted}
-          searchInput={searchInput}
-          onSearchInputChange={handleSearchInputChange}
-          onSearchSubmit={handleSearchSubmit}
-          suggestions={suggestData?.winners ?? []}
-          dateFilter={dateFilter}
-          onDateFilterChange={handleDateFilterChange}
-          daysExactFilter={daysExactFilter}
-          onDaysExactFilterChange={handleDaysExactFilterChange}
-          nicheFilter={nicheFilter}
-          onNicheFilterChange={handleNicheFilterChange}
-          currencyFilter={currencyFilter}
-          onCurrencyFilterChange={handleCurrencyFilterChange}
-          escalarFilter={escalarFilter}
-          onEscalarFilterChange={handleEscalarFilterChange}
-          countryFilter={countryFilter}
-          onCountryFilterChange={handleCountryFilterChange}
-        />
+        <div className={cn('grid gap-6', selectedWinner && 'lg:grid-cols-[minmax(0,1fr)_400px]')}>
+          <PoolWinnersSection
+            data={data}
+            isLoading={isLoading}
+            page={page}
+            onPageChange={setPage}
+            preset={preset}
+            pagoFilter={pagoFilter}
+            onPagoFilterChange={handlePagoFilter}
+            favorites={favorites}
+            onToggleFavorite={toggleFavorite}
+            search={searchSubmitted}
+            searchInput={searchInput}
+            onSearchInputChange={handleSearchInputChange}
+            onSearchSubmit={handleSearchSubmit}
+            suggestions={suggestData?.winners ?? []}
+            dateFilter={dateFilter}
+            onDateFilterChange={handleDateFilterChange}
+            daysExactFilter={daysExactFilter}
+            onDaysExactFilterChange={handleDaysExactFilterChange}
+            nicheFilter={nicheFilter}
+            onNicheFilterChange={handleNicheFilterChange}
+            currencyFilter={currencyFilter}
+            onCurrencyFilterChange={handleCurrencyFilterChange}
+            escalarFilter={escalarFilter}
+            onEscalarFilterChange={handleEscalarFilterChange}
+            countryFilter={countryFilter}
+            onCountryFilterChange={handleCountryFilterChange}
+            selectedCandidateId={selectedWinner?.candidateId ?? null}
+            onSelectWinner={handleSelectWinner}
+          />
+          {selectedWinner && (
+            <PoolDetailPanel
+              candidateId={selectedWinner.candidateId}
+              storeId={selectedWinner.storeId}
+              onClose={handleClosePanel}
+            />
+          )}
+        </div>
         <PoolArchiveHint data={archiveData} isLoading={archiveLoading} />
       </div>
     </>

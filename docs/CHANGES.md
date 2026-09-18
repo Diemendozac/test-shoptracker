@@ -4,6 +4,26 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-110 — Split-view en "Explorar testeos": panel de detalle al lado de la tabla en vez de navegar
+
+**Fecha:** 2026-09-18
+**Tipo:** feature de UI, pedido directo de Daniel (validado antes con un preview interactivo)
+
+**Por qué:** al hacer clic en un producto, salir de la tabla a `/tracker/[candidateId]` pierde el contexto de lo que se estaba comparando. Pedido: que se abra un panel al lado, condensando la tabla, sin navegar.
+
+**Qué cambió:**
+- `components/tracker/pool-detail-panel.tsx` (nuevo): panel lateral que reutiliza exactamente los mismos datos y componentes de la página de detalle completa — `useGetCandidateDetailQuery`, `RankChart`, `ScoreChart`, `ProductAdsSection`, `ProductDescriptionModal` — no se inventó ninguna fuente de datos nueva.
+- `components/tracker/pool-winners.tsx`: `PoolWinnersSection` recibe dos props opcionales nuevos (`selectedCandidateId`, `onSelectWinner`) — sin ellos la tabla se comporta exactamente igual que antes (navega con `<Link>`). El `<Link>` del producto y de "Ver" ahora intercepta el click normal (abre el panel) pero deja pasar cmd/ctrl+click y click central (sigue abriendo en pestaña nueva, comportamiento nativo de `<Link>`). En modo split, la fila oculta sparkline/contexto/ads/acción — se queda con estrella, imagen, producto, precio, score y crecimiento.
+- `app/(dashboard)/pool/page.tsx`: nuevo estado local `selectedWinner` (mismo patrón que ya usan todos los demás filtros de esta página — sin Redux). El contenido pasa a grid de 2 columnas cuando hay selección.
+
+**Qué NO cambió:** ningún endpoint nuevo, ningún dato nuevo — el panel reutiliza 100% lo que ya existía en la página de detalle. Sin Redux.
+
+**Verificación:** `npx tsc --noEmit` corrido completo — 0 errores nuevos (los 9 preexistentes de `sync-ads.ts`/`mock-data.ts` no relacionados, confirmados iguales en `main` antes de este cambio). `pnpm build` completo no se pudo correr — bloqueado por el gate de aprobación de scripts nativos de pnpm (`sharp`/`esbuild`/`swc`), no relacionado a este cambio. Pendiente que Daniel corra el build real o pruebe en `localhost:3000`.
+
+**Archivos modificados:** `components/tracker/pool-detail-panel.tsx` (nuevo), `components/tracker/pool-winners.tsx`, `app/(dashboard)/pool/page.tsx`.
+
+---
+
 ### CHANGE-109 — z-index del video flotante sube de 50 a 60 (tapado por ViewAsBar)
 
 **Fecha:** 2026-09-15

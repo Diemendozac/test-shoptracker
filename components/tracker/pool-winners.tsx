@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
+import { useState, useMemo, useRef, useCallback, useEffect, type MouseEvent as ReactMouseEvent } from 'react'
 import Link from 'next/link'
 import { Lock, TrendingUp, Crown, ChevronLeft, ChevronRight, Globe, ExternalLink, ArrowUpDown, ArrowUp, ArrowDown, Search, X, Star, Share2, Check } from 'lucide-react'
 import { ScoreRing } from '@/components/dashboard/score-ring'
@@ -239,6 +239,10 @@ interface PoolWinnersSectionProps {
   onEscalarFilterChange: (v: boolean) => void
   countryFilter: string
   onCountryFilterChange: (v: string) => void
+  // Split-view (panel de detalle al lado en vez de navegar a /tracker/[id]) — opcional,
+  // si no se pasa la tabla se comporta exactamente igual que antes (navega con <Link>).
+  selectedCandidateId?: string | null
+  onSelectWinner?: (candidateId: string, storeId: string) => void
 }
 
 export function PoolWinnersSection({
@@ -252,6 +256,7 @@ export function PoolWinnersSection({
   currencyFilter, onCurrencyFilterChange,
   escalarFilter, onEscalarFilterChange,
   countryFilter, onCountryFilterChange,
+  selectedCandidateId, onSelectWinner,
 }: PoolWinnersSectionProps) {
   const { currency: preferredCurrency } = useCurrency()
   const { maxPoolPage } = usePlanTier()
@@ -690,6 +695,9 @@ export function PoolWinnersSection({
               preferredCurrency={preferredCurrency}
               isFavorite={favorites.has(winner.candidateId)}
               onToggleFavorite={onToggleFavorite}
+              isCompact={!!selectedCandidateId}
+              isSelected={winner.candidateId === selectedCandidateId}
+              onSelect={onSelectWinner}
             />
           ))
         )}
@@ -883,12 +891,18 @@ export function ShareButton({ candidateId }: { candidateId: string }) {
   )
 }
 
-function PoolWinnerRow({ winner, position, preferredCurrency, isFavorite, onToggleFavorite }: {
+function PoolWinnerRow({
+  winner, position, preferredCurrency, isFavorite, onToggleFavorite,
+  isCompact, isSelected, onSelect,
+}: {
   winner: PoolWinnerProduct
   position: number
   preferredCurrency: string | null
   isFavorite: boolean
   onToggleFavorite: (id: string) => void
+  isCompact?: boolean
+  isSelected?: boolean
+  onSelect?: (candidateId: string, storeId: string) => void
 }) {
   const isFirst = position === 1
 
@@ -930,10 +944,21 @@ function PoolWinnerRow({ winner, position, preferredCurrency, isFavorite, onTogg
     :                { color: 'bg-rose-500',    labelColor: 'text-rose-500',    label: 'Weak'   }
     : null
 
+  function handleRowClick(e: ReactMouseEvent<HTMLAnchorElement>) {
+    if (!onSelect) return // sin split-view configurado — se comporta como antes (navega)
+    if (e.metaKey || e.ctrlKey || e.button === 1) return // dejar que abra en pestaña nueva
+    e.preventDefault()
+    onSelect(winner.candidateId, winner.storeId)
+  }
+
   return (
     <div className={cn(
-      'grid grid-cols-[32px_64px_minmax(0,1fr)_60px_48px_72px_110px_90px_140px_60px] items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/30',
+      'grid items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/30',
+      isCompact
+        ? 'grid-cols-[28px_48px_minmax(0,1fr)_56px_44px_64px]'
+        : 'grid-cols-[32px_64px_minmax(0,1fr)_60px_48px_72px_110px_90px_140px_60px]',
       isFirst && 'bg-amber-500/5',
+      isSelected && 'bg-primary/5 ring-1 ring-inset ring-primary/30',
     )}>
       {/* # */}
       <button
@@ -954,7 +979,7 @@ function PoolWinnerRow({ winner, position, preferredCurrency, isFavorite, onTogg
         <HoverImagePreview
           src={winner.productImage}
           fallback={winner.productTitle.charAt(0)}
-          size={64}
+          size={isCompact ? 40 : 64}
           proxy
         />
         {winner.storeCountry && (
@@ -969,6 +994,7 @@ function PoolWinnerRow({ winner, position, preferredCurrency, isFavorite, onTogg
         <div className="flex items-start gap-1.5">
           <Link
             href={`/tracker/${winner.candidateId}?storeId=${winner.storeId}&from=pool`}
+            onClick={handleRowClick}
             className="truncate text-sm font-semibold text-foreground hover:text-primary hover:underline transition-colors"
           >
             {winner.productTitle}
@@ -1012,15 +1038,17 @@ function PoolWinnerRow({ winner, position, preferredCurrency, isFavorite, onTogg
         <ScoreRing score={winner.performanceScore} size="sm" showLabel={false} confidence={winner.signalConfidence} />
       </div>
 
-      {/* Tendencia sparkline */}
-      <div className="flex justify-center">
-        {(() => {
-          const h = (winner.growthHistory ?? []).slice(-7)
-          return h.length >= 2
-            ? <Sparkline data={h} width={80} height={32} />
-            : <span className="text-[10px] text-muted-foreground/30">—</span>
-        })()}
-      </div>
+      {/* Tendencia sparkline — oculta en modo compacto (split-view) */}
+      {!isCompact && (
+        <div className="flex justify-center">
+          {(() => {
+            const h = (winner.growthHistory ?? []).slice(-7)
+            return h.length >= 2
+              ? <Sparkline data={h} width={80} height={32} />
+              : <span className="text-[10px] text-muted-foreground/30">—</span>
+          })()}
+        </div>
+      )}
 
       {/* Crecimiento */}
       <div>
@@ -1037,42 +1065,47 @@ function PoolWinnerRow({ winner, position, preferredCurrency, isFavorite, onTogg
         )}
       </div>
 
-      {/* Contexto */}
-      <div className="space-y-1 w-full">
-        <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
-          <div
-            className={cn('h-full rounded-full transition-all duration-500', tier?.color ?? 'bg-secondary')}
-            style={{ width: `${barFill}%` }}
-          />
-        </div>
-        <div className="flex items-center justify-between gap-1">
-          <span className="text-[11px] tabular-nums text-muted-foreground">
-            {topPct != null ? `top ${topPct}%` : '—'}
-          </span>
-          {tier && (
-            <span className={cn('text-[10px] font-semibold', tier.labelColor)}>{tier.label}</span>
+      {/* Contexto — oculto en modo compacto */}
+      {!isCompact && (
+        <div className="space-y-1 w-full">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+            <div
+              className={cn('h-full rounded-full transition-all duration-500', tier?.color ?? 'bg-secondary')}
+              style={{ width: `${barFill}%` }}
+            />
+          </div>
+          <div className="flex items-center justify-between gap-1">
+            <span className="text-[11px] tabular-nums text-muted-foreground">
+              {topPct != null ? `top ${topPct}%` : '—'}
+            </span>
+            {tier && (
+              <span className={cn('text-[10px] font-semibold', tier.labelColor)}>{tier.label}</span>
+            )}
+          </div>
+          {total != null && total > 0 && (
+            <span className="text-[11px] tabular-nums text-muted-foreground/60">
+              de {total} productos
+            </span>
           )}
         </div>
-        {total != null && total > 0 && (
-          <span className="text-[11px] tabular-nums text-muted-foreground/60">
-            de {total} productos
-          </span>
-        )}
-      </div>
+      )}
 
-      {/* Ads */}
-      <AdsCell candidateId={winner.candidateId} />
+      {/* Ads — oculto en modo compacto */}
+      {!isCompact && <AdsCell candidateId={winner.candidateId} />}
 
-      {/* Acción */}
+      {/* Acción — oculta en modo compacto, la fila entera ya es clickeable para abrir el panel */}
+      {!isCompact && (
       <div className="flex flex-col items-center gap-1">
         <Link
           href={`/tracker/${winner.candidateId}?storeId=${winner.storeId}&from=pool`}
+          onClick={handleRowClick}
           className="flex items-center gap-1 rounded-lg bg-secondary px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
         >
           Ver <ExternalLink className="h-3 w-3" />
         </Link>
         <ShareButton candidateId={winner.candidateId} />
       </div>
+      )}
     </div>
   )
 }
