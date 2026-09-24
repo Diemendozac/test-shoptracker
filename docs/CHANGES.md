@@ -4,6 +4,44 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-111 — sync-ads: un error de red ya no mata la corrida + presupuesto de tiempo para cerrar ordenado
+
+**Fecha:** 2026-09-24
+**Tipo:** fix de resiliencia del job de GitHub Actions (`sync-ads.yml`). Riesgo: con cuidado. Aprobado por Daniel.
+
+**Por qué:** el dashboard de salud de scrapers en `/admin` mostraba "Scraper de ads: FALLÓ". Diagnóstico con los logs de GitHub Actions: **el último run exitoso fue el 2026-09-11**. De las 13 corridas siguientes, 9 se cancelaron por el timeout de 180 min y 4 murieron con `❌ Fatal: fetch failed`. Hay dos causas que se suman:
+1. **Fragilidad:** solo el scraping de Meta estaba dentro de un try/catch. Las llamadas al backend (`getCandidatesForStore`, `pushAds`, etc.) no tenían timeout ni reintento, así que un solo error de red subía hasta `main().catch` y mataba la corrida completa (19-sep en la tienda 229; 23-sep en la 163 de 438, a los 87 min).
+2. **Capacidad:** la lista creció de 371 tiendas (11-sep) a 438. El 22-sep solo alcanzó 322 de 436 en 180 min, y el runner mató el proceso.
+
+Consecuencias que no se veían:
+- `reconcileStaleAds()` (el barrido de stale de FIX-074) corre al final del loop, así que **nunca se había ejecutado automáticamente**.
+- Las corridas canceladas no reportaban a `scraper_runs`, y el dashboard mostraba días vacíos y un % de éxito inflado.
+
+**Qué cambió (`lib/jobs/sync-ads.ts`):**
+- `backendFetch()`: timeout de 60 s y hasta 2 reintentos (a los 5 s y a los 15 s), solo ante error de red o 5xx. Lo usan `getCandidatesForStore`, `pushAdvertiserPages`, `pushAds` y `reconcileStaleAds`. Reintentar `pushAds` es seguro porque el backend hace upsert por `adSnapshotUrl + candidateId`.
+- Try/catch por tienda en el loop: un error inesperado queda como error de esa tienda y el loop sigue.
+- Corte tras 10 tiendas seguidas con error inesperado (backend caído), en vez de pasar horas scrapeando Meta sin poder guardar nada.
+- Presupuesto de tiempo: 165 min por defecto, configurable con `SYNC_ADS_BUDGET_MIN`. Antes de cada tienda revisa el tiempo; si se pasó, sale del loop y **siempre** corre el barrido de stale, escribe `sync-results.json` y reporta. Las cuentas: 165 + ~2 min de setup + 3 min de la tienda más lenta medida (la media es 31 s) < 180.
+- Reporte: una corrida cortada nunca se marca `success`. Queda `partial` si hubo tiendas OK y `failure` si no. `errorSample` lleva el motivo del corte, y `stores_not_reached`/`stop_reason` van en `metadata` y en `sync-results.json`.
+- Exit code 1 si el status es `failure`, para que GitHub lo muestre en rojo como antes. **Un corte por tiempo con avance real sale en verde**: la señal de "N tiendas sin procesar" está en el dashboard de `/admin`, no en GitHub.
+
+**Qué NO cambió:** el orden de las tiendas (Pro/Agency primero, FIX-068), el scraping de Meta (`meta-ads.ts`), el workflow `.yml`, el backend, Redux/UI.
+
+**Pendiente, no incluido:** con ~438 tiendas, unas ~110 del pool se van a quedar sin procesar cada día. Este cambio lo hace visible, pero no lo resuelve. Sigue abierta la decisión de negocio de FIX-068: ¿el pool va en un job separado con su propio presupuesto?
+
+**Hallazgo aparte, sin corregir (fuera de alcance):** `syncStore()` devuelve `{ status: 'synced', adsSaved: 0, matches: 0 }` sin `descriptionsFetched` en la rama "0 ads" (es el error de tipos que ya existía en `sync-ads.ts`). En runtime suma `undefined`, así que `descriptions_fetched` sale `null` en el resumen (visto en el artifact del 11-sep).
+
+**Verificación:**
+- `npx tsc --noEmit`: 0 errores nuevos (siguen los mismos 9 que ya existían).
+- Smoke test ejecutando el job real contra un backend falso:
+  - (A) Presupuesto ~0: corta, corre el barrido, reporta `failure` con "corte por tiempo: 14 tiendas sin procesar" y sale con exit 1.
+  - (B) Candidates siempre en 500: 3 intentos por tienda (30 requests para 10 tiendas), el loop sigue tras cada error, corta a las 10 fallas seguidas, corre el barrido y reporta.
+- Pendiente: la primera corrida real programada después del merge.
+
+**Archivos modificados:** `lib/jobs/sync-ads.ts`, `docs/CHANGES.md`.
+
+---
+
 ### CHANGE-110 — Split-view en "Explorar testeos": panel de detalle al lado de la tabla en vez de navegar
 
 **Fecha:** 2026-09-18

@@ -96,6 +96,28 @@ async function markDomainError(storeId: string): Promise<void> {
 
 // ── Backend API helpers ────────────────────────────────────────────────────────
 
+// CHANGE-111 (2026-09-24): antes estas llamadas no tenían timeout ni reintento — un solo
+// `fetch failed` contra el backend subía hasta main().catch y mataba la corrida completa
+// (19-sep en la tienda 229, 23-sep en la 163 de 438). Reintenta solo errores de red y 5xx;
+// un 4xx es un error real del request y se devuelve tal cual. Reintentar pushAds es seguro:
+// el backend hace upsert por adSnapshotUrl + candidateId (WebhookController).
+const BACKEND_TIMEOUT_MS  = 60_000
+const BACKEND_RETRY_WAITS = [5_000, 15_000]
+
+async function backendFetch(url: string, init: RequestInit = {}): Promise<Response> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const res = await fetch(url, { ...init, signal: AbortSignal.timeout(BACKEND_TIMEOUT_MS) })
+      if (res.status < 500 || attempt >= BACKEND_RETRY_WAITS.length) return res
+      console.warn(`  ⚠ backend ${res.status} en ${new URL(url).pathname} — reintentando`)
+    } catch (e) {
+      if (attempt >= BACKEND_RETRY_WAITS.length) throw e
+      console.warn(`  ⚠ backend sin respuesta (${(e as Error).message}) en ${new URL(url).pathname} — reintentando`)
+    }
+    await new Promise(r => setTimeout(r, BACKEND_RETRY_WAITS[attempt]))
+  }
+}
+
 async function getProStores(): Promise<Store[]> {
   let res: Response
   try {
@@ -140,7 +162,7 @@ function shouldScrapeStore(candidates: Candidate[]): { scrape: boolean; reason: 
 }
 
 async function getCandidatesForStore(storeId: string): Promise<Candidate[]> {
-  const res = await fetch(`${API_URL}/internal/stores/${storeId}/candidates`, {
+  const res = await backendFetch(`${API_URL}/internal/stores/${storeId}/candidates`, {
     headers: { 'X-Webhook-Secret': WEBHOOK_SECRET },
   })
   if (!res.ok) throw new Error(`Failed to fetch candidates: ${res.status}`)
@@ -154,7 +176,7 @@ interface AdvertiserPagePayload {
 }
 
 async function pushAdvertiserPages(storeId: string, pages: AdvertiserPagePayload[]): Promise<void> {
-  const res = await fetch(`${API_URL}/internal/stores/${storeId}/advertiser-pages`, {
+  const res = await backendFetch(`${API_URL}/internal/stores/${storeId}/advertiser-pages`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -166,7 +188,7 @@ async function pushAdvertiserPages(storeId: string, pages: AdvertiserPagePayload
 }
 
 async function pushAds(candidateId: string, storeDomain: string, ads: ScrapedAd[]): Promise<boolean> {
-  const res = await fetch(`${API_URL}/internal/webhook/ads`, {
+  const res = await backendFetch(`${API_URL}/internal/webhook/ads`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -200,7 +222,7 @@ async function pushAds(candidateId: string, storeDomain: string, ads: ScrapedAd[
 // y cuyos product_ads quedarían congelados en 'active' para siempre sin esto. Ver
 // WebhookController.reconcileStaleAds en el backend.
 async function reconcileStaleAds(): Promise<number> {
-  const res = await fetch(`${API_URL}/internal/webhook/ads/reconcile-stale`, {
+  const res = await backendFetch(`${API_URL}/internal/webhook/ads/reconcile-stale`, {
     method: 'POST',
     headers: { 'X-Webhook-Secret': WEBHOOK_SECRET },
   })
@@ -384,10 +406,45 @@ async function main(): Promise<void> {
   let totalDescriptionsFetched = 0 // FIX-070
   const errors: string[] = []
 
-  for (const store of stores) {
+  // CHANGE-111: presupuesto de tiempo. El job de GitHub Actions tiene timeout de 180 min y la
+  // lista (~438 tiendas; 22-sep: 322 alcanzadas en 180 min) ya no cabe — el runner mataba el
+  // proceso sin correr el barrido de stale ni reportar a scraper_runs (días vacíos en /admin).
+  // 165 min + ~2 min de setup + 3 min de la tienda más lenta medida < 180 min.
+  const budgetMs = Number(process.env.SYNC_ADS_BUDGET_MIN || 165) * 60_000
+  // CHANGE-111: si el backend está caído, cada tienda falla igual — cortar en vez de gastar
+  // horas scrapeando Meta sin poder guardar nada.
+  const MAX_CONSECUTIVE_FAILURES = 10
+  let consecutiveFailures = 0
+  let stopReason: string | null = null
+  let storesNotReached = 0
+
+  for (const [i, store] of stores.entries()) {
+    if (Date.now() - startedAt.getTime() > budgetMs) {
+      storesNotReached = stores.length - i
+      stopReason = `corte por tiempo: ${storesNotReached} tiendas sin procesar`
+      break
+    }
+    if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+      storesNotReached = stores.length - i
+      stopReason = `corte por ${consecutiveFailures} fallas seguidas: ${storesNotReached} tiendas sin procesar`
+      break
+    }
+
     const domain = new URL(store.baseUrl).hostname.replace(/^www\./, '')
     console.log(`\n📦 ${domain}`)
-    const result = await syncStore(store)
+
+    // CHANGE-111: un error inesperado en una tienda (típicamente red contra el backend) se
+    // registra como error de esa tienda y el loop sigue — antes mataba la corrida completa.
+    let result: StoreOutcome
+    try {
+      result = await syncStore(store)
+      consecutiveFailures = 0
+    } catch (e) {
+      const msg = (e as Error).message
+      console.error(`  ❌ ${domain} falló: ${msg}`)
+      result = { status: 'error', error: `${domain}: ${msg}` }
+      consecutiveFailures++
+    }
 
     if (result.status === 'skipped') {
       storesSkipped++
@@ -403,6 +460,8 @@ async function main(): Promise<void> {
 
     await new Promise(r => setTimeout(r, 3000)) // rate-limit between stores
   }
+
+  if (stopReason) console.warn(`\n⏱ ${stopReason}`)
 
   // Complemento a FIX-071 (2026-09-13): una sola vez por corrida completa, no por tienda.
   // Best-effort — un fallo acá nunca debe tumbar el resumen ni el resto del reporte.
@@ -425,6 +484,8 @@ async function main(): Promise<void> {
     matches:          totalMatches,
     descriptions_fetched: totalDescriptionsFetched,
     stale_ads_inactivated: staleInactivated,
+    stores_not_reached: storesNotReached, // CHANGE-111
+    stop_reason: stopReason,              // CHANGE-111
     errors,
   }
 
@@ -434,15 +495,26 @@ async function main(): Promise<void> {
   console.log(`   ${storesProcessed} procesadas / ${storesSkipped} skipped / ${totalAdsSaved} ads / ${durationSeconds}s`)
   if (errors.length > 0) console.log(`   ⚠ ${errors.length} errores: ${errors.join(', ')}`)
 
+  // CHANGE-111: una corrida cortada (tiempo o fallas seguidas) nunca se reporta como success.
+  const storesOk = storesProcessed - errors.length
+  const status: 'success' | 'partial' | 'failure' =
+    errors.length === 0 && !stopReason ? 'success'
+    : storesOk > 0 ? 'partial'
+    : 'failure'
+
   await reportScraperRun(
     startedAt,
-    errors.length === 0 ? 'success' : (storesProcessed > errors.length ? 'partial' : 'failure'),
+    status,
     stores.length,
-    storesProcessed - errors.length,
+    storesOk,
     errors.length,
-    errors[0],
-    { descriptionsFetched: totalDescriptionsFetched }, // FIX-070
+    stopReason ?? errors[0],
+    { descriptionsFetched: totalDescriptionsFetched, storesNotReached, stopReason }, // FIX-070, CHANGE-111
   )
+
+  // CHANGE-111: sin ninguna tienda OK (p.ej. backend caído) el job debe verse rojo en GitHub,
+  // igual que antes cuando moría con Fatal. Un corte por tiempo con avance real sale en verde.
+  if (status === 'failure') process.exit(1)
 }
 
 main().catch(async err => {
