@@ -4,6 +4,46 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-117 — Fechas locales y gráficos de detalle con tokens (rediseño de detalle, S7 + S4)
+
+**Fecha:** 2026-09-28
+**Tipo:** fix + ui
+
+**Qué cambió:** Es el primer paso de la fase 2 del rediseño de las vistas de detalle (`docs/redesign/detalle-producto/03-spec.md`, S7 y S4).
+
+- **Fechas (S7):**
+  - Nuevo helper `formatShortDate` que da "19 sept" (con el año solo si no es el actual) y "—" si no hay fecha.
+  - Arma las fechas `YYYY-MM-DD` como fecha **local**. Antes, `new Date('2026-09-19')` se leía como medianoche UTC y en toda Latinoamérica se veía el día anterior (medido con la zona de Bogotá: "18 de sept" para el 19).
+  - Con `first_seen: null`, el anuncio decía "Desde 31 de dic de 1969".
+- **Gráficos (S4):**
+  - Rank y score con los tokens de Radar: `--primary` y `--chart-1`, y ejes en `--subtle-foreground` a 12 px (antes #808080, 3,95:1, sin AA).
+  - Fechas en español y tooltip "Crecimiento" (antes "Growth").
+  - Las barras del score van en un solo color. Antes eran rojas por debajo de 40, lo que se leía como "caída" para cualquier producto en sus primeros días; el color del score lo pone el ScoreRing.
+  - Id de degradado único con `useId`, punto de entrada en el gráfico de rank y prop `height` (default 256, igual que antes).
+
+**Por qué:** P9 y P10 del diagnóstico (`docs/redesign/detalle-producto/01-diagnostico.md`).
+
+**Archivos modificados:**
+- `lib/format-date.ts` (nuevo): `parseApiDate` y `formatShortDate`.
+- `components/tracker/rank-chart.tsx` y `components/tracker/score-chart.tsx`: tokens, español, fechas locales y prop `height`.
+- `components/tracker/product-ads.tsx`: `formatDate` usa el helper (misma firma y mismo lugar de uso).
+- `app/(dashboard)/tracker/[candidateId]/page.tsx`: `formatDate` usa el helper ("Primera vez visto" y la tabla diaria). No se tocó nada más del archivo; la línea de "Pico" (regresión #1) sigue igual.
+
+**Qué NO cambió:** los datos de los gráficos, el eje invertido del rank, la lógica de scoring, los tipos, la API, el Redux y el gating por plan.
+
+**Verificación:**
+- `tsc --noEmit`: los mismos 9 errores previos de `sync-ads.ts` y `mock-data.ts`, ninguno nuevo.
+- `next build` OK.
+- Con Playwright y la API simulada, en `America/Bogota`: "Primera vez visto: 19 sept", "Desde 25 ago" y "Desde —" con null.
+- Página y panel sin errores de consola.
+
+**Pendiente de confirmar con Diego:** si la API manda `LocalDate` (`YYYY-MM-DD`) o timestamps. Con timestamps el helper también funciona, pero entonces no había corrimiento de un día que arreglar.
+
+**Relacionado con backend:** no.
+**Wiki actualizado:** no aplica.
+
+---
+
 ### CHANGE-116 — Textos de Resumen y Mis testeos unificados en español (rediseño R5)
 
 **Fecha:** 2026-09-28

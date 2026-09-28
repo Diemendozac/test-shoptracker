@@ -32,6 +32,7 @@ import { ShareButton } from '@/components/tracker/pool-winners'
 import type { CandidateHistory } from '@/app/(dashboard)/types'
 import { resolveDisplayLabel, isScalable } from '@/lib/label-utils'
 import { applyScoreDecay, computeDecayFactor, daysSinceLastImprovement } from '@/lib/score-decay'
+import { formatShortDate } from '@/lib/format-date'
 import { spike, unspike, loadAllSpikes, type SpikeEntry } from '@/lib/spike-store'
 
 function computeSmartLabel(
@@ -311,12 +312,8 @@ function CandidateDetailContent() {
 
   const { currency: preferredCurrency } = useCurrency()
 
-  const formatDate = (dateStr: string) =>
-    new Date(dateStr).toLocaleDateString('es-CO', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    })
+  // Fecha local y null-safe (ver lib/format-date.ts): "19 sept", "—" si falta
+  const formatDate = (dateStr: string | null | undefined) => formatShortDate(dateStr)
 
   const buildProductUrl = (rawUrl: string | null, handle: string, baseOverride?: string) => {
     const base = (baseOverride || storeBaseUrl).replace(/\/$/, '')
