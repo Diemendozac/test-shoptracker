@@ -43,7 +43,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <AppSidebar pinned={true} />
           <main className="flex flex-1 flex-col transition-all duration-300 pl-64">
             <AppHeader />
-            <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden">
+            {/* overflow-x-clip recorta igual que hidden pero NO crea un contenedor de scroll:
+                así `sticky` en los hijos se ata a la ventana, que es la que scrollea. Con
+                overflow-y-auto/overflow-x-hidden el sticky quedaba atado a este div, que nunca
+                scrollea, y no hacía nada (ver docs/redesign/detalle-producto/01-diagnostico.md, P6). */}
+            <div ref={scrollRef} className="flex-1 overflow-x-clip">
               <TrialExpiredGate>{children}</TrialExpiredGate>
             </div>
           </main>

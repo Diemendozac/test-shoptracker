@@ -22,6 +22,8 @@ interface PoolDetailPanelProps {
   candidateId: string
   storeId: string
   onClose: () => void
+  /** split: al lado de la tabla (≥ 1280 px), sticky bajo el topbar. sheet: dentro de un Sheet (< 1280 px). */
+  variant?: 'split' | 'sheet'
 }
 
 function Stat({ label, value, tone }: { label: string; value: string; tone?: 'good' | 'accent' }) {
@@ -38,7 +40,7 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: 'go
   )
 }
 
-export function PoolDetailPanel({ candidateId, storeId, onClose }: PoolDetailPanelProps) {
+export function PoolDetailPanel({ candidateId, storeId, onClose, variant = 'split' }: PoolDetailPanelProps) {
   const { currency: preferredCurrency } = useCurrency()
   const { data, isLoading, isError } = useGetCandidateDetailQuery({ storeId, candidateId })
 
@@ -47,7 +49,15 @@ export function PoolDetailPanel({ candidateId, storeId, onClose }: PoolDetailPan
   const history = data?.history ?? []
 
   return (
-    <aside className="sticky top-4 max-h-[calc(100vh-2rem)] overflow-y-auto rounded-2xl border border-border bg-card shadow-sm">
+    <aside
+      className={cn(
+        'bg-card',
+        variant === 'split'
+          // top-20 = topbar sticky de 64 px + 16 px de aire (con top-4 quedaba debajo del topbar)
+          ? 'sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto rounded-2xl border border-border shadow-sm'
+          : 'min-h-full',
+      )}
+    >
       {isLoading && (
         <div className="space-y-3 p-5">
           <div className="h-16 animate-pulse rounded-xl bg-secondary/40" />
