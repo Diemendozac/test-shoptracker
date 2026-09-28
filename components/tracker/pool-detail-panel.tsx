@@ -148,7 +148,7 @@ export function PoolDetailPanel({ candidateId, storeId, onClose }: PoolDetailPan
 
           {/* Ads */}
           <div className="border-b border-border p-4">
-            <ProductAdsSection candidateId={candidateId} />
+            <ProductAdsSection candidateId={candidateId} embedded density="compact" />
           </div>
 
           {/* Descripción */}
