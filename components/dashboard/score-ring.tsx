@@ -12,8 +12,8 @@ interface ScoreRingProps {
 }
 
 const sizeConfig = {
-  sm: { width: 48,  fontSize: 'text-xs',   labelSize: 'text-[8px]'  },
-  md: { width: 72,  fontSize: 'text-lg',   labelSize: 'text-[10px]' },
+  sm: { width: 48,  fontSize: 'text-xs',   labelSize: 'text-xs'     },
+  md: { width: 72,  fontSize: 'text-lg',   labelSize: 'text-xs'     },
   lg: { width: 96,  fontSize: 'text-2xl',  labelSize: 'text-xs'     },
 }
 
@@ -33,9 +33,9 @@ export function ScoreRing({
   const arcLen     = CIRCUMFERENCE * normalized
 
   // Color rule: green at 65+, yellow below
+  // (pendiente D-1: volver a la regla de confianza de CHANGE-004; ver docs/redesign)
   const isGreen    = clamped >= 65
-  const arcColor   = isGreen ? 'stroke-emerald-500' : 'stroke-amber-400'
-  const textColor  = isGreen ? 'text-emerald-400'   : 'text-amber-400'
+  const arcColor   = isGreen ? 'stroke-success' : 'stroke-warning'
 
   return (
     <div
@@ -52,7 +52,7 @@ export function ScoreRing({
           cx="50" cy="50" r={RADIUS}
           fill="none" strokeWidth="8"
           stroke="currentColor"
-          className="text-border"
+          className="text-score-track"
         />
 
         {/* Score arc */}
@@ -70,7 +70,7 @@ export function ScoreRing({
 
       {/* Inner text — absolutely centered so the number sits in the middle of the ring */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className={cn('font-bold tabular-nums leading-none', config.fontSize, textColor)}>
+        <span className={cn('font-semibold tabular-nums leading-none text-foreground', config.fontSize)}>
           {Math.round(clamped)}
         </span>
         {showLabel && label && (

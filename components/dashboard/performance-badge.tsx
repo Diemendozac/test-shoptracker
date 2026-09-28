@@ -32,33 +32,36 @@ const labelConfig: Record<
   }
 > = {
   Rising: {
-    color: 'text-rising',
-    bgColor: 'bg-rising/10',
-    borderColor: 'border-rising/20',
+    color: 'text-success-foreground',
+    bgColor: 'bg-success-subtle',
+    borderColor: 'border-success-border',
     icon: TrendingUp,
   },
+  // Neutro: "en observación" no es una alerta. El ámbar queda para señal débil.
   Watching: {
-    color: 'text-watching',
-    bgColor: 'bg-watching/10',
-    borderColor: 'border-watching/20',
+    color: 'text-muted-foreground',
+    bgColor: 'bg-neutral-subtle',
+    borderColor: 'border-border',
     icon: Eye,
   },
+  // Pendiente decisión de Diego (docs/redesign/03-spec-fase-2.md, D-2): el
+  // usuario no debería ver Declining. Mientras tanto se mantiene su color.
   Declining: {
-    color: 'text-declining',
-    bgColor: 'bg-declining/10',
-    borderColor: 'border-declining/20',
+    color: 'text-danger-foreground',
+    bgColor: 'bg-danger-subtle',
+    borderColor: 'border-danger-border',
     icon: TrendingDown,
   },
   Stable: {
-    color: 'text-stable',
-    bgColor: 'bg-stable/10',
-    borderColor: 'border-stable/20',
+    color: 'text-info-foreground',
+    bgColor: 'bg-info-subtle',
+    borderColor: 'border-info-border',
     icon: Minus,
   },
   New: {
-    color: 'text-primary',
-    bgColor: 'bg-primary/10',
-    borderColor: 'border-primary/20',
+    color: 'text-primary-text',
+    bgColor: 'bg-primary-subtle',
+    borderColor: 'border-primary-border',
     icon: Sparkles,
   },
 }

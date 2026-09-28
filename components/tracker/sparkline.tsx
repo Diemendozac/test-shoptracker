@@ -1,5 +1,7 @@
 'use client'
 
+import { useId } from 'react'
+
 interface SparklineProps {
   data: number[]
   width?: number
@@ -7,9 +9,11 @@ interface SparklineProps {
 }
 
 export function Sparkline({ data, width = 80, height = 32 }: SparklineProps) {
+  const gradientId = useId()
+
   if (!data || data.length < 2) return (
     <div style={{ width, height }} className="flex items-center justify-center">
-      <span className="text-[9px] text-muted-foreground/40">—</span>
+      <span className="text-xs text-subtle-foreground">—</span>
     </div>
   )
 
@@ -40,21 +44,27 @@ export function Sparkline({ data, width = 80, height = 32 }: SparklineProps) {
   const last  = data[data.length - 1]
   const first = data[0]
   const isUp  = last >= first
-  const stroke = isUp ? '#34d399' : '#f87171'
-  const fill   = isUp ? 'rgba(52,211,153,0.08)' : 'rgba(248,113,113,0.08)'
+  // Tokens semánticos (≥3:1 sobre la tarjeta); el % con signo al lado evita depender solo del color
+  const stroke = isUp ? 'var(--success)' : 'var(--danger)'
 
   return (
     <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ overflow: 'visible' }}>
+      <defs>
+        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" style={{ stopColor: stroke, stopOpacity: 0.22 }} />
+          <stop offset="1" style={{ stopColor: stroke, stopOpacity: 0 }} />
+        </linearGradient>
+      </defs>
       {/* Area */}
-      <path d={areaD} fill={fill} />
+      <path d={areaD} fill={`url(#${gradientId})`} />
       {/* Line */}
-      <path d={d} fill="none" stroke={stroke} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d={d} fill="none" style={{ stroke }} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       {/* Last point dot */}
       <circle
         cx={pts[pts.length - 1].x}
         cy={pts[pts.length - 1].y}
         r="2"
-        fill={stroke}
+        style={{ fill: stroke }}
       />
     </svg>
   )
