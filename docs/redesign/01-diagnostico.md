@@ -49,7 +49,7 @@ Cada hallazgo trae archivo, línea y ejemplo. Los contrastes están calculados c
 
 | # | Dónde | Qué pasa |
 |---|---|---|
-| T1 | `app/globals.css:54` | `--font-sans: 'Inter', 'Geist', 'Geist Fallback'` apunta a nombres literales, no a la variable `--font-inter` que genera `next/font` en `app/layout.tsx:9-12`, y **no tiene fallback genérico** (`sans-serif`). Si `next/font` renombra la familia con un hash (webpack lo hace vía `getLocalIdent`, ver nota), el cuerpo cae a la fuente por defecto del navegador. **No lo pude verificar sin un build:** hay que mirar el `font-family` computado del `<body>` en producción. Con Geist Mono pasa igual (`--font-geist-mono` no se usa). El fix de la fase 2 es correcto en cualquier caso. |
+| T1 | `app/globals.css:54` | **Verificado en fase 2 — no es un bug visible.** Con Turbopack (bundler por defecto de Next 16), `next/font` declara la familia con su nombre real (`"Inter"`), así que `--font-sans: 'Inter', …` sí la encuentra. Lo que falla es menor: no hay fallback genérico (`sans-serif`) y no se usa la fuente de respaldo con métricas ajustadas (`Inter Fallback`), lo que puede causar un salto de layout mientras carga. Se corrige en R1 apuntando a `var(--font-inter)`. |
 | T2 | 186 usos de 6–11 px | Jerarquía por tamaño diminuto en lugar de peso y color. Cabeceras de tabla en 10 px mayúsculas (`tracker-table.tsx:471`), subtextos en 9–10 px. |
 | T3 | Outfit | Se carga en `app/layout.tsx:19-23` pero solo se usa en el wordmark, por `style={{ fontFamily }}` inline en 5 archivos, sin token. |
 | T4 | `kpi-cards.tsx` | `font-black` + `text-2xl` en los KPI chicos, mientras el KPI principal del dashboard usa `font-bold`. Dos escalas de "número grande" que no se hablan. |
@@ -87,4 +87,4 @@ Mezcla de inglés y español en la misma vista: sidebar `Overview` / `Stores` ju
 
 ## Nota sobre T1 (fuentes)
 
-Revisé el código de `next@16.1.6`: `packages/next/src/build/webpack/config/blocks/css/loaders/next-font.ts` devuelve `__${exportName}_${hash}` como identificador local, mientras que el plugin PostCSS conserva el nombre de familia que entrega el loader. Qué nombre termina en el CSS depende del bundler (Next 16 usa Turbopack por defecto) y no lo pude confirmar sin compilar. Verificación de 30 segundos: DevTools → `<body>` → Computed → `font-family` / "Rendered Fonts". Si dice `Times` o `Arial`, T1 está confirmado.
+En la fase 1 marqué T1 como "no verificado" porque dependía de cómo nombra la familia `next/font` en Next 16. En la fase 2 compilé la app: el CSS generado declara `@font-face { font-family: Inter }` y `--font-inter: "Inter","Inter Fallback"`. La fuente **sí** se aplica. T1 queda como mejora menor, no como defecto visible.

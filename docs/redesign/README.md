@@ -1,6 +1,6 @@
 # Rediseño Dropspy — Fase 1 (solo diseño)
 
-**Fecha:** 2026-09-28 · **Estado:** propuesta para decidir. **No se implementó nada:** esta carpeta solo tiene documentos y previews.
+**Fecha:** 2026-09-28 · **Estado:** el dueño eligió la **dirección B** y la **fase 2 ya está implementada** en claro (R1, R2b, R3, R4 y R5). Pendientes: R2a y D-2 (esperan a Diego) y la activación del oscuro. Ver la sección "Estado" en [`03-spec-fase-2.md`](./03-spec-fase-2.md).
 
 ## Cómo revisarlo (5 minutos)
 
@@ -35,7 +35,7 @@
 
 ## Qué no se pudo verificar
 
-- **Si la fuente Inter se aplica de verdad** en producción (diagnóstico T1): depende de cómo nombra la familia `next/font` en el bundler de Next 16, y no compilé la app. Se verifica en 30 segundos con DevTools.
+- ~~Si la fuente Inter se aplica de verdad~~ → **verificado en fase 2**: sí se aplica (Turbopack declara la familia como `Inter`). T1 quedó como mejora menor.
 - **Las pantallas reales no se ejecutaron:** sin backend ni sesión no se puede levantar `/dashboard` ni `/tracker`. El diagnóstico sale de leer el código. Los previews replican columnas, textos y estados, pero no son capturas.
 - **Contraste:** verificado para todos los pares de tokens (4 temas, 41–42 pares cada uno), no para cada combinación posible de la app actual.
 - **Previews:** probados en Chromium (Playwright) a 1440 px y 390 px, en claro y oscuro, sin errores de consola ni scroll horizontal de página. No los probé en Safari ni en Firefox. Usan `color-mix()`, soportado desde Safari 16.2 y Firefox 113.

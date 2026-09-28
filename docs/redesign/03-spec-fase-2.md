@@ -5,6 +5,40 @@
 
 > **Niveles de riesgo** (los del pedido, mapeados a la plantilla): **solo** = frontend puro, ejecutable tras aprobar el plan · **con cuidado** = lógica compartida o cambio visible en toda la app; listar archivos y esperar confirmación, sin auto-accept · **requiere-revisor-técnico** = cambia el significado de una señal o toca algo que Diego debe validar (equivale a "Diego" en la plantilla).
 
+## Estado al 2026-09-28: fase 2 implementada (dirección B)
+
+**Decisiones tomadas por el dueño:** D-0 = **B (Radar)**, en contra de la recomendación (A). D-7 = **claro primero**: B se lanza en su versión clara (sidebar de tinta, violeta, Outfit) y el oscuro queda definido en `.dark` pero sin activar. D-3 = **sí** (R5 incluido). Se agregó el **shell** (sidebar, header, ticker), que no estaba en la spec original.
+
+Con claro primero, R1 queda en "con cuidado" y no en "requiere-revisor-técnico": se puede mergear sin romper las pantallas que no se migraron.
+
+| Commit | Spec | CHANGES |
+|---|---|---|
+| `ea5644a` | R1 — tokens, fuentes, primitivos, shell | CHANGE-112 |
+| `294cd33` | R2b — badges, sparkline, precio, colores del ScoreRing | CHANGE-113 |
+| `a2a22c6` | R3 — Resumen (/dashboard) | CHANGE-114 |
+| `7dadda6` | R4 — Mis testeos (/tracker) | CHANGE-115 |
+| `3abe5ae` | R5 — copy en español | CHANGE-116 |
+| `d108fd2` | Ajustes de verificación: texto con degradado AA, contexto en una línea | CHANGE-112/115 |
+
+**No implementado, a propósito:**
+- **R2a** (ScoreRing con confianza, CHANGE-004): espera **D-1** de Diego. El anillo sigue coloreando por `score >= 65`, ahora con tokens.
+- Textos crudos del backend (Rocket, Declining en "Salud del seguimiento" y en la campana): esperan **D-2**. Sí se sacó el rojo de "Declining".
+
+**Desvíos respecto de la spec (todos solo de presentación):**
+- `components/ui/badge.tsx` no se modificó: `Badge` y `Card` de shadcn no se usan en ninguna pantalla, y agregarles variantes sería código muerto. Los tokens semánticos se aplican directo en los componentes.
+- R3 sumó dos tokens de elevación (`shadow-card`, `shadow-card-hover`) en `app/globals.css`, para no repetir sombras arbitrarias.
+- R4 **sí** tocó los anchos del `grid-cols` de la tabla (la spec decía no hacerlo): en la app real, la columna Producto mostraba "L…" cuando aparecía el chip Spikear. Se redistribuyeron anchos sin quitar ni reordenar columnas, y el chip bajó al renglón de rank (mismo código). La reestructuración de fondo sigue siendo **D-4**.
+- R5 también cambió los tiers en `pool-winners.tsx` (solo el texto), para que el mismo concepto se llame igual en Explorar testeos.
+- El overline "Señal más fuerte" usa `--grad-text` (violeta → azul, ≥6:1) y no el degradado de marca, que termina en cian y en claro no llega a 4,5:1.
+
+**Verificación hecha:**
+- Build de producción OK. `tsc`: los mismos 9 errores previos (CHANGE-111), ninguno nuevo. `pnpm lint` no corre porque eslint no está instalado; ya estaba así antes.
+- Capturas de la app real con API simulada (Playwright): `/dashboard`, `/tracker`, `/stores`, `/pool`, `/pendientes` y `/login` en claro, más `/dashboard` y `/tracker` forzando `.dark`. Sin errores de consola ni scroll horizontal.
+- `node docs/redesign/tools/contrast-check.mjs`: 46/46 pares AA en `:root` y en `.dark`, incluidos los degradados con texto.
+- Checklist `react-agents-review`: hooks, tipos, estado, keys y accesibilidad de `Segmented` OK. Encontró el contraste del overline, que ya está corregido. Queda señalado que `tracker-table.tsx` (~800 líneas) debería partirse, pero eso es otro cambio.
+
+**Qué falta para activar el oscuro por defecto:** migrar los colores escritos a mano de ~21 archivos (pool, stores, detalle de candidato, home, settings, pendientes, admin, share, pricing, `product-ads`, `shooting-stars`, `spike-overlay`, `rank-chart`, `pool-detail-panel`…). Después: montar `ThemeProvider` (next-themes ya es dependencia) con `defaultTheme="dark"` y, si se quiere, un selector de tema. Quedan 348 usos de paleta a mano (eran 447) y 134 textos < 12 px (eran 186), todos fuera de las pantallas rediseñadas. Riesgo conocido del oscuro: las fotos de producto con fondo blanco resaltan mucho (se ve en "Top productos").
+
 ## Orden y empaquetado
 
 Un PR por spec, en este orden. Cada PR se revierte solo, sin arrastrar a los demás.
