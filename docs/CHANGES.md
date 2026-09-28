@@ -4,6 +4,82 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-116 — Textos de Resumen y Mis testeos unificados en español (rediseño R5)
+
+**Fecha:** 2026-09-28
+**Tipo:** ui
+
+**Qué cambió:** Se tradujeron los textos en inglés que quedaban en las pantallas rediseñadas. En el sidebar, Overview → Resumen y Stores → Tiendas. En StoreCard, "View Details" → "Ver detalle" y "+X% growth" → "+X% crecimiento". En la tabla del tracker, Clear → Limpiar y "N of M results" → "N de M resultados". Los tiers de contexto Winner/Strong/Mid/Low/Weak pasan a Élite/Fuerte/Medio/Bajo/Débil, también en Explorar testeos (solo el texto), para que el mismo concepto se llame igual en las dos vistas.
+**Por qué:** mezclar inglés y español en la misma vista era una de las señales de "producto sin terminar" del diagnóstico (docs/redesign/01-diagnostico.md §7). El dueño aprobó incluirlo en la fase 2.
+**Archivos modificados:**
+- `components/layout/app-sidebar.tsx`, `components/dashboard/store-card.tsx`, `components/tracker/tracker-table.tsx`, `components/tracker/pool-winners.tsx` — solo strings visibles; ningún código los compara como valores.
+**Qué NO cambió:** las etiquetas de "Salud del seguimiento" (Rocket, Declining…) y el `performanceLabel` crudo de la campana. Quedan para la decisión D-2 de Diego.
+**Relacionado con backend:** No aplica
+**Wiki actualizado:** No aplica
+
+---
+
+### CHANGE-115 — Mis testeos (/tracker) en la dirección B "Radar" (rediseño R4)
+
+**Fecha:** 2026-09-28
+**Tipo:** ui
+
+**Qué cambió:** Presentación del tracker. Las filas de la tabla pasan a ser tarjetas; los filtros usan bordes de control AA; los dos segmented hechos a mano pasan al componente `Segmented`; la tarjeta "Señal más fuerte" lleva el borde y el halo de marca con un único CTA en degradado; "Salud del seguimiento" usa una sola escala de marca, sin rojo; la barra de contexto tiene 2 tonos en vez de un arcoíris; el "—" de crecimiento nulo ya no sale en rojo; mínimo 12 px en todos los textos.
+**Por qué:** además del rediseño, la columna Producto quedaba en ~106 px a 1440 y los títulos se leían "L…" cuando aparecía el chip Spikear (verificado en la app real con datos simulados). Se redistribuyeron los anchos sin quitar columnas, se achicaron la imagen (64→56) y las miniaturas de ads, y el chip Spikear bajó al renglón de rank (mismo código, otra posición).
+**Archivos modificados:**
+- `app/(dashboard)/tracker/page.tsx` — Segmented y estados vacíos con tokens
+- `components/tracker/tracker-table.tsx` — solo clases, anchos y la posición del chip; diff de lógica = 0
+- `components/tracker/kpi-cards.tsx` — colores a tokens, sin font-black ni textos < 12 px
+- `components/tracker/hero-signal-card.tsx` — solo JSX desde la línea 106
+**Qué NO cambió:** filtros, orden, paginación, spike, `applyScoreDecay`, favoritos, ventana de tiempo. Las regresiones vivas de CLAUDE.md (`consecutiveTop10Days`, `topPct` sin clamp en `hero-signal-card.tsx:88`) siguen intactas y en las mismas líneas. `ShootingStars` (Top productos) está fuera de alcance.
+**Relacionado con backend:** No aplica
+**Wiki actualizado:** No aplica
+
+---
+
+### CHANGE-114 — Resumen (/dashboard) en la dirección B "Radar" (rediseño R3)
+
+**Fecha:** 2026-09-28
+**Tipo:** ui
+
+**Qué cambió:** H1 de página y números de KPI en Outfit (la fuente del wordmark); StatsCard sin el glow borroso y con el ícono en pastilla de marca; StoreCard sin el velo degradado del hover, con chips ZOMBIE/INACTIVA legibles (antes 10 px), "Pago anticipado" neutro, crecimiento con tokens y CTA secundario con flecha (antes un ícono de link externo para una ruta interna). Nuevos tokens de elevación `shadow-card` y `shadow-card-hover`.
+**Archivos modificados:**
+- `components/layout/page-layout.tsx`, `components/dashboard/stats-card.tsx`, `components/dashboard/store-card.tsx`, `app/(dashboard)/dashboard/page.tsx`, `app/globals.css`
+**Qué NO cambió:** orden de tiendas, filtro de productos de prueba, estado de tienda, tope de +500% y `resolveDisplayLabel`. La prop `variant` de StatsCard se conserva, pero ya no cambia el color.
+**Relacionado con backend:** No aplica
+**Wiki actualizado:** No aplica
+
+---
+
+### CHANGE-113 — Badges, sparkline, precio y colores del ScoreRing sobre tokens (rediseño R2b)
+
+**Fecha:** 2026-09-28
+**Tipo:** ui
+
+**Qué cambió:** PerformanceBadge: En alza = verde, En observación = neutro (antes ámbar: no es una alerta), Estable = info, Nuevo = marca. PhaseBadge: Meseta pasa a neutro. Sparkline: trazo de 2 px con token semántico (antes `#34d399`, 1,92:1 sobre blanco) y relleno con degradado vertical. FormattedPrice: el precio va en color de texto (el color de marca es para lo clicable) y la lógica del `~` no cambia. ScoreRing: arco con tokens y número neutro.
+**Qué NO cambió:** el mapeo de labels, los textos y **la regla de color del ScoreRing** (`score >= 65`). Volver a la regla de confianza de CHANGE-004 que exige CLAUDE.md es la spec R2a, que espera la decisión D-1 de Diego.
+**Archivos modificados:**
+- `components/dashboard/performance-badge.tsx`, `components/tracker/phase-badge.tsx`, `components/tracker/sparkline.tsx`, `components/ui/formatted-price.tsx`, `components/dashboard/score-ring.tsx`
+**Relacionado con backend:** No aplica
+**Wiki actualizado:** No aplica
+
+---
+
+### CHANGE-112 — Sistema de diseño B "Radar": tokens, fuentes, primitivos y shell (rediseño R1)
+
+**Fecha:** 2026-09-28
+**Tipo:** ui
+
+**Qué cambió:** Nuevos tokens en `app/globals.css`: tema claro de la dirección B en `:root` (activo) y tema oscuro en `.dark` (definido pero **sin activar**). `--accent` pasa a ser un hover neutro; antes era igual a `--primary`, así que todo hover de menú y botón ghost se pintaba azul sólido. Tokens semánticos nuevos: success/warning/danger/info (base, foreground, subtle, border), `--primary-hover/-subtle/-text/-border`, `--subtle-foreground`, `--score-track`, sidebar de tinta y degradados de marca como utilidades. `--rising/--watching/--declining/--stable` apuntan a los semánticos, para que lo no migrado herede contraste AA. Las fuentes apuntan a las variables de next/font con fallback genérico, y hay un nuevo `font-display` (Outfit). Button suma la variante `brand` (CTA con degradado, máximo uno por vista). El logo tiene una prop `gradient` opcional. El texto con degradado (`text-grad-brand`) usa `--grad-text` (violeta → azul, ≥6:1), porque el degradado de marca termina en cian y en claro no llega a AA. Se agregó el componente `Segmented`. El shell (sidebar, header y ticker) tiene la identidad B.
+**Por qué:** el dueño eligió la dirección B (docs/redesign/02-direcciones.md), lanzada primero en claro: el oscuro por defecto dejaría en mal estado las ~28 pantallas y archivos que todavía tienen colores escritos a mano. Contraste verificado con `node docs/redesign/tools/contrast-check.mjs` (46/46 pares AA en claro y en oscuro).
+**Archivos modificados:**
+- `app/globals.css`, `app/layout.tsx` (themeColor), `components/ui/button.tsx`, `components/ui/dropspy-logo.tsx`, `components/ui/segmented.tsx` (nuevo), `components/layout/app-sidebar.tsx`, `components/layout/app-header.tsx`, `components/layout/topbar-ticker.tsx`, `docs/redesign/tools/contrast-check.mjs`
+**Efecto en otras pantallas:** pool, stores, pendientes, settings, login y detalle heredan los tokens (violeta de marca, hover neutro, bordes de input más visibles, radios nuevos) sin cambios en su código. Se verificaron con capturas: no hay nada roto.
+**Relacionado con backend:** No aplica
+**Wiki actualizado:** No aplica
+
+---
+
 ### CHANGE-111 — sync-ads: un error de red ya no mata la corrida + presupuesto de tiempo para cerrar ordenado
 
 **Fecha:** 2026-09-24

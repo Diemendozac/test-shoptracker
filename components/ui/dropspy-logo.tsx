@@ -1,9 +1,14 @@
+import { useId } from 'react'
+
 interface DropspyIconProps {
   className?: string
   size?: number
+  /** Relleno con el degradado de marca (--grad-brand) en vez de currentColor */
+  gradient?: boolean
 }
 
-export function DropspyIcon({ className, size = 32 }: DropspyIconProps) {
+export function DropspyIcon({ className, size = 32, gradient = false }: DropspyIconProps) {
+  const gradientId = useId()
   return (
     <svg
       width={size}
@@ -13,9 +18,19 @@ export function DropspyIcon({ className, size = 32 }: DropspyIconProps) {
       xmlns="http://www.w3.org/2000/svg"
       className={className}
     >
+      {gradient && (
+        <defs>
+          {/* Mismos stops que --grad-brand en app/globals.css */}
+          <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="#7C5CFF" />
+            <stop offset="0.5" stopColor="#4F7BFF" />
+            <stop offset="1" stopColor="#22C3E6" />
+          </linearGradient>
+        </defs>
+      )}
       <path
         fillRule="evenodd"
-        fill="currentColor"
+        fill={gradient ? `url(#${gradientId})` : 'currentColor'}
         d={[
           // 4-pointed star (compass rose) — tips at ±225 from center, concave insets at ±72 diagonally
           'M250 25 L322 178 L475 250 L322 322 L250 475 L178 322 L25 250 L178 178Z',

@@ -31,7 +31,7 @@ export function FormattedPrice({
   const { rates } = useExchangeRates()
 
   if (amount == null) {
-    return <span className={cn('text-[10px] text-muted-foreground/40', className)}>—</span>
+    return <span className={cn('text-xs text-subtle-foreground', className)}>—</span>
   }
 
   const from = originalCurrency ?? null
@@ -48,7 +48,7 @@ export function FormattedPrice({
     : converted.toLocaleString('es-CO', { maximumFractionDigits: 0 })
 
   return (
-    <span className={cn('text-xs font-semibold text-primary tabular-nums', className)}>
+    <span className={cn('text-xs font-semibold text-foreground tabular-nums', className)}>
       {!currencyKnown && '~'}{sym}{convertedStr}
     </span>
   )
