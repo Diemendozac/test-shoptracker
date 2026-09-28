@@ -41,14 +41,14 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
           className={cn(
             'flex flex-1 items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors',
             tab === 'pending'
-              ? 'border-b-2 border-amber-500 text-amber-500'
+              ? 'border-b-2 border-warning text-warning-foreground'
               : 'text-muted-foreground hover:text-foreground'
           )}
         >
           <FlaskConical className="h-3.5 w-3.5" />
           Pendientes
           {pending.length > 0 && (
-            <span className="rounded-full bg-amber-500/20 px-1.5 text-[10px] font-semibold text-amber-500">
+            <span className="rounded-full bg-warning-subtle px-1.5 text-xs font-semibold text-warning-foreground">
               {pending.length}
             </span>
           )}
@@ -58,14 +58,14 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
           className={cn(
             'flex flex-1 items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors',
             tab === 'alerts'
-              ? 'border-b-2 border-primary text-primary'
+              ? 'border-b-2 border-primary text-primary-text'
               : 'text-muted-foreground hover:text-foreground'
           )}
         >
           <TrendingUp className="h-3.5 w-3.5" />
           Alertas
           {alerts.length > 0 && (
-            <span className="rounded-full bg-primary/20 px-1.5 text-[10px] font-semibold text-primary">
+            <span className="rounded-full bg-primary-subtle px-1.5 text-xs font-semibold text-primary-text">
               {alerts.length}
             </span>
           )}
@@ -95,19 +95,19 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
                   onClick={onClose}
                   className="flex items-start gap-3 px-4 py-3 hover:bg-secondary/30 transition-colors"
                 >
-                  <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-500/10">
-                    <FlaskConical className="h-3.5 w-3.5 text-amber-500" />
+                  <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-warning-subtle">
+                    <FlaskConical className="h-3.5 w-3.5 text-warning-foreground" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-xs font-medium text-foreground">{p.productTitle}</p>
                     <div className="mt-0.5 flex items-center gap-1.5">
-                      <span className="text-[10px] text-muted-foreground">{p.storeName}</span>
+                      <span className="text-xs text-muted-foreground">{p.storeName}</span>
                       {p.firstSeenRank > 0 && (
-                        <span className="text-[10px] text-muted-foreground">· #{p.firstSeenRank}</span>
+                        <span className="text-xs text-muted-foreground tabular-nums">· #{p.firstSeenRank}</span>
                       )}
                     </div>
                   </div>
-                  <span className="shrink-0 rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-medium text-amber-500">
+                  <span className="shrink-0 rounded-full bg-warning-subtle px-2 py-0.5 text-xs font-medium text-warning-foreground">
                     Testear
                   </span>
                 </Link>
@@ -129,24 +129,24 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
                   onClick={onClose}
                   className="flex items-start gap-3 px-4 py-3 hover:bg-secondary/30 transition-colors"
                 >
-                  <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                    <TrendingUp className="h-3.5 w-3.5 text-primary" />
+                  <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary-subtle">
+                    <TrendingUp className="h-3.5 w-3.5 text-primary-text" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-xs font-medium text-foreground">{a.productTitle}</p>
                     <div className="mt-0.5 flex items-center gap-1.5">
-                      <span className="text-[10px] text-muted-foreground">{a.storeName}</span>
+                      <span className="text-xs text-muted-foreground">{a.storeName}</span>
                       {a.growthPct !== 0 && (
                         <span className={cn(
-                          'text-[10px] font-medium',
-                          a.growthPct > 0 ? 'text-emerald-400' : 'text-rose-400'
+                          'text-xs font-medium tabular-nums',
+                          a.growthPct > 0 ? 'text-success-foreground' : 'text-danger-foreground'
                         )}>
                           {a.growthPct > 0 ? '+' : ''}{Math.round(a.growthPct)}%
                         </span>
                       )}
                     </div>
                   </div>
-                  <span className="shrink-0 rounded-full bg-primary/20 px-2 py-0.5 text-[10px] font-medium text-primary">
+                  <span className="shrink-0 rounded-full bg-primary-subtle px-2 py-0.5 text-xs font-medium text-primary-text">
                     {a.performanceLabel}
                   </span>
                 </Link>
@@ -194,7 +194,7 @@ function CurrencySelector() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex h-9 items-center gap-1 rounded-lg border border-border bg-secondary/40 px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+        className="flex h-9 items-center gap-1 rounded-lg border border-border bg-card px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:border-border-hover hover:text-foreground"
       >
         <span className="font-semibold text-foreground">{currencySymbol(current)}</span>
         <span>{current}</span>
@@ -213,7 +213,7 @@ function CurrencySelector() {
                 <span className="font-semibold text-foreground w-6">{currencySymbol(code)}</span>
                 <span className="text-muted-foreground">{code}</span>
               </span>
-              {code === current && <Check className="h-3 w-3 text-primary" />}
+              {code === current && <Check className="h-3 w-3 text-primary-text" />}
             </button>
           ))}
         </div>
@@ -240,7 +240,7 @@ export function AppHeader({ title, description }: AppHeaderProps) {
   }, [])
 
   return (
-    <header className="sticky top-0 z-40 grid h-16 grid-cols-3 items-center border-b border-border bg-background/80 px-6 backdrop-blur-sm">
+    <header className="sticky top-0 z-40 grid h-16 grid-cols-3 items-center border-b border-border bg-card/85 bg-topbar-glow px-6 backdrop-blur-sm">
       <div />
 
       <TopbarTicker />
@@ -263,7 +263,7 @@ export function AppHeader({ title, description }: AppHeaderProps) {
           >
             <Bell className="h-4 w-4" />
             {totalCount > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
+              <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-xs font-semibold leading-none text-primary-foreground tabular-nums">
                 {totalCount > 9 ? '9+' : totalCount}
               </span>
             )}

@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 // Verificador de contraste WCAG 2.1 AA para las direcciones de diseño del rediseño.
 //
-// Lee los tokens directamente de docs/redesign/preview-a.html y preview-b.html
-// (bloques html[data-theme="light"] y html[data-theme="dark"]), así que lo que
-// se verifica es exactamente lo que el dueño ve en los previews.
+// Verifica dos fuentes:
+//   1. docs/redesign/preview-a.html y preview-b.html (bloques html[data-theme=…]):
+//      lo que el dueño ve en los previews.
+//   2. app/globals.css (:root y .dark): los tokens reales de la app (fase 2).
 //
 // Uso (sin dependencias, Node 18+):
 //   node docs/redesign/tools/contrast-check.mjs          → resumen, exit 1 si algo falla
@@ -59,6 +60,20 @@ function oklch(h) {
   return `oklch(${L.toFixed(3)} ${C.toFixed(3)} ${H.toFixed(1)})`
 }
 
+function oklchToHex(L, C, H) {
+  const h = (H * Math.PI) / 180, a = C * Math.cos(h), b = C * Math.sin(h)
+  const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3
+  const m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3
+  const s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3
+  const rgb = [
+    4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+    -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
+  ]
+  const enc = c => { c = Math.min(1, Math.max(0, c)); return c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055 }
+  return '#' + rgb.map(c => Math.round(enc(c) * 255).toString(16).padStart(2, '0')).join('').toUpperCase()
+}
+
 // ---------- parseo de los previews ----------
 function tokensOf(file, theme) {
   const html = readFileSync(join(here, '..', file), 'utf8')
@@ -71,6 +86,38 @@ function tokensOf(file, theme) {
   return t
 }
 
+// ---------- parseo de app/globals.css ----------
+function tokensOfGlobals(selector) {
+  const css = readFileSync(join(here, '..', '..', '..', 'app', 'globals.css'), 'utf8')
+  const block = css.match(new RegExp(`(?:^|\\n)${selector.replace('.', '\\.')}\\s*\\{([\\s\\S]*?)\\n\\}`))
+  if (!block) throw new Error(`No encontré ${selector} en app/globals.css`)
+  const t = {}
+  for (const [, k, L, C, H] of block[1].matchAll(/--([\w-]+):\s*oklch\(([\d.]+)\s+([\d.]+)\s+([\d.]+)\)/g)) t[k] = oklchToHex(+L, +C, +H)
+  const cta = block[1].match(/--grad-cta:\s*linear-gradient\(([^;]+)\);/)
+  if (cta) t.__ctaStops = [...cta[1].matchAll(/#[0-9a-fA-F]{6}/g)].map(m => m[0].toUpperCase())
+  return t
+}
+
+// Mismos criterios que PAIRS, con los nombres de shadcn/ui que usa la app.
+const APP_PAIRS = [
+  ['foreground', 'background', 4.5], ['foreground', 'card', 4.5], ['foreground', 'secondary', 4.5], ['foreground', 'accent', 4.5],
+  ['muted-foreground', 'background', 4.5], ['muted-foreground', 'card', 4.5], ['muted-foreground', 'secondary', 4.5], ['muted-foreground', 'accent', 4.5],
+  ['subtle-foreground', 'background', 4.5], ['subtle-foreground', 'card', 4.5], ['subtle-foreground', 'secondary', 4.5], ['subtle-foreground', 'accent', 4.5],
+  ['muted-foreground', 'neutral-subtle', 4.5], ['popover-foreground', 'popover', 4.5],
+  ['primary-foreground', 'primary', 4.5], ['primary-foreground', 'primary-hover', 4.5],
+  ['primary-text', 'background', 4.5], ['primary-text', 'card', 4.5], ['primary-text', 'primary-subtle', 4.5],
+  ['success-foreground', 'card', 4.5], ['success-foreground', 'success-subtle', 4.5],
+  ['warning-foreground', 'card', 4.5], ['warning-foreground', 'warning-subtle', 4.5],
+  ['danger-foreground', 'card', 4.5], ['danger-foreground', 'danger-subtle', 4.5],
+  ['info-foreground', 'card', 4.5], ['info-foreground', 'info-subtle', 4.5],
+  ['sidebar-foreground', 'sidebar', 4.5], ['sidebar-muted-foreground', 'sidebar', 4.5], ['sidebar-muted-foreground', 'sidebar-hover', 4.5],
+  ['sidebar-accent-foreground', 'sidebar-accent', 4.5], ['sidebar-primary', 'sidebar-accent', 4.5], ['sidebar-primary', 'sidebar', 4.5],
+  ['success', 'card', 3], ['warning', 'card', 3], ['danger', 'card', 3], ['info', 'card', 3],
+  ['success', 'accent', 3], ['warning', 'accent', 3],
+  ['primary', 'card', 3], ['ring', 'card', 3], ['ring', 'background', 3],
+  ['input', 'card', 3], ['input', 'background', 3],
+]
+
 const THEMES = [
   ['A · Precisión', 'preview-a.html', 'light', 'claro'],
   ['A · Precisión', 'preview-a.html', 'dark', 'oscuro'],
@@ -78,12 +125,18 @@ const THEMES = [
   ['B · Radar', 'preview-b.html', 'light', 'claro'],
 ]
 
+const RUNS = [
+  ...THEMES.map(([dir, file, theme, label]) => ({ name: dir, label, tokens: () => tokensOf(file, theme), pairs: PAIRS, fgKey: 'accent-fg' })),
+  { name: 'app/globals.css', label: ':root (claro, activo)', tokens: () => tokensOfGlobals(':root'), pairs: APP_PAIRS, fgKey: 'primary-foreground' },
+  { name: 'app/globals.css', label: '.dark (oscuro, sin activar)', tokens: () => tokensOfGlobals('.dark'), pairs: APP_PAIRS, fgKey: 'primary-foreground' },
+]
+
 let totalFails = 0
 const md = []
-for (const [dir, file, theme, label] of THEMES) {
-  const t = tokensOf(file, theme)
+for (const { name: dir, label, tokens, pairs, fgKey } of RUNS) {
+  const t = tokens()
   const rows = []
-  for (const [fg, bg, min] of PAIRS) {
+  for (const [fg, bg, min] of pairs) {
     if (!t[fg] || !t[bg]) { rows.push({ fg, bg, min, r: NaN, ok: false, missing: true }); continue }
     const r = ratio(t[fg], t[bg])
     rows.push({ fg, bg, min, r, ok: r >= min })
@@ -91,8 +144,8 @@ for (const [dir, file, theme, label] of THEMES) {
   // Texto blanco sobre el degradado del CTA (B): se muestrea en 11 puntos del recorrido.
   if (t.__ctaStops) {
     const s = t.__ctaStops; let worst = Infinity
-    for (let i = 0; i < s.length - 1; i++) for (let k = 0; k <= 10; k++) worst = Math.min(worst, ratio(t['accent-fg'], mix(s[i], s[i + 1], k / 10)))
-    rows.push({ fg: 'accent-fg', bg: `grad-cta (${s.join(' → ')}, peor punto)`, min: 4.5, r: worst, ok: worst >= 4.5 })
+    for (let i = 0; i < s.length - 1; i++) for (let k = 0; k <= 10; k++) worst = Math.min(worst, ratio(t[fgKey], mix(s[i], s[i + 1], k / 10)))
+    rows.push({ fg: fgKey, bg: `grad-cta (${s.join(' → ')}, peor punto)`, min: 4.5, r: worst, ok: worst >= 4.5 })
   }
   const fails = rows.filter(r => !r.ok)
   totalFails += fails.length
