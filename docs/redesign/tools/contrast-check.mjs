@@ -95,6 +95,8 @@ function tokensOfGlobals(selector) {
   for (const [, k, L, C, H] of block[1].matchAll(/--([\w-]+):\s*oklch\(([\d.]+)\s+([\d.]+)\s+([\d.]+)\)/g)) t[k] = oklchToHex(+L, +C, +H)
   const cta = block[1].match(/--grad-cta:\s*linear-gradient\(([^;]+)\);/)
   if (cta) t.__ctaStops = [...cta[1].matchAll(/#[0-9a-fA-F]{6}/g)].map(m => m[0].toUpperCase())
+  const txt = block[1].match(/--grad-text:\s*linear-gradient\(([^;]+)\);/)
+  if (txt) t.__textStops = [...txt[1].matchAll(/#[0-9a-fA-F]{6}/g)].map(m => m[0].toUpperCase())
   return t
 }
 
@@ -146,6 +148,12 @@ for (const { name: dir, label, tokens, pairs, fgKey } of RUNS) {
     const s = t.__ctaStops; let worst = Infinity
     for (let i = 0; i < s.length - 1; i++) for (let k = 0; k <= 10; k++) worst = Math.min(worst, ratio(t[fgKey], mix(s[i], s[i + 1], k / 10)))
     rows.push({ fg: fgKey, bg: `grad-cta (${s.join(' → ')}, peor punto)`, min: 4.5, r: worst, ok: worst >= 4.5 })
+  }
+  // Texto con degradado (overline de la señal #1) sobre la tarjeta, en todo el recorrido.
+  if (t.__textStops) {
+    const s = t.__textStops; let worst = Infinity
+    for (let i = 0; i < s.length - 1; i++) for (let k = 0; k <= 10; k++) worst = Math.min(worst, ratio(mix(s[i], s[i + 1], k / 10), t.card))
+    rows.push({ fg: `grad-text (${s.join(' → ')}, peor punto)`, bg: 'card', min: 4.5, r: worst, ok: worst >= 4.5 })
   }
   const fails = rows.filter(r => !r.ok)
   totalFails += fails.length

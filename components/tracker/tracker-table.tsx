@@ -233,7 +233,7 @@ function ContextBar({ rank, total }: { rank: number | null; total?: number | nul
         )}
       </div>
       {total != null && total > 0 && (
-        <span className="text-xs tabular-nums text-subtle-foreground">
+        <span className="whitespace-nowrap text-xs tabular-nums text-subtle-foreground">
           de {total} productos
         </span>
       )}

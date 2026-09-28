@@ -77,6 +77,8 @@
   /* Marca: solo logo, 1 CTA por vista, señal #1 y nav activa. Nunca sobre datos. */
   --grad-brand: linear-gradient(135deg, #7C5CFF 0%, #4F7BFF 50%, #22C3E6 100%);
   --grad-cta: linear-gradient(135deg, #5B3FE6 0%, #3450E6 100%);
+  /* Degradado para TEXTO: ambos extremos ≥4.5:1 sobre --card (el de marca llega a cian y no lo cumple) */
+  --grad-text: linear-gradient(90deg, #5035D6 0%, #3450E6 100%);
   --glow: rgb(91 63 230 / 0.22);
   --elevation-card: 0 1px 2px rgb(20 22 43 / 0.05), 0 8px 24px -12px rgb(20 22 43 / 0.10);
   --elevation-card-hover: 0 1px 2px rgb(20 22 43 / 0.06), 0 16px 32px -12px rgb(20 22 43 / 0.16);
@@ -143,6 +145,7 @@
 
   --grad-brand: linear-gradient(135deg, #8B6CFF 0%, #4F7BFF 50%, #22D3EE 100%);
   --grad-cta: linear-gradient(135deg, #6B4EFF 0%, #3D5BFF 100%);
+  --grad-text: linear-gradient(90deg, #B3A6FF 0%, #7DD3FC 100%);
   --glow: rgb(107 78 255 / 0.45);
   --elevation-card: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 12px 32px -16px rgb(0 0 0 / 0.7);
   --elevation-card-hover: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 16px 40px -16px rgb(0 0 0 / 0.8);
@@ -251,7 +254,7 @@
   background-image: var(--grad-cta);
 }
 @utility text-grad-brand {
-  background-image: var(--grad-brand);
+  background-image: var(--grad-text);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
