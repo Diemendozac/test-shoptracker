@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { PoolWinnersSection } from '@/components/tracker/pool-winners'
 import type { PagoFilter } from '@/components/tracker/pool-winners'
 import { PoolDetailPanel } from '@/components/tracker/pool-detail-panel'
@@ -8,6 +8,8 @@ import { PoolArchiveHint } from '@/components/tracker/pool-archive-hint'
 import { useGetPoolWinnersQuery, useGetPoolSearchQuery } from '@/app/(dashboard)/services/dashboardApi'
 import { useViewAs } from '@/lib/view-as'
 import { cn } from '@/lib/utils'
+import { useMediaQuery } from '@/hooks/use-media-query'
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { LayoutGrid, TrendingUp, Star, Flame } from 'lucide-react'
 
 export type PoolPreset = 'all' | 'rising' | 'top_score' | 'new' | 'favorites'
@@ -47,10 +49,16 @@ export default function PoolPage() {
   // Split-view: producto seleccionado para el panel de detalle al lado de la tabla,
   // en vez de navegar a /tracker/[candidateId].
   const [selectedWinner, setSelectedWinner] = useState<{ candidateId: string; storeId: string } | null>(null)
+  // Elemento que abrió el panel: al cerrar el Sheet el foco vuelve ahí (teclado / lector de pantalla)
+  const openerRef = useRef<HTMLElement | null>(null)
   function handleSelectWinner(candidateId: string, storeId: string) {
+    openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
     setSelectedWinner({ candidateId, storeId })
   }
   function handleClosePanel() { setSelectedWinner(null) }
+  // Split (tabla + panel al lado) solo desde 1280 px: por debajo la fila compacta no entra
+  // (el título medía 17–38 px entre 1024 y 1100). Ahí el panel se abre en un Sheet.
+  const isSplit = useMediaQuery('(min-width: 1280px)')
 
   const [favorites, setFavorites] = useState<Set<string>>(() => {
     if (typeof window === 'undefined') return new Set()
@@ -172,7 +180,7 @@ export default function PoolPage() {
             </p>
           </div>
         )}
-        <div className={cn('grid gap-6', selectedWinner && 'lg:grid-cols-[minmax(0,1fr)_400px]')}>
+        <div className={cn('grid gap-6', selectedWinner && isSplit && 'grid-cols-[minmax(0,1fr)_440px]')}>
           <PoolWinnersSection
             data={data}
             isLoading={isLoading}
@@ -202,8 +210,9 @@ export default function PoolPage() {
             onCountryFilterChange={handleCountryFilterChange}
             selectedCandidateId={selectedWinner?.candidateId ?? null}
             onSelectWinner={handleSelectWinner}
+            compact={!!selectedWinner && isSplit}
           />
-          {selectedWinner && (
+          {selectedWinner && isSplit && (
             <PoolDetailPanel
               candidateId={selectedWinner.candidateId}
               storeId={selectedWinner.storeId}
@@ -211,6 +220,25 @@ export default function PoolPage() {
             />
           )}
         </div>
+        {/* < 1280 px: el mismo panel en un Sheet (antes se renderizaba debajo de toda la tabla, fuera de la vista) */}
+        <Sheet open={!!selectedWinner && !isSplit} onOpenChange={open => { if (!open) handleClosePanel() }}>
+          <SheetContent
+            side="right"
+            showCloseButton={false}
+            aria-describedby={undefined}
+            onCloseAutoFocus={e => { e.preventDefault(); openerRef.current?.focus() }}
+            className="w-full gap-0 overflow-y-auto bg-card p-0 sm:max-w-[440px]">
+            <SheetTitle className="sr-only">Detalle del producto</SheetTitle>
+            {selectedWinner && (
+              <PoolDetailPanel
+                candidateId={selectedWinner.candidateId}
+                storeId={selectedWinner.storeId}
+                onClose={handleClosePanel}
+                variant="sheet"
+              />
+            )}
+          </SheetContent>
+        </Sheet>
         <PoolArchiveHint data={archiveData} isLoading={archiveLoading} />
       </div>
     </>

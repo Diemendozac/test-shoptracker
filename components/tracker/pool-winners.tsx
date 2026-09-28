@@ -207,6 +207,11 @@ function SortIcon({ column, sort }: { column: PoolSortKey; sort: SortState }) {
 
 export type PagoFilter = 'all' | 'anticipado' | 'contraentrega'
 
+// Plantillas de columnas: la cabecera y las filas usan SIEMPRE la misma (antes la cabecera
+// quedaba en 10 columnas con el panel abierto y "Producto" medía 0 px, encimado sobre "Precio").
+const COLS_FULL = 'grid-cols-[32px_64px_minmax(0,1fr)_60px_48px_72px_110px_90px_140px_60px]'
+const COLS_COMPACT = 'grid-cols-[28px_48px_minmax(0,1fr)_56px_44px_64px]'
+
 interface PoolWinnersSectionProps {
   data: PoolWinnersResponse | undefined
   isLoading?: boolean
@@ -243,6 +248,8 @@ interface PoolWinnersSectionProps {
   // si no se pasa la tabla se comporta exactamente igual que antes (navega con <Link>).
   selectedCandidateId?: string | null
   onSelectWinner?: (candidateId: string, storeId: string) => void
+  /** Modo compacto (split view). Si no se pasa, se deriva de selectedCandidateId como antes. */
+  compact?: boolean
 }
 
 export function PoolWinnersSection({
@@ -256,10 +263,11 @@ export function PoolWinnersSection({
   currencyFilter, onCurrencyFilterChange,
   escalarFilter, onEscalarFilterChange,
   countryFilter, onCountryFilterChange,
-  selectedCandidateId, onSelectWinner,
+  selectedCandidateId, onSelectWinner, compact,
 }: PoolWinnersSectionProps) {
   const { currency: preferredCurrency } = useCurrency()
   const { maxPoolPage } = usePlanTier()
+  const isCompact = compact ?? !!selectedCandidateId
   const [sort, setSort] = useState<SortState>({ key: 'performanceScore', dir: 'desc' })
 
   // Dropdown de sugerencias en vivo (tipo Kalodata) — se cierra al hacer click afuera o Escape
@@ -632,7 +640,7 @@ export function PoolWinnersSection({
       </div>
 
       {/* Column headers */}
-      <div className="grid grid-cols-[32px_64px_minmax(0,1fr)_60px_48px_72px_110px_90px_140px_60px] items-center gap-3 border-b border-border bg-secondary/30 px-4 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+      <div className={cn('grid items-center gap-3 border-b border-border bg-secondary/30 px-4 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground', isCompact ? COLS_COMPACT : COLS_FULL)}>
         <div>#</div>
         <div />
         <button
@@ -653,21 +661,25 @@ export function PoolWinnersSection({
         >
           Score <SortIcon column="performanceScore" sort={sort} />
         </button>
-        <div className="text-center">Tendencia (7d)</div>
+        {!isCompact && <div className="text-center">Tendencia (7d)</div>}
         <button
           onClick={() => handleSort('growthPct')}
           className="group/th flex items-center gap-1 hover:text-foreground transition-colors"
         >
-          Crecimiento <SortIcon column="growthPct" sort={sort} />
+          {isCompact ? 'Crecim.' : 'Crecimiento'} <SortIcon column="growthPct" sort={sort} />
         </button>
-        <button
-          onClick={() => handleSort('currentRank')}
-          className="group/th flex items-center gap-1 hover:text-foreground transition-colors"
-        >
-          Contexto <SortIcon column="currentRank" sort={sort} />
-        </button>
-        <div>Ads</div>
-        <div className="text-center">Acción</div>
+        {!isCompact && (
+          <>
+            <button
+              onClick={() => handleSort('currentRank')}
+              className="group/th flex items-center gap-1 hover:text-foreground transition-colors"
+            >
+              Contexto <SortIcon column="currentRank" sort={sort} />
+            </button>
+            <div>Ads</div>
+            <div className="text-center">Acción</div>
+          </>
+        )}
       </div>
       <div className="divide-y divide-border/50">
         {filtered.length === 0 ? (
@@ -695,7 +707,7 @@ export function PoolWinnersSection({
               preferredCurrency={preferredCurrency}
               isFavorite={favorites.has(winner.candidateId)}
               onToggleFavorite={onToggleFavorite}
-              isCompact={!!selectedCandidateId}
+              isCompact={isCompact}
               isSelected={winner.candidateId === selectedCandidateId}
               onSelect={onSelectWinner}
             />
@@ -954,9 +966,7 @@ function PoolWinnerRow({
   return (
     <div className={cn(
       'grid items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/30',
-      isCompact
-        ? 'grid-cols-[28px_48px_minmax(0,1fr)_56px_44px_64px]'
-        : 'grid-cols-[32px_64px_minmax(0,1fr)_60px_48px_72px_110px_90px_140px_60px]',
+      isCompact ? COLS_COMPACT : COLS_FULL,
       isFirst && 'bg-amber-500/5',
       isSelected && 'bg-primary/5 ring-1 ring-inset ring-primary/30',
     )}>
@@ -1058,7 +1068,7 @@ function PoolWinnerRow({
         )}>
           {gp != null ? `${gp >= 0 ? '+' : ''}${gp.toFixed(1)}%` : '—'}
         </span>
-        {subText && (
+        {subText && !isCompact && (
           <span className={cn('mt-0.5 block text-[10px] leading-tight', subText.color)}>
             {subText.text}
           </span>

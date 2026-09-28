@@ -4,6 +4,52 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-119 — Panel del pool sticky de verdad, cabecera de tabla alineada y Sheet por debajo de 1280 px (rediseño de detalle, S1 + S2)
+
+**Fecha:** 2026-09-28
+**Tipo:** fix + ui
+
+**Qué cambió:** Es S1 y S2 de `docs/redesign/detalle-producto/03-spec.md`.
+
+- **S1, el shell:** el contenedor de `app/(dashboard)/layout.tsx` pasa de `overflow-y-auto overflow-x-hidden` a `overflow-x-clip`.
+  - El div nunca scrolleaba (scrollea la ventana), pero su `overflow` lo convertía en el contenedor de los `sticky` de sus hijos. Por eso el panel del pool, con `sticky top-4`, nunca se quedaba fijo: al bajar 700 px el panel subía 700 px (medido: top 139 → −561) y el botón de cerrar salía de la pantalla.
+  - `clip` recorta igual pero no crea contenedor de scroll.
+- **S2, el pool:**
+  - **Cabecera alineada:** la cabecera y las filas de la tabla usan las mismas constantes de columnas (`COLS_FULL` / `COLS_COMPACT`). Con el panel abierto, la cabecera seguía en 10 columnas y las filas en 6, así que "Producto" medía 0 px y se encimaba sobre "Precio". En modo compacto la cabecera oculta Tendencia, Contexto, Ads y Acción, y el subtexto de crecimiento (que se partía en 4 líneas en 64 px) no se muestra.
+  - **Split desde 1280 px:** el split (tabla + panel de 440 px) empieza en 1280 px (`useMediaQuery`). Entre 1024 y 1100 px, el título de la fila compacta medía 17–38 px.
+  - **Sheet por debajo:** con menos de 1280 px, el mismo panel se abre en un `Sheet` desde la derecha. Antes se renderizaba debajo de toda la tabla, fuera de la vista. Esc lo cierra y el foco vuelve a la fila.
+  - **Panel fijo:** el panel usa `sticky top-20`, debajo del topbar de 64 px.
+- **`components/ui/sheet.tsx`:** prop `showCloseButton` (default `true`, igual que en el shadcn actual), para no duplicar el ✕ del panel. El único otro uso (`sidebar.tsx`) no cambia.
+
+**Archivos modificados:**
+- `app/(dashboard)/layout.tsx`: una línea más su comentario.
+- `app/(dashboard)/pool/page.tsx`: `isSplit`, grilla `xl` de 440 px, `Sheet` y devolución del foco.
+- `components/tracker/pool-winners.tsx`: constantes de columnas, prop `compact` (opcional; sin ella se comporta como antes) y cabecera compacta.
+- `components/tracker/pool-detail-panel.tsx`: prop `variant` (`split` | `sheet`) y `sticky top-20`.
+- `components/ui/sheet.tsx`: prop `showCloseButton`.
+- `hooks/use-media-query.ts` (nuevo): `useSyncExternalStore`, `false` en el servidor, sin mismatch de hidratación.
+
+**Qué NO cambió:**
+- La tabla completa del pool (sin panel), los filtros, la paginación y `maxPoolPage`.
+- Cmd/ctrl + clic en una fila sigue abriendo otra pestaña (CHANGE-110).
+- Los datos, la API y el gating.
+
+**Verificación:**
+- `tsc --noEmit`: los 9 errores previos, ninguno nuevo. `next build` OK.
+- **S1:** 11 páginas del dashboard × 1440 y 390 px, comparadas antes y después: mismo `scrollWidth`, topbar sticky y **capturas idénticas píxel a píxel** (22 de 22).
+- **S2:**
+  - con el panel abierto, cabecera y fila tienen el mismo `gridTemplateColumns` en 1280, 1366, 1440 y 1600 px, y la columna Producto mide 178 / 264 / 338 / 498 px;
+  - después de bajar 700 px el panel queda en 80 px y el ✕ visible;
+  - a 1024, 1100 y 390 px el `Sheet` se abre dentro de la vista, con un solo ✕, Esc cierra y el foco vuelve a la fila;
+  - ctrl + clic abre otra pestaña.
+
+**Pendiente:** dentro del `Sheet` la cabecera del panel todavía scrollea con el contenido. La cabecera fija dentro del panel llega con S5.
+
+**Relacionado con backend:** no.
+**Wiki actualizado:** no aplica.
+
+---
+
 ### CHANGE-118 — Tarjeta de anuncio v2 y sección de anuncios (rediseño de detalle, S3)
 
 **Fecha:** 2026-09-28
