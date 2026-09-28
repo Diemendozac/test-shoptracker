@@ -9,6 +9,7 @@ interface StatsCardProps {
   change?: number
   changeLabel?: string
   icon: LucideIcon
+  /** Se conserva por compatibilidad con los call sites; en la dirección B ya no cambia el color. */
   variant?: 'default' | 'primary' | 'success' | 'warning'
 }
 
@@ -18,30 +19,20 @@ export function StatsCard({
   change,
   changeLabel,
   icon: Icon,
-  variant = 'default',
 }: StatsCardProps) {
   const isPositive = change !== undefined && change >= 0
 
   return (
-    <div className="group relative overflow-hidden rounded-xl border border-border bg-card p-5 transition-all duration-300 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5">
-      {/* Background glow effect */}
-      <div className={cn(
-        'absolute -right-8 -top-8 h-24 w-24 rounded-full blur-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100',
-        variant === 'primary' && 'bg-primary/20',
-        variant === 'success' && 'bg-rising/20',
-        variant === 'warning' && 'bg-watching/20',
-        variant === 'default' && 'bg-primary/10',
-      )} />
-
-      <div className="relative flex items-start justify-between">
-        <div className="flex flex-col gap-1">
+    <div className="rounded-xl border border-border bg-card p-5 shadow-card transition-[border-color,box-shadow] duration-200 hover:border-border-hover">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col gap-2">
           <span className="text-sm font-medium text-muted-foreground">{title}</span>
-          <span className="text-2xl font-bold tracking-tight text-foreground">{value}</span>
+          <span className="font-display text-[34px] font-semibold leading-none tracking-tight text-foreground tabular-nums">{value}</span>
           {change !== undefined && (
-            <div className="flex items-center gap-1.5 pt-1">
+            <div className="flex items-center gap-1.5">
               <span className={cn(
-                'text-xs font-medium',
-                isPositive ? 'text-rising' : 'text-declining'
+                'text-xs font-semibold tabular-nums',
+                isPositive ? 'text-success-foreground' : 'text-danger-foreground'
               )}>
                 {isPositive ? '+' : ''}{change}%
               </span>
@@ -51,13 +42,7 @@ export function StatsCard({
             </div>
           )}
         </div>
-        <div className={cn(
-          'flex h-10 w-10 items-center justify-center rounded-lg transition-colors',
-          variant === 'primary' && 'bg-primary/10 text-primary',
-          variant === 'success' && 'bg-rising/10 text-rising',
-          variant === 'warning' && 'bg-watching/10 text-watching',
-          variant === 'default' && 'bg-secondary text-muted-foreground',
-        )}>
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-subtle text-primary-text">
           <Icon className="h-5 w-5" />
         </div>
       </div>

@@ -16,15 +16,10 @@ const FALLBACK: DashboardInsight = {
   ctaPath: '/stores',
 }
 
+// Color solo cuando significa algo: sube = verde, alerta = rojo, el resto neutro.
 const ACCENT: Record<string, string> = {
-  rising:       'text-orange-500',
-  streak:       'text-amber-500',
-  score:        'text-violet-500',
-  alert:        'text-rose-500',
-  total:        'text-blue-500',
-  task_stores:  'text-emerald-600',
-  task_scale:   'text-primary',
-  task_pending: 'text-amber-600',
+  rising: 'text-success-foreground',
+  alert:  'text-danger-foreground',
 }
 
 export function TopbarTicker() {
@@ -47,7 +42,7 @@ export function TopbarTicker() {
   }, [items.length])
 
   const msg = items[idx % items.length]
-  const accent = ACCENT[msg.type] ?? 'text-primary'
+  const accent = ACCENT[msg.type] ?? 'text-foreground'
   const isTask = msg.isTask
 
   return (
@@ -59,15 +54,15 @@ export function TopbarTicker() {
           'transition-all duration-300',
           visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1.5',
           isTask
-            ? 'border-amber-400/50 bg-amber-500/5 hover:border-amber-400/80 hover:bg-amber-500/10'
+            ? 'border-warning-border bg-warning-subtle hover:border-warning'
             : 'border-border/60 bg-card hover:border-border hover:shadow-md',
         )}
       >
         {/* Task indicator dot */}
         {isTask && (
           <span className="relative flex h-1.5 w-1.5 shrink-0">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
-            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-amber-400" />
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-warning opacity-75" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-warning" />
           </span>
         )}
 
@@ -75,8 +70,8 @@ export function TopbarTicker() {
           {msg.message}
         </span>
 
-        <span className="flex shrink-0 items-center gap-0.5 text-[10px] font-semibold text-muted-foreground transition-colors group-hover:text-foreground">
-          {isTask && <CheckCircle2 className="mr-0.5 h-3 w-3 text-amber-500" />}
+        <span className="flex shrink-0 items-center gap-0.5 text-xs font-semibold text-muted-foreground transition-colors group-hover:text-foreground">
+          {isTask && <CheckCircle2 className="mr-0.5 h-3 w-3 text-warning-foreground" />}
           {msg.cta}
           <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
         </span>

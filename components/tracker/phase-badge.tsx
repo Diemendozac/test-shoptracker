@@ -12,22 +12,22 @@ const phaseConfig: Record<Phase, {
 }> = {
   Despegue: {
     icon: Rocket,
-    color: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20',
+    color: 'text-success-foreground bg-success-subtle border-success-border',
     label: 'Despegue',
   },
   Meseta: {
     icon: Minus,
-    color: 'text-amber-500 bg-amber-500/10 border-amber-500/20',
+    color: 'text-muted-foreground bg-neutral-subtle border-border',
     label: 'Meseta',
   },
   Caída: {
     icon: TrendingDown,
-    color: 'text-rose-500 bg-rose-500/10 border-rose-500/20',
+    color: 'text-danger-foreground bg-danger-subtle border-danger-border',
     label: 'Caída',
   },
   Rebote: {
     icon: RefreshCw,
-    color: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
+    color: 'text-info-foreground bg-info-subtle border-info-border',
     label: 'Rebote',
   },
 }
@@ -49,7 +49,7 @@ export function PhaseBadge({ phase, size = 'sm' }: PhaseBadgeProps) {
       className={cn(
         'inline-flex items-center gap-1 rounded-full border font-medium',
         config.color,
-        size === 'sm' && 'px-1.5 py-0.5 text-[10px]',
+        size === 'sm' && 'px-1.5 py-0.5 text-xs',
         size === 'md' && 'px-2 py-0.5 text-xs',
       )}
     >

@@ -58,7 +58,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-foreground">{t('topPerformers.title')}</h2>
+        <h2 className="font-display text-lg font-semibold text-foreground">{t('topPerformers.title')}</h2>
         <p className="text-sm text-muted-foreground">
           {t('topPerformers.subtitle')}
         </p>
@@ -67,7 +67,7 @@ export default function DashboardPage() {
       {isOverviewLoading ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-48 animate-pulse rounded-xl bg-secondary" />
+            <div key={i} className="h-48 animate-pulse rounded-xl border border-border bg-secondary" />
           ))}
         </div>
       ) : (
@@ -82,7 +82,7 @@ export default function DashboardPage() {
             <div className="mt-4 flex justify-center">
               <button
                 onClick={() => setExpanded(e => !e)}
-                className="flex items-center gap-1.5 rounded-lg border border-border bg-secondary/50 px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
                 {expanded ? (
                   <><ChevronUp className="h-4 w-4" /> {t('seeLess')}</>

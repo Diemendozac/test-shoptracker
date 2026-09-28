@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { PerformanceBadge } from './performance-badge'
 import type { DashboardItem } from '@/lib/types'
-import { ExternalLink, Package, TrendingUp } from 'lucide-react'
+import { ArrowRight, Package } from 'lucide-react'
 import { fmtCompact } from '@/lib/utils'
 import { resolveDisplayLabel } from '@/lib/label-utils'
 
@@ -15,7 +15,7 @@ function ProductImage({ src, title }: { src: string | null; title: string }) {
 
   if (!proxySrc || failed) {
     return (
-      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-secondary text-xs font-bold text-muted-foreground">
+      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border border-border bg-secondary text-xs font-semibold text-muted-foreground">
         {title.slice(0, 2).toUpperCase()}
       </div>
     )
@@ -25,7 +25,7 @@ function ProductImage({ src, title }: { src: string | null; title: string }) {
     <img
       src={proxySrc}
       alt=""
-      className="h-16 w-16 shrink-0 rounded-lg object-cover"
+      className="h-16 w-16 shrink-0 rounded-lg border border-border object-cover"
       onError={() => setFailed(true)}
     />
   )
@@ -46,7 +46,7 @@ function StoreFavicon({ url, name }: { url?: string; name: string }) {
 
   if (!faviconUrl || failed) {
     return (
-      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
+      <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-secondary text-xs font-semibold text-muted-foreground">
         {initials}
       </div>
     )
@@ -77,31 +77,30 @@ export function StoreCard({ item }: StoreCardProps) {
   const status = getDashboardStoreStatus(item)
 
   return (
-    <div className="group relative overflow-hidden rounded-xl border border-border bg-card transition-all duration-300 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5">
-      {/* Gradient overlay on hover */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-
-      <div className="relative p-5">
+    <div className="flex flex-col rounded-xl border border-border bg-card shadow-card transition-[border-color,box-shadow] duration-200 hover:border-border-hover hover:shadow-card-hover">
+      <div className="flex flex-1 flex-col p-5">
         {/* Header */}
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <StoreFavicon url={storeUrl} name={storeName} />
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <h3 className="font-semibold text-foreground">{storeName}</h3>
                 {status !== 'ACTIVA' && (
                   <span className={cn(
-                    'rounded-full px-1.5 py-0.5 text-[10px] font-medium',
-                    status === 'ZOMBIE' ? 'bg-red-500/10 text-red-500' : 'bg-orange-500/10 text-orange-600',
+                    'rounded-full border px-2 py-0.5 text-xs font-semibold tracking-wide',
+                    status === 'ZOMBIE'
+                      ? 'border-danger-border bg-danger-subtle text-danger-foreground'
+                      : 'border-warning-border bg-warning-subtle text-warning-foreground',
                   )}>
                     {status}
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex flex-wrap items-center gap-1.5">
                 <p className="text-xs text-muted-foreground">Mejor candidato</p>
                 {pagoAnticipado && (
-                  <span className="rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600">
+                  <span className="rounded-full border border-border bg-neutral-subtle px-2 py-0.5 text-xs font-medium text-muted-foreground">
                     Pago anticipado
                   </span>
                 )}
@@ -112,7 +111,7 @@ export function StoreCard({ item }: StoreCardProps) {
 
         {/* Content */}
         {topCandidate ? (
-          <div className="space-y-4">
+          <div className="flex flex-1 flex-col gap-4">
             <div className="flex items-start gap-3">
               <ProductImage src={topCandidate.productImage} title={topCandidate.productTitle} />
               <div className="flex min-w-0 flex-1 flex-col gap-2">
@@ -127,10 +126,10 @@ export function StoreCard({ item }: StoreCardProps) {
                     const display = capped ? '+500%' : `${gp >= 0 ? '+' : ''}${Math.round(gp)}%`
                     return (
                       <span
-                        className={cn('text-xs font-medium', gp >= 0 ? 'text-rising' : 'text-declining')}
+                        className={cn('text-xs font-semibold tabular-nums', gp >= 0 ? 'text-success-foreground' : 'text-danger-foreground')}
                         title={capped ? 'Crecimiento extraordinario — pocos días de datos' : undefined}
                       >
-                        {display} growth
+                        {display} crecimiento
                       </span>
                     )
                   })()}
@@ -141,20 +140,19 @@ export function StoreCard({ item }: StoreCardProps) {
             {/* Action */}
             <Link
               href={`/stores/${storeId}`}
-              className="flex items-center justify-center gap-2 rounded-lg bg-secondary py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
+              className="mt-auto flex items-center justify-center gap-2 rounded-lg border border-border bg-secondary py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
             >
-              <TrendingUp className="h-4 w-4" />
-              View Details
-              <ExternalLink className="h-3 w-3" />
+              Ver detalle
+              <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-8 text-center">
+          <div className="flex flex-1 flex-col items-center justify-center py-8 text-center">
             <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-secondary">
-              <Package className="h-6 w-6 text-muted-foreground" />
+              <Package className="h-5 w-5 text-muted-foreground" />
             </div>
-            <p className="text-sm font-medium text-muted-foreground">Aún no hay candidatos</p>
-            <p className="text-xs text-muted-foreground/70">Esperando productos nuevos</p>
+            <p className="text-sm font-medium text-foreground">Aún no hay candidatos</p>
+            <p className="text-xs text-muted-foreground">Esperando productos nuevos</p>
           </div>
         )}
       </div>

@@ -937,11 +937,11 @@ function PoolWinnerRow({
     : null
   const barFill = topPct != null ? Math.max(1, 100 - topPct) : 0
   const tier = topPct != null
-    ? topPct <= 10 ? { color: 'bg-emerald-500', labelColor: 'text-emerald-500', label: 'Winner' }
-    : topPct <= 25 ? { color: 'bg-emerald-400', labelColor: 'text-emerald-400', label: 'Strong' }
-    : topPct <= 50 ? { color: 'bg-yellow-400',  labelColor: 'text-yellow-400',  label: 'Mid'    }
-    : topPct <= 75 ? { color: 'bg-orange-400',  labelColor: 'text-orange-400',  label: 'Low'    }
-    :                { color: 'bg-rose-500',    labelColor: 'text-rose-500',    label: 'Weak'   }
+    ? topPct <= 10 ? { color: 'bg-emerald-500', labelColor: 'text-emerald-500', label: 'Élite' }
+    : topPct <= 25 ? { color: 'bg-emerald-400', labelColor: 'text-emerald-400', label: 'Fuerte' }
+    : topPct <= 50 ? { color: 'bg-yellow-400',  labelColor: 'text-yellow-400',  label: 'Medio'  }
+    : topPct <= 75 ? { color: 'bg-orange-400',  labelColor: 'text-orange-400',  label: 'Bajo'   }
+    :                { color: 'bg-rose-500',    labelColor: 'text-rose-500',    label: 'Débil'  }
     : null
 
   function handleRowClick(e: ReactMouseEvent<HTMLAnchorElement>) {
