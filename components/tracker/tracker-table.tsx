@@ -203,11 +203,11 @@ function SortIcon({ column, sort }: { column: SortKey; sort: SortState }) {
 
 function contextTier(topPct: number) {
   // Escala de un solo tono: verde para el cuarto superior, neutro para el resto
-  if (topPct <= 10) return { color: 'bg-success',  labelColor: 'text-success-foreground', label: 'Winner' }
-  if (topPct <= 25) return { color: 'bg-success',  labelColor: 'text-success-foreground', label: 'Strong' }
-  if (topPct <= 50) return { color: 'bg-subtle-foreground/60', labelColor: 'text-muted-foreground', label: 'Mid' }
-  if (topPct <= 75) return { color: 'bg-subtle-foreground/60', labelColor: 'text-muted-foreground', label: 'Low' }
-  return               { color: 'bg-subtle-foreground/60', labelColor: 'text-muted-foreground', label: 'Weak' }
+  if (topPct <= 10) return { color: 'bg-success',  labelColor: 'text-success-foreground', label: 'Élite' }
+  if (topPct <= 25) return { color: 'bg-success',  labelColor: 'text-success-foreground', label: 'Fuerte' }
+  if (topPct <= 50) return { color: 'bg-subtle-foreground/60', labelColor: 'text-muted-foreground', label: 'Medio' }
+  if (topPct <= 75) return { color: 'bg-subtle-foreground/60', labelColor: 'text-muted-foreground', label: 'Bajo' }
+  return               { color: 'bg-subtle-foreground/60', labelColor: 'text-muted-foreground', label: 'Débil' }
 }
 
 function ContextBar({ rank, total }: { rank: number | null; total?: number | null }) {
@@ -457,12 +457,12 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
 
         {hasActiveFilters && (
           <button onClick={clearFilters} className="flex h-9 items-center gap-1.5 rounded-lg border border-input bg-card px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
-            <X className="h-3 w-3" /> Clear
+            <X className="h-3 w-3" /> Limpiar
           </button>
         )}
 
         <span className="ml-auto text-xs text-muted-foreground tabular-nums">
-          {processed.length} of {candidates.length} results
+          {processed.length} de {candidates.length} resultados
         </span>
       </div>
 

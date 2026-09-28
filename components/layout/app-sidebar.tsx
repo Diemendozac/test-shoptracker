@@ -28,11 +28,11 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 const TOP_NAV = [
-  { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Resumen', href: '/dashboard', icon: LayoutDashboard },
 ]
 
 const BOTTOM_NAV = [
-  { name: 'Stores', href: '/stores', icon: Store },
+  { name: 'Tiendas', href: '/stores', icon: Store },
 ]
 
 const TESTEOS_ITEMS = [

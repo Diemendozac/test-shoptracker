@@ -129,7 +129,7 @@ export function StoreCard({ item }: StoreCardProps) {
                         className={cn('text-xs font-semibold tabular-nums', gp >= 0 ? 'text-success-foreground' : 'text-danger-foreground')}
                         title={capped ? 'Crecimiento extraordinario — pocos días de datos' : undefined}
                       >
-                        {display} growth
+                        {display} crecimiento
                       </span>
                     )
                   })()}
@@ -142,7 +142,7 @@ export function StoreCard({ item }: StoreCardProps) {
               href={`/stores/${storeId}`}
               className="mt-auto flex items-center justify-center gap-2 rounded-lg border border-border bg-secondary py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
             >
-              View Details
+              Ver detalle
               <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
