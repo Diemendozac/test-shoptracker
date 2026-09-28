@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import type { Ad, TrackerCandidate } from '@/app/(dashboard)/types'
 import { useGetProductAdsQuery } from '@/app/(dashboard)/services/dashboardApi'
 import { usePlanTier } from '@/lib/view-as'
+import { formatShortDate } from '@/lib/format-date'
 
 export type { Ad }
 
@@ -676,13 +677,8 @@ function formatRelative(isoString: string): string {
   }
 }
 
-function formatDate(isoDate: string): string {
-  try {
-    return new Date(isoDate).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })
-  } catch {
-    return isoDate
-  }
-}
+// Fecha local y null-safe (ver lib/format-date.ts): "25 ago", "—" si falta
+const formatDate = (isoDate: string | null | undefined) => formatShortDate(isoDate)
 
 // ─── StoreVideosGrid ──────────────────────────────────────────────────────────
 // One card per candidate that has active ads. Click → Meta (pro/agency/admin).
