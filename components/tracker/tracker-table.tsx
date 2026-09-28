@@ -48,7 +48,7 @@ function AdThumb({
     <div
       ref={thumbRef}
       className={cn(
-        'relative h-[56px] w-[40px] shrink-0 overflow-hidden rounded-md bg-secondary',
+        'relative h-[48px] w-[34px] shrink-0 overflow-hidden rounded-md bg-secondary',
         canViewAds ? 'cursor-pointer' : 'pointer-events-none blur-sm',
       )}
       onMouseEnter={() => {
@@ -88,7 +88,7 @@ export function AdsCell({ candidateId }: { candidateId: string }) {
       <div style={{ display: 'flex', gap: 3 }}>
         {[0, 1, 2].map(i => (
           <div key={i} style={{
-            width: 40, height: 56, borderRadius: 4,
+            width: 34, height: 48, borderRadius: 6,
             border: '1px dashed var(--color-border)',
             opacity: 0.4,
           }} />
@@ -129,7 +129,7 @@ export function AdsCell({ candidateId }: { candidateId: string }) {
           />
         ))}
         {remaining > 0 && (
-          <span className="text-[10px] font-semibold tabular-nums text-muted-foreground">
+          <span className="text-xs font-semibold tabular-nums text-muted-foreground">
             +{remaining}
           </span>
         )}
@@ -144,7 +144,7 @@ export function AdsCell({ candidateId }: { candidateId: string }) {
             />
           ))}
           {uniqueAdvertisers.length > 2 && (
-            <span className="text-[10px] font-semibold tabular-nums text-muted-foreground">
+            <span className="text-xs font-semibold tabular-nums text-muted-foreground">
               +{uniqueAdvertisers.length - 2}
             </span>
           )}
@@ -197,16 +197,17 @@ function SortIcon({ column, sort }: { column: SortKey; sort: SortState }) {
   if (sort.key !== column)
     return <ArrowUpDown className="h-3 w-3 opacity-30 transition-opacity group-hover/th:opacity-70" />
   return sort.dir === 'asc'
-    ? <ArrowUp className="h-3 w-3 text-primary" />
-    : <ArrowDown className="h-3 w-3 text-primary" />
+    ? <ArrowUp className="h-3 w-3 text-primary-text" />
+    : <ArrowDown className="h-3 w-3 text-primary-text" />
 }
 
 function contextTier(topPct: number) {
-  if (topPct <= 10) return { color: 'bg-emerald-500',  labelColor: 'text-emerald-500',  label: 'Winner' }
-  if (topPct <= 25) return { color: 'bg-emerald-400',  labelColor: 'text-emerald-400',  label: 'Strong' }
-  if (topPct <= 50) return { color: 'bg-yellow-400',   labelColor: 'text-yellow-400',   label: 'Mid'    }
-  if (topPct <= 75) return { color: 'bg-orange-400',   labelColor: 'text-orange-400',   label: 'Low'    }
-  return               { color: 'bg-rose-500',     labelColor: 'text-rose-500',     label: 'Weak'   }
+  // Escala de un solo tono: verde para el cuarto superior, neutro para el resto
+  if (topPct <= 10) return { color: 'bg-success',  labelColor: 'text-success-foreground', label: 'Winner' }
+  if (topPct <= 25) return { color: 'bg-success',  labelColor: 'text-success-foreground', label: 'Strong' }
+  if (topPct <= 50) return { color: 'bg-subtle-foreground/60', labelColor: 'text-muted-foreground', label: 'Mid' }
+  if (topPct <= 75) return { color: 'bg-subtle-foreground/60', labelColor: 'text-muted-foreground', label: 'Low' }
+  return               { color: 'bg-subtle-foreground/60', labelColor: 'text-muted-foreground', label: 'Weak' }
 }
 
 function ContextBar({ rank, total }: { rank: number | null; total?: number | null }) {
@@ -217,22 +218,22 @@ function ContextBar({ rank, total }: { rank: number | null; total?: number | nul
   const tier = topPct != null ? contextTier(topPct) : null
   return (
     <div className="space-y-1 w-full">
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-score-track">
         <div
-          className={cn('h-full rounded-full transition-all duration-500', tier?.color ?? 'bg-secondary')}
+          className={cn('h-full rounded-full transition-all duration-500', tier?.color ?? 'bg-score-track')}
           style={{ width: `${barFill}%` }}
         />
       </div>
       <div className="flex items-center justify-between gap-1">
-        <span className="text-[11px] tabular-nums text-muted-foreground">
+        <span className="text-xs tabular-nums text-muted-foreground">
           {topPct != null ? `top ${topPct}%` : '—'}
         </span>
         {tier && (
-          <span className={cn('text-[10px] font-semibold', tier.labelColor)}>{tier.label}</span>
+          <span className={cn('text-xs font-semibold', tier.labelColor)}>{tier.label}</span>
         )}
       </div>
       {total != null && total > 0 && (
-        <span className="text-[11px] tabular-nums text-muted-foreground/60">
+        <span className="text-xs tabular-nums text-subtle-foreground">
           de {total} productos
         </span>
       )}
@@ -363,7 +364,7 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
             placeholder="Buscar producto…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="h-9 w-full rounded-lg border border-border bg-secondary/40 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+            className="h-9 w-full rounded-lg border border-input bg-card pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
           />
           {search && (
             <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
@@ -374,7 +375,7 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
 
         <div className="relative">
           <select value={storeFilter} onChange={e => { setStoreFilter(e.target.value); resetPage() }}
-            className="h-9 appearance-none rounded-lg border border-border bg-secondary/40 px-3 pr-8 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer">
+            className="h-9 appearance-none rounded-lg border border-input bg-card px-3 pr-8 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer">
             {stores.map(s => <option key={s} value={s}>{s === 'all' ? 'Todas las tiendas' : s}</option>)}
           </select>
           <SlidersHorizontal className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -382,7 +383,7 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
 
         {niches.length > 1 && (
           <select value={nicheFilter} onChange={e => { setNicheFilter(e.target.value); resetPage() }}
-            className="h-9 appearance-none rounded-lg border border-border bg-secondary/40 px-3 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer">
+            className="h-9 appearance-none rounded-lg border border-input bg-card px-3 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer">
             <option value="all">Todos los nichos</option>
             {niches.filter(n => n !== 'all').map(n => <option key={n} value={n}>{n}</option>)}
           </select>
@@ -390,7 +391,7 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
 
         {currencies.length > 1 && (
           <select value={currencyFilter} onChange={e => { setCurrencyFilter(e.target.value); resetPage() }}
-            className="h-9 appearance-none rounded-lg border border-border bg-secondary/40 px-3 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer">
+            className="h-9 appearance-none rounded-lg border border-input bg-card px-3 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer">
             <option value="all">Todas las monedas</option>
             {currencies.filter(c => c !== 'all').map(c => <option key={c} value={c}>{c}</option>)}
           </select>
@@ -398,7 +399,7 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
 
         {countries.length > 1 && (
           <select value={countryFilter} onChange={e => { setCountryFilter(e.target.value); resetPage() }}
-            className="h-9 appearance-none rounded-lg border border-border bg-secondary/40 px-3 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer">
+            className="h-9 appearance-none rounded-lg border border-input bg-card px-3 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer">
             <option value="all">Todos los países</option>
             {countries.filter(c => c !== 'all').map(c => (
               <option key={c} value={c}>{countryFlag(c)} {c}</option>
@@ -407,7 +408,7 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
         )}
 
         <select value={paFilter} onChange={e => { setPaFilter(e.target.value); resetPage() }}
-          className="h-9 appearance-none rounded-lg border border-border bg-secondary/40 px-3 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer">
+          className="h-9 appearance-none rounded-lg border border-input bg-card px-3 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer">
           <option value="all">Pago: Todos</option>
           <option value="yes">Pago anticipado</option>
           <option value="no">Contraentrega</option>
@@ -418,8 +419,8 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
           className={cn(
             'h-9 rounded-lg border px-3 text-xs font-medium transition-all',
             spikeFilter
-              ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600'
-              : 'border-border bg-secondary/40 text-muted-foreground hover:border-emerald-500/50 hover:text-emerald-600',
+              ? 'border-primary-border bg-primary-subtle text-primary-text'
+              : 'border-input bg-card text-muted-foreground hover:bg-accent hover:text-foreground',
           )}
         >
           ↑ Spikear
@@ -430,8 +431,8 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
           className={cn(
             'h-9 rounded-lg border px-3 text-xs font-medium transition-all',
             hideDormant
-              ? 'border-amber-500 bg-amber-500/10 text-amber-600'
-              : 'border-border bg-secondary/40 text-muted-foreground hover:border-amber-500/50 hover:text-amber-600',
+              ? 'border-primary-border bg-primary-subtle text-primary-text'
+              : 'border-input bg-card text-muted-foreground hover:bg-accent hover:text-foreground',
           )}
         >
           Solo activos
@@ -448,14 +449,14 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
             else if (e.target.value === 'oldest') setSort({ key: 'daysElapsed', dir: 'desc' })
             else                                  setSort({ key: 'performanceScore', dir: 'desc' })
           }}
-          className="h-9 appearance-none rounded-lg border border-border bg-secondary/40 px-3 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer">
+          className="h-9 appearance-none rounded-lg border border-input bg-card px-3 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer">
           <option value="relevance">Ordenar: Relevancia</option>
           <option value="recent">Más recientes</option>
           <option value="oldest">Más antiguos</option>
         </select>
 
         {hasActiveFilters && (
-          <button onClick={clearFilters} className="flex h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-medium text-muted-foreground hover:border-primary/40 hover:text-foreground transition-colors">
+          <button onClick={clearFilters} className="flex h-9 items-center gap-1.5 rounded-lg border border-input bg-card px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
             <X className="h-3 w-3" /> Clear
           </button>
         )}
@@ -466,9 +467,9 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
       </div>
 
       {/* ── Table ── */}
-      <div className="overflow-hidden rounded-xl border border-border bg-card">
+      <div>
         {/* Header */}
-        <div className="grid grid-cols-[32px_64px_minmax(0,1fr)_110px_60px_48px_72px_110px_90px_140px_150px] items-center gap-3 border-b border-border bg-secondary/30 px-4 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        <div className="grid grid-cols-[24px_56px_minmax(0,1fr)_104px_64px_48px_80px_104px_104px_128px_148px] items-center gap-2.5 px-4 pb-2 text-xs font-medium text-muted-foreground">
           <div>#</div>
           <div />
           <button onClick={() => handleSort('productTitle')} className="group/th flex items-center gap-1.5 text-left hover:text-foreground transition-colors">
@@ -493,10 +494,10 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
         </div>
 
         {/* Body */}
-        <div className="divide-y divide-border/50">
+        <div className="space-y-2">
           {processed.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-2 py-16 text-muted-foreground">
-              <Search className="h-8 w-8 opacity-30" />
+            <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-border bg-card py-16 text-muted-foreground shadow-card">
+              <Search className="h-8 w-8 text-subtle-foreground" />
               <p className="text-sm">Ningún producto coincide con tus filtros</p>
               <button onClick={clearFilters} className="text-xs underline underline-offset-2 hover:text-foreground transition-colors">
                 Limpiar filtros
@@ -527,17 +528,14 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
                 ? Math.max(0, Math.round(((total - candidate.currentRank) / total) * 100))
                 : null
 
-              const subColor = superadoPct == null ? ''
-                : superadoPct <= 25  ? 'text-rose-500'
-                : superadoPct <= 50  ? 'text-amber-600'
-                : superadoPct <= 75  ? 'text-green-700'
-                : 'text-emerald-600'
+              // Un solo tono: el % de arriba ya dice si es bueno o malo
+              const subColor = 'text-muted-foreground'
 
               const subText: { text: string; color: string } | null = gp == null ? null
                 : gp > 1 && superadoPct != null
                   ? { text: `↑ superó al ${superadoPct}% de ${candidate.storeName}`, color: subColor }
                 : gp < -1
-                  ? { text: '↓ bajando en tienda', color: 'text-rose-500' }
+                  ? { text: '↓ bajando en tienda', color: 'text-danger-foreground' }
                 : null
 
               const score = applyScoreDecay(
@@ -549,9 +547,9 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
               return (
                 <div
                   key={candidate.candidateId}
-                  className="transition-colors hover:bg-secondary/30"
+                  className="rounded-xl border border-border bg-card shadow-card transition-[border-color,box-shadow] hover:border-border-hover hover:shadow-card-hover"
                 >
-                <div className="grid grid-cols-[32px_64px_minmax(0,1fr)_110px_60px_48px_72px_110px_90px_140px_150px] items-center gap-3 px-4 py-3">
+                <div className="grid grid-cols-[24px_56px_minmax(0,1fr)_104px_64px_48px_80px_104px_104px_128px_148px] items-center gap-2.5 px-4 py-3">
                   {/* # */}
                   <button
                     onClick={() => onToggleFavorite(candidate.candidateId)}
@@ -561,8 +559,8 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
                     <Star className={cn(
                       'h-3.5 w-3.5 transition-colors',
                       favorites.has(candidate.candidateId)
-                        ? 'fill-amber-400 text-amber-400'
-                        : 'text-muted-foreground/25 hover:text-amber-400/70',
+                        ? 'fill-warning text-warning'
+                        : 'text-subtle-foreground hover:text-warning',
                     )} />
                   </button>
 
@@ -572,9 +570,9 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
                     const spikeState = computeSpikeState(spikeEntry, candidate.performanceScore ?? 0)
                     const spikeLevel = computeSpikeLevel(spikeEntry, candidate.performanceScore ?? 0)
                     return (
-                      <div className="relative" style={{ width: 64, height: 64, flexShrink: 0 }}>
-                        <SpikeOverlay state={spikeState} level={spikeLevel} size={64}>
-                          <HoverImagePreview src={candidate.productImage} fallback={candidate.productTitle.charAt(0)} size={64} proxy />
+                      <div className="relative" style={{ width: 56, height: 56, flexShrink: 0 }}>
+                        <SpikeOverlay state={spikeState} level={spikeLevel} size={56}>
+                          <HoverImagePreview src={candidate.productImage} fallback={candidate.productTitle.charAt(0)} size={56} proxy />
                         </SpikeOverlay>
                         {candidate.storeCountry && (
                           <span className="pointer-events-none absolute -bottom-1 -right-1 z-20 flex h-5 w-5 items-center justify-center rounded-full bg-card text-[13px] leading-none shadow-sm ring-1 ring-border">
@@ -586,14 +584,30 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
                   })()}
 
                   {/* Producto */}
-                  <div className="min-w-0 pl-3">
-                    <div className="flex items-start gap-1.5">
+                  <div className="min-w-0 pl-1">
+                    <div className="flex min-w-0">
                       <Link
                         href={`/tracker/${candidate.candidateId}?storeId=${candidate.storeId}&from=tracker`}
-                        className="truncate text-sm font-semibold text-foreground hover:text-primary hover:underline transition-colors"
+                        className="truncate text-sm font-semibold text-foreground transition-colors hover:text-primary-text hover:underline"
                       >
                         {candidate.productTitle}
                       </Link>
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                      <span className="text-xs text-muted-foreground tabular-nums">
+                        {candidate.currentRank != null ? `Rank #${candidate.currentRank}` : 'Sin rank'}
+                      </span>
+                      {rankDir && (
+                        <span className={cn(
+                          'inline-flex items-center gap-0.5 rounded-md px-1 text-xs font-semibold tabular-nums',
+                          rankDir === 'up'
+                            ? 'bg-success-subtle text-success-foreground'
+                            : 'bg-danger-subtle text-danger-foreground',
+                        )}>
+                          {rankDir === 'up' ? '↑' : '↓'}
+                          {rankDelta !== null ? Math.abs(rankDelta) : ''}
+                        </span>
+                      )}
                       {isScalable(candidate.performanceScore, candidate.signalConfidence) && (() => {
                         const id = String(candidate.candidateId)
                         const isSpiked = !!spikes[id]
@@ -603,7 +617,7 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
                               unspike(id)
                               setSpikes(prev => { const n = { ...prev }; delete n[id]; return n })
                             }}
-                            className="mt-0.5 shrink-0 rounded-full bg-emerald-500/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-600 hover:bg-rose-500/15 hover:text-rose-500 transition-colors"
+                            className="shrink-0 rounded-full border border-primary-border bg-primary-subtle px-2 py-px text-xs font-semibold text-primary-text transition-colors hover:border-danger-border hover:bg-danger-subtle hover:text-danger-foreground"
                           >
                             Spikeando ✕
                           </button>
@@ -616,38 +630,22 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
                                 [id]: { spike_floor: candidate.performanceScore ?? 0, last_score: candidate.performanceScore ?? 0, spiked_at: new Date().toISOString() },
                               }))
                             }}
-                            className="mt-0.5 shrink-0 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-600 hover:bg-emerald-500/30 transition-colors"
+                            className="shrink-0 rounded-full border border-primary-border bg-primary-subtle px-2 py-px text-xs font-semibold text-primary-text transition-colors hover:bg-primary-border"
                           >
                             Spikear
                           </button>
                         )
                       })()}
                     </div>
-                    <div className="mt-1 flex items-center gap-1.5">
-                      <span className="text-[11px] text-muted-foreground tabular-nums">
-                        {candidate.currentRank != null ? `Rank #${candidate.currentRank}` : 'Sin rank'}
-                      </span>
-                      {rankDir && (
-                        <span className={cn(
-                          'inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[11px] font-bold tabular-nums',
-                          rankDir === 'up'
-                            ? 'bg-emerald-500/10 text-emerald-600'
-                            : 'bg-rose-500/10 text-rose-500',
-                        )}>
-                          {rankDir === 'up' ? '↑' : '↓'}
-                          {rankDelta !== null ? Math.abs(rankDelta) : ''}
-                        </span>
-                      )}
-                    </div>
                   </div>
 
                   {/* Tienda */}
                   <div className="min-w-0 text-center">
-                    <span className="block truncate rounded-md bg-secondary px-2 py-1 text-[11px] font-medium text-muted-foreground">
+                    <span className="block truncate rounded-md border border-border bg-secondary px-2 py-1 text-xs font-medium text-foreground">
                       {candidate.storeName}
                     </span>
                     {candidate.storeProductCount != null && candidate.storeProductCount > 0 && (
-                      <span className="mt-0.5 block text-[10px] text-muted-foreground/50">
+                      <span className="mt-0.5 block text-xs text-muted-foreground tabular-nums">
                         {candidate.storeProductCount} productos
                       </span>
                     )}
@@ -674,7 +672,7 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
                           showLabel={false}
                         />
                       ) : (
-                        <span className="text-[10px] text-muted-foreground/40">—</span>
+                        <span className="text-xs text-subtle-foreground">—</span>
                       )
                       return canViewTrackerMetrics ? content : <LockedMetric>{content}</LockedMetric>
                     })()}
@@ -686,7 +684,7 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
                       const history = (candidate.growthHistory ?? candidate.scoreHistory ?? []).slice(-displayDays)
                       const content = history.length >= 2
                         ? <Sparkline data={history} width={80} height={32} />
-                        : <span className="text-[10px] text-muted-foreground/35">—</span>
+                        : <span className="text-xs text-subtle-foreground">—</span>
                       return canViewTrackerMetrics ? content : <LockedMetric>{content}</LockedMetric>
                     })()}
                   </div>
@@ -697,13 +695,13 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
                       const content = (
                         <>
                           <span className={cn(
-                            'block text-sm font-bold tabular-nums',
-                            gp != null && gp >= 0 ? 'text-emerald-600' : 'text-rose-500',
+                            'block text-sm font-semibold tabular-nums',
+                            gp == null ? 'text-subtle-foreground' : gp >= 0 ? 'text-success-foreground' : 'text-danger-foreground',
                           )}>
                             {gp != null ? `${gp >= 0 ? '+' : ''}${gp.toFixed(1)}%` : '—'}
                           </span>
                           {subText && (
-                            <span className={cn('mt-0.5 block text-[10px] leading-tight', subText.color)}>
+                            <span className={cn('mt-0.5 block text-xs leading-4', subText.color)}>
                               {subText.text}
                             </span>
                           )}
@@ -725,7 +723,7 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
                   <div className="flex items-center justify-center gap-1.5 self-start">
                     <Link
                       href={`/tracker/${candidate.candidateId}?storeId=${candidate.storeId}`}
-                      className="flex items-center gap-1 rounded-lg bg-secondary px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
+                      className="flex items-center gap-1 rounded-lg border border-input bg-card px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent"
                     >
                       Ver
                       <ExternalLink className="h-3 w-3" />
@@ -738,7 +736,7 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
                           dispatch(dashboardApi.util.invalidateTags(['Tracker', 'Overview']))
                         }
                       }}
-                      className="rounded-lg p-1.5 text-muted-foreground/50 transition-colors hover:bg-rose-500/10 hover:text-rose-500"
+                      className="rounded-lg p-1.5 text-subtle-foreground transition-colors hover:bg-danger-subtle hover:text-danger-foreground"
                       title="Eliminar"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -754,7 +752,7 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
 
       {/* ── Pagination ── */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between border-t border-border px-2 pt-3">
+        <div className="flex items-center justify-between px-1 pt-2">
           <span className="text-xs text-muted-foreground tabular-nums">
             Mostrando {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, processed.length)} de {processed.length}
           </span>
@@ -762,7 +760,7 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
             <button
               onClick={() => setPage(p => p - 1)}
               disabled={page === 0}
-              className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
             </button>
@@ -777,7 +775,7 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
                     'flex h-7 w-7 items-center justify-center rounded-md border text-xs font-medium transition-colors',
                     p === page
                       ? 'border-primary bg-primary text-primary-foreground'
-                      : 'border-border text-muted-foreground hover:border-primary/40 hover:text-foreground',
+                      : 'border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground',
                   )}
                 >
                   {p + 1}
@@ -787,7 +785,7 @@ export function TrackerTable({ candidates, windowDays = 0, favorites, onToggleFa
             <button
               onClick={() => setPage(p => p + 1)}
               disabled={page >= totalPages - 1}
-              className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
             >
               <ChevronRight className="h-3.5 w-3.5" />
             </button>

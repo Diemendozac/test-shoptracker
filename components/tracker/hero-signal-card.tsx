@@ -103,7 +103,8 @@ export function HeroSignalCard({ candidates }: { candidates: TrackerCandidate[] 
     : null
 
   return (
-    <div className="mb-6 rounded-xl border border-border/60 bg-card px-6 py-5">
+    // Señal #1 de la vista: único lugar del tracker con borde y halo de marca
+    <div className="mb-6 rounded-xl border-grad-brand px-6 py-5">
       <div className="flex items-center gap-4">
 
         {/* Product image */}
@@ -111,41 +112,41 @@ export function HeroSignalCard({ candidates }: { candidates: TrackerCandidate[] 
 
         {/* Info block */}
         <div className="min-w-0 flex-1">
-          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <p className="mb-1 w-fit text-xs font-semibold uppercase tracking-wider text-grad-brand">
             Señal más fuerte
           </p>
 
-          <p className="truncate text-base font-medium leading-snug text-foreground">
+          <p className="truncate text-[17px] font-semibold leading-6 text-foreground">
             {hero.productTitle}
           </p>
 
-          <p className="mt-0.5 text-xs text-muted-foreground">
+          <p className="mt-0.5 text-[13px] text-muted-foreground tabular-nums">
             {hero.storeName}
             {topPct != null && <> · top {topPct}%</>}
             {hero.storeProductCount != null && <> de {hero.storeProductCount} productos</>}
             {' · '}{confidence}% confianza
             {tier && (
-              <> · <span className="font-medium text-emerald-500">{tier}</span></>
+              <> · <span className="font-medium text-success-foreground">{tier}</span></>
             )}
           </p>
 
-          <div className="mt-1.5 flex flex-wrap items-center gap-2">
+          <div className="mt-2.5 flex flex-wrap items-center gap-2">
             <PerformanceBadge label={hero.performanceLabel} size="sm" />
             {growth && hero.growthPct != null && hero.growthPct > 0 && (
-              <span className="text-sm font-semibold text-emerald-500">{growth}</span>
+              <span className="text-[15px] font-semibold text-success-foreground tabular-nums">{growth}</span>
             )}
             <span className="text-xs text-muted-foreground">desde su peor posición</span>
           </div>
         </div>
 
         {/* Sparkline + CTA */}
-        <div className="flex shrink-0 flex-col items-end gap-2">
+        <div className="flex shrink-0 flex-col items-end gap-2.5">
           {sparkData.length >= 2 && (
             <Sparkline data={sparkData} width={96} height={32} />
           )}
           <Link
             href={`/tracker/${hero.candidateId}?storeId=${hero.storeId}&from=tracker`}
-            className="flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-grad-cta px-3 text-xs font-semibold text-primary-foreground shadow-[0_8px_24px_-10px_var(--glow)] transition hover:brightness-110"
           >
             Ver análisis <ArrowRight className="h-3 w-3" />
           </Link>

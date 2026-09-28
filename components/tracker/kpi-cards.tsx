@@ -16,15 +16,15 @@ interface InfoTipProps {
 function InfoTip({ title, description, condition, className }: InfoTipProps) {
   return (
     <div className={cn('group relative inline-flex items-center', className)}>
-      <Info className="h-3.5 w-3.5 cursor-default text-muted-foreground/40 transition-colors group-hover:text-muted-foreground" />
-      <div className="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-64 rounded-xl border border-border bg-popover shadow-xl opacity-0 transition-opacity group-hover:opacity-100">
+      <Info className="h-3.5 w-3.5 cursor-default text-subtle-foreground transition-colors group-hover:text-muted-foreground" />
+      <div className="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-64 rounded-xl border border-border bg-popover shadow-card-hover opacity-0 transition-opacity group-hover:opacity-100">
         <div className="px-4 py-3">
           <p className="mb-1.5 text-xs font-bold text-popover-foreground">Definición de la métrica</p>
-          <p className="text-[11px] leading-relaxed text-muted-foreground">{description}</p>
+          <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
         </div>
         <div className="border-t border-border px-4 py-3">
           <p className="mb-1 text-xs font-bold text-popover-foreground">Calculado bajo la condición</p>
-          <p className="text-[11px] text-muted-foreground">• {condition}</p>
+          <p className="text-xs text-muted-foreground">• {condition}</p>
         </div>
       </div>
     </div>
@@ -54,12 +54,14 @@ function getRankDelta(c: TrackerCandidate): number | null {
 const BUCKET_ORDER = ['Rocket', 'Rising', 'Steady', 'Watching', 'Declining'] as const
 type Bucket = typeof BUCKET_ORDER[number]
 
+// Las etiquetas son bandas de score, no tendencias (ver CLAUDE.md): una sola escala
+// de marca de más a menos fuerte, sin rojo. "Declining" es la banda 15–29, no una caída.
 const BUCKET_COLORS: Record<Bucket, string> = {
-  Rocket:   '#085041',
-  Rising:   '#1D9E75',
-  Steady:   '#BA7517',
-  Watching: '#D3D1C7',
-  Declining:'#E24B4A',
+  Rocket:    'var(--primary)',
+  Rising:    'color-mix(in srgb, var(--primary) 72%, var(--card))',
+  Steady:    'color-mix(in srgb, var(--primary) 48%, var(--card))',
+  Declining: 'color-mix(in srgb, var(--primary) 28%, var(--card))',
+  Watching:  'color-mix(in srgb, var(--subtle-foreground) 35%, var(--card))',
 }
 
 function getBucket(c: TrackerCandidate): Bucket {
@@ -110,7 +112,7 @@ export function KpiCards({ candidates }: KpiCardsProps) {
     c => c.daysElapsed <= 7 && (c.growthPct ?? 0) > 20
   ).length
 
-  const growingCardColor = growingPct >= 50 ? '#1D9E75' : growingPct >= 25 ? '#BA7517' : undefined
+  const growingCardColor = growingPct >= 50 ? 'var(--success-foreground)' : growingPct >= 25 ? 'var(--warning-foreground)' : undefined
 
   const activeStores = stores.filter(s => getStoreStatus(s) === 'ACTIVA').length
 
@@ -126,8 +128,8 @@ export function KpiCards({ candidates }: KpiCardsProps) {
       <div className="grid grid-cols-[1fr_2fr] gap-3">
 
         {/* Mayor salto hoy */}
-        <div className="rounded-xl border border-border bg-card px-4 py-4">
-          <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <div className="rounded-xl border border-border bg-card px-4 py-4 shadow-card">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Mayor salto hoy
           </p>
 
@@ -137,7 +139,7 @@ export function KpiCards({ candidates }: KpiCardsProps) {
                 <img
                   src={`/api/image-proxy?url=${encodeURIComponent(topJumper.c.productImage)}`}
                   alt=""
-                  className="h-20 w-20 shrink-0 rounded-lg object-cover"
+                  className="h-20 w-20 shrink-0 rounded-lg border border-border object-cover"
                 />
               ) : (
                 <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg bg-secondary text-xs font-bold text-muted-foreground">
@@ -150,12 +152,12 @@ export function KpiCards({ candidates }: KpiCardsProps) {
                     ? topJumper.c.productTitle.slice(0, 32) + '…'
                     : topJumper.c.productTitle}
                 </p>
-                <p className="truncate text-[10px] text-muted-foreground">
+                <p className="truncate text-xs text-muted-foreground">
                   {topJumper.c.storeName}
                 </p>
                 <div className="mt-1 flex items-center gap-2">
-                  <span className="text-xs font-bold text-emerald-500">↑{topJumper.delta}</span>
-                  <span className="text-[10px] text-muted-foreground">
+                  <span className="rounded-md bg-success-subtle px-1.5 text-xs font-semibold text-success-foreground tabular-nums">↑{topJumper.delta}</span>
+                  <span className="text-xs text-muted-foreground tabular-nums">
                     #{getPrevRank(topJumper.c)} → #{topJumper.c.currentRank} · score {topJumper.c.performanceScore}
                   </span>
                 </div>
@@ -167,9 +169,9 @@ export function KpiCards({ candidates }: KpiCardsProps) {
         </div>
 
         {/* Salud del seguimiento */}
-        <div className="rounded-xl border border-border bg-card px-4 py-4">
+        <div className="rounded-xl border border-border bg-card px-4 py-4 shadow-card">
           <div className="mb-3">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Salud del seguimiento
             </p>
           </div>
@@ -181,7 +183,7 @@ export function KpiCards({ candidates }: KpiCardsProps) {
                 const pct   = Math.round((count / total) * 100)
                 return (
                   <div key={label} className="flex items-center gap-2">
-                    <span className="w-16 shrink-0 text-[10px] text-muted-foreground">{label}</span>
+                    <span className="w-[72px] shrink-0 text-xs text-muted-foreground">{label}</span>
                     <div className="flex-1 overflow-hidden rounded-full bg-secondary" style={{ height: 6 }}>
                       <div
                         className="h-full rounded-full transition-all duration-500"
@@ -191,10 +193,10 @@ export function KpiCards({ candidates }: KpiCardsProps) {
                         }}
                       />
                     </div>
-                    <span className="w-7 shrink-0 text-right text-[10px] tabular-nums text-muted-foreground">
+                    <span className="w-7 shrink-0 text-right text-xs font-medium tabular-nums text-foreground">
                       {count}
                     </span>
-                    <span className="w-6 shrink-0 text-right text-[10px] tabular-nums text-muted-foreground/60">
+                    <span className="w-9 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
                       {pct}%
                     </span>
                   </div>
@@ -210,9 +212,9 @@ export function KpiCards({ candidates }: KpiCardsProps) {
       {/* ── Row 2 ───────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-4 gap-3">
         {/* Nuevos despegando */}
-        <div className="rounded-xl border border-border bg-card px-4 py-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Nuevos despegando</p>
-          <p className="mt-1 text-2xl font-black tabular-nums text-foreground">{newDespegando}</p>
+        <div className="rounded-xl border border-border bg-card px-4 py-4 shadow-card">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nuevos despegando</p>
+          <p className="mt-1 font-display text-[26px] font-semibold leading-8 tracking-tight tabular-nums text-foreground">{newDespegando}</p>
           <InfoTip
             title="Nuevos despegando"
             description="Productos recién detectados que ya muestran tracción real: llevan pocos días en seguimiento y su crecimiento ya supera el 20% respecto a su posición de entrada."
@@ -222,10 +224,10 @@ export function KpiCards({ candidates }: KpiCardsProps) {
         </div>
 
         {/* En crecimiento */}
-        <div className="rounded-xl border border-border bg-card px-4 py-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">En crecimiento</p>
+        <div className="rounded-xl border border-border bg-card px-4 py-4 shadow-card">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">En crecimiento</p>
           <p
-            className="mt-1 text-2xl font-black tabular-nums"
+            className="mt-1 font-display text-[26px] font-semibold leading-8 tracking-tight tabular-nums"
             style={{ color: growingCardColor ?? 'var(--foreground)' }}
           >
             {growingPct}%
@@ -239,9 +241,9 @@ export function KpiCards({ candidates }: KpiCardsProps) {
         </div>
 
         {/* Tiendas activas */}
-        <div className="rounded-xl border border-border bg-card px-4 py-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Tiendas activas</p>
-          <p className="mt-1 text-2xl font-black tabular-nums text-foreground">{activeStores}</p>
+        <div className="rounded-xl border border-border bg-card px-4 py-4 shadow-card">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tiendas activas</p>
+          <p className="mt-1 font-display text-[26px] font-semibold leading-8 tracking-tight tabular-nums text-foreground">{activeStores}</p>
           <InfoTip
             title="Tiendas activas"
             description="Tiendas que han sido escaneadas recientemente. Si una tienda no se sincroniza en más de 24h puede indicar un problema de scraping o que fue pausada."
@@ -251,9 +253,9 @@ export function KpiCards({ candidates }: KpiCardsProps) {
         </div>
 
         {/* Productos esta semana */}
-        <div className="rounded-xl border border-border bg-card px-4 py-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Productos esta semana</p>
-          <p className="mt-1 text-2xl font-black tabular-nums text-foreground">{newThisWeek}</p>
+        <div className="rounded-xl border border-border bg-card px-4 py-4 shadow-card">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Productos esta semana</p>
+          <p className="mt-1 font-display text-[26px] font-semibold leading-8 tracking-tight tabular-nums text-foreground">{newThisWeek}</p>
           <InfoTip
             title="Productos esta semana"
             description="Total de productos que entraron al bestseller por primera vez en los últimos 7 días. Es un indicador de qué tan activo está el mercado que estás monitoreando."
