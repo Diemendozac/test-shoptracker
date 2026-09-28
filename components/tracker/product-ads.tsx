@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import { Lock, Volume2, VolumeX } from 'lucide-react'
+import { ExternalLink, Lock, Video, Volume2, VolumeX } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import type { Ad, TrackerCandidate } from '@/app/(dashboard)/types'
@@ -171,17 +171,25 @@ export function AdSlide({
   // ad.status, porque nada en el sistema podía escribir 'inactive'. Ahora sí puede, y esta card
   // ya no se oculta cuando pasa (ver ProductAdsSection abajo) — se relabelea. Incidente FIX-073.
   const isInactive = ad.status !== 'active'
+  const isLongRunning = !isInactive && ad.days_running >= 30
+  const openMeta = () => {
+    if (allowMetaLink) window.open(ad.ad_snapshot_url, '_blank', 'noopener,noreferrer')
+  }
 
+  // La card se adapta a su propio ancho (container query), no al viewport: la misma
+  // card sirve en el panel del pool (~110 px), en la página (~170 px) y en la Biblioteca.
+  // Ver docs/redesign/detalle-producto/02-propuesta.md, "tarjeta de anuncio v2".
   return (
-    <div className="flex w-full flex-col">
+    <div className="@container flex w-full min-w-0 flex-col">
 
       {/* Creative 9:16 */}
       <div
         ref={thumbRef}
         role="button"
         tabIndex={0}
+        aria-label={allowMetaLink ? `Ver anuncio de ${label} en Meta` : `Creativo del anuncio de ${label}`}
         className={cn(
-          'relative w-full overflow-hidden rounded-xl bg-secondary aspect-[9/16]',
+          'relative w-full overflow-hidden rounded-lg bg-secondary aspect-[9/16]',
           allowMetaLink ? 'cursor-pointer' : 'cursor-default',
           isInactive && 'grayscale',
         )}
@@ -189,97 +197,87 @@ export function AdSlide({
           if (thumbRef.current) onHover(ad, thumbRef.current.getBoundingClientRect())
         }}
         onMouseLeave={onLeave}
-        onClick={() => allowMetaLink && window.open(ad.ad_snapshot_url, '_blank', 'noopener,noreferrer')}
+        onClick={openMeta}
         onKeyDown={e => {
-          if (e.key === 'Enter' && allowMetaLink)
-            window.open(ad.ad_snapshot_url, '_blank', 'noopener,noreferrer')
+          if (e.key === 'Enter') openMeta()
         }}
       >
-        <img
-          src={ad.thumbnail_url || 'https://picsum.photos/seed/placeholder/400/700'}
-          alt=""
-          className="h-full w-full object-cover"
-        />
+        {ad.thumbnail_url ? (
+          <img src={ad.thumbnail_url} alt="" className="h-full w-full object-cover" />
+        ) : (
+          // Sin miniatura: placeholder neutro. Antes se mostraba una foto de stock al azar
+          // (picsum) como si fuera el creativo.
+          <div className="flex h-full w-full items-center justify-center text-subtle-foreground">
+            <Video className="h-6 w-6" aria-hidden />
+          </div>
+        )}
 
         {/* Play icon for videos */}
         {hasVideo && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black/50 backdrop-blur-sm">
-              <svg className="h-4 w-4 translate-x-0.5 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-sidebar/80">
+              <svg className="h-3.5 w-3.5 translate-x-px text-white" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
                 <path d="M8 5v14l11-7z" />
               </svg>
             </div>
           </div>
         )}
 
-        {/* Top row: ×N count (left) + days running (right) */}
-        <div className="absolute left-2 right-2 top-2 flex items-start justify-between">
-          {count > 1 ? (
-            <span className="rounded-full bg-amber-500 px-1.5 py-0.5 text-[9px] font-bold leading-none text-white">
-              ×{count}
-            </span>
-          ) : <span />}
-          <span className={cn(
-            'rounded-md px-1.5 py-0.5 text-[10px] font-bold leading-none text-white backdrop-blur-sm',
-            isInactive ? 'bg-muted-foreground/70' : ad.days_running >= 30 ? 'bg-emerald-500/80' : 'bg-black/60',
-          )}>
-            {ad.days_running}d
-          </span>
-        </div>
-
-        {/* Bottom gradient overlay: platform + advertiser */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-2.5 pb-2.5 pt-10">
-          <div className="flex items-center gap-1.5">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="#fff" className="shrink-0 opacity-80">
-              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-            </svg>
-            <span className="text-[9px] font-semibold uppercase tracking-wide text-white/70">
-              Facebook
-            </span>
-          </div>
-          <p className="mt-0.5 truncate text-[12px] font-semibold text-white">{label}</p>
-        </div>
-      </div>
-
-      {/* Below-image metadata */}
-      <div className="mt-2 space-y-1.5 px-0.5">
-        <div className="flex items-center justify-between gap-1">
-          <p className="text-[11px] text-muted-foreground">
-            Desde {formatDate(ad.first_seen)}
-          </p>
-          {isInactive ? (
-            <span className="flex shrink-0 items-center gap-1 text-[10px] font-medium text-muted-foreground">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/60" />
-              Terminó · corrió {ad.days_running}d
-            </span>
-          ) : (
-            <span className="flex shrink-0 items-center gap-1 text-[10px] font-medium text-emerald-600">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              Activo
-            </span>
-          )}
-        </div>
-        {allowMetaLink ? (
-          <a
-            href={ad.ad_snapshot_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex w-full items-center justify-center rounded-lg border border-border px-2 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-            onClick={e => e.stopPropagation()}
+        {/* ×N (mismo creativo en N anuncios) y días corriendo: 12 px sobre tinta al 80 % (AA sobre cualquier creativo) */}
+        {count > 1 && (
+          <span
+            className="absolute left-1.5 top-1.5 rounded-full bg-sidebar/80 px-1.5 text-xs font-semibold leading-5 text-sidebar-foreground tabular-nums"
+            title={`${count} anuncios con este creativo`}
           >
-            Ver en Meta →
-          </a>
-        ) : (
-          <div className="flex w-full items-center justify-center rounded-lg border border-border/40 px-2 py-1.5 text-[11px] font-medium text-muted-foreground/30 cursor-not-allowed">
-            Ver en Meta →
-          </div>
+            ×{count}
+          </span>
         )}
-        {ad.body_text && (
-          <p className="mt-1.5 line-clamp-3 text-[11px] leading-snug text-muted-foreground">
-            {ad.body_text}
-          </p>
-        )}
+        <span
+          className={cn(
+            'absolute right-1.5 top-1.5 rounded-full px-1.5 text-xs font-semibold leading-5 tabular-nums',
+            isLongRunning ? 'bg-success-foreground text-white' : 'bg-sidebar/80 text-sidebar-foreground',
+          )}
+          title={`${isInactive ? 'Corrió' : 'Lleva'} ${ad.days_running} días`}
+        >
+          {ad.days_running} d
+        </span>
       </div>
+
+      {/* Metadatos: pueden pasar a dos líneas, nunca se encima uno sobre otro */}
+      <p className="mt-2 flex flex-wrap gap-x-1.5 text-xs text-subtle-foreground @max-[159px]:flex-col">
+        <span className={cn(
+          'inline-flex items-center gap-1.5 font-semibold',
+          isInactive ? 'text-subtle-foreground' : 'text-success-foreground',
+        )}>
+          <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', isInactive ? 'bg-input' : 'bg-success')} aria-hidden />
+          {isInactive ? 'Terminado' : 'Activo'}
+        </span>
+        <span>desde {formatDate(ad.first_seen)}</span>
+      </p>
+      <p className="mt-0.5 truncate text-xs font-medium text-foreground" title={label}>{label}</p>
+
+      {allowMetaLink ? (
+        <a
+          href={ad.ad_snapshot_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-1.5 inline-flex w-fit items-center gap-1 text-xs font-medium text-primary-text hover:underline"
+          onClick={e => e.stopPropagation()}
+        >
+          Ver en Meta
+          <ExternalLink className="h-3 w-3" aria-hidden />
+        </a>
+      ) : (
+        <span className="mt-1.5 inline-flex w-fit items-center gap-1 text-xs text-subtle-foreground" title="Disponible en Pro">
+          <Lock className="h-3 w-3" aria-hidden />
+          Meta · Pro
+        </span>
+      )}
+      {ad.body_text && (
+        <p className="mt-1.5 line-clamp-3 text-xs leading-4 text-muted-foreground @max-[159px]:hidden">
+          {ad.body_text}
+        </p>
+      )}
     </div>
   )
 }
@@ -311,12 +309,24 @@ type SortOption = 'impressions' | 'recent' | 'oldest'
 
 interface ProductAdsSectionProps {
   candidateId: string
+  /** Sin tarjeta propia (borde, fondo, padding): para usar dentro de otra superficie, p. ej. el panel del pool */
+  embedded?: boolean
+  /** compact: tarjetas desde 104 px (panel). comfortable: 96 px en móvil y 152 px desde md (página) */
+  density?: 'compact' | 'comfortable'
 }
 
 type DevPlan = 'free' | 'starter' | 'pro'
 const DEV_CYCLE: DevPlan[] = ['free', 'starter', 'pro']
 
-export function ProductAdsSection({ candidateId }: ProductAdsSectionProps) {
+// Columnas que entran según el ancho (auto-fill), nunca un número fijo: con grid-cols-6
+// cada columna medía ~45 px en el panel y los textos se partían o se encimaban.
+const GRID_BY_DENSITY = {
+  compact: 'grid-cols-[repeat(auto-fill,minmax(104px,1fr))] gap-3',
+  comfortable: 'grid-cols-[repeat(auto-fill,minmax(96px,1fr))] gap-2.5 md:grid-cols-[repeat(auto-fill,minmax(152px,1fr))] md:gap-4',
+} as const
+const MAX_ADVERTISERS_COMPACT = 3
+
+export function ProductAdsSection({ candidateId, embedded = false, density = 'comfortable' }: ProductAdsSectionProps) {
   const { data, isLoading, isError } = useGetProductAdsQuery(candidateId)
   const [devPlan, setDevPlan] = useState<DevPlan | null>(null)
 
@@ -337,14 +347,17 @@ export function ProductAdsSection({ candidateId }: ProductAdsSectionProps) {
   const [expanded, setExpanded] = useState(false)
   const { hoveredAd, hoverPos, handleHover, handleLeave, handlePanelEnter, handlePanelLeave } = useHoverPanel()
 
+  const shell = cn('relative', !embedded && 'mt-6 rounded-xl border border-border bg-card p-6 shadow-card')
+  const title = (
+    <h3 className={cn('font-semibold text-foreground', embedded ? 'text-sm' : 'font-display text-lg')}>Anuncios</h3>
+  )
+
   if (isLoading) {
     return (
-      <div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
-        <div className="flex items-center gap-3 border-b border-border px-6 py-4">
-          <h3 className="font-semibold text-foreground">Anuncios</h3>
-        </div>
+      <section id="ads" aria-label="Anuncios" className={shell}>
+        {title}
         <AdsSkeleton />
-      </div>
+      </section>
     )
   }
 
@@ -356,11 +369,36 @@ export function ProductAdsSection({ candidateId }: ProductAdsSectionProps) {
   // el resto por completo. Ahora se muestran todos (activos primero), cada uno con su status
   // real en vez de ocultarse. Incidente FIX-073, wiki scout-ads-status-real-propuesta.
   const allAds = rawAds.filter(a => !isTestAd(a))
-  if (allAds.length === 0) return null
+  if (allAds.length === 0) {
+    // Si la API falló no afirmamos nada; si respondió vacío, "sin anuncios" también es un dato
+    if (isError) return null
+    return (
+      <section id="ads" aria-label="Anuncios" className={shell}>
+        <div className="flex items-baseline gap-2">
+          {title}
+          <span className="text-xs text-muted-foreground">0 activos</span>
+        </div>
+        <p className="mt-3 rounded-lg border border-dashed border-border px-4 py-4 text-center text-xs text-subtle-foreground">
+          No detectamos anuncios de este producto en la biblioteca de Meta.
+        </p>
+      </section>
+    )
+  }
   const activeAds = allAds.filter(a => a.status === 'active')
+  const endedCount = allAds.length - activeAds.length
 
   const lastUpdated = data?.lastUpdated ? formatRelative(data.lastUpdated) : ''
   const uniqueAdvertisers = uniqueAdvertisersFromAds(allAds)
+  const shownAdvertisers = density === 'compact' ? uniqueAdvertisers.slice(0, MAX_ADVERTISERS_COMPACT) : uniqueAdvertisers
+  const hiddenAdvertisers = uniqueAdvertisers.length - shownAdvertisers.length
+
+  const counts = [
+    `${activeAds.length} activo${activeAds.length !== 1 ? 's' : ''}`,
+    endedCount > 0 ? `${endedCount} terminado${endedCount !== 1 ? 's' : ''}` : null,
+    !embedded && uniqueAdvertisers.length > 0
+      ? `${uniqueAdvertisers.length} anunciante${uniqueAdvertisers.length !== 1 ? 's' : ''}`
+      : null,
+  ].filter(Boolean).join(' · ')
 
   const sortFn = (a: Ad, b: Ad) => {
     if (sortBy === 'recent') return new Date(b.first_seen).getTime() - new Date(a.first_seen).getTime()
@@ -390,48 +428,32 @@ export function ProductAdsSection({ candidateId }: ProductAdsSectionProps) {
   const hiddenCount = deduped.length - INITIAL
 
   return (
-    <div id="ads" className="relative mt-6 overflow-hidden rounded-xl border border-border bg-card">
+    <section id="ads" aria-label="Anuncios" className={shell}>
 
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-border px-6 py-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <h3 className="font-semibold text-foreground">Anuncios</h3>
-          <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-600">
-            {activeAds.length} activos
-          </span>
-          {allAds.length > activeAds.length && (
-            <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
-              {allAds.length - activeAds.length} terminados
-            </span>
-          )}
-          {uniqueAdvertisers.map(name => (
-            <AdvertiserBadge
-              key={name}
-              advertiserName={name}
-              allowMetaLink={allowMetaLink}
-            />
-          ))}
+      {/* Header: título + conteos · orden. Hace wrap en vez de aplastarse. */}
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
+          {title}
+          <span className="text-xs text-muted-foreground tabular-nums">{counts}</span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <select
             value={sortBy}
             onChange={e => setSortBy(e.target.value as SortOption)}
-            className="rounded-md border border-border bg-secondary/50 px-2 py-1 text-xs text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+            aria-label="Ordenar anuncios"
+            className="h-8 rounded-lg border border-input bg-card px-2 text-xs text-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
           >
             <option value="impressions">Impresiones</option>
             <option value="recent">Más recientes</option>
             <option value="oldest">Más duraderos</option>
           </select>
-          {lastUpdated && (
-            <span className="text-xs text-muted-foreground">actualizado {lastUpdated}</span>
-          )}
           {process.env.NODE_ENV === 'development' && (
             <button
               onClick={() => setDevPlan(prev => {
                 const idx = prev ? DEV_CYCLE.indexOf(prev) : -1
                 return idx >= DEV_CYCLE.length - 1 ? null : DEV_CYCLE[idx + 1]
               })}
-              className="rounded border border-border px-2 py-0.5 text-[10px] text-muted-foreground transition-colors hover:text-foreground"
+              className="rounded border border-border px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
               [dev] {devPlan ?? 'real'}
             </button>
@@ -439,9 +461,23 @@ export function ProductAdsSection({ candidateId }: ProductAdsSectionProps) {
         </div>
       </div>
 
-      {/* Grid */}
-      <div className={cn('relative', !canViewAds && 'pointer-events-none select-none blur-sm')}>
-        <div className="grid grid-cols-6 gap-3 px-4 pt-4 pb-3">
+      <div className={cn(!canViewAds && 'pointer-events-none select-none blur-sm')} aria-hidden={!canViewAds || undefined}>
+        {/* Anunciantes (mismo gating que siempre: borrosos y sin link fuera de Pro) + actualizado */}
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          {shownAdvertisers.map(name => (
+            <AdvertiserBadge key={name} advertiserName={name} allowMetaLink={allowMetaLink} variant="neutral" />
+          ))}
+          {hiddenAdvertisers > 0 && (
+            <span className="inline-flex h-7 items-center rounded-full border border-border bg-secondary px-2.5 text-xs font-medium text-muted-foreground">
+              +{hiddenAdvertisers}
+            </span>
+          )}
+          {lastUpdated && (
+            <span className="ml-auto text-xs text-subtle-foreground">actualizado {lastUpdated}</span>
+          )}
+        </div>
+
+        <div className={cn('mt-4 grid', GRID_BY_DENSITY[density])}>
           {visible.map(({ ad, count }, idx) => (
             <AdSlide
               key={ad.id}
@@ -456,31 +492,28 @@ export function ProductAdsSection({ candidateId }: ProductAdsSectionProps) {
         </div>
 
         {deduped.length > INITIAL && (
-          <div className="px-4 pb-4">
-            <button
-              onClick={() => setExpanded(e => !e)}
-              className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-            >
-              {expanded ? 'Ver menos ↑' : `Ver ${hiddenCount} anuncios más ↓`}
-            </button>
-          </div>
+          <button
+            onClick={() => setExpanded(e => !e)}
+            className="mt-3 inline-flex h-8 items-center rounded-lg border border-input bg-card px-3 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+          >
+            {expanded ? 'Ver menos' : `Ver ${hiddenCount} anuncios más`}
+          </button>
         )}
-        {deduped.length <= INITIAL && <div className="pb-4" />}
       </div>
 
       {!canViewAds && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-b-xl bg-card/70">
-          <Lock className="h-5 w-5 text-foreground/50" />
-          <div className="text-center">
-            <p className="text-sm font-semibold text-foreground">
-              Los anuncios activos requieren plan Starter o superior
-            </p>
+        <div className="absolute inset-x-0 bottom-0 top-12 flex flex-col items-center justify-center gap-3 rounded-b-xl bg-card/85 px-4 text-center">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-subtle">
+            <Lock className="h-4 w-4 text-primary-text" aria-hidden />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-foreground">Anuncios bloqueados en la prueba gratis</p>
             <p className="mt-1 max-w-xs text-xs text-muted-foreground">
-              Ve exactamente qué está pautando esta tienda y en qué productos.
+              Mira qué está pautando esta tienda y en qué productos. Se ven desde el plan Básico.
             </p>
           </div>
           <Button size="sm" variant="outline" asChild>
-            <Link href="/pricing">Upgrade →</Link>
+            <Link href="/pricing">Ver planes</Link>
           </Button>
         </div>
       )}
@@ -491,7 +524,7 @@ export function ProductAdsSection({ candidateId }: ProductAdsSectionProps) {
           onMouseEnter={handlePanelEnter} onMouseLeave={handlePanelLeave}
         />
       )}
-    </div>
+    </section>
   )
 }
 
@@ -523,11 +556,14 @@ function AdThumbnailHover({
       }}
       onMouseLeave={onLeave}
     >
-      <img
-        src={ad.thumbnail_url || 'https://picsum.photos/seed/placeholder/400/700'}
-        alt=""
-        className={cn('h-full w-full object-cover', !isPro && 'scale-110 blur-sm')}
-      />
+      {/* Sin miniatura queda el fondo neutro: nada de fotos de stock al azar */}
+      {ad.thumbnail_url && (
+        <img
+          src={ad.thumbnail_url}
+          alt=""
+          className={cn('h-full w-full object-cover', !isPro && 'scale-110 blur-sm')}
+        />
+      )}
       {hasVideo && isPro && (
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="flex h-5 w-5 items-center justify-center rounded-full bg-black/50">
@@ -608,10 +644,48 @@ export function uniqueAdvertisersFromAds(ads: Ad[]): string[] {
   return [...new Set(ads.map(a => a.advertiser_name).filter(Boolean))] as string[]
 }
 
-export function AdvertiserBadge({ advertiserName, allowMetaLink }: { advertiserName: string; allowMetaLink: boolean }) {
+export function AdvertiserBadge({
+  advertiserName,
+  allowMetaLink,
+  variant = 'facebook',
+}: {
+  advertiserName: string
+  allowMetaLink: boolean
+  /** 'facebook' (default): azul de FB, el de las tablas. 'neutral': chip de Radar para la sección de anuncios. */
+  variant?: 'facebook' | 'neutral'
+}) {
   const href = allowMetaLink
     ? `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=ALL&search_type=keyword_unordered&q=${encodeURIComponent(advertiserName)}`
     : '#'
+
+  // Mismo gating en las dos variantes: sin allowMetaLink, nombre borroso y sin link.
+  if (variant === 'neutral') {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        title={allowMetaLink ? undefined : 'Disponible en Pro — ver centro de anuncios del anunciante'}
+        aria-label={allowMetaLink ? `Ver anuncios de ${advertiserName} en Meta` : 'Anunciante disponible en Pro'}
+        onClick={e => {
+          e.stopPropagation()
+          if (!allowMetaLink) e.preventDefault()
+        }}
+        className={cn(
+          'inline-flex h-7 min-w-0 max-w-[180px] shrink-0 items-center gap-1.5 rounded-full border border-border bg-secondary px-2.5 text-xs font-medium text-foreground transition-colors',
+          allowMetaLink ? 'hover:border-border-hover hover:bg-accent' : 'cursor-default',
+        )}
+      >
+        <svg className="h-3 w-3 shrink-0 text-muted-foreground" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+        </svg>
+        <span className={cn('truncate', !allowMetaLink && 'pointer-events-none select-none blur-[3px]')}>
+          {advertiserName}
+        </span>
+        {!allowMetaLink && <Lock className="h-3 w-3 shrink-0 text-muted-foreground" aria-hidden />}
+      </a>
+    )
+  }
 
   return (
     <a
@@ -722,11 +796,13 @@ function StoreVideoCard({ ad, productImage, label, count, allowMetaLink, canView
       )}
     >
       {/* Video thumbnail */}
-      <img
-        src={ad.thumbnail_url || 'https://picsum.photos/seed/placeholder/400/700'}
-        alt=""
-        className="absolute inset-0 h-full w-full object-cover"
-      />
+      {ad.thumbnail_url && (
+        <img
+          src={ad.thumbnail_url}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      )}
 
       {/* Play indicator */}
       {hasVideo && (

@@ -4,6 +4,53 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-118 — Tarjeta de anuncio v2 y sección de anuncios (rediseño de detalle, S3)
+
+**Fecha:** 2026-09-28
+**Tipo:** fix + ui
+
+**Qué cambió:** Es S3 de `docs/redesign/detalle-producto/03-spec.md`. Corrige los problemas reportados en el panel de detalle del pool: la fecha de cada anuncio partida en 5 líneas, "Activo" encimado sobre la tarjeta vecina, "Ver en Meta →" en 4 líneas y miniaturas diminutas.
+
+- **La causa:** la grilla de anuncios tenía 6 columnas fijas (`grid-cols-6`), que en el panel de 400 px son ~45 px por columna. Además, el estado era `shrink-0` y no podía achicarse.
+- **La grilla:** ahora usa `repeat(auto-fill, minmax(…))`, así que entran las columnas que caben:
+  - 104 px en el panel (`density="compact"`);
+  - 96 px en móvil y 152 px desde `md` en la página (`comfortable`, el default).
+- **`AdSlide` se adapta a su propio ancho** (container query, como ya hace `card.tsx`):
+  - por debajo de 160 px, los metadatos van en columna y se oculta el copy del anuncio;
+  - chips ×N y días a 12 px sobre `bg-sidebar/80`, con contraste AA sobre cualquier creativo (antes 9–10 px y 2,1:1);
+  - ≥ 30 días va sobre `bg-success-foreground`;
+  - se saca la etiqueta "FACEBOOK" y el anunciante pasa a texto debajo;
+  - "Ver en Meta" es un link de una línea; fuera de Pro dice "🔒 Meta · Pro" en gris AA (antes 1,65:1).
+- **`ProductAdsSection`:**
+  - cabecera que hace wrap (título + conteos · orden);
+  - chips de anunciante neutros (`AdvertiserBadge variant="neutral"`, máximo 3 + "+N" en compacto);
+  - prop `embedded`, sin tarjeta propia; el panel la usa y deja de tener tarjeta dentro de tarjeta;
+  - estado vacío "No detectamos anuncios…", salvo si la API falló, que sigue sin mostrar nada;
+  - copy del bloqueo "Anuncios bloqueados en la prueba gratis… Se ven desde el plan Básico" + "Ver planes". Antes decía "plan Starter" y "Upgrade →", pero el plan se llama Básico desde CHANGE-074.
+- **Sin fotos de stock:** si un anuncio no tiene miniatura, ya no se muestra una foto al azar de picsum como si fuera el creativo. Queda un placeholder neutro en `AdSlide` y el fondo vacío en la tira de Mis testeos y en la grilla de videos de Tiendas.
+
+**Archivos modificados:**
+- `components/tracker/product-ads.tsx`: `AdSlide`, `ProductAdsSection`, `AdvertiserBadge` (variante nueva; el default `facebook` no cambia, que es el que usan las tablas del pool y de Mis testeos) y los fallbacks de miniatura.
+- `components/tracker/pool-detail-panel.tsx`: `<ProductAdsSection … embedded density="compact" />`. El resto del panel se recompone en S5.
+
+**Qué NO cambió:**
+- `canViewAds` y `allowMetaLink`: mismo gating en todos los planes.
+- El orden (primero los activos, después el `select`), el dedupe por miniatura, `INITIAL = 6`, `isTestAd` y el hover con video.
+- `StoreVideosGrid` y `AdStripPreview` (salvo el fallback) y la firma de `AdSlide`.
+- Los datos, la API y los tipos.
+
+**Verificación:**
+- `tsc --noEmit`: los 9 errores previos, ninguno nuevo. `next build` OK.
+- Playwright con la API simulada:
+  - panel del pool y página en Real, Prueba gratis y Básico sin errores de consola;
+  - `/ads-library` a 1440 y 1024 px: 18 tarjetas, ningún texto se sale de su tarjeta y sin scroll horizontal.
+- Las container queries salen compiladas en el CSS (`@container not (min-width:159px)`).
+
+**Relacionado con backend:** no.
+**Wiki actualizado:** no aplica.
+
+---
+
 ### CHANGE-117 — Fechas locales y gráficos de detalle con tokens (rediseño de detalle, S7 + S4)
 
 **Fecha:** 2026-09-28
