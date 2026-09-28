@@ -252,7 +252,15 @@ export function AdSlide({
           <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', isInactive ? 'bg-input' : 'bg-success')} aria-hidden />
           {isInactive ? 'Terminado' : 'Activo'}
         </span>
-        <span>desde {formatDate(ad.first_seen)}</span>
+        {isInactive ? (
+          // "Terminado desde 15 ene" se leía como "terminó el 15 ene", cuando es la fecha en que
+          // EMPEZÓ. Para un terminado mostramos el rango en que lo vimos corriendo.
+          <span title={`Visto activo por última vez el ${formatDate(ad.last_seen)}`}>
+            {formatDate(ad.first_seen)} – {formatDate(ad.last_seen)}
+          </span>
+        ) : (
+          <span>desde {formatDate(ad.first_seen)}</span>
+        )}
       </p>
       <p className="mt-0.5 truncate text-xs font-medium text-foreground" title={label}>{label}</p>
 

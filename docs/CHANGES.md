@@ -4,6 +4,26 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-120 — Fix: "Terminado desde 15 ene" se leía como fecha de fin
+
+**Fecha:** 2026-09-28
+**Tipo:** fix
+
+**Qué cambió:** En la tarjeta de anuncio v2 (CHANGE-118), un anuncio terminado mostraba "● Terminado · desde 15 ene". Se lee como "terminó el 15 de enero", pero es la fecha en que **empezó**. Ahora muestra el rango en que Dropspy lo vio corriendo: "● Terminado · 15 ene – 27 sept" (`first_seen` – `last_seen`), con el tooltip "Visto activo por última vez el 27 sept". Los activos siguen con "● Activo · desde 25 ago". Además, el contador de la Biblioteca de anuncios usa separador de miles ("25.568 anuncios").
+
+**Archivos modificados:**
+- `components/tracker/product-ads.tsx`: `AdSlide`, solo la línea de fechas.
+- `app/(dashboard)/ads-library/page.tsx`: `toLocaleString('es-CO')` en el contador.
+
+**Qué NO cambió:** qué anuncios se marcan como terminados. Eso lo decide el sync de anuncios y el backend; ver `docs/redesign/biblioteca-anuncios/01-diagnostico.md`.
+
+**Verificación:** `tsc --noEmit`, los 9 errores previos. `next build` OK. En `/ads-library` con la API simulada, los terminados dicen "Terminado · 19 ago – 22 sept" y los activos "Activo · desde 25 ago".
+
+**Relacionado con backend:** no.
+**Wiki actualizado:** no aplica.
+
+---
+
 ### CHANGE-119 — Panel del pool sticky de verdad, cabecera de tabla alineada y Sheet por debajo de 1280 px (rediseño de detalle, S1 + S2)
 
 **Fecha:** 2026-09-28
