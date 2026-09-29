@@ -4,15 +4,45 @@
 // nueva, separada de "Explorar testeos": lista anuncios en sí (no candidatos), sin depender de
 // que el candidato siga en tracking activo. Depende de FIX-074 (status/days_running reales) —
 // ver docs/FIXES.md en el backend para el detalle de esa parte.
+//
+// Rediseño L1 (2026-09-29, docs/redesign/biblioteca-anuncios/): arranca en Activos, cada
+// tarjeta dice de qué producto es, el estado no afirma "Terminado" cuando solo sabemos que el
+// anuncio no se vio, el video se abre en un modal y la paginación pasa a "Cargar más".
 
-import { useMemo, useState } from 'react'
-import { Lock, Video } from 'lucide-react'
-import { useGetAdsLibraryQuery } from '@/app/(dashboard)/services/dashboardApi'
-import { AdSlide, FloatingVideoPanel, useHoverPanel } from '@/components/tracker/product-ads'
-import { usePlanTier } from '@/lib/view-as'
+import { useMemo, useRef, useState } from 'react'
+import Link from 'next/link'
+import { Lock } from 'lucide-react'
+import {
+  useGetAdsLibraryPagesInfiniteQuery,
+  useGetAdsLibraryQuery,
+  useGetPoolCountriesQuery,
+} from '@/app/(dashboard)/services/dashboardApi'
+import { usePlanTier, useViewAs } from '@/lib/view-as'
+import { useMediaQuery } from '@/hooks/use-media-query'
 import { cn } from '@/lib/utils'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Button } from '@/components/ui/button'
+import { LibraryAdCard } from '@/components/ads-library/library-ad-card'
+import { AdVideoDialog } from '@/components/ads-library/ad-video-dialog'
+import {
+  DEFAULT_FILTERS,
+  LibraryToolbar,
+  RUNTIME_MIN_DAYS,
+  type LibraryFilters,
+} from '@/components/ads-library/library-toolbar'
 import type { AdLibraryItem } from '@/app/(dashboard)/types'
+
+const PAGE_SIZE = 24
+
+// 2 columnas en pantallas chicas; desde md, tantas columnas de ≥196 px como entren.
+const GRID = 'grid grid-cols-2 gap-3 md:grid-cols-[repeat(auto-fill,minmax(196px,1fr))] md:gap-5'
+
+const STATUS_WORD: Record<LibraryFilters['status'], string> = {
+  active: 'activos',
+  inactive: 'no vistos',
+  all: '',
+}
+
+const fmt = (n: number) => n.toLocaleString('es-CO')
 
 // Feedback de Daniel viendo datos reales (2026-09-15): al ordenar por days_running desc, una
 // sola marca con varios anuncios de duración parecida terminaba ocupando varias columnas
@@ -20,6 +50,7 @@ import type { AdLibraryItem } from '@/app/(dashboard)/types'
 // (round-robin, priorizando siempre el bucket con más anuncios restantes) para que la misma
 // marca no quede pegada. Cuando una marca domina más de la mitad de la página, no es
 // matemáticamente posible evitar toda repetición — se minimiza, no se garantiza al 100%.
+// Con "Cargar más" se aplica por página: así cargar la siguiente no reordena lo que ya se ve.
 function diversifyByAdvertiser(items: AdLibraryItem[]): AdLibraryItem[] {
   const buckets = new Map<string, AdLibraryItem[]>()
   for (const item of items) {
@@ -40,189 +71,224 @@ function diversifyByAdvertiser(items: AdLibraryItem[]): AdLibraryItem[] {
   return result
 }
 
-// Las 13 categorías completas de scout-clasificacion-nicho, incluido el catch-all "Otro" —
-// a diferencia del NICHES de pool-winners.tsx (que solo tiene 9, discrepancia preexistente sin
-// tocar acá), esta lista tiene que ser exhaustiva: "ningún anuncio sin categoría" fue un
-// requisito explícito de Daniel.
-const NICHES = [
-  'Belleza & Cuidado', 'Hogar & Cocina', 'Mascotas', 'Deportes & Fitness',
-  'Tecnología & Gadgets', 'Moda & Accesorios', 'Jardín & Exterior', 'Bebés & Niños',
-  'Herramientas & Auto', 'Salud & Bienestar', 'Joyería & Relojes',
-  'Juguetes & Entretenimiento', 'Otro',
-]
+function CardSkeletons({ count, animate }: { count: number; animate: boolean }) {
+  return (
+    <>
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="flex flex-col gap-2 overflow-hidden rounded-xl border border-border bg-card pb-3.5">
+          <div className={cn('aspect-[4/5] w-full bg-secondary', animate && 'animate-pulse')} />
+          <div className={cn('mx-3 h-2.5 rounded-full bg-secondary', animate && 'animate-pulse')} />
+          <div className={cn('mx-3 h-2.5 rounded-full bg-secondary', animate && 'animate-pulse')} />
+          <div className={cn('mx-3 h-2.5 w-1/2 rounded-full bg-secondary', animate && 'animate-pulse')} />
+        </div>
+      ))}
+    </>
+  )
+}
 
-type StatusFilter = 'all' | 'active' | 'inactive'
-type RuntimePreset = 'all' | '7' | '30' | '90'
-
-const RUNTIME_PRESETS: { id: RuntimePreset; label: string; minDays?: number }[] = [
-  { id: 'all', label: 'Cualquier duración' },
-  { id: '7',   label: '7+ días',  minDays: 7  },
-  { id: '30',  label: '30+ días', minDays: 30 },
-  { id: '90',  label: '90+ días', minDays: 90 },
-]
+// Bloqueo para quien no es Pro: dice qué trae la Biblioteca y lleva a planes. Detrás van
+// tarjetas vacías, nunca anuncios reales difuminados (el blur se saca con el inspector).
+function LockedLibrary({ total }: { total?: number }) {
+  return (
+    <div className="relative">
+      <div className={cn(GRID, 'opacity-70')} aria-hidden>
+        <CardSkeletons count={10} animate={false} />
+      </div>
+      <div className="absolute inset-x-0 top-12 flex justify-center px-4">
+        <div className="flex max-w-md flex-col items-center gap-3 rounded-2xl border border-border bg-card p-6 text-center shadow-card-hover">
+          <span className="flex size-11 items-center justify-center rounded-full bg-primary-subtle text-primary-text">
+            <Lock className="size-5" aria-hidden />
+          </span>
+          <h2 className="font-display text-xl font-semibold leading-7 text-foreground">La Biblioteca de anuncios es del plan Pro</h2>
+          <p className="text-sm text-muted-foreground">
+            {total ? `${fmt(total)} anuncios` : 'Anuncios'} de Meta de productos que Dropspy siguió, con cuánto
+            llevan corriendo y el producto que venden.
+          </p>
+          <Button asChild variant="brand">
+            <Link href="/pricing">Ver planes</Link>
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function AdsLibraryPage() {
-  const { allowMetaLink } = usePlanTier()
-  const { hoveredAd, hoverPos, handleHover, handleLeave, handlePanelEnter, handlePanelLeave } = useHoverPanel()
+  const { allowMetaLink, isPro: planIsPro } = usePlanTier()
+  const { isAdmin } = useViewAs()
+  // Video sin sonido al pasar el mouse: solo con mouse real y sin "reducir movimiento".
+  const canHoverPlay = useMediaQuery('(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)')
 
-  const [page, setPage] = useState(0)
-  const [status, setStatus] = useState<StatusFilter>('all')
-  const [runtime, setRuntime] = useState<RuntimePreset>('all')
-  const [niches, setNiches] = useState<string[]>([])
+  const [filters, setFilters] = useState<LibraryFilters>(DEFAULT_FILTERS)
+  const [selected, setSelected] = useState<AdLibraryItem | null>(null)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const openerRef = useRef<HTMLElement | null>(null)
 
-  const minDaysRunning = RUNTIME_PRESETS.find(r => r.id === runtime)?.minDays
+  const queryArgs = useMemo(() => {
+    const minDaysRunning = RUNTIME_MIN_DAYS[filters.runtime]
+    return {
+      size: PAGE_SIZE,
+      ...(filters.status !== 'all' && { status: filters.status }),
+      ...(minDaysRunning != null && { minDaysRunning }),
+      ...(filters.niches.length > 0 && { niche: filters.niches }),
+      ...(filters.country && { country: filters.country }),
+    }
+  }, [filters])
 
-  const { data, isLoading } = useGetAdsLibraryQuery({
-    page, size: 24,
-    ...(status !== 'all' && { status }),
-    ...(minDaysRunning != null && { minDaysRunning }),
-    ...(niches.length > 0 && { niche: niches }),
-  })
+  const {
+    data, isLoading, isError, isFetching, isFetchingNextPage, hasNextPage, fetchNextPage, refetch,
+  } = useGetAdsLibraryPagesInfiniteQuery(queryArgs)
+  // Cifras del encabezado: no cambian con los filtros.
+  const { data: allCount } = useGetAdsLibraryQuery({ size: 1 })
+  const { data: activeCount } = useGetAdsLibraryQuery({ size: 1, status: 'active' })
+  // Mismos códigos de país que el filtro del pool.
+  const { data: countriesData } = useGetPoolCountriesQuery()
 
-  // Diversificar por marca (2026-09-15) — ver comentario en diversifyByAdvertiser arriba.
-  const diversifiedAds = useMemo(
-    () => data ? diversifyByAdvertiser(data.ads) : [],
-    [data],
-  )
+  // El backend decide (data.isPro). La barra "Vista" solo cuenta para el admin: así el admin
+  // puede ver el bloqueo, y un usuario Pro no ve un bloqueo falso mientras carga /users/me.
+  const isPro = data?.pages[0]?.isPro ?? allCount?.isPro
+  const locked = isPro === false || (isAdmin && !planIsPro)
 
-  function toggleNiche(n: string) {
-    setPage(0)
-    setNiches(prev => prev.includes(n) ? prev.filter(x => x !== n) : [...prev, n])
+  const ads = useMemo(() => {
+    const seen = new Set<string>()
+    const out: AdLibraryItem[] = []
+    for (const page of data?.pages ?? []) {
+      for (const ad of diversifyByAdvertiser(page.ads ?? [])) {
+        // Con paginación por offset y datos que cambian, una página nueva puede repetir un anuncio.
+        if (seen.has(ad.id)) continue
+        seen.add(ad.id)
+        out.push(ad)
+      }
+    }
+    return out
+  }, [data])
+  const total = data?.pages[data.pages.length - 1]?.total ?? 0
+  const remaining = Math.max(0, total - ads.length)
+  const isDefaultFilters = JSON.stringify(filters) === JSON.stringify(DEFAULT_FILTERS)
+
+  function updateFilters(next: Partial<LibraryFilters>) {
+    setFilters(f => ({ ...f, ...next }))
   }
 
-  if (data && !data.isPro) {
-    return (
-      <div className="mx-auto max-w-2xl px-6 py-16 text-center">
-        <Lock className="mx-auto mb-4 h-10 w-10 text-muted-foreground" />
-        <h1 className="text-lg font-semibold text-foreground">Biblioteca de anuncios</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Disponible para planes Pro y Agency — mismo acceso que "Anuncios activos" en el detalle de un candidato.
-        </p>
-      </div>
-    )
+  function openAd(ad: AdLibraryItem, opener: HTMLElement) {
+    openerRef.current = opener
+    setSelected(ad)
+    setDialogOpen(true)
   }
 
   return (
-    <div className="mx-auto max-w-[1400px] px-6 py-8">
-      <div className="mb-6 flex items-center gap-2">
-        <Video className="h-5 w-5 text-muted-foreground" />
-        <h1 className="text-lg font-semibold text-foreground">Biblioteca de anuncios</h1>
-        {data && (
-          <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
-            {data.total.toLocaleString('es-CO')} anuncios
-          </span>
+    <div className="p-7 max-md:p-4">
+      <header className="mb-5 flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
+        <div className="min-w-0">
+          <h1 className="font-display text-[26px] font-semibold leading-8 tracking-tight text-foreground">
+            Biblioteca de anuncios
+          </h1>
+          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+            Anuncios de Meta de los productos que Dropspy siguió. Los que llevan más tiempo corriendo suelen ser los que venden.
+          </p>
+        </div>
+        {!!allCount?.total && (
+          <dl className="flex gap-5">
+            <div className="flex flex-col-reverse">
+              <dt className="text-xs text-muted-foreground">anuncios</dt>
+              <dd className="font-display text-xl font-semibold leading-6 tabular-nums text-foreground">{fmt(allCount.total)}</dd>
+            </div>
+            {activeCount && (
+              <div className="flex flex-col-reverse">
+                <dt className="text-xs text-muted-foreground">activos</dt>
+                <dd className="font-display text-xl font-semibold leading-6 tabular-nums text-foreground">{fmt(activeCount.total ?? 0)}</dd>
+              </div>
+            )}
+          </dl>
         )}
-      </div>
+      </header>
 
-      {/* Filtros */}
-      <div className="mb-6 flex flex-wrap items-start gap-6 rounded-xl border border-border bg-card p-4">
-        <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Status</p>
-          <div className="flex gap-1">
-            {(['all', 'active', 'inactive'] as StatusFilter[]).map(s => (
-              <button
-                key={s}
-                onClick={() => { setStatus(s); setPage(0) }}
-                className={cn(
-                  'rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
-                  status === s ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground hover:text-foreground',
-                )}
-              >
-                {s === 'all' ? 'Todos' : s === 'active' ? 'Activos' : 'Inactivos'}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          {/* La premisa del producto: más tiempo activo = más ganador. Ver wiki. */}
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Runtime</p>
-          <div className="flex gap-1">
-            {RUNTIME_PRESETS.map(r => (
-              <button
-                key={r.id}
-                onClick={() => { setRuntime(r.id); setPage(0) }}
-                className={cn(
-                  'rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
-                  runtime === r.id ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground hover:text-foreground',
-                )}
-              >
-                {r.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="min-w-[280px] flex-1">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Categoría</p>
-          <div className="flex flex-wrap gap-x-4 gap-y-1.5">
-            {NICHES.map(n => (
-              <label key={n} className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground">
-                <Checkbox checked={niches.includes(n)} onCheckedChange={() => toggleNiche(n)} />
-                {n}
-              </label>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Grid */}
-      {isLoading ? (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <div key={i} className="aspect-[9/16] animate-pulse rounded-xl bg-secondary" />
-          ))}
-        </div>
-      ) : !data || data.ads.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border py-16 text-center text-sm text-muted-foreground">
-          Ningún anuncio coincide con estos filtros.
-        </div>
+      {locked ? (
+        <LockedLibrary total={allCount?.total} />
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-            {diversifiedAds.map((ad, i) => (
-              <AdSlide
-                key={ad.id}
-                ad={ad}
-                index={i}
-                allowMetaLink={allowMetaLink}
-                onHover={handleHover}
-                onLeave={handleLeave}
-              />
-            ))}
-          </div>
+          <LibraryToolbar
+            filters={filters}
+            onChange={updateFilters}
+            onClear={() => setFilters(DEFAULT_FILTERS)}
+            countries={countriesData?.countries ?? []}
+          />
 
-          {/* Paginación simple — prev/next, coherente con el volumen esperado de esta vista */}
-          {data.totalPages > 1 && (
-            <div className="mt-6 flex items-center justify-center gap-3">
-              <button
-                disabled={page === 0}
-                onClick={() => setPage(p => Math.max(0, p - 1))}
-                className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground disabled:opacity-40"
-              >
-                ← Anterior
-              </button>
-              <span className="text-xs text-muted-foreground">
-                Página {page + 1} de {data.totalPages}
-              </span>
-              <button
-                disabled={page + 1 >= data.totalPages}
-                onClick={() => setPage(p => p + 1)}
-                className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground disabled:opacity-40"
-              >
-                Siguiente →
+          <p className="mb-3 min-h-5 px-0.5 text-[13px] text-muted-foreground" aria-live="polite">
+            {data && (
+              <>
+                <b className="font-semibold tabular-nums text-foreground">{fmt(total)}</b> anuncios
+                {STATUS_WORD[filters.status] && ` ${STATUS_WORD[filters.status]}`}
+                <span className="max-md:hidden"> · ordenados por tiempo corriendo</span>
+              </>
+            )}
+          </p>
+
+          {isLoading ? (
+            <div className={GRID} aria-busy="true" aria-label="Cargando anuncios">
+              <CardSkeletons count={12} animate />
+            </div>
+          ) : isError && !data ? (
+            <div className="rounded-xl border border-dashed border-border px-4 py-16 text-center text-sm text-muted-foreground">
+              No se pudo cargar la Biblioteca.{' '}
+              <button type="button" onClick={() => refetch()} className="font-medium text-primary-text hover:underline">
+                Reintentar
               </button>
             </div>
+          ) : ads.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border px-4 py-16 text-center text-sm text-muted-foreground">
+              Ningún anuncio coincide con estos filtros.
+              {!isDefaultFilters && (
+                <>
+                  {' '}
+                  <button type="button" onClick={() => setFilters(DEFAULT_FILTERS)} className="font-medium text-primary-text hover:underline">
+                    Limpiar filtros
+                  </button>
+                </>
+              )}
+            </div>
+          ) : (
+            <>
+              <div
+                className={cn(GRID, isFetching && !isFetchingNextPage && 'opacity-60 transition-opacity')}
+                aria-busy={isFetching && !isFetchingNextPage}
+              >
+                {ads.map(ad => (
+                  <LibraryAdCard
+                    key={ad.id}
+                    ad={ad}
+                    allowMetaLink={allowMetaLink}
+                    canHoverPlay={canHoverPlay}
+                    onOpen={openAd}
+                  />
+                ))}
+              </div>
+
+              <div className="mt-7 flex flex-col items-center gap-2">
+                {hasNextPage && (
+                  <Button variant="outline" onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
+                    {isFetchingNextPage
+                      ? 'Cargando…'
+                      : remaining > 0 && remaining < PAGE_SIZE ? `Cargar ${remaining} más` : `Cargar ${PAGE_SIZE} más`}
+                  </Button>
+                )}
+                {isError && hasNextPage && !isFetchingNextPage && (
+                  <p className="text-xs text-warning-foreground">No se pudieron cargar más anuncios. Intenta de nuevo.</p>
+                )}
+                <p className="text-xs text-subtle-foreground">Mostrando {fmt(ads.length)} de {fmt(total)}</p>
+              </div>
+            </>
           )}
         </>
       )}
 
-      {hoveredAd && (
-        <FloatingVideoPanel
-          ad={hoveredAd} top={hoverPos.top} left={hoverPos.left}
-          onMouseEnter={handlePanelEnter} onMouseLeave={handlePanelLeave}
-        />
-      )}
+      <AdVideoDialog
+        ad={selected}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        allowMetaLink={allowMetaLink}
+        returnFocusTo={openerRef}
+      />
     </div>
   )
 }
