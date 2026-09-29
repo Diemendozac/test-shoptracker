@@ -104,28 +104,24 @@
     "plans": {
       "kicker": "// planes",
       "title": "Empieza con 7 días gratis.",
-      "subtitle": "Sin tarjeta de crédito. Todos los planes incluyen el pool global de productos; cambian las tiendas propias que sigues y cuánto historial ves.",
+      "subtitle": "Sin tarjeta de crédito. Todos los planes incluyen el pool global de productos. Cambian las tiendas propias que sigues y, desde Pro, quién está detrás de cada anuncio.",
       "pool": "Pool global de productos",
+      "advertiser": "Anunciante y link a Meta de cada anuncio",
+      "library": "Biblioteca de anuncios",
       "basic": {
         "name": "Básico",
         "stores": "15 tiendas propias",
-        "tests": "150 testeos",
-        "history": "30 días de historial",
         "privacy": "Tus tiendas suman al pool de la comunidad"
       },
       "pro": {
         "name": "Pro",
         "stores": "40 tiendas propias",
-        "tests": "500 testeos",
-        "history": "90 días de historial",
-        "privacy": "Tus tiendas son privadas"
+        "privacy": "Privacidad de tus tiendas: en preparación"
       },
       "agency": {
         "name": "Agency",
         "stores": "100 tiendas propias",
-        "tests": "Testeos ilimitados",
-        "history": "1 año de historial",
-        "privacy": "Tus tiendas son privadas"
+        "privacy": "Privacidad de tus tiendas: en preparación"
       },
       "seePricing": "Ver precios",
       "pricingNote": "precios en COP, pago con Mercado Pago"
