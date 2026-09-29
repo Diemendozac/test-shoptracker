@@ -142,42 +142,66 @@
     }
   },
   "Auth": {
-    "divider": {
-      "orContinueWith": "o continúa con"
-    },
-    "login": {
-      "title": "Bienvenido de nuevo",
-      "subtitle": "Ingresa tus credenciales para acceder a tu cuenta",
-      "emailLabel": "Correo electrónico",
-      "passwordLabel": "Contraseña",
-      "forgotPassword": "¿Olvidaste tu contraseña?",
-      "passwordPlaceholder": "Ingresa tu contraseña",
-      "submitLoading": "Iniciando sesión...",
-      "submit": "Iniciar sesión",
-      "genericError": "Credenciales inválidas. Intenta de nuevo."
-    },
-    "signup": {
-      "title": "Crea una cuenta",
-      "subtitle": "Empieza tu prueba gratis de 7 días. Sin tarjeta de crédito.",
-      "nameLabel": "Nombre completo",
-      "namePlaceholder": "Juan Pérez",
-      "emailLabel": "Correo electrónico",
-      "passwordLabel": "Contraseña",
-      "passwordPlaceholder": "Crea una contraseña segura",
-      "passwordHint": "Debe tener al menos 8 caracteres",
-      "submitLoading": "Creando cuenta...",
-      "submit": "Crear cuenta",
-      "genericError": "No se pudo crear la cuenta. Intenta de nuevo.",
-      "termsPrefix": "Al crear una cuenta, aceptas nuestros",
-      "termsLink": "Términos de servicio",
-      "and": "y",
-      "privacyLink": "Política de privacidad"
+    "meta": {
+      "title": "Ingresa o crea tu cuenta · Dropspy"
     },
     "page": {
+      "home": "Dropspy, inicio",
       "backToHome": "Volver al inicio",
-      "tabLogin": "Iniciar sesión",
-      "tabSignup": "Registrarse",
-      "trustBadge": "Con la confianza de más de 2.000 equipos de e-commerce"
+      "tabsLabel": "Cuenta",
+      "tabSignup": "Crear cuenta",
+      "tabLogin": "Iniciar sesión"
+    },
+    "side": {
+      "kicker": "// tu cuenta",
+      "title": "El mercado ya está vigilado. Entra y mira qué está ganando.",
+      "factTrial": "7 días gratis, sin tarjeta de crédito",
+      "factDaily": "Una foto diaria del ranking de las tiendas que monitoreamos",
+      "factOwn": "Y si quieres, sigue tus propias tiendas: de 15 a 100 según el plan",
+      "mockTitle": "mercado · subiendo",
+      "sample": "Datos de ejemplo",
+      "mockProduct": "Licuadora portátil recargable",
+      "mockMeta": "Tienda de ejemplo · CO · #38 → #6 en 14 días"
+    },
+    "fields": {
+      "nameLabel": "Nombre completo",
+      "namePlaceholder": "Cómo te llamas",
+      "emailLabel": "Correo electrónico",
+      "emailPlaceholder": "tu@correo.com",
+      "passwordLabel": "Contraseña",
+      "showPassword": "Mostrar contraseña",
+      "hidePassword": "Ocultar contraseña"
+    },
+    "validation": {
+      "nameRequired": "Escribe tu nombre.",
+      "emailInvalid": "Escribe un correo válido, por ejemplo nombre@correo.com.",
+      "passwordRequired": "Escribe tu contraseña.",
+      "passwordShort": "La contraseña necesita al menos 8 caracteres."
+    },
+    "errors": {
+      "network": "No pudimos conectarnos. Revisa tu conexión e intenta de nuevo.",
+      "server": "Tuvimos un problema de nuestro lado. Intenta de nuevo en unos minutos."
+    },
+    "login": {
+      "title": "Ingresa a tu cuenta",
+      "subtitle": "Mira qué se movió en el mercado desde tu última visita.",
+      "passwordPlaceholder": "Tu contraseña",
+      "submit": "Iniciar sesión",
+      "submitLoading": "Iniciando sesión…",
+      "invalidCredentials": "Correo o contraseña incorrectos. Revisa e intenta de nuevo.",
+      "switchPrompt": "¿Todavía no tienes cuenta?",
+      "switchAction": "Crea una gratis"
+    },
+    "signup": {
+      "title": "Crea tu cuenta",
+      "subtitle": "7 días gratis, sin tarjeta de crédito. En la prueba ves lo más fuerte del pool: los productos con el puntaje más alto.",
+      "passwordPlaceholder": "Crea una contraseña",
+      "passwordHint": "Al menos 8 caracteres.",
+      "submit": "Crear cuenta",
+      "submitLoading": "Creando cuenta…",
+      "genericError": "No pudimos crear la cuenta. Revisa los datos e intenta de nuevo.",
+      "switchPrompt": "¿Ya tienes cuenta?",
+      "switchAction": "Inicia sesión"
     }
   },
   "Onboarding": {
