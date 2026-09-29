@@ -4,6 +4,77 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-121 — Biblioteca de anuncios: pantalla nueva que no afirma lo que los datos no saben (L1)
+
+**Fecha:** 2026-09-29
+**Tipo:** ui + fix
+
+**Por qué:** Daniel reportó anuncios activos que la Biblioteca mostraba como "Terminado". El diagnóstico (`docs/redesign/biblioteca-anuncios/01-diagnostico.md`, A1) muestra que, con los datos de hoy, `inactive` solo quiere decir "no apareció en la última revisión": el job lee como máximo 50 anuncios por tienda, no llega a todas las tiendas y el barrido de vencidos marca todo sin mirar Meta. Mientras se arreglan los datos (D1–D5), la pantalla deja de afirmar "Terminado". Además, la primera pantalla salía gris ("Todos" por defecto), la tarjeta no decía de qué producto era cada anuncio y el video dependía del mouse. Es L1 de `docs/redesign/biblioteca-anuncios/03-spec.md`: solo frontend, sin cambios de backend.
+
+**Qué cambió:**
+- **Arranca en "Activos"** (antes "Todos"), ordenado por tiempo corriendo como antes.
+- **Estado honesto** (`lib/ad-status.ts`):
+  - `inactive` se muestra como "○ No visto · desde el 27 sept", en ámbar y **sin gris**;
+  - un `active` cuya tienda no se revisa hace más de 2 días dice "● Activo · visto hace 9 d";
+  - el filtro es "Activos · No vistos · Todos".
+- **Tarjeta nueva** (`components/ads-library/library-ad-card.tsx`, creativo 4:5):
+  - días corriendo (verde desde 30 d);
+  - estado, anunciante y país;
+  - el copy si existe (`body_text`: hoy no viene, llega con D4);
+  - el **producto** (foto y título, que la API ya mandaba y no se mostraban);
+  - "Ver en Meta".
+- **Video:** el clic abre un modal (`ad-video-dialog.tsx`) con el video completo con sonido, el copy, el producto y el link a Meta. En escritorio, el hover reproduce el video sin sonido dentro de la misma tarjeta, solo con mouse y sin "reducir movimiento". Reemplaza **solo en esta pantalla** al panel flotante, que tapaba las tarjetas vecinas y no existía en celular.
+- **Filtros** (`library-toolbar.tsx`):
+  - en español;
+  - categorías en un desplegable con chips;
+  - **país** (la API ya lo aceptaba), con los códigos de `/dashboard/pool/countries`;
+  - "Limpiar filtros".
+  - Pegados arriba en escritorio; debajo de `md`, duración, categoría y país se pliegan en "Filtros".
+- **"Cargar 24 más"** en lugar de anterior/siguiente: `getAdsLibraryPages` con `infiniteQuery` de RTK Query. Deduplica por `id` por si una página repite anuncios, e intercala por marca por página, así que cargar más no reordena lo ya visto.
+- **Encabezado** con "N anuncios · N activos": dos pedidos con `size: 1`. L2 los reemplaza por un campo `counts`.
+- **Bloqueo para quien no es Pro:**
+  - tarjetas vacías y una tarjeta que dice qué trae la Biblioteca, con "Ver planes" (`/pricing`);
+  - **ningún dato de anuncios en el DOM**;
+  - la barra "Vista" del admin ahora también lo activa. Para usuarios reales decide `data.isPro`, así no hay bloqueo falso mientras carga `/users/me`.
+- **Links a Meta:** solo se renderizan si son http(s) de `facebook.com` (`safeMetaUrl`). El link viene del scraper.
+
+**Archivos modificados:**
+- `app/(dashboard)/ads-library/page.tsx`: reescrita con lo de arriba. Se conserva `diversifyByAdvertiser`.
+- `app/(dashboard)/services/dashboardApi.ts`:
+  - nuevo `getAdsLibraryPages` (`infiniteQuery`);
+  - `getAdsLibrary` comparte el armado de parámetros (`adsLibraryParams`) y queda para los conteos.
+- `lib/ad-status.ts` (nuevo): `describeAdStatus()`.
+- `components/ads-library/library-ad-card.tsx`, `ad-video-dialog.tsx` y `library-toolbar.tsx` (nuevos).
+
+**Qué NO cambió:**
+- `AdSlide`, `ProductAdsSection`, `FloatingVideoPanel` y `useHoverPanel`: el detalle del producto y el pool siguen diciendo "Terminado". Unificarlo es L1b y necesita el OK de Daniel.
+- Los tipos de la API.
+- El backend, el job y el scraper.
+- Qué anuncios se marcan inactivos (eso es D1–D2).
+
+**Verificación:**
+- `tsc --noEmit`: solo los 9 errores previos.
+- `next build` OK.
+- Playwright con la API simulada y paginada, 60 anuncios con nulls: 36 de 36 chequeos OK, sin errores de consola.
+  - Arranca con `status=active` y la línea "40 anuncios activos".
+  - Sin "null", "NaN" ni "Terminado".
+  - "visto hace 9 d".
+  - "No visto" sin gris.
+  - "Cargar más" agrega sin mover el scroll y el botón desaparece al final.
+  - País y categoría llegan al pedido.
+  - Modal: abre con clic y con Enter, Esc lo cierra y el foco vuelve a la tarjeta.
+  - Bloqueo sin datos en el DOM, tanto para el admin como Básico como para un Básico real.
+  - Con 390 px de contenido: sin scroll horizontal, filtros plegados y la primera tarjeta en la primera pantalla. Se probó con un viewport de 646 px, porque el sidebar fijo de 256 px sigue ahí: en un celular real el contenido recibe 134 px hasta que exista el shell móvil (M1).
+  - Ningún texto menor a 12 px.
+- Ámbar sobre la tarjeta: 5,19:1 (AA).
+- Checklist de `react-agents-review`: hooks arriba y sin efectos, props tipadas, keys por `id`, sin estado derivado guardado, componentes de menos de 300 líneas, nombres accesibles y `aria-live` en la línea de resultados. De ahí salió `safeMetaUrl`. No hay runner de tests en el repo.
+
+**Pendiente de confirmar con Diego:** que `/ads-library?country=` acepte los mismos códigos ISO que el pool, y que acepte `size=1`.
+**Relacionado con backend:** no (L2 y D1–D4 sí).
+**Wiki actualizado:** no aplica.
+
+---
+
 ### CHANGE-120 — Fix: "Terminado desde 15 ene" se leía como fecha de fin
 
 **Fecha:** 2026-09-28

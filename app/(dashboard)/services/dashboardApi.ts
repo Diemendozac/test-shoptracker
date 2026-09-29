@@ -3,6 +3,24 @@ import { createApi } from '@reduxjs/toolkit/query/react'
 import type { StoreOverviewItem, TrackerCandidate, WindowCandidate, CandidateDetail, WeeklyWinnerResponse, PoolWinnersResponse, DashboardInsight, PodiumResponse, ProductAdsResponse, AdsLibraryResponse } from '../types'
 import { makeAuthBaseQuery } from '@/lib/baseQuery'
 
+export interface AdsLibraryParams {
+  size?: number
+  status?: 'active' | 'inactive'
+  minDaysRunning?: number; maxDaysRunning?: number
+  niche?: string[]; country?: string
+}
+
+function adsLibraryParams({ size = 24, status, minDaysRunning, maxDaysRunning, niche, country }: AdsLibraryParams, page: number) {
+  return {
+    page, size,
+    ...(status              && { status }),
+    ...(minDaysRunning != null && { minDaysRunning }),
+    ...(maxDaysRunning != null && { maxDaysRunning }),
+    ...(niche?.length       && { niche }),
+    ...(country              && { country }),
+  }
+}
+
 export const dashboardApi = createApi({
   reducerPath: 'dashboardApi',
   baseQuery: makeAuthBaseQuery(process.env.NEXT_PUBLIC_API_URL + '/dashboard'),
@@ -115,22 +133,26 @@ export const dashboardApi = createApi({
     // GET /api/dashboard/ads-library?page=&size=&status=&minDaysRunning=&maxDaysRunning=&niche=&country=
     // Biblioteca de anuncios (2026-09-15, wiki scout-biblioteca-anuncios-propuesta) — a
     // diferencia de getPoolWinners, no filtra por tracking_status del candidato.
-    getAdsLibrary: builder.query<AdsLibraryResponse, {
-      page?: number; size?: number
-      status?: 'active' | 'inactive'
-      minDaysRunning?: number; maxDaysRunning?: number
-      niche?: string[]; country?: string
-    }>({
-      query: ({ page = 0, size = 24, status, minDaysRunning, maxDaysRunning, niche, country } = {}) => ({
+    // Desde 2026-09-29 la pantalla usa getAdsLibraryPages; este queda para los conteos (size: 1).
+    getAdsLibrary: builder.query<AdsLibraryResponse, AdsLibraryParams & { page?: number }>({
+      query: ({ page = 0, ...params } = {}) => ({
         url: '/ads-library',
-        params: {
-          page, size,
-          ...(status              && { status }),
-          ...(minDaysRunning != null && { minDaysRunning }),
-          ...(maxDaysRunning != null && { maxDaysRunning }),
-          ...(niche?.length       && { niche }),
-          ...(country              && { country }),
-        },
+        params: adsLibraryParams(params, page),
+      }),
+      providesTags: ['Ads'],
+    }),
+
+    // La misma consulta, por páginas acumuladas: "Cargar más" en la Biblioteca
+    // (docs/redesign/biblioteca-anuncios/03-spec.md, L1).
+    getAdsLibraryPages: builder.infiniteQuery<AdsLibraryResponse, AdsLibraryParams, number>({
+      infiniteQueryOptions: {
+        initialPageParam: 0,
+        getNextPageParam: (lastPage, _allPages, lastPageParam) =>
+          lastPageParam + 1 < (lastPage.totalPages ?? 0) ? lastPageParam + 1 : undefined,
+      },
+      query: ({ queryArg, pageParam }) => ({
+        url: '/ads-library',
+        params: adsLibraryParams(queryArg, pageParam),
       }),
       providesTags: ['Ads'],
     }),
@@ -152,4 +174,5 @@ export const {
   useGetProductAdsQuery,
   useGetStoreAdsCountQuery,
   useGetAdsLibraryQuery,
+  useGetAdsLibraryPagesInfiniteQuery,
 } = dashboardApi
