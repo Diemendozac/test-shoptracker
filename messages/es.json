@@ -1,115 +1,207 @@
 {
   "Landing": {
+    "meta": {
+      "title": "Dropspy · Qué productos están ganando en tiendas Shopify de LATAM",
+      "description": "Dropspy revisa todos los días el ranking de más vendidos de tiendas Shopify de Latinoamérica y guarda su historial. Cuando un producto nuevo empieza a subir, lo ves: en qué tienda, cuánto subió, su puntaje y su fase."
+    },
+    "skip": "Saltar al contenido",
     "nav": {
-      "features": "Funcionalidades",
-      "pricing": "Precios",
-      "docs": "Documentación",
-      "login": "Iniciar sesión",
-      "getStarted": "Empezar gratis"
+      "label": "Principal",
+      "home": "Dropspy, inicio",
+      "market": "El mercado",
+      "howItWorks": "Cómo funciona",
+      "plans": "Planes",
+      "login": "Ingresar",
+      "getStarted": "Empieza gratis"
     },
+    "sample": "Datos de ejemplo",
+    "sampleShort": "Ejemplo",
     "hero": {
-      "badge": "Inteligencia competitiva para Shopify",
-      "titleLine1": "Rastrea competidores.",
-      "titleHighlight": "Detecta tendencias.",
-      "titleLine2": "Gana mercados.",
-      "description": "Automatiza la inteligencia competitiva para tiendas Shopify. Detecta productos nuevos, sigue su ascenso en los rankings de la tienda e identifica ganadores antes que nadie.",
-      "ctaPrimary": "Empezar prueba gratis",
-      "ctaSecondary": "Ver cómo funciona"
+      "eyebrow": "Inteligencia de productos · LATAM",
+      "title": "Ya vigilamos el mercado.",
+      "titleHighlight": "Tú ves qué está ganando.",
+      "lead": "Dropspy revisa todos los días el ranking de más vendidos de tiendas Shopify de Latinoamérica y guarda su historial. Cuando un producto nuevo empieza a subir en alguna, lo ves: en qué tienda, cuánto subió, su puntaje y en qué fase va.",
+      "ctaPrimary": "Empieza gratis",
+      "ctaMarket": "Ver el mercado",
+      "ctaHow": "Ver cómo funciona",
+      "micro": "7 días gratis · sin tarjeta de crédito"
     },
-    "stats": {
-      "discovery": "descubrimiento de productos más rápido",
-      "stores": "tiendas por cuenta",
-      "window": "días de ventana de seguimiento",
-      "monitoring": "monitoreo automatizado"
+    "mock": {
+      "title": "mercado · subiendo",
+      "caption": "Ejemplo con datos de ejemplo: en una tienda de Colombia que Dropspy monitorea, una licuadora portátil pasa del puesto 38 al 6 del ranking de más vendidos en 14 días, con puntaje 73 y fase Despegue.",
+      "product": "Licuadora portátil recargable",
+      "store": "Tienda de ejemplo · CO",
+      "day": "día {day} de seguimiento",
+      "rankToday": "Rank hoy",
+      "entered": "entró en #{rank}",
+      "footer": "una foto del ranking por día",
+      "axisStart": "día 1",
+      "axisEnd": "día {day}"
     },
-    "features": {
-      "title": "Todo lo que necesitas para ir un paso adelante",
-      "subtitle": "Herramientas poderosas para equipos de e-commerce que quieren insights competitivos basados en datos.",
-      "snapshots": {
-        "title": "Capturas automatizadas",
-        "description": "Capturas diarias de las colecciones de más vendidos y productos recientes de cualquier tienda Shopify."
+    "rising": {
+      "title": "también subiendo hoy",
+      "label": "Otros productos subiendo en el mercado, datos de ejemplo",
+      "neck": "Masajeador de cuello",
+      "mount": "Soporte magnético para auto",
+      "bands": "Bandas de resistencia",
+      "storeA": "Tienda de ejemplo A",
+      "storeC": "Tienda de ejemplo C",
+      "storeD": "Tienda de ejemplo D"
+    },
+    "scale": {
+      "kicker": "// el mercado, en números",
+      "title": "No empiezas de cero: la base ya existe.",
+      "subtitle": "Cada día sumamos una foto del ranking de más vendidos de cada tienda monitoreada, con su historial. Estas son las cifras de la base a la fecha de corte.",
+      "panel": "base de datos · dropspy",
+      "cutoff": "corte: {date}",
+      "stores": "tiendas monitoreadas",
+      "storesDef": "con al menos una foto del ranking en los últimos 7 días",
+      "products": "productos detectados",
+      "productsDef": "productos nuevos que entraron al ranking de esas tiendas, en total",
+      "days": "días de historial",
+      "daysDef": "días con foto diaria del ranking guardada",
+      "countriesTitle": "Tiendas monitoreadas por país",
+      "countriesHint": "LATAM primero",
+      "otherCountries": "Otros países",
+      "daysDefSince": "días con foto diaria del ranking guardada, desde el {date}"
+    },
+    "how": {
+      "kicker": "// cómo funciona",
+      "title": "Cada mañana, lo que se movió en el mercado.",
+      "subtitle": "No tienes que agregar ninguna tienda para empezar: Dropspy ya revisa el ranking de más vendidos de las tiendas que monitorea y te muestra qué productos nuevos están subiendo.",
+      "market": {
+        "index": "01 · mercado",
+        "title": "Vigilamos las tiendas por ti",
+        "body": "Tiendas Shopify de varios países, revisadas todos los días. Entras y el radar ya tiene datos."
       },
-      "detection": {
-        "title": "Detección de productos nuevos",
-        "description": "Detecta al instante cuando la competencia lanza productos nuevos y empieza a rastrear su rendimiento."
+      "ranking": {
+        "index": "02 · ranking",
+        "title": "Una foto diaria, con historial",
+        "body": "Cada día guardamos el ranking de más vendidos de cada tienda: ves si un producto sube, se estanca o cae, y desde cuándo.",
+        "spark": "#38 → #6 en 14 días"
       },
-      "scoring": {
-        "title": "Puntaje de rendimiento",
-        "description": "Puntajes calculados por IA según cómo escalan los productos en los rankings de la tienda."
+      "score": {
+        "index": "03 · puntaje",
+        "title": "Un puntaje que se explica",
+        "body": "De 0 a 100, con los pesos a la vista: cuánto creció, en qué puesto está y si mejora de forma constante.",
+        "growth": "Crecimiento",
+        "position": "Posición",
+        "momentum": "Constancia"
       },
-      "alerts": {
-        "title": "Alertas inteligentes",
-        "description": "Recibe notificaciones cuando los productos que sigues alcanzan hitos clave o muestran potencial de despegue."
-      },
-      "trends": {
-        "title": "Análisis de tendencias",
-        "description": "Visualiza el historial de rank e identifica patrones en tu panorama competitivo."
-      },
-      "privacy": {
-        "title": "Aislamiento de datos",
-        "description": "Tus tiendas rastreadas e insights son completamente privados y nunca se comparten."
+      "phase": {
+        "index": "04 · fase",
+        "title": "La fase del ciclo",
+        "body": "Despegue, meseta, caída o rebote: sabes si todavía hay ventana para entrar."
       }
     },
-    "howItWorks": {
-      "title": "Cómo funciona Dropspy",
-      "subtitle": "Tres pasos simples hacia la automatización de inteligencia competitiva.",
-      "step1": { "title": "Agrega tiendas", "description": "Ingresa la URL de cualquier tienda Shopify pública. Nosotros hacemos el resto." },
-      "step2": { "title": "Nosotros rastreamos", "description": "Capturas diarias registran productos nuevos y cambios de ranking automáticamente." },
-      "step3": { "title": "Tú ganas", "description": "Recibe insights sobre qué productos están en tendencia antes de que se vuelvan virales." }
+    "own": {
+      "kicker": "// tus competidores",
+      "title": "¿Tienes competidores fijos? Súmalos.",
+      "subtitle": "Además del mercado, puedes seguir las tiendas que compiten contigo y ver sus productos nuevos en el mismo radar. De 15 a 100 tiendas, según el plan.",
+      "panel": "mis tiendas",
+      "add": "Agregar tienda"
     },
-    "pricingSection": {
-      "title": "Precios simples y transparentes",
-      "subtitle": "Empieza gratis. Escala cuando necesites."
+    "plans": {
+      "kicker": "// planes",
+      "title": "Empieza con 7 días gratis.",
+      "subtitle": "Sin tarjeta de crédito. Todos los planes incluyen el pool global de productos; cambian las tiendas propias que sigues y cuánto historial ves.",
+      "pool": "Pool global de productos",
+      "basic": {
+        "name": "Básico",
+        "stores": "15 tiendas propias",
+        "tests": "150 testeos",
+        "history": "30 días de historial",
+        "privacy": "Tus tiendas suman al pool de la comunidad"
+      },
+      "pro": {
+        "name": "Pro",
+        "stores": "40 tiendas propias",
+        "tests": "500 testeos",
+        "history": "90 días de historial",
+        "privacy": "Tus tiendas son privadas"
+      },
+      "agency": {
+        "name": "Agency",
+        "stores": "100 tiendas propias",
+        "tests": "Testeos ilimitados",
+        "history": "1 año de historial",
+        "privacy": "Tus tiendas son privadas"
+      },
+      "seePricing": "Ver precios",
+      "pricingNote": "precios en COP, pago con Mercado Pago"
     },
     "cta": {
-      "title": "¿Listo para superar a tu competencia?",
-      "subtitle": "Únete a miles de equipos de e-commerce que usan Dropspy para ir un paso adelante.",
-      "button": "Empieza tu prueba gratis"
+      "title": "Mira qué está ganando hoy.",
+      "button": "Empieza gratis",
+      "micro": "7 días gratis · sin tarjeta de crédito"
     },
     "footer": {
-      "privacy": "Privacidad",
-      "terms": "Términos",
-      "contact": "Contacto",
-      "rights": "2026 Dropspy. Todos los derechos reservados."
+      "plans": "Planes",
+      "login": "Ingresar",
+      "rights": "© 2026 Dropspy"
     }
   },
   "Auth": {
-    "divider": {
-      "orContinueWith": "o continúa con"
-    },
-    "login": {
-      "title": "Bienvenido de nuevo",
-      "subtitle": "Ingresa tus credenciales para acceder a tu cuenta",
-      "emailLabel": "Correo electrónico",
-      "passwordLabel": "Contraseña",
-      "forgotPassword": "¿Olvidaste tu contraseña?",
-      "passwordPlaceholder": "Ingresa tu contraseña",
-      "submitLoading": "Iniciando sesión...",
-      "submit": "Iniciar sesión",
-      "genericError": "Credenciales inválidas. Intenta de nuevo."
-    },
-    "signup": {
-      "title": "Crea una cuenta",
-      "subtitle": "Empieza tu prueba gratis de 7 días. Sin tarjeta de crédito.",
-      "nameLabel": "Nombre completo",
-      "namePlaceholder": "Juan Pérez",
-      "emailLabel": "Correo electrónico",
-      "passwordLabel": "Contraseña",
-      "passwordPlaceholder": "Crea una contraseña segura",
-      "passwordHint": "Debe tener al menos 8 caracteres",
-      "submitLoading": "Creando cuenta...",
-      "submit": "Crear cuenta",
-      "genericError": "No se pudo crear la cuenta. Intenta de nuevo.",
-      "termsPrefix": "Al crear una cuenta, aceptas nuestros",
-      "termsLink": "Términos de servicio",
-      "and": "y",
-      "privacyLink": "Política de privacidad"
+    "meta": {
+      "title": "Ingresa o crea tu cuenta · Dropspy"
     },
     "page": {
+      "home": "Dropspy, inicio",
       "backToHome": "Volver al inicio",
-      "tabLogin": "Iniciar sesión",
-      "tabSignup": "Registrarse",
-      "trustBadge": "Con la confianza de más de 2.000 equipos de e-commerce"
+      "tabsLabel": "Cuenta",
+      "tabSignup": "Crear cuenta",
+      "tabLogin": "Iniciar sesión"
+    },
+    "side": {
+      "kicker": "// tu cuenta",
+      "title": "El mercado ya está vigilado. Entra y mira qué está ganando.",
+      "factTrial": "7 días gratis, sin tarjeta de crédito",
+      "factDaily": "Una foto diaria del ranking de las tiendas que monitoreamos",
+      "factOwn": "Y si quieres, sigue tus propias tiendas: de 15 a 100 según el plan",
+      "mockTitle": "mercado · subiendo",
+      "sample": "Datos de ejemplo",
+      "mockProduct": "Licuadora portátil recargable",
+      "mockMeta": "Tienda de ejemplo · CO · #38 → #6 en 14 días"
+    },
+    "fields": {
+      "nameLabel": "Nombre completo",
+      "namePlaceholder": "Cómo te llamas",
+      "emailLabel": "Correo electrónico",
+      "emailPlaceholder": "tu@correo.com",
+      "passwordLabel": "Contraseña",
+      "showPassword": "Mostrar contraseña",
+      "hidePassword": "Ocultar contraseña"
+    },
+    "validation": {
+      "nameRequired": "Escribe tu nombre.",
+      "emailInvalid": "Escribe un correo válido, por ejemplo nombre@correo.com.",
+      "passwordRequired": "Escribe tu contraseña.",
+      "passwordShort": "La contraseña necesita al menos 8 caracteres."
+    },
+    "errors": {
+      "network": "No pudimos conectarnos. Revisa tu conexión e intenta de nuevo.",
+      "server": "Tuvimos un problema de nuestro lado. Intenta de nuevo en unos minutos."
+    },
+    "login": {
+      "title": "Ingresa a tu cuenta",
+      "subtitle": "Mira qué se movió en el mercado desde tu última visita.",
+      "passwordPlaceholder": "Tu contraseña",
+      "submit": "Iniciar sesión",
+      "submitLoading": "Iniciando sesión…",
+      "invalidCredentials": "Correo o contraseña incorrectos. Revisa e intenta de nuevo.",
+      "switchPrompt": "¿Todavía no tienes cuenta?",
+      "switchAction": "Crea una gratis"
+    },
+    "signup": {
+      "title": "Crea tu cuenta",
+      "subtitle": "7 días gratis, sin tarjeta de crédito. En la prueba ves lo más fuerte del pool: los productos con el puntaje más alto.",
+      "passwordPlaceholder": "Crea una contraseña",
+      "passwordHint": "Al menos 8 caracteres.",
+      "submit": "Crear cuenta",
+      "submitLoading": "Creando cuenta…",
+      "genericError": "No pudimos crear la cuenta. Revisa los datos e intenta de nuevo.",
+      "switchPrompt": "¿Ya tienes cuenta?",
+      "switchAction": "Inicia sesión"
     }
   },
   "Onboarding": {
