@@ -187,7 +187,11 @@ async function pushAdvertiserPages(storeId: string, pages: AdvertiserPagePayload
   if (!res.ok) throw new Error(`advertiser-pages push failed: ${res.status}`)
 }
 
-async function pushAds(candidateId: string, storeDomain: string, ads: ScrapedAd[]): Promise<boolean> {
+// D1: `complete` le dice al backend si la revisión de la tienda fue completa. Con false, el
+// backend tiene que guardar lo que vino SIN marcar como terminado lo que falta (lo que no se
+// leyó no está probado que terminó). Si el backend no conoce el campo, lo ignora y todo sigue
+// como antes. Ver docs/redesign/biblioteca-anuncios/03-spec.md (D1).
+async function pushAds(candidateId: string, storeDomain: string, ads: ScrapedAd[], complete: boolean): Promise<boolean> {
   const res = await backendFetch(`${API_URL}/internal/webhook/ads`, {
     method: 'POST',
     headers: {
@@ -197,6 +201,7 @@ async function pushAds(candidateId: string, storeDomain: string, ads: ScrapedAd[
     body: JSON.stringify({
       candidateId,
       storeDomain,
+      complete,
       ads: ads.map(ad => ({
         adSnapshotUrl: ad.adSnapshotUrl,
         thumbnailUrl: ad.thumbnailUrl,
@@ -236,7 +241,7 @@ async function reconcileStaleAds(): Promise<number> {
 type StoreOutcome =
   | { status: 'skipped'; reason: string }
   | { status: 'error';   error: string }
-  | { status: 'synced';  adsSaved: number; matches: number; descriptionsFetched: number }
+  | { status: 'synced';  adsSaved: number; matches: number; descriptionsFetched: number; complete: boolean; absenceSkipped: number }
 
 async function syncStore(store: Store): Promise<StoreOutcome> {
   let domain = new URL(store.baseUrl).hostname.replace(/^www\./, '')
@@ -276,7 +281,8 @@ async function syncStore(store: Store): Promise<StoreOutcome> {
     return { status: 'error', error: `${domain}: ${msg}` }
   }
 
-  const { ads, totalAdsOnMeta } = scrapeResult
+  const { ads, totalAdsOnMeta, complete } = scrapeResult
+  console.log(`  [D1] revisión ${complete ? 'completa' : `incompleta: ${ads.length} leídos de ${totalAdsOnMeta} en Meta`}`)
 
   // ── 4. Persist solo anunciantes con al menos un ad matcheado a un candidato ─
   // No usar el advertiser del probe sin condición — con el fallback de
@@ -305,7 +311,7 @@ async function syncStore(store: Store): Promise<StoreOutcome> {
 
   if (ads.length === 0) {
     console.log('  → 0 ads — skipping ingest')
-    return { status: 'synced', adsSaved: 0, matches: 0 }
+    return { status: 'synced', adsSaved: 0, matches: 0, descriptionsFetched: 0, complete, absenceSkipped: 0 }
   }
 
   // ── F3 verbose report ─────────────────────────────────────────────────────
@@ -337,10 +343,22 @@ async function syncStore(store: Store): Promise<StoreOutcome> {
   let skipped = 0
   let totalAdsSaved = 0
   let descriptionsFetched = 0
+  let absenceSkipped = 0
   for (const candidate of candidates) {
     const matched = ads.filter(a => a.matchedCandidateId === candidate.candidateId)
     const handle  = candidate.productUrl?.match(/\/products\/([^/?#]+)/)?.[1] ?? candidate.candidateId.slice(0, 8)
-    const gotDescription = await pushAds(candidate.candidateId, domain, matched)
+    // D1: en una revisión incompleta, que un producto no tenga anuncios entre los leídos no
+    // prueba que se le terminaron — puede que estén entre los que no se alcanzaron a leer.
+    // Mandar ads:[] haría que el backend marque TODOS sus anuncios como terminados, así que no
+    // se manda nada: sus anuncios quedan con el last_seen que tenían (la Biblioteca muestra
+    // "visto hace N d"). Esto funciona ya, sin cambios en el backend.
+    if (!complete && matched.length === 0) {
+      console.log(`  - ${handle} → sin ads con match en una revisión incompleta (no se manda señal de ausencia)`)
+      skipped++
+      absenceSkipped++
+      continue
+    }
+    const gotDescription = await pushAds(candidate.candidateId, domain, matched, complete)
     if (gotDescription) descriptionsFetched++
     if (matched.length === 0) {
       console.log(`  - ${handle} → sin ads con match (reconciliación de status enviada)`)
@@ -353,7 +371,7 @@ async function syncStore(store: Store): Promise<StoreOutcome> {
   }
   console.log(`  [F3] Resultado: ${pushed} candidatos con ads / ${skipped} sin match / ${ads.length - totalMatched} ads descartados / ${descriptionsFetched} descripciones nuevas`)
 
-  return { status: 'synced', adsSaved: totalAdsSaved, matches: pushed, descriptionsFetched }
+  return { status: 'synced', adsSaved: totalAdsSaved, matches: pushed, descriptionsFetched, complete, absenceSkipped }
 }
 
 // FIX-069: reporta el resumen de la corrida al dashboard de salud de scrapers en /admin.
@@ -404,6 +422,9 @@ async function main(): Promise<void> {
   let totalAdsSaved   = 0
   let totalMatches    = 0
   let totalDescriptionsFetched = 0 // FIX-070
+  let storesComplete = 0            // D1: tiendas revisadas completas (pueden marcar terminados)
+  let storesIncomplete = 0          // D1: tiendas revisadas a medias (tope, scroll frenado, sin resultados)
+  let absenceSignalsSkipped = 0     // D1: productos a los que no se les mandó ads:[] por revisión incompleta
   const errors: string[] = []
 
   // CHANGE-111: presupuesto de tiempo. El job de GitHub Actions tiene timeout de 180 min y la
@@ -456,6 +477,9 @@ async function main(): Promise<void> {
       totalAdsSaved += result.adsSaved
       totalMatches  += result.matches
       totalDescriptionsFetched += result.descriptionsFetched
+      if (result.complete) storesComplete++
+      else storesIncomplete++
+      absenceSignalsSkipped += result.absenceSkipped
     }
 
     await new Promise(r => setTimeout(r, 3000)) // rate-limit between stores
@@ -486,6 +510,9 @@ async function main(): Promise<void> {
     stale_ads_inactivated: staleInactivated,
     stores_not_reached: storesNotReached, // CHANGE-111
     stop_reason: stopReason,              // CHANGE-111
+    stores_complete: storesComplete,      // D1
+    stores_incomplete: storesIncomplete,  // D1
+    absence_signals_skipped: absenceSignalsSkipped, // D1
     errors,
   }
 
@@ -493,6 +520,7 @@ async function main(): Promise<void> {
 
   console.log('\n✅ sync-ads: done')
   console.log(`   ${storesProcessed} procesadas / ${storesSkipped} skipped / ${totalAdsSaved} ads / ${durationSeconds}s`)
+  console.log(`   [D1] ${storesComplete} revisiones completas / ${storesIncomplete} incompletas / ${absenceSignalsSkipped} señales de ausencia no enviadas`)
   if (errors.length > 0) console.log(`   ⚠ ${errors.length} errores: ${errors.join(', ')}`)
 
   // CHANGE-111: una corrida cortada (tiempo o fallas seguidas) nunca se reporta como success.
@@ -509,7 +537,7 @@ async function main(): Promise<void> {
     storesOk,
     errors.length,
     stopReason ?? errors[0],
-    { descriptionsFetched: totalDescriptionsFetched, storesNotReached, stopReason }, // FIX-070, CHANGE-111
+    { descriptionsFetched: totalDescriptionsFetched, storesNotReached, stopReason, storesComplete, storesIncomplete, absenceSignalsSkipped }, // FIX-070, CHANGE-111, D1
   )
 
   // CHANGE-111: sin ninguna tienda OK (p.ej. backend caído) el job debe verse rojo en GitHub,

@@ -4,6 +4,46 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-122 — sync-ads: una revisión incompleta ya no borra los anuncios de un producto (D1)
+
+**Fecha:** 2026-09-29
+**Tipo:** fix. Riesgo: requiere-revisor-técnico, porque cambia qué se escribe en la base.
+
+**Por qué:** es la causa principal de los "activos que salen como terminados" que reportó Daniel (`docs/redesign/biblioteca-anuncios/01-diagnostico.md`, A1). El scraper lee como máximo 50 anuncios por tienda, 100 si Meta muestra más de 200, y menos si Meta frena el scroll. Después, por cada producto, el job manda los anuncios que encontró, y el backend marca como terminado lo que antes estaba y hoy no vino (FIX-071). Si ninguno de los anuncios de un producto cae entre los leídos, el job mandaba `ads: []` y el backend marcaba **todos** los anuncios de ese producto como terminados, aunque sigan corriendo.
+
+**Qué cambió:**
+- `scrapeAdsForStore` devuelve `complete`. Es `true` solo si se leyeron tantos anuncios como dice Meta (`ads.length >= totalAdsOnMeta`, con `totalAdsOnMeta > 0`). El tope, un scroll frenado, "sin resultados" y una página que no cargó dan `false`.
+- **Con una revisión incompleta, a un producto con 0 anuncios leídos ya no se le manda `ads: []`.** Sus anuncios quedan con el `last_seen` que tenían, y la Biblioteca muestra "visto hace N d" (CHANGE-121). **Esto funciona ya, sin cambios en el backend.**
+- `pushAds` manda `complete` en el cuerpo de `POST /internal/webhook/ads`. Un backend que no conoce el campo lo ignora.
+- **Resumen de la corrida:**
+  - `sync-results.json` y la `metadata` de `scraper_runs` suman `stores_complete`, `stores_incomplete` y `absence_signals_skipped`;
+  - cada tienda loguea "[D1] revisión completa" o "incompleta: N leídos de M en Meta".
+- Arreglado de paso el error de tipos que CHANGE-111 dejó anotado: la rama de "0 anuncios" de `syncStore` no devolvía `descriptionsFetched`, y el resumen mostraba `null`. `tsc` pasa de 9 a 8 errores previos (los 8 de `lib/mock-data.ts`).
+
+**Lo que falta del lado del backend (Diego):** cuando un producto tiene **algunos** anuncios leídos en una revisión incompleta, el backend sigue marcando como terminados sus otros anuncios. Para cerrarlo, `WebhookController` tiene que respetar `complete: false`: guardar y actualizar lo que vino, sin marcar como terminado lo que falta. Contrato en `docs/redesign/biblioteca-anuncios/03-spec.md` (D1).
+
+**Qué NO cambió:**
+- el scraping en sí: tope, pasadas, tiempos, R2 y matcheo;
+- el orden de las tiendas;
+- el barrido de vencidos (`reconcileStaleAds`, que es D2);
+- la UI.
+
+**Costo aceptado:** un anuncio que de verdad terminó, en una tienda que nunca se revisa completa, se queda "activo" con un `last_seen` viejo en vez de pasar a terminado. Es el error honesto: la Biblioteca lo muestra como "visto hace N d" y no afirma nada. D2 lo convierte en "Sin verificar".
+
+**Verificación:**
+- `tsc --noEmit`: 8 errores previos, ninguno nuevo.
+- Smoke test del job real (`tsx`) con un scraper falso y un backend en memoria, 3 tiendas:
+  - revisión incompleta 50/150: el producto con anuncios se manda con `complete: false` y el producto con 0 anuncios **no** recibe `ads: []`;
+  - revisión completa 12/12: los dos productos se mandan con `complete: true`, incluida la señal de ausencia;
+  - 0 anuncios: no se manda nada.
+  - El resumen da `stores_complete: 1`, `stores_incomplete: 2`, `absence_signals_skipped: 1` y `descriptions_fetched: 0`.
+- **No verificado contra Meta:** este entorno no tiene acceso a facebook.com. Hay que confirmar en la primera corrida real que el log "[D1]" da números razonables (que `totalAdsOnMeta` se lea bien).
+
+**Relacionado con backend:** sí, D1 en `WebhookController` (pendiente).
+**Wiki actualizado:** no aplica.
+
+---
+
 ### CHANGE-121 — Biblioteca de anuncios: pantalla nueva que no afirma lo que los datos no saben (L1)
 
 **Fecha:** 2026-09-29
