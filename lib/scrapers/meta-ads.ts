@@ -39,6 +39,10 @@ export interface ScrapeResult {
   ads: ScrapedAd[]
   advertiser: AdvertiserInfo | null
   totalAdsOnMeta: number
+  // D1 (docs/redesign/biblioteca-anuncios/03-spec.md): true solo si se leyeron tantos anuncios
+  // como dice Meta. Con el tope de 50/100 por tienda, un scroll que Meta frena o una página
+  // que no carga, es false: lo que no se vio NO se puede dar por terminado.
+  complete: boolean
 }
 
 // ── URL builders ──────────────────────────────────────────────────────────────
@@ -545,7 +549,8 @@ export async function scrapeAdsForStore(
 
     if (!effectiveMatch) {
       console.log(`  ⏭ ${domain} — ${probe.count} ads revisados, 0 resultados en Meta → skip`)
-      return { ads: [], advertiser: null, totalAdsOnMeta: 0 }
+      // Sin resultados o página que no cargó: no se distingue una de la otra → incompleta.
+      return { ads: [], advertiser: null, totalAdsOnMeta: 0, complete: false }
     }
     if (!probe.hasMatch && probe.totalAdsOnMeta > 0) {
       console.log(`  ≈ ${domain} — ${probe.totalAdsOnMeta} resultados en Meta, dominio no visible en DOM → scrapeando`)
@@ -634,7 +639,7 @@ export async function scrapeAdsForStore(
     }
 
     if (ads.length === 0) {
-      return { ads: [], advertiser: probe.advertiser, totalAdsOnMeta: probe.totalAdsOnMeta }
+      return { ads: [], advertiser: probe.advertiser, totalAdsOnMeta: probe.totalAdsOnMeta, complete: false }
     }
 
     // ── F3 ────────────────────────────────────────────────────────────────────
@@ -677,7 +682,8 @@ export async function scrapeAdsForStore(
     const advertiser = probe.advertiser
       ?? (ads[0]?.advertiserName ? { pageName: ads[0].advertiserName, pageId: ads[0].pageId } : null)
 
-    return { ads, advertiser, totalAdsOnMeta: probe.totalAdsOnMeta }
+    const complete = probe.totalAdsOnMeta > 0 && ads.length >= probe.totalAdsOnMeta
+    return { ads, advertiser, totalAdsOnMeta: probe.totalAdsOnMeta, complete }
 
   } finally {
     await context.close()
