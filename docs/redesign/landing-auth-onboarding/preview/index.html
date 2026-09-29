@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tres direcciones · Dropspy</title>
+<style>
+:root{--bg:#F5F5FA;--fg:#14162B;--card:#FFFFFF;--muted:#484C69;--subtle:#5C6082;--border:#E2E2EE;--primary-text:#5035D6;--primary-subtle:#EFECFF;--primary-border:#D8D0FF;--warning-fg:#A15C07;--warning-subtle:#FEF5E1;--warning-border:#F6DDA6;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#080A15;--fg:#F1F2FA;--card:#10132A;--muted:#B3B8D6;--subtle:#9096BA;--border:#262B4B;--primary-text:#B3A6FF;--primary-subtle:#231F4F;--primary-border:#3B3380;--warning-fg:#FCD04F;--warning-subtle:#2C2415;--warning-border:#4B3C17;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1320px;margin:0 auto;padding:28px 20px 64px}
+h1{font-size:clamp(26px,4vw,38px);line-height:1.15;letter-spacing:-.02em;margin:0 0 10px}
+.intro{color:var(--muted);max-width:52em;margin:0 0 8px}
+.how{color:var(--subtle);font-size:14px;margin:0 0 28px}
+.grid{display:grid;gap:28px}
+.col{display:grid;gap:14px;align-content:start}
+.col header{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.col h2{font-size:21px;margin:0;letter-spacing:-.01em}
+.col h2 small{color:var(--subtle);font-weight:500;font-size:14px;margin-right:6px}
+.open{font-size:14px;color:var(--primary-text);font-weight:600;white-space:nowrap}
+.phone{position:relative;width:390px;max-width:100%;height:760px;border:1px solid var(--border);border-radius:28px;overflow:hidden;background:var(--card);box-shadow:0 24px 48px -28px rgb(0 0 0 / .35);justify-self:center}
+.phone iframe{width:390px;height:100%;border:0;display:block}
+dl{margin:0;display:grid;gap:8px;font-size:15px}
+dt{font-weight:700;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--subtle)}
+dd{margin:0 0 4px;color:var(--muted)}
+.motion{font-size:13px;color:var(--subtle);border-top:1px solid var(--border);padding-top:10px}
+.rec{margin-top:40px;background:var(--card);border:1px solid var(--primary-border);border-radius:18px;padding:22px}
+.rec h2{margin:0 0 8px;font-size:22px}
+.rec p{margin:0 0 10px;color:var(--muted)}
+.note{margin-top:22px;font-size:14px;color:var(--subtle)}
+.pill{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--warning-fg);background:var(--warning-subtle);border:1px solid var(--warning-border);border-radius:999px;padding:4px 8px;margin-right:6px}
+@media (min-width:1260px){.grid{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:430px){.phone{width:100%;height:700px}.phone iframe{width:100%}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <h1>Tres direcciones para la landing, el login y el onboarding</h1>
+  <p class="intro">Las tres usan <strong>el mismo copy</strong>, con solo afirmaciones que se pueden verificar en el código. Así lo que se compara es la dirección visual y el movimiento. Cada una trae el hero, una sección de funcionalidades y la primera pantalla del login.</p>
+  <p class="how">Se muestran en vivo a 390 px, el ancho del celular. "Abrir" las muestra a pantalla completa. En cada preview hay controles abajo a la derecha: tema claro u oscuro, y movimiento reducido.</p>
+
+  <div class="grid">
+    <section class="col" aria-labelledby="d1">
+      <header><h2 id="d1"><small>1</small>Terminal de inteligencia</h2><a class="open" href="direccion-1.html">Abrir →</a></header>
+      <div class="phone"><iframe src="direccion-1.html" title="Dirección 1 a 390 px" loading="lazy"></iframe></div>
+      <dl>
+        <dt>Idea</dt><dd>Un panel de datos vivo: filas que entran, un radar que barre, todo corto y preciso. Oscura por defecto.</dd>
+        <dt>Qué la hace buena</dt><dd>Se ve como una herramienta de datos seria, y es la marca B en su versión más fuerte (tinta, violeta, radar).</dd>
+        <dt>Riesgo</dt><dd>Puede leerse como trading o cripto y abrumar a quien llega desde TikTok en el celular. Además, que sea oscura por defecto choca con un dashboard que hoy es claro (D-7).</dd>
+      </dl>
+      <p class="motion">Movimiento: 160–240 ms, curva <code>cubic-bezier(0.2, 0, 0, 1)</code>, stagger de 60 ms, bucles continuos (radar de 6 s, escaneo de 3,6 s).</p>
+    </section>
+
+    <section class="col" aria-labelledby="d2">
+      <header><h2 id="d2"><small>2</small>Editorial premium</h2><a class="open" href="direccion-2.html">Abrir →</a></header>
+      <div class="phone"><iframe src="direccion-2.html" title="Dirección 2 a 390 px" loading="lazy"></iframe></div>
+      <dl>
+        <dt>Idea</dt><dd>Tipografía enorme, mucho aire y revelados lentos: una marca que piensa, no un catálogo.</dd>
+        <dt>Qué la hace buena</dt><dd>Transmite criterio y calma, encaja con "la marca que piensa" de la wiki, es liviana y cuida el LCP casi sola.</dd>
+        <dt>Riesgo</dt><dd>No muestra el producto: le pide al lector que se imagine la herramienta, justo la debilidad que encontró la fase 1. Sin prueba social real, puede sentirse vacía.</dd>
+      </dl>
+      <p class="motion">Movimiento: 700–1200 ms, curva <code>cubic-bezier(0.16, 1, 0.3, 1)</code>, stagger de 120 ms. Solo una luz que deriva en 18 s.</p>
+    </section>
+
+    <section class="col" aria-labelledby="d3">
+      <header><h2 id="d3"><small>3</small>Producto vivo</h2><a class="open" href="direccion-3.html">Abrir →</a></header>
+      <div class="phone"><iframe src="direccion-3.html" title="Dirección 3 a 390 px" loading="lazy"></iframe></div>
+      <dl>
+        <dt>Idea</dt><dd>El hero muestra un producto de ejemplo que sube en el ranking día a día. El producto se explica solo.</dd>
+        <dt>Qué la hace buena</dt><dd>Es prueba por demostración: en cinco segundos se entiende qué hace Dropspy, sin inventar un solo número.</dd>
+        <dt>Riesgo</dt><dd>El mock tiene que seguir igual a la app cuando esta cambie, y alguien apurado podría tomar los datos de ejemplo por reales si el rótulo no se ve bien. Es la más cara de construir.</dd>
+      </dl>
+      <p class="motion">Movimiento: 450–600 ms, curva <code>cubic-bezier(0.22, 1, 0.36, 1)</code> (resorte sin rebote), un día cada 900 ms en el mock y un aviso de producto nuevo cada 8 s.</p>
+    </section>
+  </div>
+
+  <section class="rec" aria-labelledby="rec">
+    <h2 id="rec">Recomendación: la 3, con el ritmo de la 1</h2>
+    <p>La fase 1 concluyó que la fuerza de Charm es la prueba, y que nosotros hoy no tenemos prueba social. La 3 convierte el producto mismo en la prueba: se ve subir un producto, su puntaje y su fase sin afirmar nada que no podamos sostener.</p>
+    <p>De la 1 tomaría la precisión del movimiento (duraciones cortas, curva seca) para los componentes de datos. De la 2, el aire y la escala tipográfica en las secciones de texto.</p>
+    <p>La elegiría en claro por defecto, con oscuro disponible, por la decisión D-7 y porque las fotos de producto se ven mejor sobre claro.</p>
+  </section>
+
+  <p class="note"><span class="pill">Datos de ejemplo</span>Los paneles y mocks usan productos y tiendas ficticios. Los bloques punteados "DATO REAL PENDIENTE" marcan lo que falta y no se inventa.</p>
+</main>
+</body>
+</html>
