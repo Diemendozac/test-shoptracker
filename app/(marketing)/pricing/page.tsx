@@ -292,7 +292,8 @@ export default function PricingPage() {
                           </Button>
                         </a>
                       ) : (
-                        <Link href={plan.ctaHref} className="block">
+                        // Sin sesión: registro con el plan y la facturación elegidos; después sigue al pago (CHANGE-125)
+                        <Link href={`${plan.ctaHref}&billing=${annual ? 'annual' : 'monthly'}`} className="block">
                           <Button
                             variant={plan.ctaVariant}
                             className="w-full"
