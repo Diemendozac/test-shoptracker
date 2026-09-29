@@ -198,6 +198,8 @@ Revertir el job: el backend vuelve a asumir `complete: true`. El cambio del back
 
 **Antes de empezar:** las 3 consultas de A2 dicen cuál de las causas pesa. Si todas dan 0, se prioriza la causa 1 con `lib/scrapers/test-scraper.ts`.
 
+**Actualización 2026-09-29 — consultas corridas contra producción:** ver [`04-hallazgos-a2.md`](./04-hallazgos-a2.md). Causas 2 y 3 descartadas (0 y 1 caso sobre 25.652 anuncios); causa 1 confirmada como dominante (42,5% de los anuncios comparten miniatura con un link distinto). **Empezar por el armado de tarjeta** (`:342–352` y su copia en el probe, `:220–231`); el trabajo sobre el link (`:361`, `:365–368`) y `extractAdId` (`:169–173`) queda de baja prioridad hasta ver si la causa 1 sola explica el 42,5%.
+
 ### Archivos
 
 - [ ] `lib/scrapers/meta-ads.ts`:
