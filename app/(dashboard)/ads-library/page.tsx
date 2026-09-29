@@ -109,7 +109,7 @@ export default function AdsLibraryPage() {
         <h1 className="text-lg font-semibold text-foreground">Biblioteca de anuncios</h1>
         {data && (
           <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
-            {data.total} anuncios
+            {data.total.toLocaleString('es-CO')} anuncios
           </span>
         )}
       </div>
