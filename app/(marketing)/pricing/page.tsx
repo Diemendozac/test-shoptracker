@@ -138,7 +138,7 @@ export default function PricingPage() {
 
           {!isAuthenticated && (
             <div className="hidden items-center gap-8 md:flex">
-              <Link href="/#features" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+              <Link href="/#como-funciona" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
                 Funcionalidades
               </Link>
               <Link href="/pricing" className="text-sm font-medium text-foreground">

@@ -1,0 +1,105 @@
+/* Landing (fase 3.1): lo que no se puede expresar con utilidades de Tailwind.
+   El tema oscuro sale de la clase .dark de app/globals.css, aplicada al contenedor de la página
+   (.marketing-dark); acá no se define ningún color nuevo, solo se usan los tokens.
+   Movimiento: 160–240 ms con cubic-bezier(0.2, 0, 0, 1) y 60 ms entre elementos; los contadores
+   y el arco del ScoreRing usan 700 ms (02-prototipo-y-spec.md, "Movimiento").
+
+   Todo va en @layer components para que las utilidades de Tailwind (@layer utilities) puedan
+   pisarlo, como con cualquier componente. */
+@layer components {
+  .marketing-dark {
+    --mkt-ease: cubic-bezier(0.2, 0, 0, 1);
+    color-scheme: dark;
+  }
+
+  /* iOS: el rebote del scroll muestra el fondo del body, que es claro. #080A15 = --background de .dark */
+  body:has(.marketing-dark) {
+    background-color: #080A15;
+  }
+
+  .mkt-h1 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(34px, 9.2vw, 56px);
+    line-height: 1.06;
+    letter-spacing: -0.025em;
+    margin: 12px 0 14px;
+  }
+  .mkt-h2 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(28px, 7vw, 44px);
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+    margin: 10px 0;
+  }
+  .mkt-hl {
+    background-image: var(--grad-text);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Fondo de terminal: cuadrícula fina que se desvanece */
+  .mkt-grid {
+    background-image:
+      linear-gradient(color-mix(in srgb, var(--foreground) 5%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, var(--foreground) 5%, transparent) 1px, transparent 1px);
+    background-size: 44px 44px;
+    -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, #000 30%, transparent 75%);
+    mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, #000 30%, transparent 75%);
+  }
+
+  /* Radar detrás del mock, solo en escritorio */
+  .mkt-radar {
+    background: radial-gradient(circle,
+      transparent 0 24%, color-mix(in srgb, var(--foreground) 6%, transparent) 24% 24.4%,
+      transparent 24.4% 49%, color-mix(in srgb, var(--foreground) 6%, transparent) 49% 49.4%,
+      transparent 49.4% 74%, color-mix(in srgb, var(--foreground) 6%, transparent) 74% 74.4%,
+      transparent 74.4%);
+    -webkit-mask-image: radial-gradient(circle, #000 55%, transparent 71%);
+    mask-image: radial-gradient(circle, #000 55%, transparent 71%);
+  }
+  .mkt-sweep {
+    background: conic-gradient(from 0deg, color-mix(in srgb, var(--primary) 22%, transparent), transparent 12%);
+    animation: mkt-spin 6s linear infinite;
+  }
+  @keyframes mkt-spin { to { transform: rotate(360deg) } }
+
+  /* Mock del producto vivo */
+  .mock-live { animation: mkt-live 2.4s var(--mkt-ease) infinite }
+  @keyframes mkt-live { 50% { opacity: 0.35 } }
+  .mock-body { transition: opacity 240ms var(--mkt-ease) }
+  .mock-phase { display: inline-flex; animation: mkt-pop 240ms var(--mkt-ease) }
+  @keyframes mkt-pop { from { opacity: 0; transform: scale(0.92) } }
+  .rank-area-reveal { transition: transform 240ms var(--mkt-ease) }
+  .rank-area-dot { transition: left 240ms var(--mkt-ease), top 240ms var(--mkt-ease), opacity 240ms var(--mkt-ease) }
+
+  /* Botones de la landing: 160 ms */
+  .mkt-btn { transition: transform 160ms var(--mkt-ease), filter 160ms var(--mkt-ease) }
+  .mkt-btn:hover { transform: translateY(-1px) }
+  .mkt-btn:active { transform: scale(0.98) }
+  .mkt-btn .mkt-arrow { transition: transform 160ms var(--mkt-ease) }
+  .mkt-btn:hover .mkt-arrow { transform: translateX(3px) }
+
+  /* Entrada al hacer scroll (components/marketing/reveal-on-scroll.tsx): solo con JS y sin
+     movimiento reducido, porque .reveal-ready la agrega el cliente */
+  .reveal-ready [data-reveal] {
+    transition: opacity 240ms var(--mkt-ease), transform 240ms var(--mkt-ease);
+    transition-delay: calc(var(--d, 0) * 60ms);
+  }
+  .reveal-ready [data-reveal]:not(.is-in) {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  .reveal-ready .mkt-bars i { transition: transform 700ms var(--mkt-ease) }
+  .reveal-ready .mkt-bars:not(.is-in) i { transform: scaleX(0) !important }
+
+  @media (prefers-reduced-motion: reduce) {
+    .marketing-dark *, .marketing-dark *::before, .marketing-dark *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+    .mkt-sweep { display: none }
+  }
+}

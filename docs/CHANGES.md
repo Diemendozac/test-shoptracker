@@ -4,6 +4,83 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-123 — Landing nueva: "Ya vigilamos el mercado", en oscuro y renderizada en el servidor (fase 3.1)
+
+**Fecha:** 2026-09-29
+**Tipo:** ui. Riesgo: con cuidado, porque es la página pública y cambia lo que la landing promete.
+
+**Por qué:** la landing vendía "una herramienta para rastrear tus tiendas", pero el valor real es la base que Dropspy ya junta todos los días. Además tenía 9 afirmaciones sin respaldo ("10x", "50+ tiendas", "24/7", "miles de equipos", "calculados por IA", "al instante", etc.), enlaces muertos (Documentación, Privacidad, Términos, Contacto) y era toda `'use client'`, así que el texto no venía en el HTML. Diagnóstico: `docs/redesign/landing-auth-onboarding/01-diagnostico.md` (B1, B2, B3.1, C4). Diseño aprobado: dirección 1 "Terminal de inteligencia" con el mock del producto vivo (`02-prototipo-y-spec.md`, 3.1).
+
+**Qué cambió:**
+- **Mensaje:** "Ya vigilamos el mercado. Tú ves qué está ganando." Seguir tus propias tiendas pasa a ser una sección secundaria ("¿Tienes competidores fijos? Súmalos."). Todo el copy está en `messages/es.json` (`Landing.*`), sin las 9 afirmaciones de B1.
+- **Server Component.** El texto completo llega en el HTML y funciona sin JavaScript. Las islas cliente son tres: el mock del hero, el contador del bloque de escala y la entrada de las secciones al hacer scroll.
+- **Oscuro solo en la landing:** la página se envuelve en un contenedor con la clase `dark` de `globals.css`. No se tocó `globals.css` ni `<html>`, así que el resto de la app sigue en claro (D-7). El `theme-color` de la landing es `#080A15`, y el `body` toma ese fondo mientras la landing está montada, para que el rebote del scroll en iOS no muestre una franja clara.
+- **Mock del producto vivo** (`components/marketing/live-product-mock.tsx`):
+  - una licuadora **de ejemplo**, rotulada "Datos de ejemplo", que pasa del #38 al #6 en 14 días;
+  - usa el `ScoreRing` y el `PhaseBadge` reales de la app;
+  - avanza un día cada 900 ms y se pausa fuera de pantalla o con la pestaña oculta;
+  - con movimiento reducido queda fijo en el día 14.
+- **Gráfico del mock:** `components/marketing/rank-area.tsx`, un SVG liviano con las mismas reglas visuales que `RankChart`, para no cargar Recharts en la landing. Es la opción (b) de la spec, con una diferencia: `RankChart` **no** se refactorizó para usarlo, porque eso tocaba el detalle de producto y quedaba fuera de esta fase. Si cambian las reglas de `RankChart`, hay que cambiarlas también en este archivo (está anotado).
+- **Bloque de escala oculto detrás de un flag.** Está listo en `components/marketing/scale-block.tsx`, pero no se muestra:
+  - las cifras viven en `lib/marketing/scale.ts`; hoy están todas en `null` y `SCALE_BLOCK_ENABLED = false`;
+  - `publishableScale()` solo lo muestra con el flag encendido **y** la fecha de corte y las tres cifras presentes;
+  - apagado, tampoco se muestra el enlace "El mercado", y el botón secundario del hero dice "Ver cómo funciona" y lleva a esa sección;
+  - en producción no existe "DATO REAL PENDIENTE";
+  - como `scale.ts` solo lo importan componentes del servidor, las cifras no viajan al navegador mientras el flag esté apagado.
+- **Para publicarlo (Diego):** completar `SCALE` con los conteos fechados (definiciones exactas en `02-prototipo-y-spec.md`, "Decisiones abiertas", punto 4) y pasar el flag a `true` en el mismo PR.
+- **Enlaces:** ninguno a `#`. El pie ya no enlaza Privacidad, Términos ni Contacto hasta que existan los textos reales. "Ver precios" va a `/pricing`.
+- **Metadatos:**
+  - se quitó `generator: 'v0.app'`;
+  - la descripción general ya no dice "en tiempo real" (el ranking se revisa una vez por día);
+  - nueva imagen para compartir (`app/opengraph-image.tsx`, 1200×630, sin cifras). El `openGraph` vive en `app/layout.tsx`: si la página lo definiera, Next lo reemplazaría entero y la imagen se perdería.
+
+**Archivos:**
+- `app/(marketing)/page.tsx` — landing nueva como Server Component.
+- `app/(marketing)/marketing.css` — cuadrícula, radar, entrada al hacer scroll y movimiento. Solo usa tokens, dentro de `@layer components`.
+- `components/marketing/`:
+  - `live-product-mock.tsx`, `rank-area.tsx`, `product-art.tsx` (ilustraciones provisorias hasta tener fotos, C1);
+  - `scale-block.tsx` y `count-up.tsx`;
+  - `reveal-on-scroll.tsx`;
+  - `sample-tag.tsx` y `landing-parts.tsx` (`Brand`, `StoreRow`, `HowCard`).
+- `lib/marketing/scale.ts` — cifras, flag, `publishableScale()` y `countryRows()` (LATAM de mayor a menor, y el resto sumado en "Otros países").
+- `app/opengraph-image.tsx` — imagen para compartir.
+- `app/layout.tsx` — sin `generator`, con la descripción corregida y el `openGraph`.
+- `messages/es.json` — `Landing.*` reescrito.
+- `app/(marketing)/pricing/page.tsx` — el enlace "Funcionalidades" pasa de `/#features` a `/#como-funciona`, porque la sección cambió de id.
+
+**Qué NO cambió:** `globals.css`, el tema del resto de la app, `/pricing` (salvo el ancla), el login, el onboarding, la API, el scoring y el control por plan.
+
+**Verificación:**
+- `tsc --noEmit`: 8 errores previos (`lib/mock-data.ts`), ninguno nuevo.
+- `pnpm build` sin errores; `/` y `/opengraph-image` salen estáticas.
+- Playwright contra `next start`, 38/38 a 390 y 1440 px:
+  - fondo oscuro, también en el `body`;
+  - sin scroll horizontal;
+  - titular, botones y comienzo del mock en la primera pantalla;
+  - bloque de escala y "El mercado" ausentes;
+  - sin `href="#"`, y todas las anclas internas con destino;
+  - el mock avanza;
+  - un solo `h1` y el primer Tab en "Saltar al contenido";
+  - todo el texto con contraste AA;
+  - sin errores de consola ni de hidratación.
+- **Movimiento reducido:** el mock queda fijo en #6 y 14/14, sin animaciones corriendo, y todas las secciones se ven.
+- **Sin JavaScript:** todo el texto está en el HTML y nada queda oculto.
+- **Open Graph:** hay `og:image`, `og:title` y `og:description`, y `/opengraph-image` devuelve un PNG.
+- **Flag encendido, con cifras de prueba:** se probó en una build local que nunca se commiteó. El bloque aparece con el corte y el "desde" formateados, el contador va de 0 al valor en 700 ms y el lector de pantalla siempre lee el valor final. El desglose ordena LATAM y suma el resto. Después, `scale.ts` volvió a `null` con el flag apagado.
+
+**Pendiente:**
+- **Los 3 conteos de Diego.** Sin ellos el bloque no se publica.
+- **"de Latinoamérica" en el hero** depende del desglose por país: si LATAM no es la mayoría, pasa a "de Latinoamérica y otros mercados" (`02-prototipo-y-spec.md`, "Cuidados", 3).
+- **Fotos reales de producto** para el mock (C1).
+- **Textos legales y contacto** para el pie.
+- **`metadataBase`:** en Vercel, Next usa la URL del deploy. Cuando haya dominio propio, conviene fijarlo en `app/layout.tsx`.
+- **ESLint no corre en el repo** (no hay `eslint.config.*`); es previo a este cambio.
+
+**Relacionado con backend:** no.
+**Wiki actualizado:** no aplica.
+
+---
+
 ### CHANGE-122 — sync-ads: una revisión incompleta ya no borra los anuncios de un producto (D1)
 
 **Fecha:** 2026-09-29
