@@ -96,7 +96,7 @@ main, .nav, .footer { position: relative; z-index: 1 }
 .hero-in { display: grid; gap: 28px }
 .eyebrow { display: inline-flex; align-items: center; gap: 8px; color: var(--primary-text); font-size: 12px; text-transform: uppercase; letter-spacing: .06em }
 .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success) }
-h1 { font: 600 clamp(36px, 9.6vw, 68px)/1.04 var(--display); letter-spacing: -.025em; margin: 12px 0 14px }
+h1 { font: 600 clamp(34px, 9.2vw, 56px)/1.06 var(--display); letter-spacing: -.025em; margin: 12px 0 14px }
 h1:focus { outline: none }
 .hl { background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent }
 .lead { color: var(--muted-foreground); font-size: 17px; margin: 0 0 22px; max-width: 34em }
@@ -207,6 +207,42 @@ h2 { font: 600 clamp(28px, 7vw, 44px)/1.12 var(--display); letter-spacing: -.02e
 .cta-band .micro { margin: 0 }
 .footer { padding: 28px 0 96px; border-top: 1px solid var(--border) }
 .footer-in { display: grid; gap: 14px }
+
+/* ─── Bloque de escala (posicionamiento: la base ya existe) ──────────────── */
+.section-scale { padding-top: 24px }
+.scale { margin-top: 26px; margin-bottom: 14px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--elevation-card); overflow: hidden }
+.cutoff { font-size: 12px; color: var(--subtle-foreground) }
+.scale-grid { display: grid }
+.stat-tile { display: grid; gap: 6px; align-content: start; padding: 18px 16px; border-bottom: 1px solid var(--border) }
+.stat-label { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--primary-text) }
+.stat-value { display: flex; align-items: center; min-height: 52px; font: 600 44px/1.1 var(--display); letter-spacing: -.02em; font-variant-numeric: tabular-nums; color: var(--foreground) }
+.stat-pending { display: inline-flex; align-items: center; min-height: 40px; padding: 0 12px; border: 1.5px dashed var(--warning-border); border-radius: 10px; font: 600 12px/1.3 var(--mono); letter-spacing: .06em; color: var(--warning-foreground) }
+.stat-def { font-size: 14px; color: var(--muted-foreground) }
+.countries { padding: 18px 16px }
+.countries-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 12px; margin-bottom: 12px }
+.countries-head h3 { margin: 0; font: 600 16px/1.3 var(--sans) }
+.countries-head .mono { font-size: 12px }
+.c-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px }
+.c-row { display: grid; grid-template-columns: 112px 1fr auto; gap: 12px; align-items: center; font-size: 14px }
+.c-name { color: var(--foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.c-bar { display: block; height: 8px; border-radius: 4px; background: var(--border); overflow: hidden }
+.c-bar i { display: block; height: 100%; background: var(--primary); transform-origin: left; transform: scaleX(0); transition: transform 700ms var(--ease) }
+.c-row.is-pending .c-bar { background: transparent; border: 1px dashed var(--border-hover) }
+.c-val { min-width: 64px; text-align: right; font: 500 13px/1 var(--sans); font-variant-numeric: tabular-nums; color: var(--muted-foreground) }
+.c-row.is-pending .c-val { font: 600 12px/1 var(--mono); color: var(--warning-foreground) }
+.countries-note { margin: 12px 0 0; font-size: 13px; color: var(--subtle-foreground) }
+
+/* Tarjeta 01 y "tus competidores": filas de tienda con país */
+.viz-stores { display: grid; gap: 8px }
+.store-row { display: flex; align-items: center; gap: 10px; min-width: 0 }
+.store-row .store-txt { flex: 1; min-width: 0 }
+.store-row .store-txt b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.favicon { flex: none; width: 28px; height: 28px; font-size: 13px }
+.cc { flex: none; font: 600 12px/1 var(--mono); color: var(--muted-foreground); border: 1px solid var(--border); border-radius: 6px; padding: 4px 6px }
+.own-in { display: grid; gap: 24px }
+.own-viz { max-width: 420px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden }
+.own-viz .store-row { padding: 14px }
+.own-add { display: flex; align-items: center; gap: 8px; margin: 0 14px 14px; padding: 10px 12px; border: 1px dashed var(--border-hover); border-radius: 10px; color: var(--muted-foreground); font-size: 14px }
 
 /* ─── Registro / ingreso ──────────────────────────────────────────────────── */
 .auth-in { display: grid; gap: 28px; padding-top: 24px; padding-bottom: 96px }
@@ -337,6 +373,13 @@ input[aria-invalid="true"] { border-color: var(--danger-foreground) }
   .auth-side { order: 1; padding-top: 12px }
   .auth-card { order: 2 }
   .footer-in { grid-template-columns: auto 1fr; align-items: center; gap: 28px }
+  .scale-grid { grid-template-columns: repeat(3, 1fr) }
+  .stat-tile { padding: 24px 22px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border) }
+  .stat-tile:last-child { border-right: 0 }
+  .stat-value { font-size: 52px; min-height: 60px }
+  .countries { padding: 22px }
+  .c-row { grid-template-columns: 160px 1fr 96px }
+  .own-in { grid-template-columns: 1fr 420px; align-items: center; column-gap: 56px }
 }
 @keyframes spin { to { transform: rotate(360deg) } }
 @media (min-width: 1100px) {
@@ -361,6 +404,7 @@ input[aria-invalid="true"] { border-color: var(--danger-foreground) }
     <div class="wrap nav-in">
       <a class="brand" href="#/" aria-label="Dropspy, inicio"><svg width="26" height="26" viewBox="0 0 500 500" aria-hidden="true"><defs><linearGradient id="lg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7C5CFF"/><stop offset=".5" stop-color="#4F7BFF"/><stop offset="1" stop-color="#22C3E6"/></linearGradient></defs><path fill-rule="evenodd" fill="url(#lg1)" d="M250 25 L322 178 L475 250 L322 322 L250 475 L178 322 L25 250 L178 178Z M312 250 A62 62 0 1 0 188 250 A62 62 0 1 0 312 250Z M276 250 A26 26 0 1 0 224 250 A26 26 0 1 0 276 250Z"/></svg><span>dropspy</span></a>
       <nav class="nav-links" aria-label="Principal">
+        <a href="#/" data-scroll="mercado">El mercado</a>
         <a href="#/" data-scroll="funciones">Cómo funciona</a>
         <a href="#/" data-scroll="planes">Planes</a>
       </nav>
@@ -374,12 +418,12 @@ input[aria-invalid="true"] { border-color: var(--danger-foreground) }
       <section class="hero">
         <div class="wrap hero-in">
           <div class="hero-copy">
-            <span class="eyebrow mono"><span class="dot" aria-hidden="true"></span>Para dropshippers en LATAM · Shopify</span>
-            <h1 tabindex="-1">Deja que <span class="hl">otros testeen</span> por ti.</h1>
-            <p class="lead">Dropspy revisa cada día el ranking de más vendidos de las tiendas Shopify que sigues. Cuando un producto nuevo empieza a subir, lo ves: cuánto subió, su puntaje y en qué fase va.</p>
+            <span class="eyebrow mono"><span class="dot" aria-hidden="true"></span>Inteligencia de productos · LATAM</span>
+            <h1 tabindex="-1">Ya vigilamos el mercado. <span class="hl">Tú ves qué está ganando.</span></h1>
+            <p class="lead">Dropspy revisa todos los días el ranking de más vendidos de tiendas Shopify de Latinoamérica y guarda su historial. Cuando un producto nuevo empieza a subir en alguna, lo ves: en qué tienda, cuánto subió, su puntaje y en qué fase va.</p>
             <div class="cta-row">
               <a class="btn btn-primary" href="#/registro">Empieza gratis <svg class="ico arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
-              <a class="btn btn-ghost" href="#/" data-scroll="funciones">Ver cómo funciona</a>
+              <a class="btn btn-ghost" href="#/" data-scroll="mercado">Ver el mercado</a>
             </div>
             <p class="micro mono">7 días gratis · sin tarjeta de crédito</p>
           </div>
@@ -388,14 +432,14 @@ input[aria-invalid="true"] { border-color: var(--danger-foreground) }
             
   <figure class="mock" aria-labelledby="mock-cap">
     <div class="panel-bar mono">
-      <span class="panel-title"><span class="live" aria-hidden="true"></span>seguimiento</span>
+      <span class="panel-title"><span class="live" aria-hidden="true"></span>mercado · subiendo</span>
       <span class="sample-tag">Datos de ejemplo</span>
     </div>
-    <figcaption class="sr" id="mock-cap">Ejemplo con datos de ejemplo: una licuadora portátil que en 14 días pasa del puesto 38 al 6 del ranking de más vendidos de su tienda, con puntaje 73 y fase Despegue.</figcaption>
+    <figcaption class="sr" id="mock-cap">Ejemplo con datos de ejemplo: en una tienda de Colombia que Dropspy monitorea, una licuadora portátil pasa del puesto 38 al 6 del ranking de más vendidos en 14 días, con puntaje 73 y fase Despegue.</figcaption>
     <div class="mock-body" aria-hidden="true">
       <div class="m-head">
         <span class="thumb" aria-hidden="true"><svg viewBox="0 0 100 100"><rect x="30" y="14" width="40" height="12" rx="4" fill="#3F3A55"/><rect x="26" y="24" width="48" height="60" rx="14" fill="#D9E6F2"/><rect x="26" y="24" width="48" height="60" rx="14" fill="none" stroke="#B6C7D9" stroke-width="2"/><rect x="30" y="80" width="40" height="10" rx="3" fill="#3F3A55"/><path d="M40 60h20" stroke="#9BB3CB" stroke-width="3" stroke-linecap="round"/></svg></span>
-        <div class="m-title"><strong>Licuadora portátil recargable</strong><span>Tienda de ejemplo · <span class="tnum" id="m-day">día 1</span> de seguimiento</span></div>
+        <div class="m-title"><strong>Licuadora portátil recargable</strong><span>Tienda de ejemplo · CO · <span class="tnum" id="m-day">día 1</span> de seguimiento</span></div>
       </div>
       <div class="chart" id="m-chart">
         <svg viewBox="0 0 300 120" preserveAspectRatio="none" class="chart-svg">
@@ -421,30 +465,67 @@ input[aria-invalid="true"] { border-color: var(--danger-foreground) }
     <div class="panel-bar panel-foot mono" aria-hidden="true"><span>una foto del ranking por día</span><span class="tnum" id="m-count">01/14</span></div>
   </figure>
             
-  <div class="detections" aria-label="Detecciones de hoy, datos de ejemplo">
-    <div class="panel-bar mono"><span class="panel-title">productos nuevos · hoy</span><span class="sample-tag">Ejemplo</span></div>
+  <div class="detections" aria-label="Otros productos subiendo en el mercado, datos de ejemplo">
+    <div class="panel-bar mono"><span class="panel-title">también subiendo hoy</span><span class="sample-tag">Ejemplo</span></div>
     <ul class="det-list" id="det-list">
-      <li class="det-row"><span class="thumb thumb-sm" aria-hidden="true"><svg viewBox="0 0 100 100"><path d="M22 60c0-22 12-36 28-36s28 14 28 36" fill="none" stroke="#C9CCD6" stroke-width="12" stroke-linecap="round"/><circle cx="22" cy="64" r="9" fill="#E8E2D6"/><circle cx="78" cy="64" r="9" fill="#E8E2D6"/></svg></span><span class="det-txt"><b>Masajeador de cuello</b><span>Tienda de ejemplo C</span></span><span class="new-chip">Nuevo</span></li><li class="det-row"><span class="thumb thumb-sm" aria-hidden="true"><svg viewBox="0 0 100 100"><circle cx="50" cy="44" r="20" fill="#2F3440"/><circle cx="50" cy="44" r="10" fill="#5B8DEF"/><rect x="46" y="62" width="8" height="22" rx="3" fill="#2F3440"/></svg></span><span class="det-txt"><b>Soporte magnético para auto</b><span>Tienda de ejemplo D</span></span><span class="new-chip">Nuevo</span></li><li class="det-row"><span class="thumb thumb-sm" aria-hidden="true"><svg viewBox="0 0 100 100"><rect x="18" y="32" width="64" height="12" rx="6" fill="#A7B8A0"/><rect x="18" y="48" width="64" height="12" rx="6" fill="#D6C7A8"/><rect x="18" y="64" width="64" height="12" rx="6" fill="#4B4F58"/></svg></span><span class="det-txt"><b>Bandas de resistencia</b><span>Tienda de ejemplo A</span></span><span class="new-chip">Nuevo</span></li>
+      <li class="det-row"><span class="thumb thumb-sm" aria-hidden="true"><svg viewBox="0 0 100 100"><path d="M22 60c0-22 12-36 28-36s28 14 28 36" fill="none" stroke="#C9CCD6" stroke-width="12" stroke-linecap="round"/><circle cx="22" cy="64" r="9" fill="#E8E2D6"/><circle cx="78" cy="64" r="9" fill="#E8E2D6"/></svg></span><span class="det-txt"><b>Masajeador de cuello</b><span>Tienda de ejemplo C · MX</span></span><span class="phase ph-despegue" ><svg class="ico ph-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg><span>Despegue</span></span></li><li class="det-row"><span class="thumb thumb-sm" aria-hidden="true"><svg viewBox="0 0 100 100"><circle cx="50" cy="44" r="20" fill="#2F3440"/><circle cx="50" cy="44" r="10" fill="#5B8DEF"/><rect x="46" y="62" width="8" height="22" rx="3" fill="#2F3440"/></svg></span><span class="det-txt"><b>Soporte magnético para auto</b><span>Tienda de ejemplo D · CL</span></span><span class="phase ph-despegue" ><svg class="ico ph-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg><span>Despegue</span></span></li><li class="det-row"><span class="thumb thumb-sm" aria-hidden="true"><svg viewBox="0 0 100 100"><rect x="18" y="32" width="64" height="12" rx="6" fill="#A7B8A0"/><rect x="18" y="48" width="64" height="12" rx="6" fill="#D6C7A8"/><rect x="18" y="64" width="64" height="12" rx="6" fill="#4B4F58"/></svg></span><span class="det-txt"><b>Bandas de resistencia</b><span>Tienda de ejemplo A · PE</span></span><span class="phase ph-rebote" ><svg class="ico ph-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg><span>Rebote</span></span></li>
     </ul>
   </div>
           </div>
-          <div class="hero-pending"><div class="pending" role="note" ><b>DATO REAL PENDIENTE</b>Cuántas tiendas sigue Dropspy hoy: un conteo fechado de la base de datos. Hasta tenerlo, no se publica ningún número de escala.</div></div>
+        </div>
+      </section>
+
+      
+      <section class="section section-scale" id="mercado" aria-labelledby="h-mercado">
+        <div class="wrap">
+          <span class="kicker mono reveal">// el mercado, en números</span>
+          <h2 id="h-mercado" class="reveal" style="--d:1">No empiezas de cero: la base ya existe.</h2>
+          <p class="sub reveal" style="--d:2">Cada día sumamos una foto del ranking de más vendidos de cada tienda monitoreada, con su historial. Estas son las cifras de la base a la fecha de corte.</p>
+          <div class="scale reveal" style="--d:3" id="scale">
+            <div class="panel-bar mono"><span class="panel-title">base de datos · dropspy</span><span class="cutoff" id="scale-cutoff">corte: pendiente</span></div>
+            <div class="scale-grid">
+              
+              <div class="stat-tile">
+                <span class="stat-label mono">tiendas monitoreadas</span>
+                <span class="stat-value" data-stat="tiendas"></span>
+                <span class="stat-def">con al menos una foto del ranking en los últimos 7 días</span>
+              </div>
+              <div class="stat-tile">
+                <span class="stat-label mono">productos detectados</span>
+                <span class="stat-value" data-stat="productos"></span>
+                <span class="stat-def">productos nuevos que entraron al ranking de esas tiendas, en total</span>
+              </div>
+              <div class="stat-tile">
+                <span class="stat-label mono">días de historial</span>
+                <span class="stat-value" data-stat="dias"></span>
+                <span class="stat-def">días con foto diaria del ranking guardada<span data-stat-desde></span></span>
+              </div>
+            </div>
+            <div class="countries">
+              <div class="countries-head"><h3>Tiendas monitoreadas por país</h3><span class="mono subtle">LATAM primero</span></div>
+              <ul class="c-list" id="country-list"></ul>
+              <p class="countries-note" id="countries-note">Los países y su orden salen del conteo: primero LATAM, de mayor a menor, y el resto suma en "Otros países". Mientras tanto se muestran los mercados que prioriza Dropspy.</p>
+            </div>
+          </div>
+          <div class="reveal" style="--d:4"><div class="pending" role="note" ><b>DATO REAL PENDIENTE</b>Los tres conteos y el desglose por país, con su fecha de corte. Los entrega Diego con las definiciones de 02-prototipo-y-spec.md. Hasta entonces no se publica ninguna cifra, tampoco en el hero.</div></div>
         </div>
       </section>
 
       <section class="section" id="funciones" aria-labelledby="h-funciones">
         <div class="wrap">
           <span class="kicker mono reveal">// cómo funciona</span>
-          <h2 id="h-funciones" class="reveal" style="--d:1">Cada mañana, lo que se movió en tus tiendas.</h2>
-          <p class="sub reveal" style="--d:2">Sigues las tiendas que compiten contigo. Dropspy guarda una foto diaria de su ranking de más vendidos y te muestra qué productos nuevos están subiendo.</p>
+          <h2 id="h-funciones" class="reveal" style="--d:1">Cada mañana, lo que se movió en el mercado.</h2>
+          <p class="sub reveal" style="--d:2">No tienes que agregar ninguna tienda para empezar: Dropspy ya revisa el ranking de más vendidos de las tiendas que monitorea y te muestra qué productos nuevos están subiendo.</p>
           <div class="cards">
             <article class="card reveal" style="--d:0">
-              <div class="card-top"><span class="idx mono">01 · tiendas</span><span class="sample-tag">Ejemplo</span></div>
-              <div class="viz" aria-hidden="true">
-                <div class="store-row"><span class="favicon">T</span><span class="store-txt"><b>tienda-de-ejemplo.com</b><span>48 productos · seguida desde hoy</span></span></div>
+              <div class="card-top"><span class="idx mono">01 · mercado</span><span class="sample-tag">Ejemplo</span></div>
+              <div class="viz viz-stores" aria-hidden="true">
+                <div class="store-row"><span class="favicon">A</span><span class="store-txt"><b>tienda-de-ejemplo-a.com</b></span><span class="cc">CO</span></div>
+                <div class="store-row"><span class="favicon">B</span><span class="store-txt"><b>tienda-de-ejemplo-b.com</b></span><span class="cc">MX</span></div>
+                <div class="store-row"><span class="favicon">C</span><span class="store-txt"><b>tienda-de-ejemplo-c.com</b></span><span class="cc">CL</span></div>
               </div>
-              <h3>Sigues las tiendas que compiten contigo</h3>
-              <p>Agregas su dominio y Dropspy empieza a revisarlas. De 15 a 100 tiendas, según el plan.</p>
+              <h3>Vigilamos las tiendas por ti</h3>
+              <p>Tiendas Shopify de varios países, revisadas todos los días. Entras y el radar ya tiene datos.</p>
             </article>
             <article class="card reveal" style="--d:1">
               <div class="card-top"><span class="idx mono">02 · ranking</span><span class="sample-tag">Ejemplo</span></div>
@@ -452,8 +533,8 @@ input[aria-invalid="true"] { border-color: var(--danger-foreground) }
                 <svg class="spark" viewBox="0 0 200 64" preserveAspectRatio="none"><polyline points="0,58 16,56 32,59 48,50 64,45 80,40 96,33 112,27 128,22 144,17 160,13 176,10 200,7"/></svg>
                 <span class="spark-lbl mono">#38 → #6 en 14 días</span>
               </div>
-              <h3>Una foto diaria del ranking</h3>
-              <p>Cada día se guarda el ranking de más vendidos de cada tienda: ves si un producto sube, se estanca o cae.</p>
+              <h3>Una foto diaria, con historial</h3>
+              <p>Cada día guardamos el ranking de más vendidos de cada tienda: ves si un producto sube, se estanca o cae, y desde cuándo.</p>
             </article>
             <article class="card reveal" style="--d:2">
               <div class="card-top"><span class="idx mono">03 · puntaje</span><span class="sample-tag">Ejemplo</span></div>
@@ -482,24 +563,39 @@ input[aria-invalid="true"] { border-color: var(--danger-foreground) }
         </div>
       </section>
 
+      <section class="section section-own" aria-labelledby="h-own">
+        <div class="wrap own-in">
+          <div>
+            <span class="kicker mono reveal">// tus competidores</span>
+            <h2 id="h-own" class="reveal" style="--d:1">¿Tienes competidores fijos? Súmalos.</h2>
+            <p class="sub reveal" style="--d:2">Además del mercado, puedes seguir las tiendas que compiten contigo y ver sus productos nuevos en el mismo radar. De 15 a 100 tiendas, según el plan.</p>
+          </div>
+          <div class="own-viz reveal" style="--d:3" aria-hidden="true">
+            <div class="panel-bar mono"><span class="panel-title">mis tiendas</span><span class="sample-tag">Ejemplo</span></div>
+            <div class="store-row"><span class="favicon">M</span><span class="store-txt"><b>mi-competidor.com</b></span><span class="cc">CO</span></div>
+            <div class="own-add"><svg class="ico " viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Agregar tienda</div>
+          </div>
+        </div>
+      </section>
+
       <section class="section section-plans" id="planes" aria-labelledby="h-planes">
         <div class="wrap">
           <span class="kicker mono reveal">// planes</span>
           <h2 id="h-planes" class="reveal" style="--d:1">Empieza con 7 días gratis.</h2>
-          <p class="sub reveal" style="--d:2">Sin tarjeta de crédito. Después eliges el plan según cuántas tiendas quieres seguir.</p>
+          <p class="sub reveal" style="--d:2">Sin tarjeta de crédito. Todos los planes incluyen el pool global de productos; cambian las tiendas propias que sigues y cuánto historial ves.</p>
           <div class="plans">
             
             <article class="plan reveal" style="--d:0">
               <h3>Básico</h3>
-              <ul><li><b>15 tiendas</b></li><li>150 testeos</li><li>30 días de historial</li><li class="plan-priv">Tus tiendas suman al pool de la comunidad</li></ul>
+              <ul><li>Pool global de productos</li><li><b>15 tiendas propias</b></li><li>150 testeos</li><li>30 días de historial</li><li class="plan-priv">Tus tiendas suman al pool de la comunidad</li></ul>
             </article>
             <article class="plan reveal" style="--d:1">
               <h3>Pro</h3>
-              <ul><li><b>40 tiendas</b></li><li>500 testeos</li><li>90 días de historial</li><li class="plan-priv">Tus tiendas son privadas</li></ul>
+              <ul><li>Pool global de productos</li><li><b>40 tiendas propias</b></li><li>500 testeos</li><li>90 días de historial</li><li class="plan-priv">Tus tiendas son privadas</li></ul>
             </article>
             <article class="plan reveal" style="--d:2">
               <h3>Agency</h3>
-              <ul><li><b>100 tiendas</b></li><li>Testeos ilimitados</li><li>1 año de historial</li><li class="plan-priv">Tus tiendas son privadas</li></ul>
+              <ul><li>Pool global de productos</li><li><b>100 tiendas propias</b></li><li>Testeos ilimitados</li><li>1 año de historial</li><li class="plan-priv">Tus tiendas son privadas</li></ul>
             </article>
           </div>
           <p class="plans-foot reveal"><a class="link" href="#/" data-external="/pricing">Ver precios</a> <span class="subtle">· precios en COP, pago con Mercado Pago</span></p>
@@ -508,7 +604,7 @@ input[aria-invalid="true"] { border-color: var(--danger-foreground) }
 
       <section class="section section-cta" aria-labelledby="h-cta">
         <div class="wrap cta-band reveal">
-          <h2 id="h-cta">Empieza a seguir tus tiendas hoy.</h2>
+          <h2 id="h-cta">Mira qué está ganando hoy.</h2>
           <a class="btn btn-primary" href="#/registro">Empieza gratis <svg class="ico arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
           <p class="micro mono">7 días gratis · sin tarjeta de crédito</p>
         </div>
@@ -629,7 +725,7 @@ input[aria-invalid="true"] { border-color: var(--danger-foreground) }
         </section>
         <section class="wiz-step" data-step="2" hidden aria-labelledby="wiz-h-2">
           <h1 class="stagger" id="wiz-h-2" tabindex="-1">Tu negocio</h1>
-          <p class="wiz-lead stagger">Así te mostramos primero lo que te sirve.</p>
+          <p class="wiz-lead stagger">Dos preguntas sobre cómo vendes.</p>
           
     <fieldset class="q stagger" data-key="businessModel" data-multi="false">
       <legend>¿Cómo vendes?</legend>
@@ -736,7 +832,7 @@ input[aria-invalid="true"] { border-color: var(--danger-foreground) }
   </div>
 </details>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<script>window.__COUNTRIES__={"Colombia":"+57","México":"+52","Chile":"+56","Perú":"+51","Ecuador":"+593","Paraguay":"+595","Panamá":"+507","Otro":""};window.__PHASE__={"Meseta":"<span class=\"phase ph-meseta\"><svg class=\"ico ph-ico\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M5 12h14\"/></svg><span>Meseta</span></span>","Despegue":"<span class=\"phase ph-despegue\"><svg class=\"ico ph-ico\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z\"/><path d=\"m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z\"/><path d=\"M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0\"/><path d=\"M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5\"/></svg><span>Despegue</span></span>"};</script>
+<script>window.__SCALE__={"corte":null,"desde":null,"tiendas":null,"productos":null,"dias":null,"paises":null};window.__COUNTRIES__={"Colombia":"+57","México":"+52","Chile":"+56","Perú":"+51","Ecuador":"+593","Paraguay":"+595","Panamá":"+507","Otro":""};window.__PHASE__={"Meseta":"<span class=\"phase ph-meseta\"><svg class=\"ico ph-ico\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M5 12h14\"/></svg><span>Meseta</span></span>","Despegue":"<span class=\"phase ph-despegue\"><svg class=\"ico ph-ico\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z\"/><path d=\"m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z\"/><path d=\"M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0\"/><path d=\"M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5\"/></svg><span>Despegue</span></span>"};</script>
 <script>
 // Prototipo 2B: rutas, mock del producto vivo, registro y wizard. Sin dependencias.
 (() => {
@@ -900,6 +996,54 @@ input[aria-invalid="true"] { border-color: var(--danger-foreground) }
   // Reveal al hacer scroll
   const io = new IntersectionObserver((es) => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target) } }), { rootMargin: '0px 0px -8% 0px' })
   $$('.reveal').forEach(e => io.observe(e))
+
+  // ─── Bloque de escala ──────────────────────────────────────────────────────
+  // window.__SCALE__ viene de build-prototipo.mjs. Mientras una cifra sea null, su casilla dice
+  // "DATO REAL PENDIENTE". Con cifras, cuentan de 0 al valor en 700 ms al entrar en pantalla.
+  const SCALE = Object.assign({ corte: null, desde: null, tiendas: null, productos: null, dias: null, paises: null }, window.__SCALE__ || {})
+  const LATAM = ['AR', 'BO', 'BR', 'CL', 'CO', 'CR', 'CU', 'DO', 'EC', 'GT', 'HN', 'MX', 'NI', 'PA', 'PE', 'PR', 'PY', 'SV', 'UY', 'VE']
+  const PRIORITY = ['CO', 'MX', 'CL', 'PE', 'EC'] // mercados que prioriza Dropspy (lista del onboarding), solo mientras no hay conteo
+  const regionName = (() => { try { const d = new Intl.DisplayNames(['es'], { type: 'region' }); return c => d.of(c) } catch { return c => c } })()
+  const fmtN = n => Math.round(n).toLocaleString('es-CO')
+  const fmtDate = iso => { const [y, m, d] = iso.split('-').map(Number); return `${d} ${MESES[m - 1]} ${y}` }
+  const PENDING_HTML = '<span class="stat-pending">DATO REAL PENDIENTE</span>'
+  let scaleShown = false
+
+  function countryRows() {
+    if (!Array.isArray(SCALE.paises)) return PRIORITY.map(c => ({ name: regionName(c), n: null })).concat([{ name: 'Otros países', n: null }])
+    const latam = SCALE.paises.filter(([c]) => LATAM.includes(c)).sort((a, b) => b[1] - a[1]).map(([c, n]) => ({ name: regionName(c), n }))
+    const rest = SCALE.paises.filter(([c]) => !LATAM.includes(c)).reduce((t, [, n]) => t + n, 0)
+    return rest ? latam.concat([{ name: 'Otros países', n: rest }]) : latam
+  }
+  function renderScale() {
+    $$('[data-stat]').forEach(el => {
+      const v = SCALE[el.dataset.stat]
+      if (v == null) { el.innerHTML = PENDING_HTML; el.removeAttribute('data-to'); return }
+      el.dataset.to = v
+      el.textContent = scaleShown || reduced ? fmtN(v) : '0'
+    })
+    $('[data-stat-desde]').textContent = SCALE.desde ? `, desde el ${fmtDate(SCALE.desde)}` : ''
+    $('#scale-cutoff').textContent = SCALE.corte ? `corte: ${fmtDate(SCALE.corte)}` : 'corte: pendiente'
+    const rows = countryRows(), max = Math.max(1, ...rows.map(r => r.n || 0))
+    $('#country-list').innerHTML = rows.map(r => `<li class="c-row${r.n == null ? ' is-pending' : ''}"><span class="c-name">${r.name}</span><span class="c-bar"><i style="--w:${r.n == null ? 0 : r.n / max}"></i></span><span class="c-val">${r.n == null ? 'pendiente' : fmtN(r.n)}</span></li>`).join('')
+    $('#countries-note').hidden = Array.isArray(SCALE.paises)
+    if (scaleShown || reduced) showScale(true)
+  }
+  function showScale(instant) {
+    scaleShown = true
+    $$('#country-list .c-bar i').forEach(i => { i.style.transform = `scaleX(${i.style.getPropertyValue('--w')})` })
+    $$('[data-to]').forEach(el => {
+      const to = +el.dataset.to
+      if (instant || reduced) { el.textContent = fmtN(to); return }
+      const t0 = performance.now()
+      const step = t => { const p = Math.min(1, (t - t0) / 700); el.textContent = fmtN(to * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(step) }
+      requestAnimationFrame(step)
+    })
+  }
+  new IntersectionObserver((es, o) => es.forEach(e => { if (e.isIntersecting) { showScale(false); o.disconnect() } }), { rootMargin: '0px 0px -15% 0px' }).observe($('#scale'))
+  renderScale()
+  // Para probar el contador sin publicar cifras: la verificación llama a esto con valores de prueba
+  window.__prototipo = { setScale(v) { Object.assign(SCALE, v); scaleShown = false; renderScale(); showScale(false) } }
 
   // Links internos de la landing y links fuera del prototipo
   document.addEventListener('click', (e) => {

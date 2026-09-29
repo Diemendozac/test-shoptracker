@@ -95,6 +95,13 @@ for (const width of [390, 1440]) {
   ok(`${width} landing: rótulo "Datos de ejemplo" visible en el mock`, await page.locator('.mock .sample-tag').isVisible())
   ok(`${width} landing: el mock avanza solo`, await page.evaluate(() => document.querySelector('#m-count').textContent) !== '01/14')
 
+  // Bloque de escala: sin cifras publicadas hasta tener el conteo de Diego
+  const scaleTxt = await page.evaluate(() => [...document.querySelectorAll('[data-stat], #country-list .c-val, #scale-cutoff')].map(e => e.textContent).join(' | '))
+  ok(`${width} escala: ninguna cifra publicada`, !/\d/.test(scaleTxt), scaleTxt.slice(0, 80))
+  ok(`${width} escala: las 3 casillas dicen DATO REAL PENDIENTE`, (await page.locator('[data-stat] .stat-pending').count()) === 3)
+  ok(`${width} escala: fecha de corte pendiente`, (await page.textContent('#scale-cutoff')) === 'corte: pendiente')
+  ok(`${width} hero: sin cifras de escala`, !/\d/.test(await page.textContent('.hero-copy h1')) && !/\d/.test(await page.textContent('.hero-copy .lead')))
+
   // Registro: validación visible y con teclado
   await page.goto(FILE + '#/registro'); await page.waitForTimeout(300)
   await check('2-registro')
@@ -135,6 +142,23 @@ for (const width of [390, 1440]) {
   ok(`${width} final: saluda por el nombre`, (await page.textContent('#final-title')) === 'Todo listo, Ana.')
   ok(`${width} final: resumen con las 8 respuestas`, (await page.locator('#summary div').count()) === 8 && !(await page.textContent('#summary')).includes('—'))
   ok(`${width} sin errores de JavaScript`, errors.length === 0, errors.join(' | '))
+  await page.close()
+}
+
+// Contador con valores de prueba (no se publican: solo prueban que la animación y el formato funcionan)
+{
+  const page = await browser.newPage({ viewport: { width: 390, height: 844 } })
+  await page.goto(FILE); await page.waitForTimeout(300)
+  await page.evaluate(() => document.querySelector('#mercado').scrollIntoView())
+  await page.evaluate(() => window.__prototipo.setScale({ corte: '2026-10-01', desde: '2026-03-02', tiendas: 1234, productos: 56789, dias: 214, paises: [['US', 30], ['MX', 300], ['CO', 500], ['ES', 12], ['CL', 90]] }))
+  await page.waitForTimeout(120)
+  const mid = await page.textContent('[data-stat="tiendas"]')
+  await page.waitForTimeout(900)
+  ok('contador: anima desde 0 (a mitad de camino no está en el valor final)', mid !== '1.234', mid)
+  ok('contador: termina en el valor con separador de miles', (await page.textContent('[data-stat="tiendas"]')) === '1.234' && (await page.textContent('[data-stat="productos"]')) === '56.789')
+  ok('contador: fecha de corte y "desde"', (await page.textContent('#scale-cutoff')) === 'corte: 1 oct 2026' && (await page.textContent('[data-stat-desde]')) === ', desde el 2 mar 2026')
+  const rows = await page.$$eval('#country-list .c-name', els => els.map(e => e.textContent))
+  ok('países: LATAM de mayor a menor y el resto en "Otros países"', rows.join(',') === 'Colombia,México,Chile,Otros países', rows.join(','))
   await page.close()
 }
 

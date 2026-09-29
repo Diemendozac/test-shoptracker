@@ -161,6 +161,54 @@
   const io = new IntersectionObserver((es) => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target) } }), { rootMargin: '0px 0px -8% 0px' })
   $$('.reveal').forEach(e => io.observe(e))
 
+  // ─── Bloque de escala ──────────────────────────────────────────────────────
+  // window.__SCALE__ viene de build-prototipo.mjs. Mientras una cifra sea null, su casilla dice
+  // "DATO REAL PENDIENTE". Con cifras, cuentan de 0 al valor en 700 ms al entrar en pantalla.
+  const SCALE = Object.assign({ corte: null, desde: null, tiendas: null, productos: null, dias: null, paises: null }, window.__SCALE__ || {})
+  const LATAM = ['AR', 'BO', 'BR', 'CL', 'CO', 'CR', 'CU', 'DO', 'EC', 'GT', 'HN', 'MX', 'NI', 'PA', 'PE', 'PR', 'PY', 'SV', 'UY', 'VE']
+  const PRIORITY = ['CO', 'MX', 'CL', 'PE', 'EC'] // mercados que prioriza Dropspy (lista del onboarding), solo mientras no hay conteo
+  const regionName = (() => { try { const d = new Intl.DisplayNames(['es'], { type: 'region' }); return c => d.of(c) } catch { return c => c } })()
+  const fmtN = n => Math.round(n).toLocaleString('es-CO')
+  const fmtDate = iso => { const [y, m, d] = iso.split('-').map(Number); return `${d} ${MESES[m - 1]} ${y}` }
+  const PENDING_HTML = '<span class="stat-pending">DATO REAL PENDIENTE</span>'
+  let scaleShown = false
+
+  function countryRows() {
+    if (!Array.isArray(SCALE.paises)) return PRIORITY.map(c => ({ name: regionName(c), n: null })).concat([{ name: 'Otros países', n: null }])
+    const latam = SCALE.paises.filter(([c]) => LATAM.includes(c)).sort((a, b) => b[1] - a[1]).map(([c, n]) => ({ name: regionName(c), n }))
+    const rest = SCALE.paises.filter(([c]) => !LATAM.includes(c)).reduce((t, [, n]) => t + n, 0)
+    return rest ? latam.concat([{ name: 'Otros países', n: rest }]) : latam
+  }
+  function renderScale() {
+    $$('[data-stat]').forEach(el => {
+      const v = SCALE[el.dataset.stat]
+      if (v == null) { el.innerHTML = PENDING_HTML; el.removeAttribute('data-to'); return }
+      el.dataset.to = v
+      el.textContent = scaleShown || reduced ? fmtN(v) : '0'
+    })
+    $('[data-stat-desde]').textContent = SCALE.desde ? `, desde el ${fmtDate(SCALE.desde)}` : ''
+    $('#scale-cutoff').textContent = SCALE.corte ? `corte: ${fmtDate(SCALE.corte)}` : 'corte: pendiente'
+    const rows = countryRows(), max = Math.max(1, ...rows.map(r => r.n || 0))
+    $('#country-list').innerHTML = rows.map(r => `<li class="c-row${r.n == null ? ' is-pending' : ''}"><span class="c-name">${r.name}</span><span class="c-bar"><i style="--w:${r.n == null ? 0 : r.n / max}"></i></span><span class="c-val">${r.n == null ? 'pendiente' : fmtN(r.n)}</span></li>`).join('')
+    $('#countries-note').hidden = Array.isArray(SCALE.paises)
+    if (scaleShown || reduced) showScale(true)
+  }
+  function showScale(instant) {
+    scaleShown = true
+    $$('#country-list .c-bar i').forEach(i => { i.style.transform = `scaleX(${i.style.getPropertyValue('--w')})` })
+    $$('[data-to]').forEach(el => {
+      const to = +el.dataset.to
+      if (instant || reduced) { el.textContent = fmtN(to); return }
+      const t0 = performance.now()
+      const step = t => { const p = Math.min(1, (t - t0) / 700); el.textContent = fmtN(to * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(step) }
+      requestAnimationFrame(step)
+    })
+  }
+  new IntersectionObserver((es, o) => es.forEach(e => { if (e.isIntersecting) { showScale(false); o.disconnect() } }), { rootMargin: '0px 0px -15% 0px' }).observe($('#scale'))
+  renderScale()
+  // Para probar el contador sin publicar cifras: la verificación llama a esto con valores de prueba
+  window.__prototipo = { setScale(v) { Object.assign(SCALE, v); scaleShown = false; renderScale(); showScale(false) } }
+
   // Links internos de la landing y links fuera del prototipo
   document.addEventListener('click', (e) => {
     const a = e.target.closest('[data-scroll]')

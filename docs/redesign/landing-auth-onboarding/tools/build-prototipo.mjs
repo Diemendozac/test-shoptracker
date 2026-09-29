@@ -54,7 +54,14 @@ const fonts = d1.match(/<style>(@font-face[\s\S]*?)<\/style>/)[1]
 // ─── Vistas ──────────────────────────────────────────────────────────────────
 const views = makeViews({ icon: lucide, logo })
 const phaseHtml = (p, ico, cls) => `<span class="phase ${cls}">${lucide(ico, 'ph-ico')}<span>${p}</span></span>`
-const clientData = `window.__COUNTRIES__=${JSON.stringify(Object.fromEntries(views.COUNTRIES))};window.__PHASE__=${JSON.stringify({ Meseta: phaseHtml('Meseta', 'minus', 'ph-meseta'), Despegue: phaseHtml('Despegue', 'rocket', 'ph-despegue') })};`
+// ─── Cifras del bloque de escala ────────────────────────────────────────────
+// Posicionamiento (2026-09-29): "ya vigilamos el mercado por ti". Las cifras las entrega Diego con
+// las definiciones de 02-prototipo-y-spec.md (Decisiones abiertas). Mientras sean null, el
+// prototipo muestra "DATO REAL PENDIENTE". NO poner números de relleno.
+//   corte, desde: 'AAAA-MM-DD' · tiendas, productos, dias: enteros · paises: [['CO', n], ['MX', n], …]
+const SCALE = { corte: null, desde: null, tiendas: null, productos: null, dias: null, paises: null }
+
+const clientData = `window.__SCALE__=${JSON.stringify(SCALE)};window.__COUNTRIES__=${JSON.stringify(Object.fromEntries(views.COUNTRIES))};window.__PHASE__=${JSON.stringify({ Meseta: phaseHtml('Meseta', 'minus', 'ph-meseta'), Despegue: phaseHtml('Despegue', 'rocket', 'ph-despegue') })};`
 
 const toolbar = `
 <details class="pt">

@@ -36,17 +36,19 @@ export function makeViews({ icon, logo }) {
   const thumb = (key, cls = 'thumb') => `<span class="${cls}" aria-hidden="true"><svg viewBox="0 0 100 100">${PRODUCT[key]}</svg></span>`
 
   // ─── Mock del producto vivo (hero) ─────────────────────────────────────────
+  // Posicionamiento (2026-09-29): el mock muestra el MERCADO que Dropspy ya vigila, no una tienda
+  // que el usuario agregó. Por eso la tienda lleva país y abajo hay otros productos subiendo.
   const mock = `
   <figure class="mock" aria-labelledby="mock-cap">
     <div class="panel-bar mono">
-      <span class="panel-title"><span class="live" aria-hidden="true"></span>seguimiento</span>
+      <span class="panel-title"><span class="live" aria-hidden="true"></span>mercado · subiendo</span>
       ${sampleTag()}
     </div>
-    <figcaption class="sr" id="mock-cap">Ejemplo con datos de ejemplo: una licuadora portátil que en 14 días pasa del puesto 38 al 6 del ranking de más vendidos de su tienda, con puntaje 73 y fase Despegue.</figcaption>
+    <figcaption class="sr" id="mock-cap">Ejemplo con datos de ejemplo: en una tienda de Colombia que Dropspy monitorea, una licuadora portátil pasa del puesto 38 al 6 del ranking de más vendidos en 14 días, con puntaje 73 y fase Despegue.</figcaption>
     <div class="mock-body" aria-hidden="true">
       <div class="m-head">
         ${thumb('licuadora')}
-        <div class="m-title"><strong>Licuadora portátil recargable</strong><span>Tienda de ejemplo · <span class="tnum" id="m-day">día 1</span> de seguimiento</span></div>
+        <div class="m-title"><strong>Licuadora portátil recargable</strong><span>Tienda de ejemplo · CO · <span class="tnum" id="m-day">día 1</span> de seguimiento</span></div>
       </div>
       <div class="chart" id="m-chart">
         <svg viewBox="0 0 300 120" preserveAspectRatio="none" class="chart-svg">
@@ -70,18 +72,52 @@ export function makeViews({ icon, logo }) {
     <div class="panel-bar panel-foot mono" aria-hidden="true"><span>una foto del ranking por día</span><span class="tnum" id="m-count">01/14</span></div>
   </figure>`
 
-  const DETECTIONS = [
-    ['masajeador', 'Masajeador de cuello', 'Tienda de ejemplo C'],
-    ['soporte', 'Soporte magnético para auto', 'Tienda de ejemplo D'],
-    ['bandas', 'Bandas de resistencia', 'Tienda de ejemplo A'],
+  const RISING = [
+    ['masajeador', 'Masajeador de cuello', 'Tienda de ejemplo C', 'MX', 'Despegue'],
+    ['soporte', 'Soporte magnético para auto', 'Tienda de ejemplo D', 'CL', 'Despegue'],
+    ['bandas', 'Bandas de resistencia', 'Tienda de ejemplo A', 'PE', 'Rebote'],
   ]
   const detections = `
-  <div class="detections" aria-label="Detecciones de hoy, datos de ejemplo">
-    <div class="panel-bar mono"><span class="panel-title">productos nuevos · hoy</span>${sampleTag('Ejemplo')}</div>
+  <div class="detections" aria-label="Otros productos subiendo en el mercado, datos de ejemplo">
+    <div class="panel-bar mono"><span class="panel-title">también subiendo hoy</span>${sampleTag('Ejemplo')}</div>
     <ul class="det-list" id="det-list">
-      ${DETECTIONS.map(([k, n, s]) => `<li class="det-row">${thumb(k, 'thumb thumb-sm')}<span class="det-txt"><b>${n}</b><span>${s}</span></span><span class="new-chip">Nuevo</span></li>`).join('')}
+      ${RISING.map(([k, n, s, cc, ph]) => `<li class="det-row">${thumb(k, 'thumb thumb-sm')}<span class="det-txt"><b>${n}</b><span>${s} · ${cc}</span></span>${phaseBadge(ph)}</li>`).join('')}
     </ul>
   </div>`
+
+  // ─── Bloque de escala ──────────────────────────────────────────────────────
+  // Las cifras llegan en window.__SCALE__ (build-prototipo.mjs). Mientras sean null, cada casilla
+  // muestra "DATO REAL PENDIENTE": no se publica ningún número sin el conteo fechado de Diego.
+  const STATS = [
+    ['tiendas', 'tiendas monitoreadas', 'con al menos una foto del ranking en los últimos 7 días'],
+    ['productos', 'productos detectados', 'productos nuevos que entraron al ranking de esas tiendas, en total'],
+    ['dias', 'días de historial', 'días con foto diaria del ranking guardada<span data-stat-desde></span>'],
+  ]
+  const scale = `
+      <section class="section section-scale" id="mercado" aria-labelledby="h-mercado">
+        <div class="wrap">
+          <span class="kicker mono reveal">// el mercado, en números</span>
+          <h2 id="h-mercado" class="reveal" style="--d:1">No empiezas de cero: la base ya existe.</h2>
+          <p class="sub reveal" style="--d:2">Cada día sumamos una foto del ranking de más vendidos de cada tienda monitoreada, con su historial. Estas son las cifras de la base a la fecha de corte.</p>
+          <div class="scale reveal" style="--d:3" id="scale">
+            <div class="panel-bar mono"><span class="panel-title">base de datos · dropspy</span><span class="cutoff" id="scale-cutoff">corte: pendiente</span></div>
+            <div class="scale-grid">
+              ${STATS.map(([key, label, def]) => `
+              <div class="stat-tile">
+                <span class="stat-label mono">${label}</span>
+                <span class="stat-value" data-stat="${key}"></span>
+                <span class="stat-def">${def}</span>
+              </div>`).join('')}
+            </div>
+            <div class="countries">
+              <div class="countries-head"><h3>Tiendas monitoreadas por país</h3><span class="mono subtle">LATAM primero</span></div>
+              <ul class="c-list" id="country-list"></ul>
+              <p class="countries-note" id="countries-note">Los países y su orden salen del conteo: primero LATAM, de mayor a menor, y el resto suma en "Otros países". Mientras tanto se muestran los mercados que prioriza Dropspy.</p>
+            </div>
+          </div>
+          <div class="reveal" style="--d:4">${pending('', 'Los tres conteos y el desglose por país, con su fecha de corte. Los entrega Diego con las definiciones de 02-prototipo-y-spec.md. Hasta entonces no se publica ninguna cifra, tampoco en el hero.')}</div>
+        </div>
+      </section>`
 
   // ─── Landing ───────────────────────────────────────────────────────────────
   const nav = `
@@ -89,6 +125,7 @@ export function makeViews({ icon, logo }) {
     <div class="wrap nav-in">
       <a class="brand" href="#/" aria-label="Dropspy, inicio">${logo(26)}<span>dropspy</span></a>
       <nav class="nav-links" aria-label="Principal">
+        <a href="#/" data-scroll="mercado">El mercado</a>
         <a href="#/" data-scroll="funciones">Cómo funciona</a>
         <a href="#/" data-scroll="planes">Planes</a>
       </nav>
@@ -99,6 +136,8 @@ export function makeViews({ icon, logo }) {
     </div>
   </header>`
 
+  const storeRow = (letter, domain, cc) => `<div class="store-row"><span class="favicon">${letter}</span><span class="store-txt"><b>${domain}</b></span><span class="cc">${cc}</span></div>`
+
   const landing = `
   <div class="view" data-view="landing" hidden>
     <div class="grid-bg" aria-hidden="true"></div>
@@ -107,12 +146,12 @@ export function makeViews({ icon, logo }) {
       <section class="hero">
         <div class="wrap hero-in">
           <div class="hero-copy">
-            <span class="eyebrow mono"><span class="dot" aria-hidden="true"></span>Para dropshippers en LATAM · Shopify</span>
-            <h1 tabindex="-1">Deja que <span class="hl">otros testeen</span> por ti.</h1>
-            <p class="lead">Dropspy revisa cada día el ranking de más vendidos de las tiendas Shopify que sigues. Cuando un producto nuevo empieza a subir, lo ves: cuánto subió, su puntaje y en qué fase va.</p>
+            <span class="eyebrow mono"><span class="dot" aria-hidden="true"></span>Inteligencia de productos · LATAM</span>
+            <h1 tabindex="-1">Ya vigilamos el mercado. <span class="hl">Tú ves qué está ganando.</span></h1>
+            <p class="lead">Dropspy revisa todos los días el ranking de más vendidos de tiendas Shopify de Latinoamérica y guarda su historial. Cuando un producto nuevo empieza a subir en alguna, lo ves: en qué tienda, cuánto subió, su puntaje y en qué fase va.</p>
             <div class="cta-row">
               <a class="btn btn-primary" href="#/registro">Empieza gratis ${icon('arrow-right', 'arrow')}</a>
-              <a class="btn btn-ghost" href="#/" data-scroll="funciones">Ver cómo funciona</a>
+              <a class="btn btn-ghost" href="#/" data-scroll="mercado">Ver el mercado</a>
             </div>
             <p class="micro mono">7 días gratis · sin tarjeta de crédito</p>
           </div>
@@ -121,23 +160,26 @@ export function makeViews({ icon, logo }) {
             ${mock}
             ${detections}
           </div>
-          <div class="hero-pending">${pending('', 'Cuántas tiendas sigue Dropspy hoy: un conteo fechado de la base de datos. Hasta tenerlo, no se publica ningún número de escala.')}</div>
         </div>
       </section>
+
+      ${scale}
 
       <section class="section" id="funciones" aria-labelledby="h-funciones">
         <div class="wrap">
           <span class="kicker mono reveal">// cómo funciona</span>
-          <h2 id="h-funciones" class="reveal" style="--d:1">Cada mañana, lo que se movió en tus tiendas.</h2>
-          <p class="sub reveal" style="--d:2">Sigues las tiendas que compiten contigo. Dropspy guarda una foto diaria de su ranking de más vendidos y te muestra qué productos nuevos están subiendo.</p>
+          <h2 id="h-funciones" class="reveal" style="--d:1">Cada mañana, lo que se movió en el mercado.</h2>
+          <p class="sub reveal" style="--d:2">No tienes que agregar ninguna tienda para empezar: Dropspy ya revisa el ranking de más vendidos de las tiendas que monitorea y te muestra qué productos nuevos están subiendo.</p>
           <div class="cards">
             <article class="card reveal" style="--d:0">
-              <div class="card-top"><span class="idx mono">01 · tiendas</span>${sampleTag('Ejemplo')}</div>
-              <div class="viz" aria-hidden="true">
-                <div class="store-row"><span class="favicon">T</span><span class="store-txt"><b>tienda-de-ejemplo.com</b><span>48 productos · seguida desde hoy</span></span></div>
+              <div class="card-top"><span class="idx mono">01 · mercado</span>${sampleTag('Ejemplo')}</div>
+              <div class="viz viz-stores" aria-hidden="true">
+                ${storeRow('A', 'tienda-de-ejemplo-a.com', 'CO')}
+                ${storeRow('B', 'tienda-de-ejemplo-b.com', 'MX')}
+                ${storeRow('C', 'tienda-de-ejemplo-c.com', 'CL')}
               </div>
-              <h3>Sigues las tiendas que compiten contigo</h3>
-              <p>Agregas su dominio y Dropspy empieza a revisarlas. De 15 a 100 tiendas, según el plan.</p>
+              <h3>Vigilamos las tiendas por ti</h3>
+              <p>Tiendas Shopify de varios países, revisadas todos los días. Entras y el radar ya tiene datos.</p>
             </article>
             <article class="card reveal" style="--d:1">
               <div class="card-top"><span class="idx mono">02 · ranking</span>${sampleTag('Ejemplo')}</div>
@@ -145,8 +187,8 @@ export function makeViews({ icon, logo }) {
                 <svg class="spark" viewBox="0 0 200 64" preserveAspectRatio="none"><polyline points="0,58 16,56 32,59 48,50 64,45 80,40 96,33 112,27 128,22 144,17 160,13 176,10 200,7"/></svg>
                 <span class="spark-lbl mono">#38 → #6 en 14 días</span>
               </div>
-              <h3>Una foto diaria del ranking</h3>
-              <p>Cada día se guarda el ranking de más vendidos de cada tienda: ves si un producto sube, se estanca o cae.</p>
+              <h3>Una foto diaria, con historial</h3>
+              <p>Cada día guardamos el ranking de más vendidos de cada tienda: ves si un producto sube, se estanca o cae, y desde cuándo.</p>
             </article>
             <article class="card reveal" style="--d:2">
               <div class="card-top"><span class="idx mono">03 · puntaje</span>${sampleTag('Ejemplo')}</div>
@@ -173,20 +215,35 @@ export function makeViews({ icon, logo }) {
         </div>
       </section>
 
+      <section class="section section-own" aria-labelledby="h-own">
+        <div class="wrap own-in">
+          <div>
+            <span class="kicker mono reveal">// tus competidores</span>
+            <h2 id="h-own" class="reveal" style="--d:1">¿Tienes competidores fijos? Súmalos.</h2>
+            <p class="sub reveal" style="--d:2">Además del mercado, puedes seguir las tiendas que compiten contigo y ver sus productos nuevos en el mismo radar. De 15 a 100 tiendas, según el plan.</p>
+          </div>
+          <div class="own-viz reveal" style="--d:3" aria-hidden="true">
+            <div class="panel-bar mono"><span class="panel-title">mis tiendas</span>${sampleTag('Ejemplo')}</div>
+            ${storeRow('M', 'mi-competidor.com', 'CO')}
+            <div class="own-add">${icon('plus')} Agregar tienda</div>
+          </div>
+        </div>
+      </section>
+
       <section class="section section-plans" id="planes" aria-labelledby="h-planes">
         <div class="wrap">
           <span class="kicker mono reveal">// planes</span>
           <h2 id="h-planes" class="reveal" style="--d:1">Empieza con 7 días gratis.</h2>
-          <p class="sub reveal" style="--d:2">Sin tarjeta de crédito. Después eliges el plan según cuántas tiendas quieres seguir.</p>
+          <p class="sub reveal" style="--d:2">Sin tarjeta de crédito. Todos los planes incluyen el pool global de productos; cambian las tiendas propias que sigues y cuánto historial ves.</p>
           <div class="plans">
             ${[
-              ['Básico', '15 tiendas', '150 testeos', '30 días de historial', 'Tus tiendas suman al pool de la comunidad'],
-              ['Pro', '40 tiendas', '500 testeos', '90 días de historial', 'Tus tiendas son privadas'],
-              ['Agency', '100 tiendas', 'Testeos ilimitados', '1 año de historial', 'Tus tiendas son privadas'],
+              ['Básico', '15 tiendas propias', '150 testeos', '30 días de historial', 'Tus tiendas suman al pool de la comunidad'],
+              ['Pro', '40 tiendas propias', '500 testeos', '90 días de historial', 'Tus tiendas son privadas'],
+              ['Agency', '100 tiendas propias', 'Testeos ilimitados', '1 año de historial', 'Tus tiendas son privadas'],
             ].map(([n, a, b, c, d], i) => `
             <article class="plan reveal" style="--d:${i}">
               <h3>${n}</h3>
-              <ul><li><b>${a}</b></li><li>${b}</li><li>${c}</li><li class="plan-priv">${d}</li></ul>
+              <ul><li>Pool global de productos</li><li><b>${a}</b></li><li>${b}</li><li>${c}</li><li class="plan-priv">${d}</li></ul>
             </article>`).join('')}
           </div>
           <p class="plans-foot reveal"><a class="link" href="#/" data-external="/pricing">Ver precios</a> <span class="subtle">· precios en COP, pago con Mercado Pago</span></p>
@@ -195,7 +252,7 @@ export function makeViews({ icon, logo }) {
 
       <section class="section section-cta" aria-labelledby="h-cta">
         <div class="wrap cta-band reveal">
-          <h2 id="h-cta">Empieza a seguir tus tiendas hoy.</h2>
+          <h2 id="h-cta">Mira qué está ganando hoy.</h2>
           <a class="btn btn-primary" href="#/registro">Empieza gratis ${icon('arrow-right', 'arrow')}</a>
           <p class="micro mono">7 días gratis · sin tarjeta de crédito</p>
         </div>
@@ -292,7 +349,7 @@ export function makeViews({ icon, logo }) {
     },
     {
       title: 'Tu negocio',
-      lead: 'Así te mostramos primero lo que te sirve.',
+      lead: 'Dos preguntas sobre cómo vendes.',
       body: group('businessModel', '¿Cómo vendes?', [['pago_anticipado', 'Pago anticipado'], ['contra_entrega', 'Contra entrega']], { cols: 'opts-2' }) +
         group('objective', 'Objetivo principal ahora mismo', OBJECTIVES),
     },
