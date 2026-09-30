@@ -4,6 +4,56 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-137 — Competidores: cupos reales, tarjetas con hechos y "Nuevos por revisar" (Fase 3a)
+
+**Fecha:** 2026-09-30
+**Tipo:** pantalla de tiendas y navegación. Riesgo: con cuidado.
+
+**Por qué:** Fase 3a de la propuesta de la app por pantalla (vault: `wiki/propuesta-app-por-pantalla.md`). "Mis tiendas" tenía:
+- estrellas de "Calidad", un número compuesto que no se explicaba;
+- "Sincronizar ahora", que dispara un scraping por clic, para todos;
+- "Pausar / Reanudar" en el menú de cada tienda, **sin ninguna acción**.
+
+Pendientes era otra pantalla, con el botón "Testear": la misma palabra que usa la app para lo que prueban las otras tiendas. Daniel decidió el 2026-09-30:
+- Pendientes pasa dentro de Competidores;
+- "Sincronizar ahora" queda solo para admin;
+- (para 3b) acierto = llegó al top 10 % del catálogo.
+
+**Qué cambió:**
+- `stores/page.tsx` → **Competidores**:
+  - cupos reales ("4 de 15 tiendas en tu plan", con `maxStores`); al llegar al límite, "Seguir tienda" se desactiva y aparece un link a planes;
+  - aviso de tiendas quietas y cuántos cupos usan;
+  - el bloque "Nuevos por revisar";
+  - una tarjeta por tienda. Orden: activas por productos nuevos, después las quietas y al final las pausadas, que siguen visibles para poder editarlas o dejar de seguirlas.
+  - La búsqueda aparece desde 7 tiendas. Se quitaron el filtro de pago y los encabezados de orden.
+- `components/stores/store-card.tsx` (nuevo): estado en español (`lib/today.ts`), productos nuevos en 7 días, barras de productos nuevos por semana (últimas 4, solo productos en seguimiento), su mejor producto ahora con su señal, y anuncios activos (`/stores/{id}/ads/count`, que existía y no se usaba). Menú: Editar, Sincronizar ahora (solo admin) y Dejar de seguir (antes "Eliminar tienda"). Se quitó "Pausar / Reanudar", que no hacía nada.
+- `components/tracker/pending-candidates.tsx` → **Nuevos por revisar**:
+  - "Seguir" en vez de "Testear"; "Seguir todos" o "Seguir N" con selección; "Descartar";
+  - un botón para activar la detección automática (`autoDetectCandidates`, la preferencia que ya existía en Ajustes), que solo aparece si está apagada;
+  - colores del sistema en vez de `amber-*`, y dos líneas por producto en el celular.
+  - **Fecha corregida:** usaba `new Date('YYYY-MM-DD')`, que en Latinoamérica muestra un día antes (P10 de `docs/redesign/detalle-producto`). Ahora usa `formatShortDate`.
+- `pendientes/page.tsx`: redirige a `/stores`.
+- Menú y barra del celular: sale "Pendientes"; su contador pasa a Competidores / Tiendas.
+
+**Qué NO cambió:** el backend, el alta de tiendas (`AddStoreModal`), la edición (`EditStoreModal`), las mutaciones de pendientes y el store de Redux (`storesSlice`, que se sigue usando igual por `useStores`).
+
+**Verificación:**
+- `next build` compila; `tsc --noEmit` solo marca `lib/mock-data.ts`.
+- En local, con una API de prueba y sin credenciales, a 1440 y 390 px sin scroll horizontal:
+  - `/pendientes` redirige, y el contador aparece en el menú y en la barra del celular;
+  - cupos, aviso de tienda quieta, "Nuevos por revisar" con su botón y las tarjetas se ven bien;
+  - se corrigieron dos problemas del celular (el nombre aplastado en las filas y el texto de la detección automática) y la fecha un día antes.
+
+**Pendientes:**
+- Quedan sin uso `stores/components/StoreRow.tsx` y `lib/store-quality.ts`.
+- La pestaña "Pendientes" de la campana (`app-header.tsx`) todavía lleva a `/tracker` (termina en el Radar, no en Competidores).
+- El aviso de "Sincronizar ahora" (`useStores`) todavía manda a `/tracker`; solo lo ve el admin.
+
+**Relacionado con backend:** no.
+**Wiki actualizado:** sí (log.md del 2026-09-30).
+
+---
+
 ### CHANGE-136 — Hoy reemplaza Inicio y Resumen (Fase 2e)
 
 **Fecha:** 2026-09-30

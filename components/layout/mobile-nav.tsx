@@ -15,7 +15,8 @@ import { NAV_ITEMS, isNavActive, type NavKey } from '@/components/layout/app-sid
 // Barra inferior del celular (CHANGE-132). Antes el menú lateral de 256 px estaba fijo en todos
 // los anchos y a 390 px tapaba media pantalla. Cuatro destinos a mano y "Más" con el resto.
 const BAR: NavKey[] = ['home', 'radar', 'ads', 'stores']
-const MORE: NavKey[] = ['pending']
+// Pendientes ya no es una pantalla (CHANGE-137): el contador va sobre Tiendas
+const MORE: NavKey[] = []
 
 export function MobileNav() {
   const pathname = usePathname()
@@ -56,19 +57,19 @@ export function MobileNav() {
           return (
             <Link key={key} href={item.href} aria-current={active ? 'page' : undefined}
               className={cn(tab, active ? 'text-primary-text' : 'text-muted-foreground hover:text-foreground')}>
-              <item.icon className="h-5 w-5" />
+              <span className="relative">
+                <item.icon className="h-5 w-5" />
+                {key === 'stores' && pendingCount > 0 && (
+                  <span aria-label={`${pendingCount} nuevos por revisar`} className="absolute -right-1 -top-0.5 h-2 w-2 rounded-full bg-warning" />
+                )}
+              </span>
               <span className="truncate">{item.short}</span>
             </Link>
           )
         })}
         <button type="button" onClick={() => setMoreOpen(true)} aria-haspopup="dialog"
           className={cn(tab, moreActive ? 'text-primary-text' : 'text-muted-foreground hover:text-foreground')}>
-          <span className="relative">
-            <Ellipsis className="h-5 w-5" />
-            {pendingCount > 0 && (
-              <span className="absolute -right-1 -top-0.5 h-2 w-2 rounded-full bg-warning" />
-            )}
-          </span>
+          <Ellipsis className="h-5 w-5" />
           <span>Más</span>
         </button>
       </nav>
@@ -89,11 +90,6 @@ export function MobileNav() {
                     active ? 'bg-primary-subtle text-primary-text' : 'text-foreground hover:bg-secondary')}>
                   <item.icon className="h-4 w-4" />
                   {item.name}
-                  {key === 'pending' && pendingCount > 0 && (
-                    <span className="ml-auto rounded-full bg-warning-subtle px-1.5 py-0.5 text-xs font-semibold leading-none text-warning-foreground tabular-nums">
-                      {pendingCount}
-                    </span>
-                  )}
                 </Link>
               )
             })}
