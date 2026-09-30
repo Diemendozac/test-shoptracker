@@ -4,6 +4,234 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-139 — Ajustes y plan: el plan primero, con lo que usas de verdad (Fase 3d)
+
+**Fecha:** 2026-09-30
+**Tipo:** pantalla de ajustes. Riesgo: con cuidado (tiene la oferta de pago).
+
+**Por qué:** Fase 3d de la propuesta de la app por pantalla (vault: `wiki/propuesta-app-por-pantalla.md`). Ajustes tenía:
+- un perfil con avatar grande;
+- el plan repetido en dos lugares;
+- la oferta para subir de plan al final;
+- los días de prueba y el uso del plan en ningún lado;
+- "Cerrar sesión" como sección propia.
+
+**Qué cambió (`settings/page.tsx`):**
+- **Tu plan**, primero:
+  - nombre del plan; en la prueba, días que quedan y la fecha en que termina;
+  - uso real: tiendas que sigues (activas / `maxStores`, con barra y aviso al llegar al límite), Radar (primera página o completo, según `maxPoolPage`), Biblioteca de anuncios (completa o sin anunciante ni links) y "Anunciante y link a Meta" (incluido o solo en Pro);
+  - debajo, la oferta para subir de plan (la misma de CHANGE-131) y cómo cancelar: el correo como texto seleccionable y, además, la opción de cancelar desde la cuenta de Mercado Pago.
+  - Se quitó el renglón "Plan actual" de la oferta, que repetía la tarjeta.
+- **Avisos por correo:** el mismo texto de CHANGE-131.
+- **Detección automática:** el mismo interruptor, con un texto que dice dónde se nota ("sin pasar por Nuevos por revisar en Competidores").
+- **Cuenta:** email y fecha de alta en una línea, cambio de contraseña (el mismo `PasswordSection`) y "Cerrar sesión".
+- El título pasa de "Configuración" a "Ajustes y plan". En el celular, la oferta se apila en vez de apretar el texto.
+
+**Qué NO cambió:** el backend, los links de Mercado Pago, `PasswordSection`, la preferencia `autoDetectCandidates` y el correo de contacto (`AGENCY_CONTACT_EMAIL`, que sigue sin verificar: ver CHANGE-131).
+
+**Verificación:**
+- `next build` compila; `tsc --noEmit` solo marca `lib/mock-data.ts`.
+- En local, con una API de prueba y sin credenciales, con una cuenta en prueba: plan, días, fecha de fin, uso y oferta a 1440 y 390 px, sin scroll horizontal.
+- **Falta:** verlo con una cuenta Básico y una Pro. Tampoco se confirmó en Mercado Pago que el cliente pueda cancelar desde su cuenta: la frase lo menciona como alternativa al correo.
+
+**Relacionado con backend:** no.
+**Wiki actualizado:** sí (log.md del 2026-09-30).
+
+---
+
+### CHANGE-138 — Ficha de tienda: cómo prueba, qué le funciona y cómo lo vende (Fase 3b)
+
+**Fecha:** 2026-09-30
+**Tipo:** pantalla de detalle de tienda. Riesgo: con cuidado.
+
+**Por qué:** Fase 3b de la propuesta de la app por pantalla (vault: `wiki/propuesta-app-por-pantalla.md`). La ficha tenía:
+- el estado en mayúsculas sin explicar ("ZOMBIE", "MODERADA");
+- tres indicadores (en testeo, en alza, score promedio: este último no significa nada útil para una tienda);
+- una tabla de todos los productos que repetía Mis testeos;
+- los nombres y links de las páginas anunciantes para todos los planes, cuando el anunciante es de Pro en todo el resto de la app (FIX-077/081).
+
+**Qué cambió:**
+- `stores/[storeId]/page.tsx`:
+  - **Cabecera:** estado en español con su dato ("Activa · 4 productos nuevos en 7 días"), país, moneda, nicho, pago y último corte.
+  - **Cómo prueba esta tienda.**
+  - **Lo que le está funcionando:** sus 5 mejores productos con señal, puesto y edad.
+  - **Cómo lo vende:** anuncios activos (`/stores/{id}/ads/count`), páginas anunciantes y videos.
+  - Un link "Ver sus N productos en el Radar". "Volver a Competidores".
+- `components/stores/store-launches.tsx` (nuevo): **Cómo prueba esta tienda.**
+  - Productos nuevos por semana (últimas 4, con los productos que Dropspy sigue hoy).
+  - Una frase con el acierto: **llegó al top 10 % del catálogo de la tienda** (su mejor puesto ≤ 10 % de `productCount`; decisión de Daniel del 2026-09-30).
+  - Ejemplo: "De los 9 productos que Dropspy siguió en los últimos 15 días, 3 llegaron al top 10 % de su catálogo (puesto 20 o mejor): acierta 1 de cada 3."
+  - Sin tamaño de catálogo, lo dice y no calcula.
+- **Páginas anunciantes:** en Pro, nombre, número de anuncios y link a Facebook, como antes. Sin Pro: "Anuncia desde N páginas de Facebook. Cuáles son es parte del plan Pro." **Es solo visual:** `/stores/{id}/advertiser-pages` todavía manda los nombres a todos los planes; hay que enmascararlos en el backend como en FIX-077.
+- `pool/page.tsx`: el alcance "Mis tiendas" acepta `?tienda={storeId}` y muestra "Solo {tienda} · Ver todas mis tiendas".
+
+**Qué NO cambió:** el backend y los videos de la tienda (`StoreVideosGrid`, con la misma fuente de antes).
+
+**Hallazgo de rendimiento (sin tocar):** para los videos, la ficha pide `/pool/winners?size=500` y filtra por dominio en el navegador, porque los anuncios se rastrean en las tiendas del pool. El backend arma el historial de cada uno de esos 500 productos con consultas separadas. Conviene un endpoint de videos por tienda.
+
+**Verificación:**
+- `next build` compila; `tsc --noEmit` solo marca `lib/mock-data.ts`.
+- En local, con una API de prueba y sin credenciales, a 1440 y 390 px sin scroll horizontal:
+  - la frase del acierto, incluido el caso "todos acertaron";
+  - el candado de páginas anunciantes en la prueba, sin los nombres en pantalla;
+  - el link al Radar filtrado ("Solo tuhogarideal", 3 productos).
+- Se corrigieron "acierta 1 de cada 1" y "Último corte" encima del nombre en el celular.
+
+**Relacionado con backend:** no (quedan dos pedidos: enmascarar las páginas anunciantes sin Pro y un endpoint de videos por tienda).
+**Wiki actualizado:** sí (log.md del 2026-09-30).
+
+---
+
+### CHANGE-137 — Competidores: cupos reales, tarjetas con hechos y "Nuevos por revisar" (Fase 3a)
+
+**Fecha:** 2026-09-30
+**Tipo:** pantalla de tiendas y navegación. Riesgo: con cuidado.
+
+**Por qué:** Fase 3a de la propuesta de la app por pantalla (vault: `wiki/propuesta-app-por-pantalla.md`). "Mis tiendas" tenía:
+- estrellas de "Calidad", un número compuesto que no se explicaba;
+- "Sincronizar ahora", que dispara un scraping por clic, para todos;
+- "Pausar / Reanudar" en el menú de cada tienda, **sin ninguna acción**.
+
+Pendientes era otra pantalla, con el botón "Testear": la misma palabra que usa la app para lo que prueban las otras tiendas. Daniel decidió el 2026-09-30:
+- Pendientes pasa dentro de Competidores;
+- "Sincronizar ahora" queda solo para admin;
+- (para 3b) acierto = llegó al top 10 % del catálogo.
+
+**Qué cambió:**
+- `stores/page.tsx` → **Competidores**:
+  - cupos reales ("4 de 15 tiendas en tu plan", con `maxStores`); al llegar al límite, "Seguir tienda" se desactiva y aparece un link a planes;
+  - aviso de tiendas quietas y cuántos cupos usan;
+  - el bloque "Nuevos por revisar";
+  - una tarjeta por tienda. Orden: activas por productos nuevos, después las quietas y al final las pausadas, que siguen visibles para poder editarlas o dejar de seguirlas.
+  - La búsqueda aparece desde 7 tiendas. Se quitaron el filtro de pago y los encabezados de orden.
+- `components/stores/store-card.tsx` (nuevo): estado en español (`lib/today.ts`), productos nuevos en 7 días, barras de productos nuevos por semana (últimas 4, solo productos en seguimiento), su mejor producto ahora con su señal, y anuncios activos (`/stores/{id}/ads/count`, que existía y no se usaba). Menú: Editar, Sincronizar ahora (solo admin) y Dejar de seguir (antes "Eliminar tienda"). Se quitó "Pausar / Reanudar", que no hacía nada.
+- `components/tracker/pending-candidates.tsx` → **Nuevos por revisar**:
+  - "Seguir" en vez de "Testear"; "Seguir todos" o "Seguir N" con selección; "Descartar";
+  - un botón para activar la detección automática (`autoDetectCandidates`, la preferencia que ya existía en Ajustes), que solo aparece si está apagada;
+  - colores del sistema en vez de `amber-*`, y dos líneas por producto en el celular.
+  - **Fecha corregida:** usaba `new Date('YYYY-MM-DD')`, que en Latinoamérica muestra un día antes (P10 de `docs/redesign/detalle-producto`). Ahora usa `formatShortDate`.
+- `pendientes/page.tsx`: redirige a `/stores`.
+- Menú y barra del celular: sale "Pendientes"; su contador pasa a Competidores / Tiendas.
+
+**Qué NO cambió:** el backend, el alta de tiendas (`AddStoreModal`), la edición (`EditStoreModal`), las mutaciones de pendientes y el store de Redux (`storesSlice`, que se sigue usando igual por `useStores`).
+
+**Verificación:**
+- `next build` compila; `tsc --noEmit` solo marca `lib/mock-data.ts`.
+- En local, con una API de prueba y sin credenciales, a 1440 y 390 px sin scroll horizontal:
+  - `/pendientes` redirige, y el contador aparece en el menú y en la barra del celular;
+  - cupos, aviso de tienda quieta, "Nuevos por revisar" con su botón y las tarjetas se ven bien;
+  - se corrigieron dos problemas del celular (el nombre aplastado en las filas y el texto de la detección automática) y la fecha un día antes.
+
+**Pendientes:**
+- Quedan sin uso `stores/components/StoreRow.tsx` y `lib/store-quality.ts`.
+- La pestaña "Pendientes" de la campana (`app-header.tsx`) todavía lleva a `/tracker` (termina en el Radar, no en Competidores).
+- El aviso de "Sincronizar ahora" (`useStores`) todavía manda a `/tracker`; solo lo ve el admin.
+
+**Relacionado con backend:** no.
+**Wiki actualizado:** sí (log.md del 2026-09-30).
+
+---
+
+### CHANGE-136 — Hoy reemplaza Inicio y Resumen (Fase 2e)
+
+**Fecha:** 2026-09-30
+**Tipo:** pantalla de entrada y navegación. Riesgo: con cuidado (es lo primero que se ve después del login).
+
+**Por qué:** Fase 2e de la propuesta de la app por pantalla (vault: `wiki/propuesta-app-por-pantalla.md`). Tres pantallas respondían "qué está ganando": Inicio, Resumen y Mis testeos. Inicio tenía:
+- un logo gigante;
+- un buscador que solo miraba tus tiendas y 10 productos del pool;
+- accesos rápidos que repetían el menú;
+- "Qué hacer ahora" con mensajes genéricos que llevaban todos a la misma tabla.
+
+Resumen tenía tres indicadores de inventario. El mensaje rotativo de la barra superior cambiaba cada 5 segundos y no se alcanzaba a leer. Daniel aprobó el contenido el 2026-09-30.
+
+**Qué cambió:**
+- `lib/today.ts` (nuevo): lógica pura de la pantalla.
+  - **Eventos por producto de tus tiendas desde su registro anterior**, como máximo uno por producto, en este orden de importancia: entró al top 10, subió 3+ puestos, nuevo (1 día o menos), bajó 3+ puestos. "Registro" es un día en más vendidos, porque el historial no guarda los días fuera del ranking; por eso la pantalla dice "desde su registro anterior" y no "desde ayer".
+  - **El titular del día.** Si no pasó nada, lo dice: "Sin cambios fuertes en tus tiendas desde el último corte".
+  - **La salud de cada tienda activa:** su estado (`inactivityTier` en español: Activa, Moderada, Inactiva, Sin movimiento) y los productos nuevos de los últimos 7 días. Primero las quietas.
+  - Probado con `tsx`: orden de eventos, titular con y sin cambios, y salud.
+- `app/(dashboard)/home/page.tsx`: Hoy, con fecha, titular y un botón ("Ver el cambio más fuerte" o "Ir al Radar"), el feed de cambios, la salud de tus tiendas y "Ganando en el mercado". Sin tiendas, muestra "Sigue las tiendas de tu competencia" y el mercado.
+- `components/home/changes-feed.tsx`, `market-row.tsx`, `store-health.tsx` (nuevos):
+  - el feed lleva el evento, la curva del puesto y la señal (`lib/signal.ts`);
+  - el mercado son los 5 primeros del Radar con video, con señal, puesto y número de anuncios;
+  - la salud avisa cuántos cupos se están usando en tiendas quietas.
+- `dashboard/page.tsx`: Resumen redirige a `/home`.
+- Menú (`app-sidebar.tsx`): "Inicio" pasa a "Hoy". La barra del celular y el buscador usan la misma lista.
+- Barra superior (`app-header.tsx`): se quitó el mensaje rotativo (`TopbarTicker`, `/insights`); quedan dos columnas desde 1024 px.
+
+**Qué se quitó de Inicio:** el logo y el título grandes, el buscador (reemplazado por ⌘K en CHANGE-132), el acceso rápido, "Mejores testeos" (su carrusel de videos por producto pasa a ser "Ganando en el mercado") y "Qué hacer ahora".
+
+**Corrección a la propuesta:** la propuesta decía que `/podium` devuelve "productos que llegaron al #1 esta semana". No es así. Devuelve los 3 productos con mejor puntaje del pool cuyo mejor puesto está en el top 10 % de su tienda, e ignora el parámetro `days` (la variable `cutoff` se calcula y no se usa). Por eso Hoy no tiene esa sección.
+
+**Qué NO cambió:** el backend, las rutas (`/home` sigue siendo la URL) y el login, que ya llevaba a `/home` desde CHANGE-132.
+
+**Verificación:**
+- `next build` compila; `tsc --noEmit` solo marca `lib/mock-data.ts`.
+- En local, con una API de prueba y sin credenciales:
+  - `/dashboard` redirige a `/home` y el menú dice "Hoy";
+  - la barra superior ya no tiene el mensaje rotativo;
+  - titular, feed, salud y mercado a 1440 y 390 px, sin scroll horizontal.
+- En la prueba se encontró y corrigió que a 390 px las tarjetas quedaban más anchas que la pantalla: la grilla no tenía columnas explícitas.
+- **No verificado:** el estado sin tiendas, porque la API de prueba siempre devuelve tiendas.
+
+**Pendientes:** quedan sin uso `topbar-ticker.tsx`, `hooks/useDashboard.ts`, `components/dashboard/stats-card.tsx` y `store-card.tsx`. `/insights` ya no se consulta en ninguna pantalla.
+
+**Relacionado con backend:** no. Hallazgo: `DashboardController.podium` calcula `cutoff` con `days` y no lo usa.
+**Wiki actualizado:** sí (log.md del 2026-09-30).
+
+---
+
+### CHANGE-135 — Ficha de producto única: la misma en el panel del Radar y en la página (Fase 2d)
+
+**Fecha:** 2026-09-30
+**Tipo:** UI de la ficha de producto y reglas de plan. Riesgo: con cuidado.
+
+**Por qué:** Fase 2d de la propuesta de la app por pantalla (vault: `wiki/propuesta-app-por-pantalla.md`). El panel del pool y la página `/tracker/[id]` mostraban el mismo producto con datos, orden y reglas distintas (`docs/redesign/detalle-producto/01-diagnostico.md`). El resumen útil ("Subió 12 posiciones…") estaba al final en letra chica, y el mismo producto podía verse con 72 en el panel y 50 en la página (S-1).
+
+Decisiones de Daniel (2026-09-30):
+- **S-1:** el puntaje del backend en todas partes.
+- **G-5:** la tienda visible para todos; "Ver en la tienda" como hoy.
+- El contenido de la ficha, tal como se describe abajo.
+
+Estado verificado antes de decidir: G-1 y G-2 ya estaban resueltos por CHANGE-129 (todos ven anuncios y métricas), y G-3 por FIX-077 (el backend enmascara el anunciante).
+
+**Qué cambió:**
+- `components/tracker/product-sheet.tsx` (nuevo): la ficha, en variante `page` o `panel`. Las secciones, en orden:
+  1. **Cabecera:** foto (galería en la página), nombre, tienda (con link a su ficha si es tuya), precio, fecha en que se vio por primera vez, "Ver en la tienda", "Link" y, en el panel, "Página completa".
+  2. **Veredicto:** la señal de la escala nueva (`lib/signal.ts`, con el historial de la ficha) y una frase con datos reales: puestos ganados en sus últimos registros, puesto hoy y top % de su tienda (si la tienda es tuya), anuncios activos y el más antiguo, y un aviso si hay pocos días de datos. Al lado, el anillo con el puntaje del backend.
+  3. **Trayectoria:** un gráfico con selector Puesto / Puntaje y "Entró en #X · hoy #Y · día N".
+  4. **Anuncios:** `ProductAdsSection`, igual que antes.
+  5. **Producto:** la descripción, si existe.
+  6. **Historial diario:** plegado, del más nuevo al más viejo, sin la columna de estado (eran bandas de puntaje en inglés).
+- **"Ver en la tienda":** se muestra si eres Pro, si la tienda es tuya o si es una tienda de Dropspy (`isScoutStore`, usuario `system@scout.internal`), como hoy. Ya no depende de `?from=pool` (G-4): se mira si la tienda está en tu lista. Sin permiso se ve "Ver en la tienda · Pro". **Para dejarlo solo en Pro** (sin la excepción de Dropspy) basta quitar `|| c.isScoutStore` en `canOpenProduct`.
+- **Puntaje (S-1):** el del backend. La página ya no aplica `applyScoreDecay`, ni muestra "decay ×0,8 · N d sin mejora".
+- `pool-detail-panel.tsx`: ahora solo envuelve la ficha (variante panel, fija al lado de la tabla o dentro del Sheet).
+- `tracker/[candidateId]/page.tsx`: envuelve la ficha (variante página). "Volver al Tracker" pasa a "Volver al Radar": lleva al pool si se abrió desde el pool y a "Mis tiendas" en otro caso.
+- `components/tracker/product-gallery.tsx` (nuevo): la galería con visor, movida sin cambios desde la página.
+- **Se quitaron** de la página: los 4 indicadores sueltos (rank, mejor rank, crecimiento, confianza), el resumen del final, `PerformanceBadge` y la etiqueta calculada día por día, el handle del producto, "Día N de 30" y el botón local "↑ Spikear / Spikeando" (solo vivía en el navegador y duplica Favoritos).
+
+**Qué NO cambió:** el backend, `ProductAdsSection`, `RankChart`, `ScoreChart`, `ProductDescriptionModal` y las reglas de anuncios por plan.
+
+**Desviación de la spec:** la spec nombraba un botón Favorito en la cabecera. No se puso: para que la estrella de la ficha y la de la fila del Radar estén sincronizadas hay que tocar `pool/page.tsx`, que no estaba en la lista aprobada. La estrella sigue en cada fila del Radar.
+
+**Verificación:**
+- `next build` compila; `tsc --noEmit` solo marca `lib/mock-data.ts`.
+- En local, con una API de prueba y sin credenciales:
+  - la página a 1440 y 390 px, sin scroll horizontal;
+  - el panel al lado del Radar a 1440 px;
+  - el veredicto ("Subió 28 puestos en sus últimos 6 registros. Hoy está en el puesto #12, el top 6 % de su tienda. Tiene 2 anuncios activos…");
+  - el gráfico y el selector;
+  - "Volver al Radar" hacia el alcance correcto.
+- Sin errores de consola.
+
+**Pendientes:** `lib/spike-store.ts`, `lib/score-decay.ts` y `computeSmartLabel` quedan sin uso en esta pantalla (la tabla de Mis testeos, que los usa, ya no se muestra desde CHANGE-134).
+
+**Relacionado con backend:** no.
+**Wiki actualizado:** sí (log.md del 2026-09-30).
+
+---
+
 ### CHANGE-134 — Radar: escala de señal, fila compartida, alcance "Mis tiendas" y límite honesto de la prueba (Fases 2b y 2c)
 
 **Fecha:** 2026-09-30

@@ -1,295 +1,160 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import Link from 'next/link'
+import { Plus, Search, X } from 'lucide-react'
 import { PageLayout } from '@/components/layout/page-layout'
-import { Plus, Search, X, ChevronUp, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useStores } from './hooks/useStores'
 import { AddStoreModal } from './components/AddStoreModal'
 import { EditStoreModal } from './components/EditStoreModal'
-import { StoreRow } from './components/StoreRow'
 import { useGetTrackerCandidatesQuery } from '../services/dashboardApi'
 import { useGetMeQuery } from '../services/userApi'
-import { computeStoreQuality } from '@/lib/store-quality'
-import type { StoreQuality } from '@/lib/store-quality'
+import { storeHealth, type StoreHealthRow } from '@/lib/today'
+import { StoreCard } from '@/components/stores/store-card'
+import { PendingCandidatesSection } from '@/components/tracker/pending-candidates'
 import type { StoreResponse } from './types'
 import type { TrackerCandidate } from '../types'
-import { cn } from '@/lib/utils'
 
-type SortField = 'name' | 'status' | 'calidad' | 'testeados' | null
-type SortDir = 'asc' | 'desc'
-type PayFilter = 'all' | 'anticipado' | 'contraentrega'
+// Competidores (CHANGE-137, Fase 3a del rediseño). Antes "Mis tiendas": una tabla con estrellas
+// de "Calidad", filtros de pago y orden, "Sincronizar ahora" para todos y "Pausar/Reanudar" sin
+// acción. Ahora: cupos reales del plan, aviso de tiendas quietas, los productos nuevos por
+// revisar (antes la pantalla Pendientes) y una tarjeta por tienda con hechos que se comprueban.
 
-function getStatusOrder(store: StoreResponse): number {
-  const hours = store.lastScrapedAt
-    ? (Date.now() - new Date(store.lastScrapedAt).getTime()) / (1000 * 60 * 60)
-    : Infinity
-  if (hours < 24) return 0
-  if (hours > 7 * 24) return 2
-  return 1
-}
-
-export default function StoresPage() {
+export default function CompetitorsPage() {
   const {
     stores, isLoading,
     deleteStore, deletingStoreId,
     syncStore, syncingStoreId,
     openAddModal,
   } = useStores()
-
-  const { data: allCandidates = [], isLoading: isCandidatesLoading } = useGetTrackerCandidatesQuery({})
-  // Límite real del plan (PLAN_MAX_STORES del backend). Antes el texto decía "de 50" fijo, y
-  // Básico y la prueba tienen 15 (CHANGE-131). El backend cuenta las tiendas activas.
+  const { data: candidates = [] } = useGetTrackerCandidatesQuery({})
   const { data: me } = useGetMeQuery()
-  const maxStores = me?.maxStores
-  const activeStores = stores.filter((s) => s.isActive).length
+  const isAdmin = me?.plan === 'admin'
 
   const [editingStore, setEditingStore] = useState<StoreResponse | null>(null)
   const [query, setQuery] = useState('')
-  const [sortField, setSortField] = useState<SortField>('calidad')
-  const [sortDir, setSortDir] = useState<SortDir>('desc')
-  const [payFilter, setPayFilter] = useState<PayFilter>('all')
 
-  // Compute quality per store from all tracker candidates
-  const qualityMap = useMemo(() => {
-    const map: Record<string, StoreQuality | null> = {}
-    const byStore: Record<string, typeof allCandidates> = {}
-    for (const c of allCandidates) {
-      if (!byStore[c.storeId]) byStore[c.storeId] = []
-      byStore[c.storeId].push(c)
-    }
-    const maxCandidates = Math.max(...Object.values(byStore).map(cs => cs.length), 1)
-    for (const store of stores) {
-      map[store.storeId] = computeStoreQuality(byStore[store.storeId] ?? [], maxCandidates)
-    }
-    return map
-  }, [allCandidates, stores])
+  // Límite real del plan (PLAN_MAX_STORES del backend); el backend cuenta las tiendas activas
+  const maxStores = me?.maxStores
+  const activeCount = stores.filter((s) => s.isActive).length
+  const atLimit = maxStores != null && maxStores < 999 && activeCount >= maxStores
 
-  // Top 3 testeos (por score) de cada tienda, para los círculos de la columna "Testeos"
-  const topCandidatesByStore = useMemo(() => {
-    const byStore: Record<string, TrackerCandidate[]> = {}
-    for (const c of allCandidates) {
-      if (!byStore[c.storeId]) byStore[c.storeId] = []
-      byStore[c.storeId].push(c)
-    }
+  const byStore = useMemo(() => {
     const map: Record<string, TrackerCandidate[]> = {}
-    for (const storeId in byStore) {
-      map[storeId] = [...byStore[storeId]]
-        .sort((a, b) => (b.performanceScore ?? 0) - (a.performanceScore ?? 0))
-        .slice(0, 3)
-    }
+    for (const c of candidates) (map[c.storeId] ??= []).push(c)
     return map
-  }, [allCandidates])
+  }, [candidates])
 
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDir(d => d === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortField(field)
-      setSortDir('desc')
-    }
-  }
-
-  const filtered = useMemo(() => {
-    let result = query.trim()
-      ? stores.filter(s =>
-          s.storeName.toLowerCase().includes(query.toLowerCase()) ||
-          s.baseUrl.toLowerCase().includes(query.toLowerCase())
-        )
-      : [...stores]
-
-    if (payFilter === 'anticipado') result = result.filter(s => s.pagoAnticipado === true)
-    if (payFilter === 'contraentrega') result = result.filter(s => s.pagoAnticipado !== true)
-
-    if (sortField === 'calidad') {
-      result.sort((a, b) => {
-        const qa = qualityMap[a.storeId]?.finalScore ?? -1
-        const qb = qualityMap[b.storeId]?.finalScore ?? -1
-        return sortDir === 'asc' ? qa - qb : qb - qa
-      })
-    } else if (sortField === 'status') {
-      result.sort((a, b) => {
-        const sa = getStatusOrder(a)
-        const sb = getStatusOrder(b)
-        return sortDir === 'asc' ? sa - sb : sb - sa
-      })
-    } else if (sortField === 'testeados') {
-      result.sort((a, b) => {
-        const ca = qualityMap[a.storeId]?.candidateCount ?? 0
-        const cb = qualityMap[b.storeId]?.candidateCount ?? 0
-        return sortDir === 'asc' ? ca - cb : cb - ca
-      })
-    } else if (sortField === 'name') {
-      result.sort((a, b) => {
-        const cmp = a.storeName.localeCompare(b.storeName)
-        return sortDir === 'asc' ? cmp : -cmp
-      })
-    }
-
-    return result
-  }, [stores, query, sortField, sortDir, qualityMap, payFilter])
-
-  function SortHeader({ field, label, className }: { field: SortField; label: string; className?: string }) {
-    const active = sortField === field
-    return (
-      <button
-        onClick={() => handleSort(field)}
-        className={cn(
-          'inline-flex items-center gap-0.5 transition-colors hover:text-foreground',
-          active ? 'text-foreground' : '',
-          className,
-        )}
-      >
-        {label}
-        {active ? (
-          sortDir === 'asc' ? <ChevronUp className="h-2.5 w-2.5" /> : <ChevronDown className="h-2.5 w-2.5" />
-        ) : (
-          <ChevronDown className="h-2.5 w-2.5 opacity-30" />
-        )}
-      </button>
-    )
-  }
+  // Activas primero por productos nuevos; después las quietas; al final las pausadas, que no
+  // usan cupo pero se tienen que poder ver para editarlas o dejar de seguirlas.
+  const rows = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    const health = storeHealth(stores, candidates)
+    const paused: StoreHealthRow[] = stores
+      .filter((s) => !s.isActive)
+      .map((s) => ({ store: s, newThisWeek: 0, label: 'Pausada', tone: 'none' }))
+    const ordered = [
+      ...health.filter((r) => r.tone !== 'bad'),
+      ...health.filter((r) => r.tone === 'bad'),
+      ...paused,
+    ]
+    return q ? ordered.filter((r) => r.store.storeName.toLowerCase().includes(q) || r.store.baseUrl.toLowerCase().includes(q)) : ordered
+  }, [stores, candidates, query])
+  const quiet = rows.filter((r) => r.tone === 'bad').length
 
   return (
-    <PageLayout title="Mis tiendas" description="Administra tus tiendas Shopify rastreadas">
+    <PageLayout title="Competidores" description="Las tiendas Shopify que sigues y lo que están lanzando.">
       <AddStoreModal />
       <EditStoreModal store={editingStore} onClose={() => setEditingStore(null)} />
 
-      {/* Header */}
-      <div className="mb-4 flex items-center gap-3">
-        {/* Search */}
-        <div className="relative flex-1 max-w-xs">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="text"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder="Buscar tienda…"
-            className="h-9 w-full rounded-lg border border-border bg-secondary/40 pl-9 pr-8 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-          />
-          {query && (
-            <button
-              onClick={() => setQuery('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
-
-        <p className="flex-1 text-sm text-muted-foreground">
-          {query ? (
-            <><span className="font-medium text-foreground">{filtered.length}</span> de {stores.length} tiendas</>
-          ) : (
-            maxStores == null ? (
-              <><span className="font-medium text-foreground">{stores.length}</span> {stores.length === 1 ? 'tienda' : 'tiendas'}</>
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="text-sm text-muted-foreground">
+            {maxStores == null ? (
+              <><span className="font-semibold text-foreground">{activeCount}</span> {activeCount === 1 ? 'tienda' : 'tiendas'}</>
             ) : maxStores >= 999 ? (
-              <><span className="font-medium text-foreground">{activeStores}</span> tiendas activas · sin límite</>
+              <><span className="font-semibold text-foreground">{activeCount}</span> tiendas · sin límite</>
             ) : (
-              <><span className="font-medium text-foreground">{activeStores}</span> de {maxStores} tiendas activas en tu plan</>
-            )
-          )}
-        </p>
-
-        {/* Pago filter chips */}
-        <div className="flex items-center gap-1 rounded-lg border border-border bg-secondary/30 p-1">
-          {([['all', 'Todos'], ['anticipado', 'Anticipado'], ['contraentrega', 'Contraentrega']] as [PayFilter, string][]).map(([val, label]) => (
-            <button
-              key={val}
-              onClick={() => setPayFilter(val)}
-              className={cn(
-                'rounded-md px-2.5 py-1 text-xs font-medium transition-all',
-                payFilter === val
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
+              <><span className="font-semibold text-foreground">{activeCount} de {maxStores}</span> tiendas en tu plan</>
+            )}
+          </p>
+          {stores.length > 6 && (
+            <div className="relative w-full max-w-xs sm:w-56">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <input
+                id="buscar-tienda"
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar tienda…"
+                aria-label="Buscar tienda"
+                className="h-9 w-full rounded-lg border border-input bg-card pl-9 pr-8 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+              {query && (
+                <button onClick={() => setQuery('')} aria-label="Limpiar búsqueda" className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <X className="h-3.5 w-3.5" />
+                </button>
               )}
-            >
-              {label}
-            </button>
-          ))}
+            </div>
+          )}
+          <div className="ml-auto flex items-center gap-3">
+            {atLimit && (
+              <span className="text-xs text-muted-foreground">
+                Llegaste al límite. <Link href="/pricing" className="font-medium text-primary-text hover:underline">Ver planes</Link>
+              </span>
+            )}
+            <Button variant="brand" className="gap-2" onClick={openAddModal} disabled={atLimit}>
+              <Plus className="h-4 w-4" />Seguir tienda
+            </Button>
+          </div>
         </div>
 
-        <Button className="gap-2 shrink-0" onClick={openAddModal}>
-          <Plus className="h-4 w-4" />
-          Agregar tienda
-        </Button>
-      </div>
+        {quiet > 0 && (
+          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-danger-border bg-danger-subtle px-4 py-3 text-sm text-danger-foreground">
+            <span className="font-semibold">{quiet === 1 ? '1 tienda está quieta.' : `${quiet} tiendas están quietas.`}</span>
+            <span>{quiet === 1 ? 'Estás usando un cupo en una tienda que casi no se mueve.' : `Estás usando ${quiet} cupos en tiendas que casi no se mueven.`}</span>
+          </div>
+        )}
 
-      {/* Table */}
-      <div className="rounded-2xl border border-border bg-card">
-        {/* Column headers */}
-        <div className="grid grid-cols-[40px_1fr_96px_140px_96px_80px_96px_80px] items-center gap-3 border-b border-border px-4 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-          <div />
-          <SortHeader field="name" label="Tienda" />
-          <SortHeader field="calidad" label="Calidad" className="justify-center" />
-          <SortHeader field="testeados" label="Testeos" className="justify-center" />
-          <div className="text-center">Pago</div>
-          <div className="text-center">Ads</div>
-          <SortHeader field="status" label="Estado" className="justify-center" />
-          <div />
-        </div>
+        <PendingCandidatesSection />
 
         {isLoading ? (
-          <div className="divide-y divide-border/50">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="flex items-center gap-3 px-4 py-3">
-                <div className="h-9 w-9 animate-pulse rounded-lg bg-secondary" />
-                <div className="flex-1 space-y-1.5">
-                  <div className="h-3 w-36 animate-pulse rounded bg-secondary" />
-                  <div className="h-2 w-24 animate-pulse rounded bg-secondary/60" />
-                </div>
-              </div>
-            ))}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-60 animate-pulse rounded-xl bg-secondary" />)}
           </div>
-        ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 py-16 text-muted-foreground">
-            {query ? (
-              <>
-                <p className="text-sm">No hay tiendas que coincidan con &ldquo;{query}&rdquo;</p>
-                <button onClick={() => setQuery('')} className="text-xs text-primary hover:underline">
-                  Limpiar búsqueda
-                </button>
-              </>
-            ) : (
-              <>
-                <p className="text-sm">No tienes tiendas registradas aún.</p>
-                <Button variant="outline" className="gap-2" onClick={openAddModal}>
-                  <Plus className="h-4 w-4" />
-                  Agregar primera tienda
-                </Button>
-              </>
-            )}
+        ) : stores.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border px-6 py-16 text-center">
+            <p className="text-sm font-medium text-foreground">Todavía no sigues ninguna tienda</p>
+            <p className="max-w-sm text-sm text-muted-foreground">
+              Pega el link de una tienda Shopify de tu competencia. Desde el próximo corte verás aquí qué lanza y qué le funciona.
+            </p>
+            <Button variant="outline" className="gap-2" onClick={openAddModal}><Plus className="h-4 w-4" />Seguir la primera tienda</Button>
           </div>
+        ) : rows.length === 0 ? (
+          <p className="py-10 text-center text-sm text-muted-foreground">
+            Ninguna tienda coincide con &ldquo;{query}&rdquo;. <button onClick={() => setQuery('')} className="text-primary-text hover:underline">Limpiar</button>
+          </p>
         ) : (
-          <div className="divide-y divide-border/50">
-            {filtered.map((store) => (
-              <StoreRow
-                key={store.storeId}
-                store={store}
-                quality={qualityMap[store.storeId] ?? null}
-                qualityLoading={isCandidatesLoading}
-                topCandidates={topCandidatesByStore[store.storeId] ?? []}
-                isSyncing={syncingStoreId === store.storeId}
-                isDeleting={deletingStoreId === store.storeId}
-                onSync={() => syncStore(store.storeId, store.storeName)}
-                onDelete={() => deleteStore(store.storeId)}
-                onEdit={() => setEditingStore(store)}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {rows.map((row) => (
+              <StoreCard
+                key={row.store.storeId}
+                row={row}
+                candidates={byStore[row.store.storeId] ?? []}
+                isAdmin={isAdmin}
+                isSyncing={syncingStoreId === row.store.storeId}
+                isDeleting={deletingStoreId === row.store.storeId}
+                onEdit={() => setEditingStore(row.store)}
+                onDelete={() => deleteStore(row.store.storeId)}
+                onSync={() => syncStore(row.store.storeId, row.store.storeName)}
               />
             ))}
           </div>
         )}
 
-        {/* Add row at bottom */}
-        {!isLoading && (
-          <button
-            onClick={openAddModal}
-            className="flex w-full items-center gap-3 border-t border-dashed border-border px-4 py-3 text-sm text-muted-foreground transition-colors hover:bg-secondary/20 hover:text-foreground"
-          >
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-dashed border-border">
-              <Plus className="h-4 w-4" />
-            </div>
-            <span>Agregar nueva tienda</span>
-          </button>
+        {stores.some((s) => !s.isActive) && (
+          <p className="text-xs text-subtle-foreground">Las tiendas pausadas no usan cupo.</p>
         )}
       </div>
     </PageLayout>

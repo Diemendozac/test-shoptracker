@@ -1,12 +1,6 @@
-'use client'
+import { redirect } from 'next/navigation'
 
-import { PageLayout } from '@/components/layout/page-layout'
-import { PendingCandidatesSection } from '@/components/tracker/pending-candidates'
-
+// Pendientes pasó a ser el bloque "Nuevos por revisar" de Competidores (CHANGE-137, Fase 3a).
 export default function PendientesPage() {
-  return (
-    <PageLayout title="Pendientes" description="Productos detectados que aún no están en testeo">
-      <PendingCandidatesSection />
-    </PageLayout>
-  )
+  redirect('/stores')
 }
