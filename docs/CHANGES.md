@@ -4,6 +4,37 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-128 — Infra: el frontend puede correr fuera de Vercel (Docker para Easypanel)
+
+**Fecha:** 2026-09-29
+**Tipo:** infra. Riesgo: con cuidado, porque toca la configuración del build y el layout raíz. Es la fase 1 de la SPEC-002.
+
+**Por qué:** Diego le delegó el control total a Daniel, pero el frontend en producción corre en una cuenta de Vercel a la que Daniel no tiene acceso. Para llevarlo al servidor de Daniel (Easypanel, donde ya están el backend y la base), la app tiene que poder compilarse y correr como contenedor. Este cambio no mueve nada de producción: solo deja lista la imagen.
+
+**Qué cambió:**
+- **`Dockerfile` (nuevo):**
+  - tres etapas: dependencias (pnpm 9.15.9 con `--frozen-lockfile`), build e imagen final, que solo lleva el servidor autónomo, los estáticos y `public/`;
+  - usa Node 24, corre como el usuario `node` y escucha en el puerto 3000;
+  - `NEXT_PUBLIC_API_URL` entra como argumento de build. Por defecto trae la API de producción, que ya es pública.
+- **`.dockerignore` (nuevo):** deja fuera `node_modules`, `.next`, `.git` y `docs`, y también cualquier `.env*`, para que ningún secreto entre a la imagen.
+- **`next.config.mjs`:** `output: 'standalone'`. En Vercel no cambia nada.
+- **`app/layout.tsx`:**
+  - **`metadataBase` fijo en `https://www.getdropspy.com`.** Fuera de Vercel, Next usaba `localhost` para las URLs absolutas, y la imagen para compartir links quedaba rota.
+  - **`<Analytics />` de Vercel solo se renderiza en Vercel** (`process.env.VERCEL`). En otro servidor, su script da 404.
+
+**Verificación:** la máquina local no tiene Docker, así que el build de la imagen se prueba en Easypanel. Lo demás se probó en local:
+- el build `standalone`, con la misma URL de API que usa la imagen;
+- la carpeta que arma la imagen final, servida con `node server.js`:
+  - la landing, `/pricing`, `/login` (con el aviso del plan), `/api/exchange-rates`, `/icon`, `/apple-icon` y `/opengraph-image` responden 200;
+  - los estáticos y `public/` responden 200;
+- la URL de la API quedó incrustada en el JS y no aparece el script de Vercel;
+- `og:image` apunta a `https://www.getdropspy.com`;
+- el servidor arranca en 52 ms y usa unos 110 MB de memoria.
+
+**Archivos modificados:** `Dockerfile`, `.dockerignore`, `next.config.mjs` y `app/layout.tsx`.
+**Relacionado con backend:** no.
+**Wiki actualizado:** Sí (log.md del 2026-09-29).
+
 ### CHANGE-126 — Landing: los planes dejan de prometer lo que no se aplica
 
 **Fecha:** 2026-09-29
