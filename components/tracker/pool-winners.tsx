@@ -168,35 +168,6 @@ function getPageRange(current: number, total: number): (number | 'ellipsis')[] {
   return [0, 'ellipsis', current - 1, current, current + 1, 'ellipsis', total - 1]
 }
 
-/**
- * "En alza" concrete definition — all 4 conditions must hold:
- *  1. Rank improved at least 3 consecutive days in the last 7
- *  2. Score improved vs yesterday
- *  3. growthPct > 0
- *  4. daysElapsed >= 3
- * Lower rank number = better position (rank 1 = best seller).
- */
-function isRising(w: PoolWinnerProduct): boolean {
-  if (w.daysElapsed < 3) return false
-  if (w.growthPct == null || w.growthPct <= 0) return false
-
-  // Score improved vs yesterday
-  const sh = w.scoreHistory
-  if (sh && sh.length >= 2 && sh[sh.length - 1] <= sh[sh.length - 2]) return false
-
-  // Rank improved at least 3 consecutive days (streak) in last 7
-  const rh = w.rankHistory
-  if (!rh || rh.length < 3) return false
-  const recent = rh.slice(-7)
-  let streak = 0
-  let maxStreak = 0
-  for (let i = 1; i < recent.length; i++) {
-    if (recent[i] < recent[i - 1]) { streak++; if (streak > maxStreak) maxStreak = streak }
-    else streak = 0
-  }
-  return maxStreak >= 3
-}
-
 function SortIcon({ column, sort }: { column: PoolSortKey; sort: SortState }) {
   if (sort.key !== column)
     return <ArrowUpDown className="h-3 w-3 opacity-50 transition-opacity group-hover/th:opacity-100" />
@@ -223,6 +194,10 @@ interface PoolWinnersSectionProps {
   onPagoFilterChange?: (f: PagoFilter) => void
   favorites: Set<string>
   onToggleFavorite: (id: string) => void
+  /** Favoritos con sus datos guardados: la pestaña Favoritos los muestra todos, no solo los de la página. */
+  favoriteItems?: PoolWinnerProduct[]
+  /** Favoritos guardados solo con el id (antes de CHANGE-131) que todavía no volvieron a aparecer. */
+  missingFavorites?: number
   // Server-side filter props — state lives in pool/page.tsx
   // search: término CONFIRMADO (Enter) — el que realmente filtra `data`/la tabla.
   // searchInput: lo que el usuario está tecleando ahora mismo — value del <input>.
@@ -255,7 +230,7 @@ interface PoolWinnersSectionProps {
 export function PoolWinnersSection({
   data, isLoading, page = 0, onPageChange, preset = 'all',
   pagoFilter = 'all', onPagoFilterChange,
-  favorites, onToggleFavorite,
+  favorites, onToggleFavorite, favoriteItems = [], missingFavorites = 0,
   search, searchInput, onSearchInputChange, onSearchSubmit, suggestions,
   dateFilter, onDateFilterChange,
   daysExactFilter, onDaysExactFilterChange,
@@ -311,13 +286,16 @@ export function PoolWinnersSection({
   const { data: countriesData } = useGetPoolCountriesQuery()
   const countries = countriesData?.countries ?? []
 
+  const isFavoritesTab = preset === 'favorites'
+
   // Client-side: deduplication + tab presets + sort only.
   // All other filters (search, dates, niche, currency, pago, escalar, country) are server-side
   // query params — never filter() on a partial page.
   const filtered = useMemo(() => {
     // Deduplicate: same product title + same store → keep the one with higher score
     const seen = new Map<string, PoolWinnerProduct>()
-    for (const w of winners) {
+    // Favoritos: la lista guardada completa, no la página abierta (CHANGE-131)
+    for (const w of (isFavoritesTab ? favoriteItems : winners)) {
       const key = `${w.productTitle.trim().toLowerCase()}|${w.baseUrl ?? w.storeId}`
       const existing = seen.get(key)
       if (!existing || w.performanceScore > existing.performanceScore) {
@@ -325,11 +303,6 @@ export function PoolWinnersSection({
       }
     }
     let r = Array.from(seen.values())
-    // Tab preset filters (client-side valid: favorites uses localStorage, rising/new are display hints)
-    if (preset === 'favorites')  r = r.filter(w => favorites.has(w.candidateId))
-    if (preset === 'rising')     r = r.filter(isRising)
-    if (preset === 'top_score')  r = [...r].sort((a, b) => b.performanceScore - a.performanceScore).slice(0, 20)
-    if (preset === 'new')        r = r.filter(w => w.daysElapsed <= 7)
     // Sort
     if (sort.key) {
       const k = sort.key
@@ -344,7 +317,7 @@ export function PoolWinnersSection({
       })
     }
     return r
-  }, [winners, preset, favorites, sort])
+  }, [winners, isFavoritesTab, favoriteItems, sort])
 
   const hasActiveFilters = !!search || nicheFilter.size > 0 || currencyFilter.size > 0 || dateFilter > 0 || daysExactFilter != null || pagoFilter !== 'all' || escalarFilter || !!countryFilter
 
@@ -681,14 +654,30 @@ export function PoolWinnersSection({
           </>
         )}
       </div>
+      {isFavoritesTab && (filtered.length > 0 || missingFavorites > 0) && (
+        <p className="px-6 pb-2 text-xs text-muted-foreground">
+          Tus favoritos, con los datos de la última vez que aparecieron en el pool. Los filtros no se aplican a esta lista.
+          {missingFavorites > 0 && (
+            <> {missingFavorites === 1
+              ? '1 favorito guardado antes aparece aquí si vuelve a salir en el pool.'
+              : `${missingFavorites} favoritos guardados antes aparecen aquí si vuelven a salir en el pool.`}</>
+          )}
+        </p>
+      )}
       <div className="divide-y divide-border/50">
         {filtered.length === 0 ? (
-          preset === 'favorites' ? (
+          isFavoritesTab ? (
             <div className="flex flex-col items-center justify-center gap-3 py-16 text-muted-foreground">
               <Star className="h-9 w-9 opacity-20" />
               <div className="text-center">
-                <p className="text-sm font-medium text-foreground">Aún no tienes favoritos</p>
-                <p className="mt-0.5 text-xs">Marca productos con ★ para guardarlos aquí.</p>
+                <p className="text-sm font-medium text-foreground">
+                  {missingFavorites > 0 ? 'Tus favoritos aparecerán aquí' : 'Aún no tienes favoritos'}
+                </p>
+                <p className="mt-0.5 text-xs">
+                  {missingFavorites > 0
+                    ? 'Los guardaste antes de este cambio: aparecen aquí si vuelven a salir en el pool.'
+                    : 'Marca productos con ★ para guardarlos aquí.'}
+                </p>
               </div>
             </div>
           ) : (
@@ -703,7 +692,7 @@ export function PoolWinnersSection({
             <PoolWinnerRow
               key={winner.candidateId}
               winner={winner}
-              position={page * 20 + i + 1}
+              position={isFavoritesTab ? i + 1 : page * 20 + i + 1}
               preferredCurrency={preferredCurrency}
               isFavorite={favorites.has(winner.candidateId)}
               onToggleFavorite={onToggleFavorite}
@@ -715,8 +704,8 @@ export function PoolWinnersSection({
         )}
       </div>
 
-      {/* Pagination */}
-      {onPageChange && data && (data.totalPages ?? 1) > 1 && (
+      {/* Pagination — la lista de favoritos no se pagina: son los guardados, no el pool */}
+      {!isFavoritesTab && onPageChange && data && (data.totalPages ?? 1) > 1 && (
         <div className="flex items-center justify-between border-t border-border px-6 py-3">
           <span className="text-xs text-muted-foreground">
             Mostrando {page * 20 + 1}–{Math.min((page + 1) * 20, data.total ?? 0)} de {data.total ?? 0} productos
@@ -766,7 +755,7 @@ export function PoolWinnersSection({
       )}
 
       {/* bottom padding when no pagination */}
-      {!(onPageChange && data && (data.totalPages ?? 1) > 1) && (
+      {(isFavoritesTab || !(onPageChange && data && (data.totalPages ?? 1) > 1)) && (
         <div className="pb-4" />
       )}
     </div>

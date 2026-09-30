@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { PoolWinnersSection } from '@/components/tracker/pool-winners'
 import type { PagoFilter } from '@/components/tracker/pool-winners'
 import { PoolDetailPanel } from '@/components/tracker/pool-detail-panel'
@@ -10,17 +11,20 @@ import { useViewAs } from '@/lib/view-as'
 import { cn } from '@/lib/utils'
 import { useMediaQuery } from '@/hooks/use-media-query'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
-import { LayoutGrid, TrendingUp, Star, Flame } from 'lucide-react'
+import { LayoutGrid, Star } from 'lucide-react'
+import type { PoolWinnerProduct } from '@/app/(dashboard)/types'
 
-export type PoolPreset = 'all' | 'rising' | 'top_score' | 'new' | 'favorites'
+// "En alza", "Top score" y "Nuevos esta semana" se quitaron (CHANGE-131): filtraban en el navegador
+// solo los 20 productos de la página abierta, no el pool. Top score repetía el orden del backend
+// (ya viene por puntaje) y Nuevos repetía el filtro de Fechas "7d", que sí filtra en el servidor.
+export type PoolPreset = 'all' | 'favorites'
 
 const TABS: { id: PoolPreset; label: string; icon: React.ElementType }[] = [
   { id: 'all',       label: 'Todos los productos', icon: LayoutGrid },
-  { id: 'rising',    label: 'En alza',             icon: Flame      },
-  { id: 'top_score', label: 'Top score',           icon: Star       },
-  { id: 'new',       label: 'Nuevos esta semana',  icon: TrendingUp },
   { id: 'favorites', label: 'Favoritos',           icon: Star       },
 ]
+
+const FAVORITE_ITEMS_KEY = 'dropspy_favorites_pool_items'
 
 export default function PoolPage() {
   // effectivePlan, no isAdmin: si un admin está simulando "ver como Pro/Starter"
@@ -68,6 +72,33 @@ export default function PoolPage() {
     } catch { return new Set() }
   })
 
+  // Favoritos que se pueden mostrar aunque no estén en la página abierta (CHANGE-131). Antes la
+  // pestaña filtraba solo los 20 productos cargados, así que un favorito de la página 3 no se veía
+  // nunca. Se guarda la fila tal como se vio la última vez en el pool, y se refresca cada vez que
+  // vuelve a aparecer. `favorites` (ids) sigue siendo la lista de verdad, con la misma clave de
+  // siempre: los favoritos viejos (sin datos guardados) aparecen si vuelven a salir en el pool.
+  const [favoriteItems, setFavoriteItems] = useState<Record<string, PoolWinnerProduct>>(() => {
+    if (typeof window === 'undefined') return {}
+    try {
+      const stored = localStorage.getItem(FAVORITE_ITEMS_KEY)
+      return stored ? JSON.parse(stored) as Record<string, PoolWinnerProduct> : {}
+    } catch { return {} }
+  })
+
+  function saveFavoriteItems(next: Record<string, PoolWinnerProduct>) {
+    try { localStorage.setItem(FAVORITE_ITEMS_KEY, JSON.stringify(next)) } catch { /* sin almacenamiento: queda en memoria */ }
+  }
+
+  // Búsqueda que llega desde el buscador global (⌘K → "Buscar con IA en el Radar", CHANGE-132):
+  // /pool?q=... se aplica como si se hubiera escrito y confirmado con Enter.
+  const qParam = useSearchParams().get('q')
+  useEffect(() => {
+    if (!qParam) return
+    setSearchInput(qParam)
+    setSearchSubmitted(qParam)
+    setPage(0)
+  }, [qParam])
+
   // Debounce solo para el dropdown de sugerencias en vivo — 300ms después de dejar de escribir.
   // La tabla principal NO escucha esto; escucha searchSubmitted (solo cambia con Enter).
   useEffect(() => {
@@ -93,6 +124,15 @@ export default function PoolPage() {
   function handleCountryFilterChange(v: string) { setCountryFilter(v); setPage(0) }
 
   function toggleFavorite(id: string) {
+    const wasFavorite = favorites.has(id)
+    const winner = data?.winners.find(w => w.candidateId === id)
+    setFavoriteItems(prev => {
+      const next = { ...prev }
+      if (wasFavorite) delete next[id]
+      else if (winner) next[id] = winner
+      saveFavoriteItems(next)
+      return next
+    })
     setFavorites(prev => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
@@ -132,6 +172,28 @@ export default function PoolPage() {
   const { data: suggestData } = useGetPoolWinnersQuery(
     { ...sharedParams, page: 0, size: 6, q: searchDebounced },
     { skip: !searchDebounced },
+  )
+
+  // Refresca los datos guardados de los favoritos que aparecen en la página abierta, y completa
+  // los favoritos viejos que se guardaron solo con el id.
+  useEffect(() => {
+    const seen = (data?.winners ?? []).filter(w => favorites.has(w.candidateId))
+    if (seen.length === 0) return
+    setFavoriteItems(prev => {
+      const next = { ...prev }
+      for (const w of seen) next[w.candidateId] = w
+      saveFavoriteItems(next)
+      return next
+    })
+  }, [data, favorites])
+
+  const favoriteList = useMemo(
+    () => Object.values(favoriteItems).filter(w => favorites.has(w.candidateId)),
+    [favoriteItems, favorites],
+  )
+  const missingFavorites = useMemo(
+    () => [...favorites].filter(id => !favoriteItems[id]).length,
+    [favorites, favoriteItems],
   )
 
   // Archivo (FIX-053): candidatos que ya salieron del tracking activo, buscables por IA.
@@ -191,6 +253,8 @@ export default function PoolPage() {
             onPagoFilterChange={handlePagoFilter}
             favorites={favorites}
             onToggleFavorite={toggleFavorite}
+            favoriteItems={favoriteList}
+            missingFavorites={missingFavorites}
             search={searchSubmitted}
             searchInput={searchInput}
             onSearchInputChange={handleSearchInputChange}
