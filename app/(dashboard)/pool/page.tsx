@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useMemo } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { PoolWinnersSection } from '@/components/tracker/pool-winners'
 import type { PagoFilter } from '@/components/tracker/pool-winners'
 import { PoolDetailPanel } from '@/components/tracker/pool-detail-panel'
@@ -87,6 +88,16 @@ export default function PoolPage() {
   function saveFavoriteItems(next: Record<string, PoolWinnerProduct>) {
     try { localStorage.setItem(FAVORITE_ITEMS_KEY, JSON.stringify(next)) } catch { /* sin almacenamiento: queda en memoria */ }
   }
+
+  // Búsqueda que llega desde el buscador global (⌘K → "Buscar con IA en el Radar", CHANGE-132):
+  // /pool?q=... se aplica como si se hubiera escrito y confirmado con Enter.
+  const qParam = useSearchParams().get('q')
+  useEffect(() => {
+    if (!qParam) return
+    setSearchInput(qParam)
+    setSearchSubmitted(qParam)
+    setPage(0)
+  }, [qParam])
 
   // Debounce solo para el dropdown de sugerencias en vivo — 300ms después de dejar de escribir.
   // La tabla principal NO escucha esto; escucha searchSubmitted (solo cambia con Enter).
