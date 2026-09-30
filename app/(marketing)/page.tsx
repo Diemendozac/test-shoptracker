@@ -226,8 +226,14 @@ export default async function LandingPage() {
                   <ul className="grid gap-1 text-[15px] text-muted-foreground">
                     <li>{t('plans.pool')}</li>
                     <li><b className="text-foreground">{t(`plans.${p}.stores`)}</b></li>
-                    <li>{t(`plans.${p}.tests`)}</li>
-                    <li>{t(`plans.${p}.history`)}</li>
+                    {/* Testeos e historial por plan no se aplican en el backend: se dejaron de prometer (CHANGE-126).
+                        Lo que sí distingue a Pro y Agency: el anunciante con su link a Meta y la Biblioteca de anuncios. */}
+                    {p !== 'basic' && (
+                      <>
+                        <li>{t('plans.advertiser')}</li>
+                        <li>{t('plans.library')}</li>
+                      </>
+                    )}
                     <li className="text-sm text-subtle-foreground">{t(`plans.${p}.privacy`)}</li>
                   </ul>
                 </article>
