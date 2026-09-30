@@ -177,7 +177,8 @@ export function LibraryAdCard({
             </div>
           )}
 
-          {!metaUrl ? null : allowMetaLink ? (
+          {/* Sin Pro el backend ya no manda el link (FIX-081): se muestra el candado igual */}
+          {allowMetaLink && metaUrl ? (
             <a
               href={metaUrl}
               target="_blank"
@@ -187,12 +188,12 @@ export function LibraryAdCard({
               Ver en Meta
               <ExternalLink className="size-3" aria-hidden />
             </a>
-          ) : (
+          ) : !allowMetaLink ? (
             <span className="inline-flex w-fit items-center gap-1 text-xs text-subtle-foreground" title="Disponible en Pro">
               <Lock className="size-3" aria-hidden />
               Meta · Pro
             </span>
-          )}
+          ) : null}
         </div>
       </div>
     </article>

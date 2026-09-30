@@ -105,7 +105,9 @@ function PlanCard({ id, annual, billing, hasSession }: { id: PaidPlan; annual: b
   const features: Feature[] = [
     { icon: Check, text: t('pool') },
     { icon: Check, text: t('stores', { count: PLAN_STORES[id] }), strong: true },
-    ...(id === 'pro' ? [{ icon: Check, text: t('advertiser') }, { icon: Check, text: t('library') }] : []),
+    ...(id === 'pro'
+      ? [{ icon: Check, text: t('advertiser') }, { icon: Check, text: t('library') }]
+      : [{ icon: Check, text: t('libraryNoAdvertiser') }]),
     { icon: Check, text: t('alerts') },
     id === 'starter'
       ? { icon: Users, text: t('communityPool'), soft: true }
