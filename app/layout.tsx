@@ -25,6 +25,10 @@ const outfit = Outfit({
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('Landing.meta')
   return {
+    // Base de las URLs absolutas (la imagen para compartir, entre otras). En Vercel, Next la deduce
+    // del proyecto; en cualquier otro servidor usaría localhost y las vistas previas de los links
+    // saldrían rotas. Por eso va fija al dominio público (SPEC-002).
+    metadataBase: new URL('https://www.getdropspy.com'),
     title: 'Dropspy - Inteligencia Competitiva para Dropshippers',
     // Sin "en tiempo real": el ranking se revisa una vez por día (B1 del diagnóstico de landing)
     description: 'Dropspy revisa todos los días el ranking de más vendidos de tiendas Shopify y te muestra qué productos nuevos están subiendo: en qué tienda, cuánto subieron, su puntaje y su fase.',
@@ -61,7 +65,8 @@ export default async function RootLayout({
             {children}
           </StoreProvider>
         </NextIntlClientProvider>
-        <Analytics />
+        {/* La analítica de Vercel solo existe en Vercel: en otro servidor su script da 404 en consola */}
+        {process.env.VERCEL && <Analytics />}
       </body>
     </html>
   )
