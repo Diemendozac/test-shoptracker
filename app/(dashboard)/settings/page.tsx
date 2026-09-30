@@ -11,6 +11,8 @@ import { useGetMeQuery, useChangePasswordMutation, useUpdatePreferencesMutation 
 import { User, Mail, Bell, Shield, CreditCard, LogOut, Eye, EyeOff, Check, X, Zap, ArrowUpRight, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { mpCheckoutUrl } from '@/lib/mercadopago'
+import { usePlanTier, useTrialStatus } from '@/lib/view-as'
+import { useGetStoresQuery } from '@/app/(dashboard)/stores/services/storeApi'
 import { AGENCY_CONTACT_EMAIL, PLAN_STORES } from '@/lib/pricing'
 
 // ─── Plan badge ───────────────────────────────────────────────────────────────
@@ -193,39 +195,28 @@ function BillingSection({ plan }: { plan: string; email?: string; userId?: strin
 
   return (
     <div className="space-y-3">
-      {/* Plan actual */}
-      <div className="flex items-center justify-between rounded-xl bg-secondary/40 px-4 py-3">
-        <div>
-          <p className="text-xs text-muted-foreground">Plan actual</p>
-          <p className="font-semibold text-foreground capitalize">{PLAN_LABELS[plan]?.label ?? plan}</p>
-        </div>
-        <Link href="/pricing" className="text-xs text-primary underline-offset-4 hover:underline flex items-center gap-1">
-          Ver todos los planes <ArrowUpRight className="h-3 w-3" />
-        </Link>
-      </div>
-
       {/* Upgrade CTA */}
       {upgrade && (
-        <div className="flex items-center justify-between rounded-xl bg-gradient-to-r from-primary/20 via-primary/10 to-transparent p-4">
+        <div className="flex flex-col items-start gap-3 rounded-xl bg-gradient-to-r from-primary/20 via-primary/10 to-transparent p-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="font-semibold text-foreground">{upgrade.label}</p>
             <p className="text-sm text-muted-foreground">{upgrade.desc}</p>
           </div>
           {upgrade.contact ? (
-            <div className="flex flex-col items-end gap-1 shrink-0">
+            <div className="flex shrink-0 flex-col items-start gap-1 sm:items-end">
               <a href={contactHref}>
                 <Button size="sm">Escríbenos</Button>
               </a>
-              <p className="text-right text-[10px] text-muted-foreground">{AGENCY_CONTACT_EMAIL}</p>
+              <p className="text-[11px] text-muted-foreground sm:text-right">{AGENCY_CONTACT_EMAIL}</p>
             </div>
           ) : (
-            <div className="flex flex-col items-end gap-1 shrink-0">
+            <div className="flex shrink-0 flex-col items-start gap-1 sm:items-end">
               <a href={checkoutHref} target="_blank" rel="noopener noreferrer">
                 <Button size="sm">
                   Actualizar <ExternalLink className="ml-1.5 h-3 w-3" />
                 </Button>
               </a>
-              <p className="text-right text-[10px] text-muted-foreground">
+              <p className="text-[11px] text-muted-foreground sm:text-right">
                 Paga con el mismo correo de tu cuenta
               </p>
             </div>
@@ -233,26 +224,104 @@ function BillingSection({ plan }: { plan: string; email?: string; userId?: strin
         </div>
       )}
 
-      {/* Manage subscription — visible para planes pagos */}
+      {/* Cancelar — solo planes pagos. El correo va como texto copiable además del link. */}
       {plan !== 'free' && (
-        <p className="text-xs text-muted-foreground text-center">
-          Para cancelar o cambiar método de pago, escríbenos a{' '}
-          <a href="mailto:hola@dropspy.io" className="text-primary underline-offset-4 hover:underline">
-            hola@dropspy.io
-          </a>
+        <p className="text-xs text-muted-foreground">
+          <span className="font-medium text-foreground">Para cancelar o cambiar el método de pago</span>, escríbenos a{' '}
+          <a href={`mailto:${AGENCY_CONTACT_EMAIL}`} className="select-all text-primary-text underline-offset-4 hover:underline">
+            {AGENCY_CONTACT_EMAIL}
+          </a>. También puedes cancelar la suscripción desde tu cuenta de Mercado Pago.
         </p>
       )}
     </div>
   )
 }
 
+// ─── Tu plan, con consumo real (CHANGE-139) ────────────────────────────────────
+
+function UsageRow({ label, value, detail, ratio, tone = 'brand' }: {
+  label: string
+  value: string
+  detail?: string
+  ratio?: number
+  tone?: 'brand' | 'warn'
+}) {
+  return (
+    <div className="grid gap-1.5 py-2.5">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-sm text-muted-foreground">{label}</span>
+        <span className="text-sm font-semibold tabular-nums text-foreground">{value}</span>
+      </div>
+      {ratio != null && (
+        <div className="h-1.5 overflow-hidden rounded-full bg-secondary" aria-hidden>
+          <div className={cn('h-full rounded-full', tone === 'warn' ? 'bg-warning' : 'bg-primary')} style={{ width: `${Math.max(2, Math.min(100, ratio * 100))}%` }} />
+        </div>
+      )}
+      {detail && <span className="text-xs text-subtle-foreground">{detail}</span>}
+    </div>
+  )
+}
+
+function PlanCard({ plan, maxStores, createdAt }: { plan: string; maxStores: number | undefined; createdAt: string | undefined }) {
+  const { data: stores = [] } = useGetStoresQuery()
+  const { isPro, maxPoolPage } = usePlanTier()
+  const { isTrial, isExpired, daysLeft } = useTrialStatus()
+  const planMeta = PLAN_LABELS[plan] ?? PLAN_LABELS.free
+  const active = stores.filter((s) => s.isActive).length
+  const unlimited = maxStores == null || maxStores >= 999
+  const trialEnds = isTrial && createdAt
+    ? new Date(new Date(createdAt).getTime() + 7 * 86_400_000).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })
+    : null
+
+  return (
+    <section aria-labelledby="tu-plan" className="rounded-xl border border-border bg-card shadow-card">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
+        <div>
+          <p className="text-xs font-medium text-subtle-foreground">Tu plan</p>
+          <h2 id="tu-plan" className="font-display text-xl font-semibold text-foreground">
+            {planMeta.label}
+            {isTrial && !isExpired && <span className="ml-2 text-base font-normal text-muted-foreground">· {daysLeft === 1 ? 'te queda 1 día' : `te quedan ${daysLeft} días`}</span>}
+          </h2>
+          {trialEnds && <p className="text-xs text-subtle-foreground">La prueba termina el {trialEnds}.</p>}
+        </div>
+        <Link href="/pricing" className="flex items-center gap-1 text-xs font-medium text-primary-text hover:underline">
+          Ver todos los planes <ArrowUpRight className="h-3 w-3" />
+        </Link>
+      </div>
+      <div className="divide-y divide-border px-5">
+        <UsageRow
+          label="Tiendas que sigues"
+          value={unlimited ? `${active} · sin límite` : `${active} de ${maxStores}`}
+          ratio={unlimited ? undefined : active / Math.max(1, maxStores!)}
+          tone={!unlimited && active >= maxStores! ? 'warn' : 'brand'}
+          detail={!unlimited && active >= maxStores! ? 'Llegaste al límite de tu plan.' : undefined}
+        />
+        <UsageRow
+          label="Radar del mercado"
+          value={maxPoolPage === 0 ? 'Primera página' : 'Completo'}
+          detail={maxPoolPage === 0 ? 'La prueba ve los 20 productos más fuertes. Con un plan pago ves todo el mercado.' : undefined}
+        />
+        <UsageRow label="Biblioteca de anuncios" value={isPro ? 'Completa' : 'Sin anunciante ni links'} />
+        <UsageRow label="Anunciante y link a Meta" value={isPro ? 'Incluido' : 'Solo en Pro'} />
+      </div>
+      {plan !== 'admin' && (
+        <div className="border-t border-border p-5">
+          <BillingSection plan={plan} />
+        </div>
+      )}
+    </section>
+  )
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
+// Ajustes y plan (CHANGE-139, Fase 3d). Antes: un perfil con avatar grande, el plan repetido en
+// dos lugares, la oferta abajo de todo y "Cerrar sesión" como sección aparte. Ahora el plan va
+// primero, con lo que usas de verdad, y después avisos, preferencias y cuenta.
 
 export default function SettingsPage() {
   const router   = useRouter()
   const dispatch = useAppDispatch()
   const { data: me, isLoading } = useGetMeQuery()
-
   const [updatePreferences] = useUpdatePreferencesMutation()
 
   function handleLogout() {
@@ -261,161 +330,65 @@ export default function SettingsPage() {
   }
 
   const plan = me?.plan ?? 'free'
-  const planMeta = PLAN_LABELS[plan] ?? PLAN_LABELS.free
-  const avatarLetter = me?.email?.charAt(0).toUpperCase() ?? '—'
   const joinedDate = me?.createdAt
     ? new Date(me.createdAt).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })
-    : '—'
+    : null
+  const card = 'rounded-xl border border-border bg-card shadow-card'
+  const heading = 'flex items-center gap-2 text-sm font-semibold text-foreground'
 
   return (
-    <PageLayout title="Configuración" description="Administra tu cuenta y preferencias">
-      <div className="mx-auto max-w-3xl space-y-6">
-
-        {/* ── Profile ── */}
-        <div className="rounded-xl border border-border bg-card">
-          <div className="border-b border-border p-4">
-            <h2 className="flex items-center gap-2 font-semibold text-foreground">
-              <User className="h-4 w-4" />
-              Perfil
-            </h2>
-          </div>
-          <div className="p-6 space-y-5">
-            {isLoading ? (
-              <div className="flex items-center gap-4">
-                <div className="h-16 w-16 animate-pulse rounded-full bg-secondary" />
-                <div className="space-y-2">
-                  <div className="h-4 w-40 animate-pulse rounded bg-secondary" />
-                  <div className="h-3 w-24 animate-pulse rounded bg-secondary" />
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/20 text-2xl font-bold text-primary">
-                  {avatarLetter}
-                </div>
-                <div>
-                  <p className="font-semibold text-foreground">{me?.email ?? '—'}</p>
-                  <p className="text-xs text-muted-foreground">Miembro desde {joinedDate}</p>
-                </div>
-              </div>
-            )}
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Email</label>
-                <div className="flex h-10 items-center rounded-lg border border-border bg-input px-3 text-sm text-muted-foreground">
-                  <Mail className="mr-2 h-3.5 w-3.5 shrink-0" />
-                  {me?.email ?? '—'}
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Plan</label>
-                <div className="flex h-10 items-center gap-2 rounded-lg border border-border bg-input px-3 text-sm">
-                  <span className={cn('rounded px-2 py-0.5 text-xs font-semibold', planMeta.color)}>
-                    {planMeta.label}
-                  </span>
-                  <span className="text-muted-foreground">
-                    {me?.maxStores ?? 1} {me?.maxStores === 1 ? 'tienda' : 'tiendas'} máx.
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Notifications ── */}
-        <div className="rounded-xl border border-border bg-card">
-          <div className="border-b border-border p-4">
-            <h2 className="flex items-center gap-2 font-semibold text-foreground">
-              <Bell className="h-4 w-4" />
-              Notificaciones
-            </h2>
-          </div>
-          {/* Antes había tres interruptores (resumen diario, alertas, reporte semanal) que eran
-              estado local: se apagaban al recargar y nada los enviaba (CHANGE-131). Lo único que
-              existe es el aviso por correo del backend (AlertService, tras cada sync), que no se
-              configura desde aquí. Vuelven los controles cuando existan de verdad. */}
-          <div className="px-6 py-4">
-            <p className="text-sm font-medium text-foreground">Avisos por correo</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Cuando un producto de tus tiendas llega a la señal más fuerte, te escribimos a{' '}
-              <span className="font-medium text-foreground">{me?.email ?? 'tu correo'}</span>.
-              Por ahora no se configuran desde aquí.
-            </p>
-          </div>
-        </div>
-
-        {/* ── Automatización ── */}
-        <div className="rounded-xl border border-border bg-card">
-          <div className="border-b border-border p-4">
-            <h2 className="flex items-center gap-2 font-semibold text-foreground">
-              <Zap className="h-4 w-4" />
-              Automatización
-            </h2>
-          </div>
-          <div className="divide-y divide-border">
-            <div className="flex items-center justify-between px-6 py-4">
-              <div>
-                <p className="text-sm font-medium text-foreground">Testear candidatos automáticamente</p>
-                <p className="text-xs text-muted-foreground">
-                  Los nuevos productos detectados se agregan directo al tracker sin necesitar tu aprobación.
-                </p>
-              </div>
-              <Toggle
-                checked={Boolean(me?.autoDetectCandidates)}
-                onChange={(v) => updatePreferences({ autoDetectCandidates: v })}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* ── Security ── */}
-        <div className="rounded-xl border border-border bg-card">
-          <div className="border-b border-border p-4">
-            <h2 className="flex items-center gap-2 font-semibold text-foreground">
-              <Shield className="h-4 w-4" />
-              Seguridad
-            </h2>
-          </div>
-          <div className="p-6">
-            <PasswordSection />
-          </div>
-        </div>
-
-        {/* ── Billing ── */}
-        {plan !== 'admin' && (
-          <div className="rounded-xl border border-border bg-card">
-            <div className="border-b border-border p-4">
-              <h2 className="flex items-center gap-2 font-semibold text-foreground">
-                <CreditCard className="h-4 w-4" />
-                Plan y facturación
-              </h2>
-            </div>
-            <div className="p-6 space-y-4">
-              <BillingSection plan={plan} email={me?.email} userId={me?.userId} />
-            </div>
-          </div>
+    <PageLayout title="Ajustes y plan">
+      <div className="mx-auto grid max-w-3xl grid-cols-[minmax(0,1fr)] gap-5">
+        {isLoading ? (
+          <div className="h-64 animate-pulse rounded-xl bg-secondary" />
+        ) : (
+          <PlanCard plan={plan} maxStores={me?.maxStores} createdAt={me?.createdAt} />
         )}
 
-        {/* ── Session ── */}
-        <div className="rounded-xl border border-destructive/30 bg-card">
-          <div className="border-b border-destructive/30 p-4">
-            <h2 className="flex items-center gap-2 font-semibold text-destructive">
-              <LogOut className="h-4 w-4" />
-              Sesión
-            </h2>
+        {/* Avisos (CHANGE-131): lo único que existe es el correo del backend */}
+        <section className={card} aria-labelledby="avisos">
+          <div className="px-5 py-4">
+            <h2 id="avisos" className={heading}><Bell className="h-4 w-4" />Avisos por correo</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Cuando un producto de tus tiendas llega a la señal más fuerte, te escribimos a{' '}
+              <span className="font-medium text-foreground">{me?.email ?? 'tu correo'}</span>. Por ahora no se configuran desde aquí.
+            </p>
           </div>
-          <div className="p-6 flex items-center justify-between">
+        </section>
+
+        <section className={card} aria-labelledby="preferencias">
+          <div className="flex items-start justify-between gap-4 px-5 py-4">
             <div>
-              <p className="font-medium text-foreground">Cerrar sesión</p>
-              <p className="text-sm text-muted-foreground">Salir de tu cuenta en este dispositivo</p>
+              <h2 id="preferencias" className={heading}><Zap className="h-4 w-4" />Detección automática</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Los productos nuevos de tus tiendas entran solos al Radar, sin pasar por “Nuevos por revisar” en Competidores.
+              </p>
             </div>
-            <Button variant="destructive" size="sm" onClick={handleLogout}>
-              Cerrar sesión
+            <Toggle
+              checked={Boolean(me?.autoDetectCandidates)}
+              onChange={(v) => updatePreferences({ autoDetectCandidates: v })}
+            />
+          </div>
+        </section>
+
+        <section className={card} aria-labelledby="cuenta">
+          <div className="border-b border-border px-5 py-4">
+            <h2 id="cuenta" className={heading}><User className="h-4 w-4" />Cuenta</h2>
+            <p className="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
+              <Mail className="h-3.5 w-3.5" />{me?.email ?? '—'}
+              {joinedDate && <span className="text-subtle-foreground">· desde el {joinedDate}</span>}
+            </p>
+          </div>
+          <div className="border-b border-border px-5 py-4">
+            <h3 className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground"><Shield className="h-4 w-4" />Contraseña</h3>
+            <PasswordSection />
+          </div>
+          <div className="px-5 py-4">
+            <Button variant="outline" size="sm" className="gap-2 text-destructive hover:text-destructive" onClick={handleLogout}>
+              <LogOut className="h-4 w-4" />Cerrar sesión
             </Button>
           </div>
-        </div>
-
+        </section>
       </div>
     </PageLayout>
   )
