@@ -1,8 +1,21 @@
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import { currencySymbol } from '@/lib/currency'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
+}
+
+/**
+ * Monto con el símbolo de su moneda, separadores de es-CO y sin decimales:
+ * (59900, 'COP') → "$59.900", (12, 'USD') → "US$12". Es el formato que ya usan FormattedPrice
+ * y el inicio. Sin monto (null, undefined o NaN) → "—". No agrega "~": si el número es una
+ * estimación, el prefijo lo pone quien llama.
+ */
+export function formatCurrency(amount: number | null | undefined, currency: string | null | undefined): string {
+  if (amount == null || !Number.isFinite(amount)) return '—'
+  const digits = Math.abs(amount).toLocaleString('es-CO', { maximumFractionDigits: 0 })
+  return `${amount < 0 ? '-' : ''}${currencySymbol(currency)}${digits}`
 }
 
 /** Formatea un número en K/M para displays compactos (p.ej. 53000 → "53K") */
