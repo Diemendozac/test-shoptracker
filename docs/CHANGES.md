@@ -4,6 +4,58 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-127 — /pricing nueva: solo lo que existe, el precio primero y el pago contado con honestidad
+
+**Fecha:** 2026-09-29
+**Tipo:** ui. Riesgo: con cuidado, porque es la entrada al cobro.
+- No cambia `lib/mercadopago.ts`, sus links ni el parámetro `?plan=`.
+- Depende de CHANGE-125 (PR #26) para el paso a Mercado Pago sin sesión.
+
+**Por qué:** es la página donde se decide pagar, y cada promesa falsa ahí termina en un reclamo o en un reembolso. La página anterior tenía varios problemas:
+- **Vendía funciones que Dropspy no tiene:** exportar a CSV, API, Slack y seats.
+- **Vendía diferencias por plan que no se aplican en ningún lado:** testeos e historial.
+- **Prometía "Datos 100 % privados",** que todavía no está listo.
+- **Mostraba "Más popular" sin un dato que lo respalde.**
+- **Decía "Ahorra 20 %"**, cuando el ahorro real del anual es 16,7 %.
+- **Tenía problemas de lectura:** textos de 10 y 11 px, contraste por debajo de AA y, en 390 px, una barra que se salía de la pantalla.
+
+**Qué cambió:**
+- **Página del servidor.** Es un Server Component con los textos en `messages/es.json` (`Pricing`). Solo son islas cliente el interruptor con las tarjetas, lo que cambia con la sesión y la entrada al hacer scroll. Usa el mismo tema oscuro y el mismo movimiento que la landing.
+- **Hero.** Lleva el interruptor mensual/anual (`role="switch"`) y el ahorro real: "Anual: pagas 10 meses y usas 12". Ese número se calcula de los precios y se redondea a favor del cliente.
+- **Tarjetas:**
+  - Básico y Pro muestran solo lo que existe.
+  - Agency pasa a "Plan a tu medida", con el botón "Habla con nosotros". Por ahora lleva al correo hola@dropspy.io, que ya estaba publicado; después será WhatsApp.
+  - Ya no dice "Más popular".
+  - En escritorio, `subgrid` deja el precio, las funciones y el botón a la misma altura en las tres tarjetas.
+- **El precio nunca espera:**
+  - llega en el HTML;
+  - las tarjetas y la tabla no tienen efecto de entrada;
+  - solo cuenta (240 ms) al cambiar la facturación, y con movimiento reducido cambia de una;
+  - el lector de pantalla oye los precios finales (`aria-live`).
+- **Secciones nuevas:**
+  - qué incluye y qué no incluye la prueba gratis;
+  - una tabla comparativa (`<table>` real que entra en 390 px);
+  - cómo funciona el pago: manual y con el mismo correo de la cuenta;
+  - 8 preguntas frecuentes con respuesta real, en `<details>`.
+- **Botones según la sesión:**
+  - sin sesión llevan a `/login?tab=signup&plan=…&billing=…` (CHANGE-125);
+  - con sesión, al link de Mercado Pago de ese plan y esa facturación.
+  - La sesión vive en `localStorage` y se lee después de hidratar, así que el HTML del servidor y el primer render coinciden.
+- **`formatCurrency(amount, currency)` nuevo en `lib/utils.ts`.** El CLAUDE.md ya lo pedía, pero no existía. Tiene el mismo formato que `FormattedPrice` (`$59.900`, `US$12`).
+
+**Archivos modificados:**
+- `app/(marketing)/pricing/page.tsx`: reescrita como Server Component, con la barra y el pie propios. No toca la landing.
+- `components/pricing/billing-plans.tsx` (nuevo): el interruptor, las tarjetas, los botones y el anuncio para lectores de pantalla.
+- `components/pricing/price-amount.tsx` (nuevo): el conteo del precio al cambiar la facturación.
+- `components/pricing/session-switch.tsx` (nuevo): `useHasSession` y `SessionSwitch`, sin desajuste de hidratación.
+- `components/pricing/compare-table.tsx` y `components/pricing/pricing-faq.tsx` (nuevos): componentes del servidor.
+- `lib/pricing.ts` (nuevo): los precios, las tiendas por plan, los meses que se pagan en el anual y el contacto de Agency.
+- `lib/utils.ts`: `formatCurrency`.
+- `messages/es.json`: namespace `Pricing`. No cambia ninguna clave existente.
+
+**Relacionado con backend:** no cambia endpoints. Las tiendas por plan son las publicadas, y el límite lo aplica el backend.
+**Wiki actualizado:** Sí (log.md del 2026-09-29).
+
 ### CHANGE-126 — Landing: los planes dejan de prometer lo que no se aplica
 
 **Fecha:** 2026-09-29
