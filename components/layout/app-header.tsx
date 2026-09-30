@@ -6,7 +6,6 @@ import { Bell, FlaskConical, TrendingUp, X, ChevronDown, Check, Clock } from 'lu
 import { Button } from '@/components/ui/button'
 import { useGetNotificationsQuery } from '@/app/(dashboard)/services/userApi'
 import { useCurrency } from '@/store/hooks'
-import { TopbarTicker } from '@/components/layout/topbar-ticker'
 import { SUPPORTED_CURRENCIES, currencySymbol } from '@/lib/currency'
 import { cn } from '@/lib/utils'
 import { useTrialStatus, useViewAs } from '@/lib/view-as'
@@ -316,7 +315,7 @@ export function AppHeader({ title, description }: AppHeaderProps) {
   return (
     // En el celular: fila flexible con el logo (no hay menú lateral) y sin el mensaje rotativo.
     // Desde 1024 px: las tres columnas de siempre (CHANGE-132).
-    <header className="sticky top-0 z-40 flex h-14 items-center gap-2 border-b border-border bg-card/85 bg-topbar-glow px-4 backdrop-blur-sm lg:grid lg:h-16 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_auto] lg:px-6">
+    <header className="sticky top-0 z-40 flex h-14 items-center gap-2 border-b border-border bg-card/85 bg-topbar-glow px-4 backdrop-blur-sm lg:grid lg:h-16 lg:grid-cols-[minmax(0,1fr)_auto] lg:px-6">
       <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden lg:flex-none">
         <Link href="/home" aria-label="Inicio" className="shrink-0 lg:hidden">
           <DropspyIcon size={26} gradient />
@@ -325,9 +324,8 @@ export function AppHeader({ title, description }: AppHeaderProps) {
         <LastSync />
       </div>
 
-      <div className="hidden min-w-0 lg:flex lg:justify-center">
-        <TopbarTicker />
-      </div>
+      {/* El mensaje rotativo (TopbarTicker, /insights) se quitó en CHANGE-136: cambiaba cada 5 s y
+          no se alcanzaba a leer. Lo que importa del día ahora está en Hoy. */}
 
       <div className="flex shrink-0 items-center justify-end gap-1.5 lg:gap-2">
         <CommandSearch />

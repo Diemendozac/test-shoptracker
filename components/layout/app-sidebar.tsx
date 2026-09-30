@@ -31,11 +31,12 @@ import {
 // Inicio, que muestra más. La ruta sigue existiendo. Explorar testeos pasa a llamarse Radar y
 // Tiendas, Competidores. Pendientes se queda hasta decidir la detección automática (Fase 3).
 // Mis testeos salió del menú en CHANGE-134: es el alcance "Mis tiendas" del Radar.
+// Inicio pasó a llamarse Hoy en CHANGE-136 (también reemplaza a Resumen).
 // La barra inferior del celular (mobile-nav.tsx) usa esta misma lista.
 export type NavKey = 'home' | 'radar' | 'pending' | 'stores' | 'ads'
 
 export const NAV_ITEMS: { key: NavKey; name: string; short: string; href: string; icon: React.ElementType }[] = [
-  { key: 'home',    name: 'Inicio',       short: 'Inicio',   href: '/home',        icon: Home },
+  { key: 'home',    name: 'Hoy',          short: 'Hoy',      href: '/home',        icon: Home },
   { key: 'radar',   name: 'Radar',        short: 'Radar',    href: '/pool',        icon: Radar },
   { key: 'pending', name: 'Pendientes',   short: 'Pendientes', href: '/pendientes', icon: Clock },
   { key: 'stores',  name: 'Competidores', short: 'Tiendas',  href: '/stores',      icon: Store },

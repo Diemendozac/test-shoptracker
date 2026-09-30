@@ -4,6 +4,56 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-136 — Hoy reemplaza Inicio y Resumen (Fase 2e)
+
+**Fecha:** 2026-09-30
+**Tipo:** pantalla de entrada y navegación. Riesgo: con cuidado (es lo primero que se ve después del login).
+
+**Por qué:** Fase 2e de la propuesta de la app por pantalla (vault: `wiki/propuesta-app-por-pantalla.md`). Tres pantallas respondían "qué está ganando": Inicio, Resumen y Mis testeos. Inicio tenía:
+- un logo gigante;
+- un buscador que solo miraba tus tiendas y 10 productos del pool;
+- accesos rápidos que repetían el menú;
+- "Qué hacer ahora" con mensajes genéricos que llevaban todos a la misma tabla.
+
+Resumen tenía tres indicadores de inventario. El mensaje rotativo de la barra superior cambiaba cada 5 segundos y no se alcanzaba a leer. Daniel aprobó el contenido el 2026-09-30.
+
+**Qué cambió:**
+- `lib/today.ts` (nuevo): lógica pura de la pantalla.
+  - **Eventos por producto de tus tiendas desde su registro anterior**, como máximo uno por producto, en este orden de importancia: entró al top 10, subió 3+ puestos, nuevo (1 día o menos), bajó 3+ puestos. "Registro" es un día en más vendidos, porque el historial no guarda los días fuera del ranking; por eso la pantalla dice "desde su registro anterior" y no "desde ayer".
+  - **El titular del día.** Si no pasó nada, lo dice: "Sin cambios fuertes en tus tiendas desde el último corte".
+  - **La salud de cada tienda activa:** su estado (`inactivityTier` en español: Activa, Moderada, Inactiva, Sin movimiento) y los productos nuevos de los últimos 7 días. Primero las quietas.
+  - Probado con `tsx`: orden de eventos, titular con y sin cambios, y salud.
+- `app/(dashboard)/home/page.tsx`: Hoy, con fecha, titular y un botón ("Ver el cambio más fuerte" o "Ir al Radar"), el feed de cambios, la salud de tus tiendas y "Ganando en el mercado". Sin tiendas, muestra "Sigue las tiendas de tu competencia" y el mercado.
+- `components/home/changes-feed.tsx`, `market-row.tsx`, `store-health.tsx` (nuevos):
+  - el feed lleva el evento, la curva del puesto y la señal (`lib/signal.ts`);
+  - el mercado son los 5 primeros del Radar con video, con señal, puesto y número de anuncios;
+  - la salud avisa cuántos cupos se están usando en tiendas quietas.
+- `dashboard/page.tsx`: Resumen redirige a `/home`.
+- Menú (`app-sidebar.tsx`): "Inicio" pasa a "Hoy". La barra del celular y el buscador usan la misma lista.
+- Barra superior (`app-header.tsx`): se quitó el mensaje rotativo (`TopbarTicker`, `/insights`); quedan dos columnas desde 1024 px.
+
+**Qué se quitó de Inicio:** el logo y el título grandes, el buscador (reemplazado por ⌘K en CHANGE-132), el acceso rápido, "Mejores testeos" (su carrusel de videos por producto pasa a ser "Ganando en el mercado") y "Qué hacer ahora".
+
+**Corrección a la propuesta:** la propuesta decía que `/podium` devuelve "productos que llegaron al #1 esta semana". No es así. Devuelve los 3 productos con mejor puntaje del pool cuyo mejor puesto está en el top 10 % de su tienda, e ignora el parámetro `days` (la variable `cutoff` se calcula y no se usa). Por eso Hoy no tiene esa sección.
+
+**Qué NO cambió:** el backend, las rutas (`/home` sigue siendo la URL) y el login, que ya llevaba a `/home` desde CHANGE-132.
+
+**Verificación:**
+- `next build` compila; `tsc --noEmit` solo marca `lib/mock-data.ts`.
+- En local, con una API de prueba y sin credenciales:
+  - `/dashboard` redirige a `/home` y el menú dice "Hoy";
+  - la barra superior ya no tiene el mensaje rotativo;
+  - titular, feed, salud y mercado a 1440 y 390 px, sin scroll horizontal.
+- En la prueba se encontró y corrigió que a 390 px las tarjetas quedaban más anchas que la pantalla: la grilla no tenía columnas explícitas.
+- **No verificado:** el estado sin tiendas, porque la API de prueba siempre devuelve tiendas.
+
+**Pendientes:** quedan sin uso `topbar-ticker.tsx`, `hooks/useDashboard.ts`, `components/dashboard/stats-card.tsx` y `store-card.tsx`. `/insights` ya no se consulta en ninguna pantalla.
+
+**Relacionado con backend:** no. Hallazgo: `DashboardController.podium` calcula `cutoff` con `days` y no lo usa.
+**Wiki actualizado:** sí (log.md del 2026-09-30).
+
+---
+
 ### CHANGE-135 — Ficha de producto única: la misma en el panel del Radar y en la página (Fase 2d)
 
 **Fecha:** 2026-09-30
