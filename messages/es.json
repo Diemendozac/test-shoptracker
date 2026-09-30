@@ -261,5 +261,167 @@
     },
     "seeLess": "Ver menos",
     "seeMore": "Ver {count} tiendas más"
+  },
+  "Pricing": {
+    "meta": {
+      "title": "Planes y precios · Dropspy",
+      "description": "Precios en pesos colombianos. Empieza gratis 7 días, sin tarjeta de crédito, y paga con Mercado Pago cuando quieras seguir."
+    },
+    "nav": {
+      "backToApp": "Volver a la app"
+    },
+    "hero": {
+      "eyebrow": "// planes y precios",
+      "title": "Precios en pesos.",
+      "titleHighlight": "Empieza gratis 7 días.",
+      "lead": "Sin tarjeta de crédito. Cuando quieras seguir, pagas con Mercado Pago: tarjeta, PSE o Efecty."
+    },
+    "billing": {
+      "monthly": "Mensual",
+      "annual": "Anual",
+      "switchLabel": "Pagar anual",
+      "saving": "Anual: pagas {paid} meses y usas 12",
+      "announceMonthly": "Precios mensuales. Básico: {starter} al mes; Pro: {pro} al mes.",
+      "announceAnnual": "Precios anuales. Básico: {starter} al mes, {starterTotal} al año en un solo pago; Pro: {pro} al mes, {proTotal} al año en un solo pago."
+    },
+    "plans": {
+      "title": "Planes",
+      "currency": "COP",
+      "perMonth": "/mes",
+      "noteMonthly": "Se cobra cada mes.",
+      "noteAnnual": "{total} al año, en un solo pago.",
+      "pool": "Pool global de productos",
+      "stores": "{count} tiendas propias",
+      "advertiser": "Anunciante y link a Meta de cada anuncio",
+      "library": "Biblioteca de anuncios",
+      "alerts": "Alertas por email",
+      "communityPool": "Tus tiendas suman al pool de la comunidad",
+      "privacySoon": "Privacidad de tus tiendas: en preparación",
+      "cta": "Suscribirse",
+      "ctaSession": "Pagar con Mercado Pago",
+      "ctaNote": "Creas tu cuenta y te llevamos a pagar con Mercado Pago.",
+      "ctaNoteSession": "Se abre Mercado Pago en otra pestaña. Paga con el correo de tu cuenta.",
+      "starter": {
+        "name": "Básico",
+        "for": "Para operar con el pool completo y tus propias tiendas."
+      },
+      "pro": {
+        "name": "Pro",
+        "for": "Para ver quién está detrás de cada anuncio."
+      },
+      "agency": {
+        "name": "Agency",
+        "for": "Para operar más de {stores} tiendas. Lo armamos conversando.",
+        "price": "Plan a tu medida",
+        "allPro": "Todo lo de Pro",
+        "cta": "Habla con nosotros",
+        "ctaNote": "Te respondemos por correo: {email}",
+        "mailSubject": "Plan Agency"
+      },
+      "foot": "Precios en pesos colombianos. El anual se cobra en un solo pago."
+    },
+    "trial": {
+      "kicker": "// prueba gratis",
+      "title": "Qué incluye la prueba gratis",
+      "subtitle": "Siete días, sin tarjeta. Ves lo más fuerte del mercado y pruebas Dropspy con una tienda tuya.",
+      "includes": "Incluye",
+      "excludes": "No incluye",
+      "in": {
+        "days": "7 días, sin tarjeta de crédito",
+        "pool": "La primera página del pool: los 20 productos con el puntaje más alto",
+        "ads": "Los anuncios de esos productos; el anunciante queda bloqueado",
+        "store": "1 tienda propia",
+        "alerts": "Alertas por email de tu tienda"
+      },
+      "out": {
+        "pool": "El resto del pool",
+        "metrics": "El puntaje, la tendencia y el crecimiento en \"Mis testeos\"",
+        "videos": "Los videos de anuncios en \"Mis testeos\"",
+        "advertiser": "El anunciante y el link a Meta"
+      },
+      "cta": "Empieza gratis"
+    },
+    "compare": {
+      "kicker": "// comparar",
+      "title": "Qué cambia entre planes",
+      "subtitle": "Solo lo que Dropspy hace hoy.",
+      "caption": "Comparación de los planes Básico, Pro y Agency",
+      "feature": "Función",
+      "yes": "Incluido",
+      "no": "No incluido",
+      "price": "Precio al mes",
+      "annualPrice": "{price} en anual",
+      "custom": "A tu medida",
+      "stores": "Tiendas propias",
+      "pool": "Pool global de productos",
+      "poolAds": "Anuncios de los productos del pool",
+      "advertiser": "Anunciante y link a Meta",
+      "library": "Biblioteca de anuncios",
+      "alerts": "Alertas por email",
+      "privacy": "Privacidad de tus tiendas",
+      "privacyStarter": "Suman al pool",
+      "privacySoon": "En preparación"
+    },
+    "payment": {
+      "kicker": "// cómo pagas",
+      "title": "Cómo funciona el pago",
+      "choose": {
+        "title": "Eliges el plan y creas tu cuenta",
+        "body": "O entras con la que ya tienes."
+      },
+      "pay": {
+        "title": "Pagas en Mercado Pago",
+        "body": "Con tarjeta, PSE o Efecty, y con el mismo correo de tu cuenta."
+      },
+      "activate": {
+        "title": "Activamos tu plan a mano",
+        "body": "En menos de 24 horas desde tu pago."
+      },
+      "honest": "Todavía no es automático: buscamos tu pago por el correo con el que pagaste. Por eso tiene que ser el mismo de tu cuenta."
+    },
+    "faq": {
+      "kicker": "// preguntas",
+      "title": "Preguntas frecuentes",
+      "card": {
+        "q": "¿Necesito tarjeta para la prueba?",
+        "a": "No. La prueba dura 7 días y no pide ningún medio de pago."
+      },
+      "trialEnd": {
+        "q": "¿Qué pasa cuando termina la prueba?",
+        "a": "La app se bloquea hasta que tu plan esté activo. Tus tiendas y tus testeos quedan guardados."
+      },
+      "howToPay": {
+        "q": "¿Cómo pago?",
+        "a": "Con Mercado Pago: tarjeta de crédito o débito, PSE o Efecty."
+      },
+      "activation": {
+        "q": "¿Cuándo se activa mi plan?",
+        "a": "Lo activamos a mano en menos de 24 horas. Buscamos tu pago por el correo con el que pagaste: usa el mismo de tu cuenta."
+      },
+      "annual": {
+        "q": "¿El anual se cobra de una vez?",
+        "a": "Sí. Pagas {paid} meses y usas 12: {starterTotal} el Básico y {proTotal} el Pro, en un solo pago."
+      },
+      "privacy": {
+        "q": "¿Mis tiendas son privadas?",
+        "a": "Hoy las tiendas activas de todos los planes alimentan el pool, también las de Pro y Agency. Estamos separando las de Pro y Agency; cuando esté listo, lo anunciamos aquí."
+      },
+      "downgrade": {
+        "q": "¿Qué pasa con mis tiendas si paso a un plan con menos tiendas?",
+        "a": "Siguen activas, pero no puedes agregar más hasta quedar por debajo del límite de tu plan."
+      },
+      "agency": {
+        "q": "¿Qué es \"Habla con nosotros\"?",
+        "a": "Agency se arma conversando: cuántas tiendas necesitas y cómo trabajas. Escríbenos a <mail>{email}</mail>."
+      }
+    },
+    "closing": {
+      "title": "Mira qué está ganando hoy.",
+      "cta": "Empieza gratis",
+      "note": "7 días gratis · sin tarjeta de crédito"
+    },
+    "footer": {
+      "home": "Inicio"
+    }
   }
 }
