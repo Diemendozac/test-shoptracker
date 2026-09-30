@@ -10,7 +10,6 @@ import { useGetPendingCandidatesQuery } from '@/app/(dashboard)/services/candida
 import {
   Home,
   Radar,
-  Clock,
   Store,
   Video,
   Settings,
@@ -32,13 +31,14 @@ import {
 // Tiendas, Competidores. Pendientes se queda hasta decidir la detección automática (Fase 3).
 // Mis testeos salió del menú en CHANGE-134: es el alcance "Mis tiendas" del Radar.
 // Inicio pasó a llamarse Hoy en CHANGE-136 (también reemplaza a Resumen).
+// Pendientes salió del menú en CHANGE-137: es el bloque "Nuevos por revisar" de Competidores,
+// y el contador pasa al ítem Competidores.
 // La barra inferior del celular (mobile-nav.tsx) usa esta misma lista.
-export type NavKey = 'home' | 'radar' | 'pending' | 'stores' | 'ads'
+export type NavKey = 'home' | 'radar' | 'stores' | 'ads'
 
 export const NAV_ITEMS: { key: NavKey; name: string; short: string; href: string; icon: React.ElementType }[] = [
   { key: 'home',    name: 'Hoy',          short: 'Hoy',      href: '/home',        icon: Home },
   { key: 'radar',   name: 'Radar',        short: 'Radar',    href: '/pool',        icon: Radar },
-  { key: 'pending', name: 'Pendientes',   short: 'Pendientes', href: '/pendientes', icon: Clock },
   { key: 'stores',  name: 'Competidores', short: 'Tiendas',  href: '/stores',      icon: Store },
   { key: 'ads',     name: 'Anuncios',     short: 'Anuncios', href: '/ads-library', icon: Video },
 ]
@@ -51,8 +51,7 @@ export function isNavActive(key: NavKey, pathname: string, _fromParam: string | 
   switch (key) {
     case 'home':    return pathname.startsWith('/home')
     case 'radar':   return pathname.startsWith('/pool') || pathname.startsWith('/tracker')
-    case 'pending': return pathname.startsWith('/pendientes')
-    case 'stores':  return pathname.startsWith('/stores')
+    case 'stores':  return pathname.startsWith('/stores') || pathname.startsWith('/pendientes')
     case 'ads':     return pathname.startsWith('/ads-library')
   }
 }
@@ -131,7 +130,7 @@ export function AppSidebar({ pinned, onTogglePinned }: AppSidebarProps) {
       <nav aria-label="Principal" className="flex-1 space-y-1 px-2 py-4">
         {NAV_ITEMS.map((item) => {
           const isActive = isNavActive(item.key, pathname, fromParam)
-          const showBadge = item.key === 'pending' && pendingCount > 0
+          const showBadge = item.key === 'stores' && pendingCount > 0
           return (
             <Link key={item.key} href={item.href}
               aria-current={isActive ? 'page' : undefined}
