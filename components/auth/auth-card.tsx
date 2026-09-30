@@ -6,6 +6,7 @@ import type { FetchBaseQueryError } from '@reduxjs/toolkit/query'
 import type { SerializedError } from '@reduxjs/toolkit'
 import { useAuth } from '@/app/(auth)/hooks/useAuth'
 import { cn } from '@/lib/utils'
+import { checkoutHref, type CheckoutIntent } from '@/lib/checkout-intent'
 import {
   Field, FormHead, PasswordField, SubmitRow, SwitchLine, focusFirstInvalid,
   type FieldErrors,
@@ -35,9 +36,11 @@ function useServerError(error: FetchBaseQueryError | SerializedError | undefined
   return tab === 'login' ? t('login.invalidCredentials') : t('signup.genericError')
 }
 
-export function AuthCard({ initialTab }: { initialTab: AuthTab }) {
+export function AuthCard({ initialTab, checkout }: { initialTab: AuthTab; checkout?: CheckoutIntent | null }) {
   const t = useTranslations('Auth')
   const [tab, setTab] = useState<AuthTab>(initialTab)
+  // Si viene de elegir un plan en /pricing, al entrar sigue al pago de ese plan (CHANGE-125)
+  const redirectTo = checkoutHref(checkout)
   // El correo se comparte entre pestañas: si alguien empieza en la equivocada, no lo reescribe
   const [email, setEmail] = useState('')
   const tabRefs = useRef<Record<AuthTab, HTMLButtonElement | null>>({ signup: null, login: null })
@@ -68,6 +71,14 @@ export function AuthCard({ initialTab }: { initialTab: AuthTab }) {
 
   return (
     <div className="w-full max-w-[440px] justify-self-center rounded-2xl border border-border bg-card p-5 shadow-card sm:p-7">
+      {checkout && (
+        <div role="note" className="mb-5 rounded-[10px] border border-primary-border bg-primary-subtle px-3.5 py-3 text-sm">
+          <p className="font-semibold text-foreground">
+            {t('checkout.title', { plan: t(`checkout.plans.${checkout.plan}`), billing: t(`checkout.billing.${checkout.billing}`) })}
+          </p>
+          <p className="mt-1 text-muted-foreground">{t('checkout.body')}</p>
+        </div>
+      )}
       <div role="tablist" aria-label={t('page.tabsLabel')} className="mb-5 grid grid-cols-2 gap-1 rounded-[10px] border border-border bg-background p-1">
         {TABS.map((id) => (
           <button
@@ -93,8 +104,8 @@ export function AuthCard({ initialTab }: { initialTab: AuthTab }) {
 
       <div role="tabpanel" id="auth-panel" aria-labelledby={`auth-tab-${tab}`}>
         {tab === 'signup'
-          ? <SignupForm email={email} onEmail={setEmail} onSwitch={() => select('login', true)} />
-          : <LoginForm email={email} onEmail={setEmail} onSwitch={() => select('signup', true)} />}
+          ? <SignupForm email={email} onEmail={setEmail} onSwitch={() => select('login', true)} redirectTo={redirectTo} />
+          : <LoginForm email={email} onEmail={setEmail} onSwitch={() => select('signup', true)} redirectTo={redirectTo} />}
       </div>
     </div>
   )
@@ -106,9 +117,11 @@ interface FormProps {
   email: string
   onEmail: (value: string) => void
   onSwitch: () => void
+  /** Link de pago del plan elegido; sin él, el destino de siempre */
+  redirectTo?: string
 }
 
-function SignupForm({ email, onEmail, onSwitch }: FormProps) {
+function SignupForm({ email, onEmail, onSwitch, redirectTo }: FormProps) {
   const t = useTranslations('Auth')
   const { register, isRegisterLoading, registerError } = useAuth()
   const [name, setName] = useState('')
@@ -126,7 +139,7 @@ function SignupForm({ email, onEmail, onSwitch }: FormProps) {
     setErrors(next)
     if (focusFirstInvalid(formRef.current, next)) return
     try {
-      await register({ name: name.trim(), email: email.trim(), password })
+      await register({ name: name.trim(), email: email.trim(), password }, { redirectTo })
     } catch {
       // El mensaje sale del estado de la mutation (serverError)
     }
@@ -159,7 +172,7 @@ function SignupForm({ email, onEmail, onSwitch }: FormProps) {
   )
 }
 
-function LoginForm({ email, onEmail, onSwitch }: FormProps) {
+function LoginForm({ email, onEmail, onSwitch, redirectTo }: FormProps) {
   const t = useTranslations('Auth')
   const { login, isLoginLoading, loginError } = useAuth()
   const [password, setPassword] = useState('')
@@ -176,7 +189,7 @@ function LoginForm({ email, onEmail, onSwitch }: FormProps) {
     setErrors(next)
     if (focusFirstInvalid(formRef.current, next)) return
     try {
-      await login({ email: email.trim(), password })
+      await login({ email: email.trim(), password }, { redirectTo })
     } catch {
       // El mensaje sale del estado de la mutation (serverError)
     }

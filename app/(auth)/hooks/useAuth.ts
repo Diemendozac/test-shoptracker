@@ -8,6 +8,11 @@ import { markJustRegistered } from '../store/onboardingSlice'
 import { useLoginMutation, useRegisterMutation } from '../services/authApi'
 import type { LoginRequest, RegisterRequest } from '../services/authApi'
 
+interface AuthRedirect {
+  /** Link de pago de Mercado Pago del plan elegido en /pricing (CHANGE-125). */
+  redirectTo?: string
+}
+
 export function useAuth() {
   const dispatch = useAppDispatch()
   const router = useRouter()
@@ -16,17 +21,26 @@ export function useAuth() {
   const [loginMutation, { isLoading: isLoginLoading, error: loginError }] = useLoginMutation()
   const [registerMutation, { isLoading: isRegisterLoading, error: registerError }] = useRegisterMutation()
 
-  const login = async (credentials: LoginRequest) => {
-    const result = await loginMutation(credentials).unwrap()
-    dispatch(setCredentials(result))
-    router.push('/dashboard')
+  // Si la persona venía de elegir un plan, sigue al pago (navegación completa: es otro sitio).
+  // Solo se acepta un link de mpago.la; cualquier otro valor se ignora y queda el destino de siempre.
+  const go = (fallback: string, redirectTo?: string) => {
+    if (redirectTo?.startsWith('https://mpago.la/')) window.location.assign(redirectTo)
+    else router.push(fallback)
   }
 
-  const register = async (data: RegisterRequest) => {
+  const login = async (credentials: LoginRequest, { redirectTo }: AuthRedirect = {}) => {
+    const result = await loginMutation(credentials).unwrap()
+    dispatch(setCredentials(result))
+    go('/dashboard', redirectTo)
+  }
+
+  // El onboarding sigue siendo obligatorio: markJustRegistered queda guardado y el modal
+  // aparece cuando la persona vuelve a la app después de pagar.
+  const register = async (data: RegisterRequest, { redirectTo }: AuthRedirect = {}) => {
     const result = await registerMutation(data).unwrap()
     dispatch(setCredentials(result))
     dispatch(markJustRegistered())
-    router.push('/home')
+    go('/home', redirectTo)
   }
 
   const signOut = () => {

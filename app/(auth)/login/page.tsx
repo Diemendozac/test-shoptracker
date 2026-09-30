@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
 import { ArrowLeft, Check } from 'lucide-react'
 import { AuthCard, type AuthTab } from '@/components/auth/auth-card'
+import { parseCheckoutIntent } from '@/lib/checkout-intent'
 import { ScoreRing } from '@/components/dashboard/score-ring'
 import { PhaseBadge } from '@/components/tracker/phase-badge'
 import { Brand } from '@/components/marketing/landing-parts'
@@ -24,10 +25,12 @@ const WRAP = 'mx-auto w-full max-w-[1200px] px-5 lg:px-8'
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string | string[] }>
+  searchParams: Promise<{ tab?: string | string[]; plan?: string | string[]; billing?: string | string[] }>
 }) {
-  const { tab } = await searchParams
+  const { tab, plan, billing } = await searchParams
   const initialTab: AuthTab = tab === 'signup' ? 'signup' : 'login'
+  // ?plan= viene de los botones de /pricing sin sesión: después de entrar, sigue al pago (CHANGE-125)
+  const checkout = parseCheckoutIntent(plan, billing)
   const t = await getTranslations('Auth')
 
   return (
@@ -48,7 +51,7 @@ export default async function LoginPage({
       <main className={`${WRAP} relative grid gap-7 pt-6 pb-24 lg:grid-cols-[1fr_440px] lg:items-start lg:gap-x-16 lg:pt-14`}>
         {/* En el celular, la tarjeta del formulario va primero y el resumen de valor debajo */}
         <div className="lg:order-2">
-          <AuthCard initialTab={initialTab} />
+          <AuthCard initialTab={initialTab} checkout={checkout} />
         </div>
 
         <section aria-labelledby="auth-side-title" className="lg:order-1 lg:pt-3">

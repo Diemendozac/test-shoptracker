@@ -198,6 +198,19 @@
       "genericError": "No pudimos crear la cuenta. Revisa los datos e intenta de nuevo.",
       "switchPrompt": "¿Ya tienes cuenta?",
       "switchAction": "Inicia sesión"
+    },
+    "checkout": {
+      "title": "Elegiste el plan {plan} · {billing}",
+      "body": "Crea tu cuenta o inicia sesión y te llevamos a pagar con Mercado Pago. Paga con este mismo correo: activamos tu plan a mano en menos de 24 horas.",
+      "plans": {
+        "starter": "Básico",
+        "pro": "Pro",
+        "agency": "Agency"
+      },
+      "billing": {
+        "monthly": "mensual",
+        "annual": "anual"
+      }
     }
   },
   "Onboarding": {

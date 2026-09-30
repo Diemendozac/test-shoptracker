@@ -28,6 +28,31 @@ Daniel decidió corregirlas ya, sin esperar el rediseño de precios. Las tiendas
 **Relacionado con backend:** no se toca. Pendientes para Diego: el filtro de privacidad del pool y el límite de tiendas por plan.
 **Wiki actualizado:** Sí (log.md del 2026-09-29).
 
+### CHANGE-125 — Fix: elegir un plan sin sesión ahora termina en el pago de Mercado Pago
+
+**Fecha:** 2026-09-29
+**Tipo:** fix. Riesgo: con cuidado, porque toca el registro y el ingreso. No cambia endpoints, payload, `lib/mercadopago.ts` ni sus links.
+
+**Por qué:** en `/pricing`, sin sesión, "Suscribirse" llevaba a `/login?tab=signup&plan=X`, pero nada leía ese `plan`: después de registrarse o de ingresar, la persona terminaba en la prueba gratis o en el dashboard y nunca llegaba a Mercado Pago. Los 3 planes, en mensual y en anual, estaban rotos (la elección de anual ni siquiera llegaba a la URL). Con sesión sí funcionaba: los 6 links de Mercado Pago están vivos. Diagnóstico completo en `docs/redesign/pricing/01-diagnostico.md` (fila 20), que vive en el respaldo privado.
+
+**Qué cambió:**
+- **`/pricing`:** el botón sin sesión agrega `&billing=monthly|annual` según el interruptor.
+- **`/login`:** el servidor lee `?plan=` y `?billing=` (`lib/checkout-intent.ts`) y solo acepta `starter`, `pro` o `agency`. Con un plan válido, la tarjeta muestra el aviso "Elegiste el plan Pro · anual… Paga con este mismo correo: activamos tu plan a mano en menos de 24 horas" (el mismo compromiso que `/pricing` ya mostraba con sesión).
+- **Después de registrarse o ingresar con un plan**, `useAuth` lleva al link de Mercado Pago de ese plan y facturación (navegación completa). Sin plan, el destino es el de siempre (`/home` o `/dashboard`).
+- **Seguridad:** el link se arma con `mpCheckoutUrl` a partir del plan validado; nunca se toma una URL del query. `useAuth` además solo acepta destinos externos de `https://mpago.la/`, así que no queda una redirección abierta.
+- **El onboarding sigue siendo obligatorio:** el registro sigue marcando `justRegistered`, así que el modal aparece cuando la persona vuelve a la app después de pagar.
+
+**Archivos modificados:**
+- `lib/checkout-intent.ts` (nuevo): validación del plan y armado del link.
+- `app/(auth)/hooks/useAuth.ts`: `login` y `register` aceptan `{ redirectTo }` opcional.
+- `app/(auth)/login/page.tsx`: lee `plan` y `billing` y se los pasa a la tarjeta.
+- `components/auth/auth-card.tsx`: aviso del plan elegido y destino de pago en los dos formularios.
+- `app/(marketing)/pricing/page.tsx`: `billing` en el botón sin sesión.
+- `messages/es.json`: `Auth.checkout.*`.
+
+**Relacionado con backend:** no. La activación sigue siendo manual por correo (no hay webhook).
+**Wiki actualizado:** Sí (log.md del 2026-09-29).
+
 ### CHANGE-124 — Registro e ingreso: oscuros, en el HTML, accesibles y sin promesas falsas (fase 3.2)
 
 **Fecha:** 2026-09-29
