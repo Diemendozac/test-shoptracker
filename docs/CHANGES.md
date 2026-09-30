@@ -56,6 +56,30 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 **Relacionado con backend:** no cambia endpoints. Las tiendas por plan son las publicadas, y el límite lo aplica el backend.
 **Wiki actualizado:** Sí (log.md del 2026-09-29).
 
+### CHANGE-126 — Landing: los planes dejan de prometer lo que no se aplica
+
+**Fecha:** 2026-09-29
+**Tipo:** fix de textos. Riesgo: solo (textos de la landing). No cambia precios, links, planes ni backend.
+
+**Por qué:** la sección de planes de la landing (CHANGE-123) copió promesas de `/pricing` que el código no cumple:
+- "150 / 500 testeos" y "30 días / 90 días / 1 año de historial": ningún límite por plan existe en el frontend ni en el backend;
+- "Tus tiendas son privadas" en Pro y Agency: hoy el pool incluye las tiendas activas de todos los planes (hallazgo de FIX-077 del backend, pendiente del revisor técnico).
+
+Daniel decidió corregirlas ya, sin esperar el rediseño de precios. Las tiendas por plan (15 / 40 / 100) **se mantienen** por decisión de Daniel; el backend hoy aplica otros números y la alineación queda propuesta a Diego (no se toca el backend).
+
+**Qué cambió** (`messages/es.json`, `Landing.plans.*`, y `app/(marketing)/page.tsx`):
+- **Se quitaron** los testeos y el historial por plan.
+- **Privacidad honesta:** Pro y Agency dicen "Privacidad de tus tiendas: en preparación". Básico sigue con "Tus tiendas suman al pool de la comunidad", que es cierto.
+- **Lo que sí distingue a Pro y Agency** ocupa ese lugar: "Anunciante y link a Meta de cada anuncio" y "Biblioteca de anuncios", las dos solo para Pro, Agency y admin en el backend.
+- **El subtítulo** ya no dice "cuánto historial ves": dice que cambian las tiendas propias y, desde Pro, quién está detrás de cada anuncio.
+
+**Archivos modificados:**
+- `messages/es.json`: `Landing.plans` (sin `tests` ni `history`; nuevas `advertiser` y `library`).
+- `app/(marketing)/page.tsx`: la tarjeta de cada plan ya no pinta testeos ni historial, y pinta las dos líneas de Pro.
+
+**Relacionado con backend:** no se toca. Pendientes para Diego: el filtro de privacidad del pool y el límite de tiendas por plan.
+**Wiki actualizado:** Sí (log.md del 2026-09-29).
+
 ### CHANGE-125 — Fix: elegir un plan sin sesión ahora termina en el pago de Mercado Pago
 
 **Fecha:** 2026-09-29
