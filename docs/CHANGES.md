@@ -68,6 +68,40 @@ Daniel eligió el 2026-09-30:
 
 ---
 
+### CHANGE-133 — Página para compartir: vista previa en WhatsApp y adelanto sin datos de Pro (Fase 2a)
+
+**Fecha:** 2026-09-30
+**Tipo:** página pública. Riesgo: con cuidado (la ve cualquiera y es la que circula por WhatsApp).
+
+**Por qué:** Fase 2a de la propuesta de la app por pantalla (vault: `wiki/propuesta-app-por-pantalla.md`). La página `/share/[id]` es el anuncio gratis de Dropspy, pero:
+- era un componente de cliente que pedía los datos después de cargar, así que WhatsApp, Instagram y Facebook no veían el producto: el link salía sin imagen ni título propios;
+- mostraba a cualquiera el nombre de la tienda, el link al producto y todos los videos activos, que en la app dependen del plan;
+- usaba colores fijos (`neutral-*`) fuera del sistema y un emoji como ícono de error.
+
+Daniel eligió el 2026-09-30 la opción "adelanto".
+
+**Qué cambió:**
+- `app/share/[candidateId]/page.tsx`: componente de servidor. Lee `GET /public/candidates/{id}` desde el servidor (`lib/share.ts`, caché de 1 hora), así que lo que no se muestra no llega al navegador. Muestra:
+  - producto, precio, país y pago anticipado;
+  - una frase de veredicto con datos reales (puesto hoy, mejor puesto, días en el ranking, anuncios activos y el más antiguo);
+  - el anuncio que más días lleva al aire, con video, y dos más borrosos y sin video, con "N más con tu prueba";
+  - un llamado a la prueba. El registro lleva `ref=share&product={id}` para medir de dónde vienen las cuentas; todavía nada lo lee.
+- **Ya no muestra** el nombre de la tienda, el link al producto, el link a Meta ni los demás videos. Verificado en un build de producción: ninguno de esos datos aparece en el HTML.
+- `generateMetadata`: título, descripción y `noindex`. No se indexa hasta decidir la regla de privacidad de las páginas públicas.
+- `opengraph-image.tsx` (nuevo): imagen de vista previa por producto, con foto, nombre, "Puesto #N en su tienda" y "N anuncios activos", y los colores de la imagen de la landing. Pide la foto en JPEG o PNG con tiempo límite; si falla, sale sin foto en vez de romperse.
+- `not-found.tsx` (nuevo): link vencido o producto fuera de seguimiento, con los tokens del sistema.
+- `components/share/share-ad-video.tsx` (nuevo): el único video que se reproduce, sin sonido hasta tocar el botón.
+
+**Qué NO cambió:**
+- El endpoint público del backend sigue devolviendo la tienda, el link y todos los anuncios. La página ya no los muestra, pero cualquiera que llame al endpoint directo los ve. Recortarlo es un cambio de contrato de API (backend).
+- La página no dice "Despegando" ni muestra el gráfico de trayectoria: el endpoint público no manda el historial de rank.
+- El botón "Link" del pool sigue copiando `/share/{id}`.
+
+**Verificación:**
+- `next build` compila.
+- Con la API de producción y un id inventado: 404 con la página nueva y `noindex`; la imagen de vista previa se genera.
+- Con un servidor local que imita el endpoint: la página se ve bien a 390 px sin scroll horizontal, y en el build de producción el HTML no trae tienda, link al producto ni link a Meta.
+- **No verificado con un producto real:** falta abrir un link compartido de verdad y pegarlo en WhatsApp.
 ### CHANGE-132 — Fase 1: menú con los nombres nuevos, la app en el celular y buscador global
 
 **Fecha:** 2026-09-30
