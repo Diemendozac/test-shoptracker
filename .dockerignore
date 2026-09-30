@@ -1,0 +1,15 @@
+# Lo que no entra a la imagen del frontend (Dockerfile).
+# Secretos: ningún .env se copia; las variables se cargan en Easypanel.
+.env*
+node_modules
+.next
+.git
+.github
+.gstack
+.claude
+docs
+*.log
+*.tsbuildinfo
+.DS_Store
+Dockerfile
+.dockerignore
