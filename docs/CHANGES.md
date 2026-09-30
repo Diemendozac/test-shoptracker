@@ -4,6 +4,49 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-138 — Ficha de tienda: cómo prueba, qué le funciona y cómo lo vende (Fase 3b)
+
+**Fecha:** 2026-09-30
+**Tipo:** pantalla de detalle de tienda. Riesgo: con cuidado.
+
+**Por qué:** Fase 3b de la propuesta de la app por pantalla (vault: `wiki/propuesta-app-por-pantalla.md`). La ficha tenía:
+- el estado en mayúsculas sin explicar ("ZOMBIE", "MODERADA");
+- tres indicadores (en testeo, en alza, score promedio: este último no significa nada útil para una tienda);
+- una tabla de todos los productos que repetía Mis testeos;
+- los nombres y links de las páginas anunciantes para todos los planes, cuando el anunciante es de Pro en todo el resto de la app (FIX-077/081).
+
+**Qué cambió:**
+- `stores/[storeId]/page.tsx`:
+  - **Cabecera:** estado en español con su dato ("Activa · 4 productos nuevos en 7 días"), país, moneda, nicho, pago y último corte.
+  - **Cómo prueba esta tienda.**
+  - **Lo que le está funcionando:** sus 5 mejores productos con señal, puesto y edad.
+  - **Cómo lo vende:** anuncios activos (`/stores/{id}/ads/count`), páginas anunciantes y videos.
+  - Un link "Ver sus N productos en el Radar". "Volver a Competidores".
+- `components/stores/store-launches.tsx` (nuevo): **Cómo prueba esta tienda.**
+  - Productos nuevos por semana (últimas 4, con los productos que Dropspy sigue hoy).
+  - Una frase con el acierto: **llegó al top 10 % del catálogo de la tienda** (su mejor puesto ≤ 10 % de `productCount`; decisión de Daniel del 2026-09-30).
+  - Ejemplo: "De los 9 productos que Dropspy siguió en los últimos 15 días, 3 llegaron al top 10 % de su catálogo (puesto 20 o mejor): acierta 1 de cada 3."
+  - Sin tamaño de catálogo, lo dice y no calcula.
+- **Páginas anunciantes:** en Pro, nombre, número de anuncios y link a Facebook, como antes. Sin Pro: "Anuncia desde N páginas de Facebook. Cuáles son es parte del plan Pro." **Es solo visual:** `/stores/{id}/advertiser-pages` todavía manda los nombres a todos los planes; hay que enmascararlos en el backend como en FIX-077.
+- `pool/page.tsx`: el alcance "Mis tiendas" acepta `?tienda={storeId}` y muestra "Solo {tienda} · Ver todas mis tiendas".
+
+**Qué NO cambió:** el backend y los videos de la tienda (`StoreVideosGrid`, con la misma fuente de antes).
+
+**Hallazgo de rendimiento (sin tocar):** para los videos, la ficha pide `/pool/winners?size=500` y filtra por dominio en el navegador, porque los anuncios se rastrean en las tiendas del pool. El backend arma el historial de cada uno de esos 500 productos con consultas separadas. Conviene un endpoint de videos por tienda.
+
+**Verificación:**
+- `next build` compila; `tsc --noEmit` solo marca `lib/mock-data.ts`.
+- En local, con una API de prueba y sin credenciales, a 1440 y 390 px sin scroll horizontal:
+  - la frase del acierto, incluido el caso "todos acertaron";
+  - el candado de páginas anunciantes en la prueba, sin los nombres en pantalla;
+  - el link al Radar filtrado ("Solo tuhogarideal", 3 productos).
+- Se corrigieron "acierta 1 de cada 1" y "Último corte" encima del nombre en el celular.
+
+**Relacionado con backend:** no (quedan dos pedidos: enmascarar las páginas anunciantes sin Pro y un endpoint de videos por tienda).
+**Wiki actualizado:** sí (log.md del 2026-09-30).
+
+---
+
 ### CHANGE-137 — Competidores: cupos reales, tarjetas con hechos y "Nuevos por revisar" (Fase 3a)
 
 **Fecha:** 2026-09-30

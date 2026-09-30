@@ -82,6 +82,8 @@ export default function PoolPage() {
   const searchParams = useSearchParams()
   const scope: Scope = searchParams.get('alcance') === 'mis-tiendas' ? 'mine' : 'market'
   const isMine = scope === 'mine'
+  // Desde la ficha de tienda: "Ver sus N productos en el Radar" (CHANGE-138)
+  const storeFilter = isMine ? searchParams.get('tienda') : null
   function handleScope(next: Scope) {
     if (next === scope) return
     setPage(0)
@@ -248,9 +250,10 @@ export default function PoolPage() {
       .filter(c => daysExactFilter == null || c.daysElapsed === daysExactFilter)
       .filter(c => !escalarFilter || isScalable(c.performanceScore, c.signalConfidence))
       .filter(c => !countryFilter || c.storeCountry === countryFilter)
+      .filter(c => !storeFilter || c.storeId === storeFilter)
       .sort((a, b) => (b.performanceScore ?? 0) - (a.performanceScore ?? 0))
       .map(trackerToRow)
-  }, [isMine, trackerData, searchSubmitted, pagoFilter, nicheFilter, currencyFilter, dateFilter, daysExactFilter, escalarFilter, countryFilter])
+  }, [isMine, storeFilter, trackerData, searchSubmitted, pagoFilter, nicheFilter, currencyFilter, dateFilter, daysExactFilter, escalarFilter, countryFilter])
   const mineData: PoolWinnersResponse | undefined = isMine && !trackerLoading ? {
     locked: false,
     plan: effectivePlan,
@@ -342,6 +345,17 @@ export default function PoolPage() {
 
       {/* ── Content ── */}
       <div className="p-3 sm:p-6">
+        {storeFilter && (
+          <div className="mb-3 flex flex-wrap items-center gap-2 text-sm">
+            <span className="rounded-full border border-primary-border bg-primary-subtle px-3 py-1 font-medium text-primary-text">
+              Solo {trackerData.find(c => c.storeId === storeFilter)?.storeName ?? 'esta tienda'}
+            </span>
+            <button type="button" onClick={() => router.replace('/pool?alcance=mis-tiendas', { scroll: false })}
+              className="text-xs font-medium text-muted-foreground hover:text-foreground hover:underline">
+              Ver todas mis tiendas
+            </button>
+          </div>
+        )}
         {error && !data && (
           <div className="rounded-xl border border-border bg-card px-6 py-8 text-center">
             <p className="text-sm font-medium text-foreground">No se pudo cargar el pool</p>
