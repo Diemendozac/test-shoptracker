@@ -97,6 +97,7 @@ Estas regresiones requieren spec individual con nivel de riesgo antes de tocarla
 
 - **Estimaciones siempre con `~`:** nunca mostrar un número de ventas o ingresos estimados sin prefijo `~`. El backend los llama `estUnitsDayLow` / `estRevDayLow` — son estimaciones conservadoras, no cifras exactas.
 - **Labels de performance:** `Rocket` del backend se mapea a `Rising` en la UI. El usuario nunca ve "Rocket" ni "Declining" — siempre el badge correspondiente según la tabla de arriba.
+- **Escala de señal (Radar, CHANGE-134):** Despegando, Creciendo, Estable, Cayendo y Nuevo salen de `computeSignal()` en `lib/signal.ts` (regla sobre los últimos 7 registros de rank, aprobada por Daniel el 2026-09-30) y se muestran con `SignalBadge`. No usar `performanceLabel` para decir si un producto sube o cae: es una banda de puntaje.
 - **`signalConfidence`:** siempre pasar al `ScoreRing`. Un score alto con baja confianza debe verse mayormente amarillo, no verde.
 - **Moneda:** usar siempre `formatCurrency(amount, currency)` de `lib/utils.ts`. No hardcodear `$`.
 - **Null safety:** la API puede devolver `null` en casi cualquier campo numérico. Usar `?? 0` o `?? '—'` según el contexto, nunca asumir que hay un valor.

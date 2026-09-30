@@ -1,22 +1,19 @@
 'use client'
 
-import { useState, useMemo, useRef, useCallback, useEffect, type MouseEvent as ReactMouseEvent } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import Link from 'next/link'
-import { Lock, TrendingUp, Crown, ChevronLeft, ChevronRight, Globe, ExternalLink, ArrowUpDown, ArrowUp, ArrowDown, Search, X, Star, Share2, Check } from 'lucide-react'
+import { Lock, TrendingUp, Crown, ChevronLeft, ChevronRight, Globe, ArrowUpDown, ArrowUp, ArrowDown, Search, X, Star } from 'lucide-react'
 import { ScoreRing } from '@/components/dashboard/score-ring'
-import { Sparkline } from '@/components/tracker/sparkline'
 import { Button } from '@/components/ui/button'
-import { cn, fmtCompact } from '@/lib/utils'
-import { FormattedPrice } from '@/components/ui/formatted-price'
+import { cn } from '@/lib/utils'
 import { useCurrency } from '@/store/hooks'
-import { HoverImagePreview } from '@/components/ui/image-preview'
 import type { PoolWinnersResponse, PoolWinnerProduct } from '@/app/(dashboard)/types'
-import type { Ad } from '@/components/tracker/product-ads'
 import type { PoolPreset } from '@/app/(dashboard)/pool/page'
-import { isScalable } from '@/lib/label-utils'
-import { useGetProductAdsQuery, useGetPoolCountriesQuery } from '@/app/(dashboard)/services/dashboardApi'
+import { useGetPoolCountriesQuery } from '@/app/(dashboard)/services/dashboardApi'
 import { usePlanTier } from '@/lib/view-as'
-import { FloatingVideoPanel, useHoverPanel, AdvertiserBadge, uniqueAdvertisersFromAds } from '@/components/tracker/product-ads'
+import { useMediaQuery } from '@/hooks/use-media-query'
+import { ProductRow, ROW_COLS, type RowLayout } from '@/components/tracker/product-row'
+export { ShareButton } from '@/components/tracker/share-button'
 
 function countryFlag(code: string | null | undefined): string {
   if (!code || code.length !== 2) return ''
@@ -25,7 +22,7 @@ function countryFlag(code: string | null | undefined): string {
          String.fromCodePoint(base + code.toUpperCase().charCodeAt(1))
 }
 
-type PoolSortKey = 'productTitle' | 'productPrice' | 'performanceScore' | 'growthPct' | 'currentRank'
+type PoolSortKey = 'productTitle' | 'productPrice' | 'performanceScore' | 'growthPct' | 'currentRank' | 'daysElapsed'
 type SortDir = 'asc' | 'desc'
 interface SortState { key: PoolSortKey | null; dir: SortDir }
 
@@ -36,128 +33,6 @@ const NICHES = [
   'Mascotas', 'Moda & Accesorios', 'Salud & Bienestar',
 ]
 const CURRENCIES = ['COP', 'EUR', 'GBP', 'USD']
-
-// ─── AdsCell ─────────────────────────────────────────────────────────────────
-
-const PLACEHOLDER = 'https://picsum.photos/seed/placeholder/400/700'
-
-function AdThumb({
-  ad, canViewAds, allowMetaLink, onHover, onLeave,
-}: {
-  ad: Ad
-  canViewAds: boolean
-  allowMetaLink: boolean
-  onHover: (ad: Ad, rect: DOMRect) => void
-  onLeave: () => void
-}) {
-  const thumbRef = useRef<HTMLDivElement>(null)
-  const hasVideo = !!ad.video_url_r2
-  // status real de ads v2 (2026-09-15) — antes esta card ni se mostraba si el ad no era
-  // 'active' (AdsCell filtraba antes de llegar acá). Ahora sí llega, así que se marca en vez
-  // de ocultarse: grayscale + label. Ver wiki scout-ads-status-real-propuesta, incidente FIX-073.
-  const isInactive = ad.status !== 'active'
-  return (
-    <div
-      ref={thumbRef}
-      className={cn(
-        'relative h-[56px] w-[40px] shrink-0 overflow-hidden rounded-md bg-secondary',
-        canViewAds ? 'cursor-pointer' : 'pointer-events-none blur-sm',
-        isInactive && 'opacity-60 grayscale',
-      )}
-      onMouseEnter={() => {
-        if (canViewAds && thumbRef.current)
-          onHover(ad, thumbRef.current.getBoundingClientRect())
-      }}
-      onMouseLeave={onLeave}
-      onClick={() => allowMetaLink && window.open(ad.ad_snapshot_url, '_blank', 'noopener,noreferrer')}
-    >
-      <img src={ad.thumbnail_url || PLACEHOLDER} alt="" className="h-full w-full object-cover" />
-      {hasVideo && canViewAds && !isInactive && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-black/50">
-            <svg className="h-2.5 w-2.5 translate-x-px text-white" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          </div>
-        </div>
-      )}
-      {isInactive && (
-        <div className="absolute bottom-0 left-0 right-0 bg-black/75 py-[1px] text-center">
-          <span className="text-[6px] font-bold uppercase tracking-wide text-white">Inactivo</span>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function AdsCell({ candidateId }: { candidateId: string }) {
-  const { data } = useGetProductAdsQuery(candidateId)
-  const { hoveredAd, hoverPos, handleHover, handleLeave, handlePanelEnter, handlePanelLeave } = useHoverPanel()
-  const { allowMetaLink } = usePlanTier()
-  // El pool global (Explorar testeos) siempre muestra los video ads sin blur,
-  // incluida la prueba gratis — a diferencia de Mis testeos. Ver CHANGE-082.
-  const canViewAds = true
-
-  // status real de ads v2 (2026-09-15) — antes filtraba status==='active' acá, lo que sacaba
-  // al candidato entero de esta card (y, peor, de la paginación de hasVideo en el backend —
-  // ver ScoreSummaryRepository). Ahora se muestran todos los ads, activos primero, para que
-  // los que siguen corriendo aparezcan antes que los que ya terminaron. Incidente: FIX-073.
-  const allAds = data?.ads ?? []
-  if (allAds.length === 0) return (
-    <div style={{ display: 'flex', gap: 3 }}>
-      {[0, 1, 2].map(i => (
-        <div key={i} style={{
-          width: 40, height: 56, borderRadius: 4,
-          border: '1px dashed var(--color-border)',
-          opacity: 0.4,
-        }} />
-      ))}
-    </div>
-  )
-
-  const sorted = [...allAds].sort(
-    (a, b) => Number(a.status !== 'active') - Number(b.status !== 'active'),
-  )
-  const previews          = sorted.slice(0, 3)
-  const remaining         = sorted.length - 3
-  const uniqueAdvertisers = uniqueAdvertisersFromAds(allAds)
-
-  return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-center gap-1">
-        {previews.map(ad => (
-          <AdThumb
-            key={ad.id} ad={ad}
-            canViewAds={canViewAds} allowMetaLink={allowMetaLink}
-            onHover={handleHover} onLeave={handleLeave}
-          />
-        ))}
-        {remaining > 0 && (
-          <span className="text-[10px] font-semibold tabular-nums text-muted-foreground">
-            +{remaining}
-          </span>
-        )}
-      </div>
-      {uniqueAdvertisers.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {uniqueAdvertisers.map(name => (
-            <AdvertiserBadge
-              key={name}
-              advertiserName={name}
-              allowMetaLink={allowMetaLink}
-            />
-          ))}
-        </div>
-      )}
-      {hoveredAd && canViewAds && (
-        <FloatingVideoPanel
-          ad={hoveredAd} top={hoverPos.top} left={hoverPos.left}
-          onMouseEnter={handlePanelEnter} onMouseLeave={handlePanelLeave}
-        />
-      )}
-    </div>
-  )
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -180,8 +55,6 @@ export type PagoFilter = 'all' | 'anticipado' | 'contraentrega'
 
 // Plantillas de columnas: la cabecera y las filas usan SIEMPRE la misma (antes la cabecera
 // quedaba en 10 columnas con el panel abierto y "Producto" medía 0 px, encimado sobre "Precio").
-const COLS_FULL = 'grid-cols-[32px_64px_minmax(0,1fr)_60px_48px_72px_110px_90px_140px_60px]'
-const COLS_COMPACT = 'grid-cols-[28px_48px_minmax(0,1fr)_56px_44px_64px]'
 
 interface PoolWinnersSectionProps {
   data: PoolWinnersResponse | undefined
@@ -198,6 +71,12 @@ interface PoolWinnersSectionProps {
   favoriteItems?: PoolWinnerProduct[]
   /** Favoritos guardados solo con el id (antes de CHANGE-131) que todavía no volvieron a aparecer. */
   missingFavorites?: number
+  /**
+   * Alcance del Radar (CHANGE-134): 'market' = todo el pool (paginado en el servidor, con el límite
+   * de páginas del plan); 'mine' = los productos de tus tiendas (/tracker), filtrados y paginados
+   * en pool/page.tsx. En 'mine' no hay límite de páginas ni búsqueda con IA.
+   */
+  scope?: 'market' | 'mine'
   // Server-side filter props — state lives in pool/page.tsx
   // search: término CONFIRMADO (Enter) — el que realmente filtra `data`/la tabla.
   // searchInput: lo que el usuario está tecleando ahora mismo — value del <input>.
@@ -230,7 +109,7 @@ interface PoolWinnersSectionProps {
 export function PoolWinnersSection({
   data, isLoading, page = 0, onPageChange, preset = 'all',
   pagoFilter = 'all', onPagoFilterChange,
-  favorites, onToggleFavorite, favoriteItems = [], missingFavorites = 0,
+  favorites, onToggleFavorite, favoriteItems = [], missingFavorites = 0, scope = 'market',
   search, searchInput, onSearchInputChange, onSearchSubmit, suggestions,
   dateFilter, onDateFilterChange,
   daysExactFilter, onDaysExactFilterChange,
@@ -243,6 +122,14 @@ export function PoolWinnersSection({
   const { currency: preferredCurrency } = useCurrency()
   const { maxPoolPage } = usePlanTier()
   const isCompact = compact ?? !!selectedCandidateId
+  // Fila compartida (CHANGE-134): tarjeta por debajo de 768 px, fila media hasta 1280 px.
+  // El layout del dashboard monta después de hidratar, así que el primer render ya tiene el ancho real.
+  const isMdUp = useMediaQuery('(min-width: 768px)')
+  const isWide = useMediaQuery('(min-width: 1280px)')
+  const rowVariant: 'row' | 'card' = isMdUp ? 'row' : 'card'
+  const rowLayout: RowLayout = isCompact ? 'compact' : isWide ? 'full' : 'medium'
+  const isMine = scope === 'mine'
+  const pageLimit = isMine ? Infinity : maxPoolPage
   const [sort, setSort] = useState<SortState>({ key: 'performanceScore', dir: 'desc' })
 
   // Dropdown de sugerencias en vivo (tipo Kalodata) — se cierra al hacer click afuera o Escape
@@ -340,12 +227,24 @@ export function PoolWinnersSection({
 
   if (!data) return null
 
-  if (data.locked) {
+  if (!isMine && data.locked) {
     return <LockedState />
   }
 
-  if (page > maxPoolPage) {
+  if (!isMine && page > maxPoolPage) {
     return <PoolPageLocked />
+  }
+
+  if (isMine && data.winners.length === 0 && !hasActiveFilters && !isFavoritesTab) {
+    return (
+      <div className="mb-6 rounded-2xl border border-border bg-card p-6">
+        <p className="text-sm font-medium text-foreground">Todavía no hay productos de tus tiendas</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Sigue una tienda en <Link href="/stores" className="font-medium text-primary-text hover:underline">Competidores</Link> y
+          sus productos nuevos aparecen aquí después del próximo corte.
+        </p>
+      </div>
+    )
   }
 
   // Solo el pool "de verdad" vacío (sin búsqueda ni filtros) se queda sin barra de búsqueda —
@@ -386,7 +285,7 @@ export function PoolWinnersSection({
           <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Busca por palabra clave (IA) — Enter para buscar…"
+            placeholder={isMine ? 'Busca en los productos de tus tiendas — Enter para buscar…' : 'Busca por palabra clave (IA) — Enter para buscar…'}
             value={searchInput}
             onChange={e => { onSearchInputChange(e.target.value); setShowSuggestions(true) }}
             onFocus={() => setShowSuggestions(true)}
@@ -612,48 +511,32 @@ export function PoolWinnersSection({
         </div>
       </div>
 
-      {/* Column headers */}
-      <div className={cn('grid items-center gap-3 border-b border-border bg-secondary/30 px-4 py-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground', isCompact ? COLS_COMPACT : COLS_FULL)}>
-        <div>#</div>
-        <div />
-        <button
-          onClick={() => handleSort('productTitle')}
-          className="group/th flex items-center gap-1 hover:text-foreground transition-colors"
-        >
-          Producto <SortIcon column="productTitle" sort={sort} />
-        </button>
-        <button
-          onClick={() => handleSort('productPrice')}
-          className="group/th flex items-center gap-1 hover:text-foreground transition-colors"
-        >
-          Precio <SortIcon column="productPrice" sort={sort} />
-        </button>
-        <button
-          onClick={() => handleSort('performanceScore')}
-          className="group/th flex items-center justify-center gap-1 hover:text-foreground transition-colors"
-        >
-          Score <SortIcon column="performanceScore" sort={sort} />
-        </button>
-        {!isCompact && <div className="text-center">Tendencia (7d)</div>}
-        <button
-          onClick={() => handleSort('growthPct')}
-          className="group/th flex items-center gap-1 hover:text-foreground transition-colors"
-        >
-          {isCompact ? 'Crecim.' : 'Crecimiento'} <SortIcon column="growthPct" sort={sort} />
-        </button>
-        {!isCompact && (
-          <>
-            <button
-              onClick={() => handleSort('currentRank')}
-              className="group/th flex items-center gap-1 hover:text-foreground transition-colors"
-            >
-              Contexto <SortIcon column="currentRank" sort={sort} />
-            </button>
-            <div>Ads</div>
-            <div className="text-center">Acción</div>
-          </>
-        )}
-      </div>
+      {/* Encabezados de la fila compartida (CHANGE-134). En el celular no hay encabezados: tarjetas. */}
+      {rowVariant === 'row' && (
+        <div className={cn('grid items-center gap-3 border-b border-border bg-secondary/30 px-4 py-2.5 text-xs font-medium text-muted-foreground', ROW_COLS[rowLayout])}>
+          <div />
+          <div />
+          <button onClick={() => handleSort('productTitle')} className="group/th flex items-center gap-1 transition-colors hover:text-foreground">
+            Producto <SortIcon column="productTitle" sort={sort} />
+          </button>
+          <div title="Despegando, Creciendo, Estable o Cayendo, según sus últimos 7 registros de rank">Señal</div>
+          <button onClick={() => handleSort('currentRank')} className="group/th flex items-center gap-1 transition-colors hover:text-foreground">
+            Movimiento <SortIcon column="currentRank" sort={sort} />
+          </button>
+          {rowLayout === 'full' && (
+            <>
+              <button onClick={() => handleSort('performanceScore')} className="group/th flex items-center gap-1 transition-colors hover:text-foreground">
+                Puntaje <SortIcon column="performanceScore" sort={sort} />
+              </button>
+              <button onClick={() => handleSort('daysElapsed')} className="group/th flex items-center gap-1 transition-colors hover:text-foreground">
+                Detectado <SortIcon column="daysElapsed" sort={sort} />
+              </button>
+              <div>Anuncios</div>
+            </>
+          )}
+          {rowLayout !== 'compact' && <div />}
+        </div>
+      )}
       {isFavoritesTab && (filtered.length > 0 || missingFavorites > 0) && (
         <p className="px-6 pb-2 text-xs text-muted-foreground">
           Tus favoritos, con los datos de la última vez que aparecieron en el pool. Los filtros no se aplican a esta lista.
@@ -688,21 +571,42 @@ export function PoolWinnersSection({
             </p>
           )
         ) : (
-          filtered.map((winner, i) => (
-            <PoolWinnerRow
+          filtered.map((winner) => (
+            <ProductRow
               key={winner.candidateId}
-              winner={winner}
-              position={isFavoritesTab ? i + 1 : page * 20 + i + 1}
-              preferredCurrency={preferredCurrency}
+              product={winner}
+              href={isMine ? `/tracker/${winner.candidateId}?storeId=${winner.storeId}` : `/tracker/${winner.candidateId}?storeId=${winner.storeId}&from=pool`}
+              variant={rowVariant}
+              layout={rowLayout}
+              preferredCurrency={preferredCurrency ?? 'USD'}
               isFavorite={favorites.has(winner.candidateId)}
               onToggleFavorite={onToggleFavorite}
-              isCompact={isCompact}
               isSelected={winner.candidateId === selectedCandidateId}
               onSelect={onSelectWinner}
             />
           ))
         )}
       </div>
+
+      {/* Límite de la prueba, dicho con el número real (CHANGE-134). Antes solo se veían candados
+          en la paginación y, al llegar a la página siguiente, un muro. */}
+      {!isMine && !isFavoritesTab && page === maxPoolPage && (data.total ?? 0) > (page + 1) * 20 && (
+        <div className="flex flex-wrap items-center gap-3 border-t border-border bg-secondary/40 px-4 py-4">
+          <Lock className="h-4 w-4 shrink-0 text-subtle-foreground" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-foreground">
+              Hay {((data.total ?? 0) - (page + 1) * 20).toLocaleString('es-CO')} productos más en el Radar
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {page === 0 ? 'Tu prueba ve la primera página, lo más fuerte del mercado.' : `Tu plan ve las primeras ${(page + 1).toLocaleString('es-CO')} páginas.`}
+              {' '}Con un plan pago ves todo el mercado.
+            </p>
+          </div>
+          <Link href="/pricing" className="rounded-lg bg-grad-cta px-3 py-2 text-xs font-semibold text-primary-foreground shadow-[0_8px_24px_-10px_var(--glow)] hover:brightness-110">
+            Ver planes
+          </Link>
+        </div>
+      )}
 
       {/* Pagination — la lista de favoritos no se pagina: son los guardados, no el pool */}
       {!isFavoritesTab && onPageChange && data && (data.totalPages ?? 1) > 1 && (
@@ -721,7 +625,7 @@ export function PoolWinnersSection({
             {getPageRange(page, data.totalPages ?? 1).map((p, idx) =>
               p === 'ellipsis' ? (
                 <span key={`e${idx}`} className="flex h-7 w-5 items-center justify-center text-xs text-muted-foreground select-none">…</span>
-              ) : p > maxPoolPage ? (
+              ) : p > pageLimit ? (
                 <span
                   key={p}
                   className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/40 text-muted-foreground/30"
@@ -745,7 +649,7 @@ export function PoolWinnersSection({
             )}
             <button
               onClick={() => onPageChange(page + 1)}
-              disabled={page >= (data.totalPages ?? 1) - 1 || page >= maxPoolPage}
+              disabled={page >= (data.totalPages ?? 1) - 1 || page >= pageLimit}
               className="flex h-7 w-7 items-center justify-center rounded-lg border border-border text-muted-foreground hover:border-primary/40 hover:text-foreground disabled:opacity-30 disabled:pointer-events-none transition-colors"
             >
               <ChevronRight className="h-3.5 w-3.5" />
@@ -861,250 +765,3 @@ function LockedState() {
   )
 }
 
-export function ShareButton({ candidateId }: { candidateId: string }) {
-  const [copied, setCopied] = useState(false)
-
-  function handleShare(e: React.MouseEvent) {
-    e.preventDefault()
-    const url = `${window.location.origin}/share/${candidateId}`
-    navigator.clipboard.writeText(url).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    })
-  }
-
-  return (
-    <button
-      onClick={handleShare}
-      title="Copiar link para compartir"
-      className={cn(
-        'flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium transition-colors',
-        copied
-          ? 'bg-emerald-500/15 text-emerald-600'
-          : 'bg-secondary text-muted-foreground hover:bg-primary/10 hover:text-primary',
-      )}
-    >
-      {copied
-        ? <><Check className="h-3 w-3" /> Copiado</>
-        : <><Share2 className="h-3 w-3" /> Link</>
-      }
-    </button>
-  )
-}
-
-function PoolWinnerRow({
-  winner, position, preferredCurrency, isFavorite, onToggleFavorite,
-  isCompact, isSelected, onSelect,
-}: {
-  winner: PoolWinnerProduct
-  position: number
-  preferredCurrency: string | null
-  isFavorite: boolean
-  onToggleFavorite: (id: string) => void
-  isCompact?: boolean
-  isSelected?: boolean
-  onSelect?: (candidateId: string, storeId: string) => void
-}) {
-  const isFirst = position === 1
-
-  const rh = winner.rankHistory
-  const prevRank = rh && rh.length >= 2 ? rh[rh.length - 2] : (winner.previousRank ?? null)
-  const rankDelta = prevRank != null && winner.currentRank != null ? prevRank - winner.currentRank : null
-  const rankDir = rankDelta !== null && rankDelta !== 0
-    ? (rankDelta > 0 ? 'up' : 'down')
-    : winner.growthPct != null && winner.growthPct > 1 ? 'up'
-    : winner.growthPct != null && winner.growthPct < -1 ? 'down'
-    : null
-
-  const gp = winner.growthPct
-  const total = winner.storeProductCount
-  const superadoPct = winner.currentRank != null && total && total > 0
-    ? Math.max(0, Math.round(((total - winner.currentRank) / total) * 100))
-    : null
-  const subColor = superadoPct == null ? ''
-    : superadoPct <= 25 ? 'text-rose-500'
-    : superadoPct <= 50 ? 'text-amber-600'
-    : superadoPct <= 75 ? 'text-green-700'
-    : 'text-emerald-600'
-  const subText = gp == null ? null
-    : gp > 1 && superadoPct != null
-      ? { text: `↑ superó al ${superadoPct}% de ${winner.storeName}`, color: subColor }
-    : gp < -1
-      ? { text: '↓ bajando en tienda', color: 'text-rose-500' }
-    : null
-
-  const topPct = winner.currentRank != null && total && total > 0
-    ? Math.min(100, Math.max(1, Math.round((winner.currentRank / total) * 100)))
-    : null
-  const barFill = topPct != null ? Math.max(1, 100 - topPct) : 0
-  const tier = topPct != null
-    ? topPct <= 10 ? { color: 'bg-emerald-500', labelColor: 'text-emerald-500', label: 'Élite' }
-    : topPct <= 25 ? { color: 'bg-emerald-400', labelColor: 'text-emerald-400', label: 'Fuerte' }
-    : topPct <= 50 ? { color: 'bg-yellow-400',  labelColor: 'text-yellow-400',  label: 'Medio'  }
-    : topPct <= 75 ? { color: 'bg-orange-400',  labelColor: 'text-orange-400',  label: 'Bajo'   }
-    :                { color: 'bg-rose-500',    labelColor: 'text-rose-500',    label: 'Débil'  }
-    : null
-
-  function handleRowClick(e: ReactMouseEvent<HTMLAnchorElement>) {
-    if (!onSelect) return // sin split-view configurado — se comporta como antes (navega)
-    if (e.metaKey || e.ctrlKey || e.button === 1) return // dejar que abra en pestaña nueva
-    e.preventDefault()
-    onSelect(winner.candidateId, winner.storeId)
-  }
-
-  return (
-    <div className={cn(
-      'grid items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/30',
-      isCompact ? COLS_COMPACT : COLS_FULL,
-      isFirst && 'bg-amber-500/5',
-      isSelected && 'bg-primary/5 ring-1 ring-inset ring-primary/30',
-    )}>
-      {/* # */}
-      <button
-        onClick={() => onToggleFavorite(winner.candidateId)}
-        title={isFavorite ? 'Quitar favorito' : 'Marcar favorito'}
-        className="flex w-full items-center justify-center"
-      >
-        <Star className={cn(
-          'h-3.5 w-3.5 transition-colors',
-          isFavorite
-            ? 'fill-amber-400 text-amber-400'
-            : 'text-muted-foreground/25 hover:text-amber-400/70',
-        )} />
-      </button>
-
-      {/* Image + country badge */}
-      <div className="relative inline-block">
-        <HoverImagePreview
-          src={winner.productImage}
-          fallback={winner.productTitle.charAt(0)}
-          size={isCompact ? 40 : 64}
-          proxy
-        />
-        {winner.storeCountry && (
-          <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-card text-[13px] shadow-sm ring-1 ring-border leading-none">
-            {countryFlag(winner.storeCountry)}
-          </span>
-        )}
-      </div>
-
-      {/* Producto + rank */}
-      <div className="min-w-0 pl-3">
-        <div className="flex items-start gap-1.5">
-          <Link
-            href={`/tracker/${winner.candidateId}?storeId=${winner.storeId}&from=pool`}
-            onClick={handleRowClick}
-            className="truncate text-sm font-semibold text-foreground hover:text-primary hover:underline transition-colors"
-          >
-            {winner.productTitle}
-          </Link>
-          {isScalable(winner.performanceScore, winner.signalConfidence) && (
-            <span className="mt-0.5 shrink-0 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-600">
-              Spikear
-            </span>
-          )}
-        </div>
-        {winner.currentRank != null && (
-          <div className="mt-1 flex items-center gap-1.5">
-            <span className="text-[11px] text-muted-foreground tabular-nums">
-              Rank #{winner.currentRank}
-            </span>
-            {rankDir && (
-              <span className={cn(
-                'inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[11px] font-bold tabular-nums',
-                rankDir === 'up' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-500',
-              )}>
-                {rankDir === 'up' ? '↑' : '↓'}
-                {rankDelta !== null ? Math.abs(rankDelta) : ''}
-              </span>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Precio */}
-      <div>
-        <FormattedPrice
-          amount={winner.productPrice}
-          originalCurrency={winner.currency}
-          preferredCurrency={preferredCurrency ?? 'USD'}
-          compact
-        />
-      </div>
-
-      {/* Score */}
-      <div className="flex items-center justify-center">
-        <ScoreRing score={winner.performanceScore} size="sm" showLabel={false} confidence={winner.signalConfidence} />
-      </div>
-
-      {/* Tendencia sparkline — oculta en modo compacto (split-view) */}
-      {!isCompact && (
-        <div className="flex justify-center">
-          {(() => {
-            const h = (winner.growthHistory ?? []).slice(-7)
-            return h.length >= 2
-              ? <Sparkline data={h} width={80} height={32} />
-              : <span className="text-[10px] text-muted-foreground/30">—</span>
-          })()}
-        </div>
-      )}
-
-      {/* Crecimiento */}
-      <div>
-        <span className={cn(
-          'block text-sm font-bold tabular-nums',
-          gp != null && gp >= 0 ? 'text-emerald-600' : 'text-rose-500',
-        )}>
-          {gp != null ? `${gp >= 0 ? '+' : ''}${gp.toFixed(1)}%` : '—'}
-        </span>
-        {subText && !isCompact && (
-          <span className={cn('mt-0.5 block text-[10px] leading-tight', subText.color)}>
-            {subText.text}
-          </span>
-        )}
-      </div>
-
-      {/* Contexto — oculto en modo compacto */}
-      {!isCompact && (
-        <div className="space-y-1 w-full">
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
-            <div
-              className={cn('h-full rounded-full transition-all duration-500', tier?.color ?? 'bg-secondary')}
-              style={{ width: `${barFill}%` }}
-            />
-          </div>
-          <div className="flex items-center justify-between gap-1">
-            <span className="text-[11px] tabular-nums text-muted-foreground">
-              {topPct != null ? `top ${topPct}%` : '—'}
-            </span>
-            {tier && (
-              <span className={cn('text-[10px] font-semibold', tier.labelColor)}>{tier.label}</span>
-            )}
-          </div>
-          {total != null && total > 0 && (
-            <span className="text-[11px] tabular-nums text-muted-foreground/60">
-              de {total} productos
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Ads — oculto en modo compacto */}
-      {!isCompact && <AdsCell candidateId={winner.candidateId} />}
-
-      {/* Acción — oculta en modo compacto, la fila entera ya es clickeable para abrir el panel */}
-      {!isCompact && (
-      <div className="flex flex-col items-center gap-1">
-        <Link
-          href={`/tracker/${winner.candidateId}?storeId=${winner.storeId}&from=pool`}
-          onClick={handleRowClick}
-          className="flex items-center gap-1 rounded-lg bg-secondary px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
-        >
-          Ver <ExternalLink className="h-3 w-3" />
-        </Link>
-        <ShareButton candidateId={winner.candidateId} />
-      </div>
-      )}
-    </div>
-  )
-}

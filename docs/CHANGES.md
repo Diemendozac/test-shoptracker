@@ -4,6 +4,70 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-134 — Radar: escala de señal, fila compartida, alcance "Mis tiendas" y límite honesto de la prueba (Fases 2b y 2c)
+
+**Fecha:** 2026-09-30
+**Tipo:** UI de la pantalla principal y lógica de visualización del puntaje. Riesgo: con cuidado. La regla de señal la aprobó Daniel como decisión técnica.
+
+**Por qué:** Fases 2b y 2c de la propuesta de la app por pantalla (vault: `wiki/propuesta-app-por-pantalla.md`).
+- La tabla del pool mostraba el mismo dato con cuatro escalas: score, tendencia, crecimiento y "Élite/Fuerte/Medio/Bajo/Débil".
+- `performanceLabel` es una banda de puntaje, no una tendencia: "Declining" no significa que el producto caiga.
+- Mis testeos era otra tabla (797 líneas) con otros filtros para la misma pregunta.
+- La prueba gratis solo veía candados en la paginación.
+
+Daniel eligió el 2026-09-30:
+- la regla de señal tal como está abajo;
+- Mis testeos pasa a ser un alcance del Radar;
+- la prueba ve el límite con el número real.
+
+**Qué cambió:**
+- **Escala de señal** (`lib/signal.ts`, `signal-badge.tsx`, nuevos). Sobre los últimos 7 registros de rank:
+  - **Nuevo:** 2 días o menos.
+  - **Despegando:** subió 3+ puestos y 20 %+, con 3+ subidas seguidas y puntaje 50+.
+  - **Creciendo:** subió 3+ puestos y 10 %+.
+  - **Cayendo:** bajó 3+ puestos y 20 %+, con 3+ bajadas.
+  - **Estable:** el resto, o menos de 3 registros.
+  - **Confianza** por días de datos: 1–4 baja, 5–9 media, 10+ alta. Es lo mismo que el backend guarda como `signalConfidence = días ÷ 15`. Con confianza baja nunca se usa el verde lleno.
+  - Probada con 10 casos: bordes de 3 puestos, 10 % y 20 %, racha, ventana de 7 y puntaje menor a 50.
+  - Límite conocido: el historial de rank no tiene los días fuera de más vendidos, así que un producto que sale del ranking no se marca como Cayendo.
+- **Fila compartida** (`product-row.tsx`, nuevo). Reemplaza a `PoolWinnerRow` con cuatro evidencias: señal con confianza, movimiento (curva del puesto, #puesto, "subió N"/"bajó N"), puntaje, edad ("hace N días") y anuncios. Tiene cuatro anchos:
+  - completa, desde 1280 px;
+  - media, de 768 a 1279 px: la edad y el número de anuncios van debajo del nombre;
+  - compacta, con el panel abierto;
+  - tarjeta, por debajo de 768 px.
+- **`ads-cell.tsx` y `share-button.tsx`** (nuevos): las miniaturas de anuncios y el botón "Link" se movieron desde `pool-winners.tsx` sin cambios, para compartirlos. `pool-winners` sigue re-exportando `ShareButton`. `AdsCount` es nuevo: el número de anuncios activos.
+- **Alcance del Radar** (`pool/page.tsx`): "Todo el mercado" (el pool, igual que antes) o "Mis tiendas" (`?alcance=mis-tiendas`). "Mis tiendas" usa `/tracker` con los mismos filtros del pool aplicados en el navegador, ordenado por puntaje y paginado de a 20. No tiene límite de páginas ni búsqueda con IA, y no pide el pool.
+- **Mis testeos** (`tracker/page.tsx`): redirige a `/pool?alcance=mis-tiendas` y sale del menú y de la barra del celular. La barra del celular queda Inicio, Radar, Anuncios, Tiendas y Más. La ficha `/tracker/[id]` no cambia. Los favoritos de Mis testeos (`dropspy_favorites_tracker`) se suman a los del Radar la primera vez que se abre.
+- **Límite de la prueba**: al final de la primera página, "Hay N productos más en el Radar. Tu prueba ve la primera página…", con el total real de la respuesta y un botón a planes.
+- `pool-winners.tsx`: se quitaron `PoolWinnerRow`, las columnas viejas, "Contexto (Élite/Fuerte…)" y los imports que quedaron sin uso.
+
+**Qué NO cambió:** el backend, el puntaje, los filtros del pool y su búsqueda con IA, las reglas de plan de los anuncios (`AdsCell` es el mismo), el panel de detalle, la ficha de producto y el orden del pool. El `ScoreRing` y el badge viejo siguen en las pantallas que no se tocaron (ficha, tiendas, Inicio).
+
+**Verificación:**
+- `next build` compila; `tsc --noEmit` solo marca `lib/mock-data.ts`, que ya fallaba.
+- La regla: 10 casos con `tsx`.
+- En local, con una API de prueba y una sesión falsa, sin credenciales:
+  - a 1440 px, la tabla con los cinco estados, el ámbar con confianza baja, el aviso "Hay 1.180 productos más" y el candado en la paginación;
+  - `/tracker` redirige a "Mis tiendas" con sus 9 productos y sin límite;
+  - la búsqueda y un favorito en "Mis tiendas" funcionan, y el favorito aparece en Favoritos;
+  - tarjetas a 390 px y fila media a 1024 px, sin scroll horizontal.
+- En la misma prueba se vieron funcionando el chip de días de prueba y "Corte: hoy …" de CHANGE-131/132.
+- **Falta con datos reales:** revisar con tu cuenta que los estados se sientan correctos en productos que conoces.
+
+**Pendientes conocidos:**
+- `tracker-table.tsx`, `hero-signal-card.tsx`, `shooting-stars.tsx` y `kpi-cards.tsx` quedan sin uso hasta decidir en Hoy (2e) si alguno vuelve.
+- Textos viejos fuera de esta entrega:
+  - "Volver al Tracker" en la ficha (lleva al Radar por la redirección; se cambia en 2d);
+  - "Mis testeos" en el texto de la prueba de `/pricing` (`messages/es.json`, `Pricing.trial.in.tracker`);
+  - "al tracker" en Ajustes;
+  - el filtro "↑ Spikear" del pool.
+- Las tarjetas del celular muestran el número de anuncios, no los videos: el visor vertical es de una entrega posterior.
+
+**Relacionado con backend:** no.
+**Wiki actualizado:** sí (log.md del 2026-09-30).
+
+---
+
 ### CHANGE-133 — Página para compartir: vista previa en WhatsApp y adelanto sin datos de Pro (Fase 2a)
 
 **Fecha:** 2026-09-30

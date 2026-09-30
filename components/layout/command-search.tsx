@@ -160,7 +160,7 @@ export function CommandSearch() {
                   )}
 
                   {trackerResults.length > 0 && (
-                    <CommandGroup heading="Tus testeos">
+                    <CommandGroup heading="Productos de tus tiendas">
                       {trackerResults.map((c) => (
                         <CommandItem key={c.candidateId} value={`tracker-${c.candidateId}`}
                           onSelect={() => go(`/tracker/${c.candidateId}?storeId=${c.storeId}`)}>

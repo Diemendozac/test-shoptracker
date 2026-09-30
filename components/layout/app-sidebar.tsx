@@ -10,7 +10,6 @@ import { useGetPendingCandidatesQuery } from '@/app/(dashboard)/services/candida
 import {
   Home,
   Radar,
-  FlaskConical,
   Clock,
   Store,
   Video,
@@ -31,27 +30,26 @@ import {
 // wiki/propuesta-app-por-pantalla.md). Resumen (/dashboard) sale del menú: el login lleva a
 // Inicio, que muestra más. La ruta sigue existiendo. Explorar testeos pasa a llamarse Radar y
 // Tiendas, Competidores. Pendientes se queda hasta decidir la detección automática (Fase 3).
+// Mis testeos salió del menú en CHANGE-134: es el alcance "Mis tiendas" del Radar.
 // La barra inferior del celular (mobile-nav.tsx) usa esta misma lista.
-export type NavKey = 'home' | 'radar' | 'tracker' | 'pending' | 'stores' | 'ads'
+export type NavKey = 'home' | 'radar' | 'pending' | 'stores' | 'ads'
 
 export const NAV_ITEMS: { key: NavKey; name: string; short: string; href: string; icon: React.ElementType }[] = [
   { key: 'home',    name: 'Inicio',       short: 'Inicio',   href: '/home',        icon: Home },
   { key: 'radar',   name: 'Radar',        short: 'Radar',    href: '/pool',        icon: Radar },
-  { key: 'tracker', name: 'Mis testeos',  short: 'Testeos',  href: '/tracker',     icon: FlaskConical },
   { key: 'pending', name: 'Pendientes',   short: 'Pendientes', href: '/pendientes', icon: Clock },
   { key: 'stores',  name: 'Competidores', short: 'Tiendas',  href: '/stores',      icon: Store },
   { key: 'ads',     name: 'Anuncios',     short: 'Anuncios', href: '/ads-library', icon: Video },
 ]
 
 /**
- * Qué ítem del menú está activo. La ficha de producto (/tracker/[id]) se marca como Radar si se
- * abrió desde el pool (?from=pool) y como Mis testeos en cualquier otro caso, como antes.
+ * Qué ítem del menú está activo. Mis testeos pasó a ser el alcance "Mis tiendas" del Radar
+ * (CHANGE-134), así que la ficha de producto (/tracker/[id]) siempre marca Radar.
  */
-export function isNavActive(key: NavKey, pathname: string, fromParam: string | null): boolean {
+export function isNavActive(key: NavKey, pathname: string, _fromParam: string | null): boolean {
   switch (key) {
     case 'home':    return pathname.startsWith('/home')
-    case 'radar':   return pathname.startsWith('/pool') || (pathname.startsWith('/tracker') && fromParam === 'pool')
-    case 'tracker': return pathname.startsWith('/tracker') && fromParam !== 'pool'
+    case 'radar':   return pathname.startsWith('/pool') || pathname.startsWith('/tracker')
     case 'pending': return pathname.startsWith('/pendientes')
     case 'stores':  return pathname.startsWith('/stores')
     case 'ads':     return pathname.startsWith('/ads-library')
