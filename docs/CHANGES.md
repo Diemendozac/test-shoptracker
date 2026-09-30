@@ -4,6 +4,41 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-139 — Ajustes y plan: el plan primero, con lo que usas de verdad (Fase 3d)
+
+**Fecha:** 2026-09-30
+**Tipo:** pantalla de ajustes. Riesgo: con cuidado (tiene la oferta de pago).
+
+**Por qué:** Fase 3d de la propuesta de la app por pantalla (vault: `wiki/propuesta-app-por-pantalla.md`). Ajustes tenía:
+- un perfil con avatar grande;
+- el plan repetido en dos lugares;
+- la oferta para subir de plan al final;
+- los días de prueba y el uso del plan en ningún lado;
+- "Cerrar sesión" como sección propia.
+
+**Qué cambió (`settings/page.tsx`):**
+- **Tu plan**, primero:
+  - nombre del plan; en la prueba, días que quedan y la fecha en que termina;
+  - uso real: tiendas que sigues (activas / `maxStores`, con barra y aviso al llegar al límite), Radar (primera página o completo, según `maxPoolPage`), Biblioteca de anuncios (completa o sin anunciante ni links) y "Anunciante y link a Meta" (incluido o solo en Pro);
+  - debajo, la oferta para subir de plan (la misma de CHANGE-131) y cómo cancelar: el correo como texto seleccionable y, además, la opción de cancelar desde la cuenta de Mercado Pago.
+  - Se quitó el renglón "Plan actual" de la oferta, que repetía la tarjeta.
+- **Avisos por correo:** el mismo texto de CHANGE-131.
+- **Detección automática:** el mismo interruptor, con un texto que dice dónde se nota ("sin pasar por Nuevos por revisar en Competidores").
+- **Cuenta:** email y fecha de alta en una línea, cambio de contraseña (el mismo `PasswordSection`) y "Cerrar sesión".
+- El título pasa de "Configuración" a "Ajustes y plan". En el celular, la oferta se apila en vez de apretar el texto.
+
+**Qué NO cambió:** el backend, los links de Mercado Pago, `PasswordSection`, la preferencia `autoDetectCandidates` y el correo de contacto (`AGENCY_CONTACT_EMAIL`, que sigue sin verificar: ver CHANGE-131).
+
+**Verificación:**
+- `next build` compila; `tsc --noEmit` solo marca `lib/mock-data.ts`.
+- En local, con una API de prueba y sin credenciales, con una cuenta en prueba: plan, días, fecha de fin, uso y oferta a 1440 y 390 px, sin scroll horizontal.
+- **Falta:** verlo con una cuenta Básico y una Pro. Tampoco se confirmó en Mercado Pago que el cliente pueda cancelar desde su cuenta: la frase lo menciona como alternativa al correo.
+
+**Relacionado con backend:** no.
+**Wiki actualizado:** sí (log.md del 2026-09-30).
+
+---
+
 ### CHANGE-138 — Ficha de tienda: cómo prueba, qué le funciona y cómo lo vende (Fase 3b)
 
 **Fecha:** 2026-09-30
