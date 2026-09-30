@@ -8,17 +8,17 @@ import { useAppSelector, useAppDispatch } from '@/store/hooks'
 import { logout } from '@/app/(auth)/store/authSlice'
 import { useGetPendingCandidatesQuery } from '@/app/(dashboard)/services/candidateApi'
 import {
-  LayoutDashboard,
+  Home,
+  Radar,
   FlaskConical,
-  Store,
-  Settings,
-  ChevronDown,
-  Building2,
-  Globe,
   Clock,
+  Store,
+  Video,
+  Settings,
   ShieldCheck,
   LogOut,
-  Video,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react'
 import { DropspyIcon } from '@/components/ui/dropspy-logo'
 import { useGetMeQuery } from '@/app/(dashboard)/services/userApi'
@@ -27,29 +27,43 @@ import {
   DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
-const TOP_NAV = [
-  { name: 'Resumen', href: '/dashboard', icon: LayoutDashboard },
+// Menú plano con los nombres de la propuesta (CHANGE-132, Fase 1 del rediseño; vault:
+// wiki/propuesta-app-por-pantalla.md). Resumen (/dashboard) sale del menú: el login lleva a
+// Inicio, que muestra más. La ruta sigue existiendo. Explorar testeos pasa a llamarse Radar y
+// Tiendas, Competidores. Pendientes se queda hasta decidir la detección automática (Fase 3).
+// La barra inferior del celular (mobile-nav.tsx) usa esta misma lista.
+export type NavKey = 'home' | 'radar' | 'tracker' | 'pending' | 'stores' | 'ads'
+
+export const NAV_ITEMS: { key: NavKey; name: string; short: string; href: string; icon: React.ElementType }[] = [
+  { key: 'home',    name: 'Inicio',       short: 'Inicio',   href: '/home',        icon: Home },
+  { key: 'radar',   name: 'Radar',        short: 'Radar',    href: '/pool',        icon: Radar },
+  { key: 'tracker', name: 'Mis testeos',  short: 'Testeos',  href: '/tracker',     icon: FlaskConical },
+  { key: 'pending', name: 'Pendientes',   short: 'Pendientes', href: '/pendientes', icon: Clock },
+  { key: 'stores',  name: 'Competidores', short: 'Tiendas',  href: '/stores',      icon: Store },
+  { key: 'ads',     name: 'Anuncios',     short: 'Anuncios', href: '/ads-library', icon: Video },
 ]
 
-const BOTTOM_NAV = [
-  { name: 'Tiendas', href: '/stores', icon: Store },
-]
-
-const TESTEOS_ITEMS = [
-  { name: 'Mis testeos',      href: '/tracker',      icon: Building2 },
-  { name: 'Explorar testeos', href: '/pool',         icon: Globe },
-  // Biblioteca de anuncios (2026-09-15, wiki scout-biblioteca-anuncios-propuesta) — pantalla
-  // nueva, anuncios en sí (no candidatos), sin depender de tracking_status. Ver FIX-074/
-  // ads-library en el backend.
-  { name: 'Biblioteca de anuncios', href: '/ads-library', icon: Video },
-  { name: 'Pendientes',       href: '/pendientes', icon: Clock },
-]
+/**
+ * Qué ítem del menú está activo. La ficha de producto (/tracker/[id]) se marca como Radar si se
+ * abrió desde el pool (?from=pool) y como Mis testeos en cualquier otro caso, como antes.
+ */
+export function isNavActive(key: NavKey, pathname: string, fromParam: string | null): boolean {
+  switch (key) {
+    case 'home':    return pathname.startsWith('/home')
+    case 'radar':   return pathname.startsWith('/pool') || (pathname.startsWith('/tracker') && fromParam === 'pool')
+    case 'tracker': return pathname.startsWith('/tracker') && fromParam !== 'pool'
+    case 'pending': return pathname.startsWith('/pendientes')
+    case 'stores':  return pathname.startsWith('/stores')
+    case 'ads':     return pathname.startsWith('/ads-library')
+  }
+}
 
 interface AppSidebarProps {
   pinned: boolean
+  onTogglePinned: () => void
 }
 
-export function AppSidebar({ pinned }: AppSidebarProps) {
+export function AppSidebar({ pinned, onTogglePinned }: AppSidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const dispatch = useAppDispatch()
@@ -69,25 +83,28 @@ export function AppSidebar({ pinned }: AppSidebarProps) {
   const isAdmin = me?.plan === 'admin'
   const pendingCount = pending?.length ?? 0
 
-  const inTesteos = pathname.startsWith('/tracker') || pathname.startsWith('/pool') || pathname.startsWith('/pendientes')
-  const [open, setOpen] = useState(inTesteos)
   const [hovered, setHovered] = useState(false)
-
   const expanded = pinned || hovered
 
-  useEffect(() => {
-    if (inTesteos) setOpen(true)
-  }, [inTesteos])
-
-  // Collapse hover state when sidebar becomes pinned
+  // Al fijar el menú se descarta el estado de hover
   useEffect(() => {
     if (pinned) setHovered(false)
   }, [pinned])
 
+  const label = (text: string) => (
+    <span className={cn(
+      'overflow-hidden whitespace-nowrap transition-all duration-300',
+      expanded ? 'max-w-[160px] opacity-100' : 'max-w-0 opacity-0',
+    )}>
+      {text}
+    </span>
+  )
+
   return (
     <aside
+      // Solo desde 1024 px. Por debajo manda la barra inferior (mobile-nav.tsx).
       className={cn(
-        'fixed inset-y-0 left-0 z-50 flex flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out',
+        'fixed inset-y-0 left-0 z-50 hidden flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out lg:flex',
         expanded ? 'w-64' : 'w-16',
       )}
       onMouseEnter={() => !pinned && setHovered(true)}
@@ -112,13 +129,14 @@ export function AppSidebar({ pinned }: AppSidebarProps) {
       </Link>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-2 py-4">
-
-        {/* Top items */}
-        {TOP_NAV.map((item) => {
-          const isActive = pathname === item.href
+      <nav aria-label="Principal" className="flex-1 space-y-1 px-2 py-4">
+        {NAV_ITEMS.map((item) => {
+          const isActive = isNavActive(item.key, pathname, fromParam)
+          const showBadge = item.key === 'pending' && pendingCount > 0
           return (
-            <Link key={item.name} href={item.href}
+            <Link key={item.key} href={item.href}
+              aria-current={isActive ? 'page' : undefined}
+              title={expanded ? undefined : item.name}
               className={cn(
                 'group relative flex items-center rounded-lg py-2.5 text-sm font-medium transition-all duration-200',
                 expanded ? 'gap-3 px-3' : 'justify-center',
@@ -129,105 +147,16 @@ export function AppSidebar({ pinned }: AppSidebarProps) {
             >
               <item.icon className={cn('h-4 w-4 shrink-0 transition-colors',
                 isActive ? 'text-sidebar-primary' : 'text-sidebar-muted-foreground group-hover:text-sidebar-foreground')} />
-              <span className={cn(
-                'overflow-hidden whitespace-nowrap transition-all duration-300',
-                expanded ? 'max-w-[160px] opacity-100' : 'max-w-0 opacity-0',
-              )}>
-                {item.name}
-              </span>
-            </Link>
-          )
-        })}
-
-        {/* Testeos accordion */}
-        <div>
-          <button
-            onClick={() => expanded && setOpen((v) => !v)}
-            className={cn(
-              'group flex w-full items-center rounded-lg py-2.5 text-sm font-medium transition-all duration-200',
-              expanded ? 'gap-3 px-3' : 'justify-center',
-              inTesteos
-                ? 'text-sidebar-foreground hover:bg-sidebar-hover'
-                : 'text-sidebar-muted-foreground hover:bg-sidebar-hover hover:text-sidebar-foreground',
-            )}
-          >
-            <FlaskConical className={cn('h-4 w-4 shrink-0 transition-colors',
-              inTesteos ? 'text-sidebar-primary' : 'text-sidebar-muted-foreground group-hover:text-sidebar-foreground')} />
-            <span className={cn(
-              'flex-1 overflow-hidden whitespace-nowrap text-left transition-all duration-300',
-              expanded ? 'max-w-[120px] opacity-100' : 'max-w-0 opacity-0',
-            )}>
-              Testeos
-            </span>
-            <ChevronDown className={cn(
-              'h-3.5 w-3.5 shrink-0 text-sidebar-muted-foreground transition-all duration-300',
-              open && expanded ? 'rotate-180' : '',
-              expanded ? 'opacity-100' : 'max-w-0 opacity-0 overflow-hidden',
-            )} />
-          </button>
-
-          <div className={cn(
-            'overflow-hidden transition-all duration-200',
-            // max-h subido de 36 a 44 — se agregó un 4to item (Biblioteca de anuncios, 2026-09-15)
-            (open && expanded) ? 'max-h-44 opacity-100' : 'max-h-0 opacity-0',
-          )}>
-            <div className="ml-3 mt-0.5 space-y-0.5 border-l border-sidebar-border pl-3">
-              {TESTEOS_ITEMS.map((item) => {
-                const isActive =
-                  item.href === '/tracker'
-                    ? pathname.startsWith('/tracker') && fromParam !== 'pool'
-                    : item.href === '/pool'
-                    ? pathname.startsWith('/pool') || (pathname.startsWith('/tracker') && fromParam === 'pool')
-                    : pathname.startsWith(item.href)
-                const isPendientes = item.href === '/pendientes'
-                const showBadge = isPendientes && pendingCount > 0
-                return (
-                  <Link key={item.name} href={item.href}
-                    className={cn(
-                      'group relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-all duration-200',
-                      isActive
-                        ? 'bg-sidebar-accent font-medium text-sidebar-accent-foreground before:absolute before:-left-[13px] before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-r-full before:bg-grad-brand'
-                        : 'text-sidebar-muted-foreground hover:bg-sidebar-hover hover:text-sidebar-foreground',
-                    )}
-                  >
-                    <item.icon className={cn('h-3.5 w-3.5 shrink-0',
-                      isActive ? 'text-sidebar-primary' : 'text-sidebar-muted-foreground group-hover:text-sidebar-foreground')} />
-                    {item.name}
-                    <div className="ml-auto flex items-center gap-1.5">
-                      {showBadge && (
-                        <span className="rounded-full bg-warning-subtle px-1.5 py-0.5 text-xs font-semibold leading-none text-warning-foreground tabular-nums">
-                          {pendingCount}
-                        </span>
-                      )}
-                    </div>
-                  </Link>
+              {label(item.name)}
+              {showBadge && (
+                expanded ? (
+                  <span className="ml-auto rounded-full bg-warning-subtle px-1.5 py-0.5 text-xs font-semibold leading-none text-warning-foreground tabular-nums">
+                    {pendingCount}
+                  </span>
+                ) : (
+                  <span aria-label={`${pendingCount} pendientes`} className="absolute right-3 top-2 h-2 w-2 rounded-full bg-warning" />
                 )
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom items */}
-        {BOTTOM_NAV.map((item) => {
-          const isActive = pathname.startsWith(item.href)
-          return (
-            <Link key={item.name} href={item.href}
-              className={cn(
-                'group relative flex items-center rounded-lg py-2.5 text-sm font-medium transition-all duration-200',
-                expanded ? 'gap-3 px-3' : 'justify-center',
-                isActive
-                  ? 'bg-sidebar-accent text-sidebar-accent-foreground before:absolute before:-left-2 before:top-2 before:bottom-2 before:w-[3px] before:rounded-r-full before:bg-grad-brand'
-                  : 'text-sidebar-muted-foreground hover:bg-sidebar-hover hover:text-sidebar-foreground',
               )}
-            >
-              <item.icon className={cn('h-4 w-4 shrink-0 transition-colors',
-                isActive ? 'text-sidebar-primary' : 'text-sidebar-muted-foreground group-hover:text-sidebar-foreground')} />
-              <span className={cn(
-                'overflow-hidden whitespace-nowrap transition-all duration-300',
-                expanded ? 'max-w-[160px] opacity-100' : 'max-w-0 opacity-0',
-              )}>
-                {item.name}
-              </span>
             </Link>
           )
         })}
@@ -238,8 +167,9 @@ export function AppSidebar({ pinned }: AppSidebarProps) {
         const isActive = pathname.startsWith('/admin')
         return (
           <Link href="/admin"
+            title={expanded ? undefined : 'Admin'}
             className={cn(
-              'group flex items-center rounded-lg py-2.5 text-sm font-medium transition-all duration-200 mx-2',
+              'group mx-2 flex items-center rounded-lg py-2.5 text-sm font-medium transition-all duration-200',
               expanded ? 'gap-3 px-3' : 'justify-center',
               isActive
                 ? 'bg-sidebar-accent text-sidebar-accent-foreground'
@@ -247,15 +177,25 @@ export function AppSidebar({ pinned }: AppSidebarProps) {
             )}
           >
             <ShieldCheck className={cn('h-4 w-4 shrink-0', isActive && 'text-sidebar-primary')} />
-            <span className={cn(
-              'overflow-hidden whitespace-nowrap transition-all duration-300',
-              expanded ? 'max-w-[160px] opacity-100' : 'max-w-0 opacity-0',
-            )}>
-              Admin
-            </span>
+            {label('Admin')}
           </Link>
         )
       })()}
+
+      {/* Plegar / fijar el menú (se recuerda en este navegador) */}
+      <button
+        type="button"
+        onClick={onTogglePinned}
+        aria-pressed={pinned}
+        title={pinned ? 'Plegar menú' : 'Fijar menú'}
+        className={cn(
+          'mx-2 mb-1 flex items-center rounded-lg py-2 text-xs font-medium text-sidebar-muted-foreground transition-colors hover:bg-sidebar-hover hover:text-sidebar-foreground',
+          expanded ? 'gap-3 px-3' : 'justify-center',
+        )}
+      >
+        {pinned ? <PanelLeftClose className="h-4 w-4 shrink-0" /> : <PanelLeftOpen className="h-4 w-4 shrink-0" />}
+        {label(pinned ? 'Plegar menú' : 'Fijar menú')}
+      </button>
 
       {/* User Section — click para desplegar acceso a Settings */}
       <div className="border-t border-sidebar-border p-3">

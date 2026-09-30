@@ -4,6 +4,40 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-132 — Fase 1: menú con los nombres nuevos, la app en el celular y buscador global
+
+**Fecha:** 2026-09-30
+**Tipo:** layout compartido y navegación. Riesgo: con cuidado (lo usan todas las pantallas).
+
+**Por qué:** Fase 1 de la propuesta de la app por pantalla (vault: `wiki/propuesta-app-por-pantalla.md`). El menú lateral de 256 px estaba fijo en todos los anchos (`pinned={true}` y `pl-64`), así que a 390 px tapaba media pantalla, y el embudo nuevo nace en el celular. El menú tenía un acordeón "Testeos" con cuatro pantallas y nombres que no coinciden con la propuesta. Faltaba un buscador de verdad (la lupa sin acción se quitó en CHANGE-131). Daniel aprobó la spec y los archivos el 2026-09-30 y eligió: nombres nuevos sin Resumen; escala de señal y fila de producto compartida para la Fase 2.
+
+**Qué cambió:**
+- **Menú lateral** (`app-sidebar.tsx`): lista plana con Inicio, Radar (`/pool`), Mis testeos, Pendientes (con contador), Competidores (`/stores`) y Anuncios. Resumen (`/dashboard`) sale del menú; la ruta sigue existiendo. Solo aparece desde 1024 px y se puede plegar a íconos con "Plegar menú" (se recuerda en `localStorage`, clave `dropspy_sidebar_pinned`). La lógica de expandir al pasar el mouse ya existía y ahora se usa. `NAV_ITEMS` e `isNavActive` quedan exportados para la barra del celular.
+- **Barra inferior en el celular** (`mobile-nav.tsx`, nuevo): por debajo de 1024 px, Inicio, Radar, Testeos, Anuncios y Más. Más abre un panel con Competidores, Pendientes, Configuración, Admin y Cerrar sesión. Respeta el área segura del teléfono.
+- **Layout** (`(dashboard)/layout.tsx`): padding izquierdo según el menú (`lg:pl-64` o `lg:pl-16`) y espacio abajo para la barra del celular.
+- **Barra superior** (`app-header.tsx`): en el celular, fila con el logo y sin el mensaje rotativo; desde 1024 px, las tres columnas de siempre. Nuevo chip "Último corte: hoy 4:10 a. m." con el `lastScrapedAt` más reciente de tus tiendas activas (ámbar si pasaron más de 2 días; oculto sin tiendas y por debajo de 768 px). El chip de días de prueba usa texto corto en el celular y con el menú abierto.
+- **Buscador global** (`command-search.tsx`, nuevo): botón en la barra y atajo ⌘K / Ctrl+K. Busca en tus tiendas y en tus testeos (en el navegador, sin tildes) y en el Radar (`/pool/winners?q=`, literal, 250 ms después de dejar de escribir, con las reglas de plan de la pantalla del pool). "Buscar con IA en el Radar" abre `/pool?q=`. Sin texto, muestra accesos a cada pantalla.
+- **Radar** (`pool/page.tsx`): lee `?q=` y lo aplica como una búsqueda confirmada con Enter.
+- **Login** (`useAuth.ts`): lleva a `/home` en lugar de `/dashboard`. El registro ya llevaba a `/home`.
+
+**Qué NO cambió:** rutas, permisos por plan, el store de Redux, el backend y el contenido de las pantallas. Las tablas de Mis testeos, Radar y Competidores siguen anchas en el celular (se desplazan de lado dentro de la pantalla): se rehacen en la Fase 2. La escala de señal y la fila de producto compartida también quedan para la Fase 2.
+
+**Verificación:**
+- `next build` compila; `tsc --noEmit` solo marca `lib/mock-data.ts`, que ya fallaba.
+- En local, con una sesión falsa contra una API inexistente (sin credenciales): a 390, 768, 1024 y 1280 px no hay scroll horizontal; el menú lateral se oculta por debajo de 1024 px y aparece la barra inferior; "Más" abre su panel; ⌘K abre el buscador; Enter en "Buscar con IA" lleva a `/pool?q=` con Radar activo; plegar el menú deja 64 px y se recuerda.
+- **No verificado:** los chips de prueba y de último corte, y los resultados del buscador, porque necesitan datos de la API. Hay que probarlos con sesión antes de mergear.
+
+**Pendientes conocidos:**
+- Textos con los nombres viejos en archivos fuera de esta fase: el título "Mis tiendas" de `stores/page.tsx`, "Explorar pool" y "Mis tiendas" en el acceso rápido de Inicio, y "Explorar pool" en `/share`. Se corrigen con Inicio (Fase 2) y Competidores (Fase 3).
+- La barra "Ver como" del admin (`ViewAsBar`, fija abajo) queda encima de la barra inferior en el celular. Solo la ve el admin.
+- `admin/page.tsx` sigue mandando a `/dashboard` a quien no es admin.
+- El buscador no busca anuncios: `/ads-library` no acepta texto en el backend.
+
+**Relacionado con backend:** no.
+**Wiki actualizado:** sí (log.md del 2026-09-30).
+
+---
+
 ### CHANGE-131 — Fase 0: la app deja de decir cosas que no son ciertas
 
 **Fecha:** 2026-09-30
