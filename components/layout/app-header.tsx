@@ -2,13 +2,17 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { Bell, Search, FlaskConical, TrendingUp, X, ChevronDown, Check } from 'lucide-react'
+import { Bell, FlaskConical, TrendingUp, X, ChevronDown, Check, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useGetNotificationsQuery } from '@/app/(dashboard)/services/userApi'
 import { useCurrency } from '@/store/hooks'
 import { TopbarTicker } from '@/components/layout/topbar-ticker'
 import { SUPPORTED_CURRENCIES, currencySymbol } from '@/lib/currency'
 import { cn } from '@/lib/utils'
+import { useTrialStatus, useViewAs } from '@/lib/view-as'
+import { useGetStoresQuery } from '@/app/(dashboard)/stores/services/storeApi'
+import { DropspyIcon } from '@/components/ui/dropspy-logo'
+import { CommandSearch } from '@/components/layout/command-search'
 
 interface AppHeaderProps {
   title?: string
@@ -222,6 +226,76 @@ function CurrencySelector() {
   )
 }
 
+// ─── Días de prueba ───────────────────────────────────────────────────────────
+// useTrialStatus().daysLeft ya existía pero ninguna pantalla lo mostraba: la persona se enteraba
+// el día 7, con el bloqueo (CHANGE-131). Solo con la fecha de registro cargada, para no mostrar
+// "7 días" mientras /users/me responde. Usa el plan real, así que el admin que simula la prueba
+// no lo ve.
+function TrialDaysLeft() {
+  const { isTrial, isExpired, daysLeft } = useTrialStatus()
+  const { signupDate } = useViewAs()
+  if (!isTrial || isExpired || !signupDate) return null
+  const urgent = daysLeft <= 2
+  return (
+    <Link
+      href="/pricing"
+      className={cn(
+        'inline-flex w-fit shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+        urgent
+          ? 'border-warning-border bg-warning-subtle text-warning-foreground hover:bg-warning-subtle/70'
+          : 'border-primary-border bg-primary-subtle text-primary-text hover:bg-primary-subtle/70',
+      )}
+    >
+      <Clock className="h-3.5 w-3.5 shrink-0" />
+      {/* En el celular, la versión corta (CHANGE-132) */}
+      {/* Texto corto en el celular y con el menú lateral abierto (1024–1535 px), donde la columna es angosta */}
+      <span className="sm:hidden lg:inline 2xl:hidden">{daysLeft === 1 ? '1 día de prueba' : `${daysLeft} días de prueba`}</span>
+      <span className="hidden sm:inline lg:hidden 2xl:inline">{daysLeft === 1 ? 'Te queda 1 día de prueba' : `Te quedan ${daysLeft} días de prueba`}</span>
+      <span className="hidden font-semibold sm:inline lg:hidden 2xl:inline">· Ver planes</span>
+    </Link>
+  )
+}
+
+// ─── Último corte ─────────────────────────────────────────────────────────────
+// La hora real de la última revisión de tus tiendas, en lugar de decir "tiempo real"
+// (CHANGE-132). Sale del lastScrapedAt más reciente de tus tiendas activas. En ámbar si
+// pasaron más de 2 días: el dato puede estar viejo. Sin tiendas, no se muestra.
+function formatCut(d: Date): string {
+  const now = new Date()
+  const time = d.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' })
+  const day = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime()
+  const diffDays = Math.round((day(now) - day(d)) / 86_400_000)
+  if (diffDays <= 0) return `hoy ${time}`
+  if (diffDays === 1) return `ayer ${time}`
+  return `hace ${diffDays} días`
+}
+
+function LastSync() {
+  const { data: stores } = useGetStoresQuery()
+  const latest = (stores ?? [])
+    .filter((s) => s.isActive && s.lastScrapedAt)
+    .map((s) => new Date(s.lastScrapedAt))
+    .filter((d) => !Number.isNaN(d.getTime()))
+    .sort((a, b) => b.getTime() - a.getTime())[0]
+  if (!latest) return null
+  const stale = Date.now() - latest.getTime() > 2 * 86_400_000
+  return (
+    <span
+      title="La última vez que revisamos tus tiendas"
+      className={cn(
+        'hidden shrink-0 items-center whitespace-nowrap rounded-full border px-3 py-1 text-xs md:inline-flex',
+        stale
+          ? 'border-warning-border bg-warning-subtle text-warning-foreground'
+          : 'border-border bg-card text-muted-foreground',
+      )}
+    >
+      <span className="hidden 2xl:inline">Último corte:&nbsp;</span>
+      <span className="2xl:hidden">Corte:&nbsp;</span>
+      {formatCut(latest)}
+    </span>
+  )
+}
+
 // ─── Header ───────────────────────────────────────────────────────────────────
 
 export function AppHeader({ title, description }: AppHeaderProps) {
@@ -240,17 +314,23 @@ export function AppHeader({ title, description }: AppHeaderProps) {
   }, [])
 
   return (
-    <header className="sticky top-0 z-40 grid h-16 grid-cols-3 items-center border-b border-border bg-card/85 bg-topbar-glow px-6 backdrop-blur-sm">
-      <div />
+    // En el celular: fila flexible con el logo (no hay menú lateral) y sin el mensaje rotativo.
+    // Desde 1024 px: las tres columnas de siempre (CHANGE-132).
+    <header className="sticky top-0 z-40 flex h-14 items-center gap-2 border-b border-border bg-card/85 bg-topbar-glow px-4 backdrop-blur-sm lg:grid lg:h-16 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_auto] lg:px-6">
+      <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden lg:flex-none">
+        <Link href="/home" aria-label="Inicio" className="shrink-0 lg:hidden">
+          <DropspyIcon size={26} gradient />
+        </Link>
+        <TrialDaysLeft />
+        <LastSync />
+      </div>
 
-      <TopbarTicker />
+      <div className="hidden min-w-0 lg:flex lg:justify-center">
+        <TopbarTicker />
+      </div>
 
-      <div className="flex items-center justify-end gap-2">
-        <Button variant="ghost" size="icon" className="relative">
-          <Search className="h-4 w-4" />
-          <span className="sr-only">Buscar</span>
-        </Button>
-
+      <div className="flex shrink-0 items-center justify-end gap-1.5 lg:gap-2">
+        <CommandSearch />
         <CurrencySelector />
 
         {/* Bell */}

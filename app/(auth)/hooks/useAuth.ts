@@ -31,7 +31,8 @@ export function useAuth() {
   const login = async (credentials: LoginRequest, { redirectTo }: AuthRedirect = {}) => {
     const result = await loginMutation(credentials).unwrap()
     dispatch(setCredentials(result))
-    go('/dashboard', redirectTo)
+    // Inicio muestra más que Resumen, que salió del menú (CHANGE-132). /dashboard sigue existiendo.
+    go('/home', redirectTo)
   }
 
   // El onboarding sigue siendo obligatorio: markJustRegistered queda guardado y el modal

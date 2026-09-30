@@ -37,9 +37,6 @@ components/
 │   └── stats-card.tsx          ← KPI cards del dashboard
 ├── tracker/             ← Componentes del tracker de candidatos
 │   ├── tracker-table.tsx       ← Tabla principal de candidatos con estimaciones
-│   ├── winner-card.tsx         ← Winner de la semana por tienda
-│   ├── winner-podium.tsx       ← Top 5 productos que llegaron a rank #1
-│   ├── race-track.tsx          ← Visualización tipo "carrera" de posiciones
 │   ├── score-chart.tsx         ← Histórico del score (Recharts)
 │   ├── rank-chart.tsx          ← Histórico del rank (Recharts)
 │   ├── phase-badge.tsx         ← Badge Despegue/Meseta/Caída/Rebote

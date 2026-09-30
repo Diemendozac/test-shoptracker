@@ -38,9 +38,68 @@ Daniel eligió el 2026-09-30 la opción "adelanto".
 - Con la API de producción y un id inventado: 404 con la página nueva y `noindex`; la imagen de vista previa se genera.
 - Con un servidor local que imita el endpoint: la página se ve bien a 390 px sin scroll horizontal, y en el build de producción el HTML no trae tienda, link al producto ni link a Meta.
 - **No verificado con un producto real:** falta abrir un link compartido de verdad y pegarlo en WhatsApp.
+### CHANGE-132 — Fase 1: menú con los nombres nuevos, la app en el celular y buscador global
+
+**Fecha:** 2026-09-30
+**Tipo:** layout compartido y navegación. Riesgo: con cuidado (lo usan todas las pantallas).
+
+**Por qué:** Fase 1 de la propuesta de la app por pantalla (vault: `wiki/propuesta-app-por-pantalla.md`). El menú lateral de 256 px estaba fijo en todos los anchos (`pinned={true}` y `pl-64`), así que a 390 px tapaba media pantalla, y el embudo nuevo nace en el celular. El menú tenía un acordeón "Testeos" con cuatro pantallas y nombres que no coinciden con la propuesta. Faltaba un buscador de verdad (la lupa sin acción se quitó en CHANGE-131). Daniel aprobó la spec y los archivos el 2026-09-30 y eligió: nombres nuevos sin Resumen; escala de señal y fila de producto compartida para la Fase 2.
+
+**Qué cambió:**
+- **Menú lateral** (`app-sidebar.tsx`): lista plana con Inicio, Radar (`/pool`), Mis testeos, Pendientes (con contador), Competidores (`/stores`) y Anuncios. Resumen (`/dashboard`) sale del menú; la ruta sigue existiendo. Solo aparece desde 1024 px y se puede plegar a íconos con "Plegar menú" (se recuerda en `localStorage`, clave `dropspy_sidebar_pinned`). La lógica de expandir al pasar el mouse ya existía y ahora se usa. `NAV_ITEMS` e `isNavActive` quedan exportados para la barra del celular.
+- **Barra inferior en el celular** (`mobile-nav.tsx`, nuevo): por debajo de 1024 px, Inicio, Radar, Testeos, Anuncios y Más. Más abre un panel con Competidores, Pendientes, Configuración, Admin y Cerrar sesión. Respeta el área segura del teléfono.
+- **Layout** (`(dashboard)/layout.tsx`): padding izquierdo según el menú (`lg:pl-64` o `lg:pl-16`) y espacio abajo para la barra del celular.
+- **Barra superior** (`app-header.tsx`): en el celular, fila con el logo y sin el mensaje rotativo; desde 1024 px, las tres columnas de siempre. Nuevo chip "Último corte: hoy 4:10 a. m." con el `lastScrapedAt` más reciente de tus tiendas activas (ámbar si pasaron más de 2 días; oculto sin tiendas y por debajo de 768 px). El chip de días de prueba usa texto corto en el celular y con el menú abierto.
+- **Buscador global** (`command-search.tsx`, nuevo): botón en la barra y atajo ⌘K / Ctrl+K. Busca en tus tiendas y en tus testeos (en el navegador, sin tildes) y en el Radar (`/pool/winners?q=`, literal, 250 ms después de dejar de escribir, con las reglas de plan de la pantalla del pool). "Buscar con IA en el Radar" abre `/pool?q=`. Sin texto, muestra accesos a cada pantalla.
+- **Radar** (`pool/page.tsx`): lee `?q=` y lo aplica como una búsqueda confirmada con Enter.
+- **Login** (`useAuth.ts`): lleva a `/home` en lugar de `/dashboard`. El registro ya llevaba a `/home`.
+
+**Qué NO cambió:** rutas, permisos por plan, el store de Redux, el backend y el contenido de las pantallas. Las tablas de Mis testeos, Radar y Competidores siguen anchas en el celular (se desplazan de lado dentro de la pantalla): se rehacen en la Fase 2. La escala de señal y la fila de producto compartida también quedan para la Fase 2.
+
+**Verificación:**
+- `next build` compila; `tsc --noEmit` solo marca `lib/mock-data.ts`, que ya fallaba.
+- En local, con una sesión falsa contra una API inexistente (sin credenciales): a 390, 768, 1024 y 1280 px no hay scroll horizontal; el menú lateral se oculta por debajo de 1024 px y aparece la barra inferior; "Más" abre su panel; ⌘K abre el buscador; Enter en "Buscar con IA" lleva a `/pool?q=` con Radar activo; plegar el menú deja 64 px y se recuerda.
+- **No verificado:** los chips de prueba y de último corte, y los resultados del buscador, porque necesitan datos de la API. Hay que probarlos con sesión antes de mergear.
+
+**Pendientes conocidos:**
+- Textos con los nombres viejos en archivos fuera de esta fase: el título "Mis tiendas" de `stores/page.tsx`, "Explorar pool" y "Mis tiendas" en el acceso rápido de Inicio, y "Explorar pool" en `/share`. Se corrigen con Inicio (Fase 2) y Competidores (Fase 3).
+- La barra "Ver como" del admin (`ViewAsBar`, fija abajo) queda encima de la barra inferior en el celular. Solo la ve el admin.
+- `admin/page.tsx` sigue mandando a `/dashboard` a quien no es admin.
+- El buscador no busca anuncios: `/ads-library` no acepta texto en el backend.
 
 **Relacionado con backend:** no.
 **Wiki actualizado:** sí (log.md del 2026-09-30).
+
+---
+
+### CHANGE-131 — Fase 0: la app deja de decir cosas que no son ciertas
+
+**Fecha:** 2026-09-30
+**Tipo:** textos, UI y limpieza. Riesgo: solo (frontend, sin Redux, sin backend, sin contratos de API).
+
+**Por qué:** es la Fase 0 de la propuesta de la app por pantalla (vault: `wiki/propuesta-app-por-pantalla.md`). Antes de rediseñar nada, la app tiene que dejar de prometer lo que no hace. Cada punto se verificó en el código de `main` (`d26a80a`). Daniel pidió "haz la fase 0" sobre la lista de la propuesta, que ya nombraba archivo y línea de cada cambio: esa fue la aprobación del plan (paso 3 del protocolo DEV-CHANGE).
+
+**Qué cambió:**
+- **Tiendas** (`stores/page.tsx`): decía "N de 50 tiendas registradas" con el 50 escrito fijo. Básico y la prueba tienen 15. Ahora usa `maxStores` de `/users/me` y cuenta las tiendas activas, que es lo que limita el backend: "12 de 15 tiendas activas en tu plan". Admin (999) ve "sin límite". Mientras `/users/me` carga, solo el número de tiendas.
+- **Ajustes, oferta para subir de plan** (`settings/page.tsx`): vendía "Datos privados", "Exportar CSV", "Seats múltiples" y "API access", que no existen. Ahora dice solo lo que da cada plan según `/pricing` (`lib/pricing.ts`): prueba → Básico "sigues después de los 7 días, 15 tiendas, el pool completo"; Básico → Pro "40 tiendas, anunciante y link a Meta". Pro → Agency ya no lleva a un link de pago con un precio que no está publicado: dice "lo armamos a tu medida" y lleva a escribirnos, igual que `/pricing`.
+- **Ajustes, notificaciones** (`settings/page.tsx`): los interruptores "Resumen diario", "Alertas Rising" y "Reporte semanal" eran estado local: se apagaban al recargar y nada los enviaba. Se quitaron. En su lugar, un texto dice lo único que existe: el aviso por correo del backend (`AlertService`, tras cada sync) cuando un producto de tus tiendas llega a la señal más fuerte, y que no se configura desde aquí.
+- **Inicio** (`home/page.tsx`): "N tiendas monitoreadas en tiempo real" → "Revisamos tus N tiendas una vez al día" (solo si N > 0). N son las tiendas del usuario y el scraping es diario.
+- **Barra superior** (`app-header.tsx`): se quitó la lupa, que no tenía acción. Se agregó "Te quedan N días de prueba · Ver planes" (lleva a `/pricing`; en ámbar los últimos 2 días). `useTrialStatus().daysLeft` ya existía y ninguna pantalla lo mostraba: la persona se enteraba el día 7, con el bloqueo. Solo aparece con la fecha de registro cargada y con el plan real `free` (el admin que simula la prueba no lo ve).
+- **Explorar testeos** (`pool/page.tsx`, `pool-winners.tsx`): las pestañas "En alza", "Top score", "Nuevos esta semana" y "Favoritos" filtraban en el navegador solo los 20 productos de la página abierta, no el pool.
+  - Se quitaron "En alza" (su regla solo miraba la página), "Top score" (repetía el orden del backend, que ya viene por puntaje) y "Nuevos esta semana" (repetía el filtro de Fechas "7d", que sí filtra en el servidor).
+  - "Favoritos" ahora muestra todos los favoritos, no solo los de la página. Se guarda cada fila marcada (`localStorage`, clave nueva `dropspy_favorites_pool_items`) y se refresca cada vez que vuelve a salir en el pool. La lista de ids sigue en la clave de siempre. Los favoritos guardados antes de este cambio (solo con el id) aparecen si vuelven a salir en el pool, y la pantalla lo dice. La lista de favoritos no se pagina y avisa que los filtros no se le aplican.
+- **Componentes sin uso, borrados:** `components/tracker/winner-podium.tsx`, `race-track.tsx`, `winner-card.tsx` y `components/dashboard/pending-candidates-section.tsx`. Ningún archivo los importaba (verificado con grep). Se sacaron también de la estructura de `CLAUDE.md`.
+
+**Qué NO cambió:** permisos por plan, Redux, endpoints, el ajuste "Testear candidatos automáticamente" (ese sí funciona), el link de cancelación ni el correo `hola@dropspy.io`. `/podium` sigue existiendo en el backend y en `dashboardApi` aunque ya no lo use ningún componente: vuelve en la pantalla "Hoy".
+
+**Verificación:** `next build` compila. `tsc --noEmit` solo marca `lib/mock-data.ts`, que ya fallaba antes y no se tocó. El repo no tiene ESLint instalado. No se probó en el navegador con sesión: las pantallas necesitan login contra la API de producción. Hay que revisarlas con una cuenta de prueba y una Pro antes de mergear (Tiendas, Ajustes, Inicio, la barra superior y las dos pestañas del pool).
+
+**Pendiente, fuera de este cambio:**
+- **Backend:** el aviso por correo solo sale si `MAIL_USERNAME` está configurado en producción (`EmailService.sendRocketAlert`). Si no lo está, el envío se omite en silencio y aun así `AlertService` marca `alertSentAt`, como si se hubiera enviado. Hay que confirmar la variable en Easypanel. `/pricing` también promete "Alertas por email".
+- **Correo:** `dropspy.io` tiene registros MX (reenvío de Namecheap), pero no se pudo comprobar que exista el alias `hola@`. Hay que mandarle un correo de prueba.
+
+**Relacionado con backend:** no.
+**Wiki actualizado:** sí (log.md del 2026-09-30 y `wiki/propuesta-app-por-pantalla.md`).
 
 ---
 

@@ -11,6 +11,7 @@ import { useGetMeQuery, useChangePasswordMutation, useUpdatePreferencesMutation 
 import { User, Mail, Bell, Shield, CreditCard, LogOut, Eye, EyeOff, Check, X, Zap, ArrowUpRight, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { mpCheckoutUrl } from '@/lib/mercadopago'
+import { AGENCY_CONTACT_EMAIL, PLAN_STORES } from '@/lib/pricing'
 
 // ─── Plan badge ───────────────────────────────────────────────────────────────
 
@@ -170,11 +171,15 @@ function PasswordSection() {
 
 // ─── Billing section ─────────────────────────────────────────────────────────
 
-const UPGRADE_OPTIONS: Record<string, { nextPlan: string; label: string; desc: string } | null> = {
-  free:    { nextPlan: 'starter', label: 'Suscríbete a Básico', desc: '15 tiendas · Pool global · Alertas por email' },
-  starter: { nextPlan: 'pro',     label: 'Actualizar a Pro',    desc: '40 tiendas · Datos privados · Exportar CSV' },
-  basic:   { nextPlan: 'pro',     label: 'Actualizar a Pro',    desc: '40 tiendas · Datos privados · Exportar CSV' },
-  pro:     { nextPlan: 'agency',  label: 'Actualizar a Agency', desc: '100 tiendas · Seats múltiples · API access' },
+// Solo diferencias que el plan da de verdad, las mismas de /pricing (lib/pricing.ts y
+// messages/es.json → Pricing). Antes vendía "Datos privados", "Exportar CSV", "Seats múltiples"
+// y "API access", que no existen (CHANGE-131). Agency se arma conversando, como en /pricing:
+// lleva a escribirnos, no a un link de pago con un precio que no está publicado.
+const UPGRADE_OPTIONS: Record<string, { nextPlan: string; label: string; desc: string; contact?: boolean } | null> = {
+  free:    { nextPlan: 'starter', label: 'Suscríbete a Básico', desc: `Sigues después de los 7 días · ${PLAN_STORES.starter} tiendas · el pool completo, no solo la primera página` },
+  starter: { nextPlan: 'pro',     label: 'Actualizar a Pro',    desc: `${PLAN_STORES.pro} tiendas · anunciante y link a Meta de cada anuncio` },
+  basic:   { nextPlan: 'pro',     label: 'Actualizar a Pro',    desc: `${PLAN_STORES.pro} tiendas · anunciante y link a Meta de cada anuncio` },
+  pro:     { nextPlan: 'agency',  label: `Más de ${PLAN_STORES.pro} tiendas: plan Agency`, desc: 'Lo armamos a tu medida, conversando.', contact: true },
   agency:  null,
 }
 
@@ -184,6 +189,7 @@ function BillingSection({ plan }: { plan: string; email?: string; userId?: strin
   // Mercado Pago: links estáticos de suscripción (no llevan user_id) — la activación
   // se concilia manualmente por el email con el que se paga. Ver lib/mercadopago.ts.
   const checkoutHref = upgrade ? mpCheckoutUrl(upgrade.nextPlan, 'monthly') ?? '#' : '#'
+  const contactHref = `mailto:${AGENCY_CONTACT_EMAIL}?subject=${encodeURIComponent('Plan Agency')}`
 
   return (
     <div className="space-y-3">
@@ -205,16 +211,25 @@ function BillingSection({ plan }: { plan: string; email?: string; userId?: strin
             <p className="font-semibold text-foreground">{upgrade.label}</p>
             <p className="text-sm text-muted-foreground">{upgrade.desc}</p>
           </div>
-          <div className="flex flex-col items-end gap-1 shrink-0">
-            <a href={checkoutHref} target="_blank" rel="noopener noreferrer">
-              <Button size="sm">
-                Actualizar <ExternalLink className="ml-1.5 h-3 w-3" />
-              </Button>
-            </a>
-            <p className="text-right text-[10px] text-muted-foreground">
-              Paga con el mismo correo de tu cuenta
-            </p>
-          </div>
+          {upgrade.contact ? (
+            <div className="flex flex-col items-end gap-1 shrink-0">
+              <a href={contactHref}>
+                <Button size="sm">Escríbenos</Button>
+              </a>
+              <p className="text-right text-[10px] text-muted-foreground">{AGENCY_CONTACT_EMAIL}</p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-end gap-1 shrink-0">
+              <a href={checkoutHref} target="_blank" rel="noopener noreferrer">
+                <Button size="sm">
+                  Actualizar <ExternalLink className="ml-1.5 h-3 w-3" />
+                </Button>
+              </a>
+              <p className="text-right text-[10px] text-muted-foreground">
+                Paga con el mismo correo de tu cuenta
+              </p>
+            </div>
+          )}
         </div>
       )}
 
@@ -239,15 +254,6 @@ export default function SettingsPage() {
   const { data: me, isLoading } = useGetMeQuery()
 
   const [updatePreferences] = useUpdatePreferencesMutation()
-  const [notifications, setNotifications] = useState({
-    dailyDigest:  false,
-    risingAlerts: true,
-    weeklyReport: false,
-  })
-
-  function toggleNotif(key: keyof typeof notifications) {
-    setNotifications((prev) => ({ ...prev, [key]: !prev[key] }))
-  }
 
   function handleLogout() {
     dispatch(logout())
@@ -325,23 +331,17 @@ export default function SettingsPage() {
               Notificaciones
             </h2>
           </div>
-          <div className="divide-y divide-border">
-            {([
-              { key: 'dailyDigest',  label: 'Resumen diario',      desc: 'Email con los top productos de cada día' },
-              { key: 'risingAlerts', label: 'Alertas Rising',       desc: 'Te avisamos cuando un producto entra en tendencia' },
-              { key: 'weeklyReport', label: 'Reporte semanal',      desc: 'Resumen completo de performance cada semana' },
-            ] as const).map(({ key, label, desc }) => (
-              <div key={key} className="flex items-center justify-between px-6 py-4">
-                <div>
-                  <p className="text-sm font-medium text-foreground">{label}</p>
-                  <p className="text-xs text-muted-foreground">{desc}</p>
-                </div>
-                <Toggle
-                  checked={notifications[key]}
-                  onChange={() => toggleNotif(key)}
-                />
-              </div>
-            ))}
+          {/* Antes había tres interruptores (resumen diario, alertas, reporte semanal) que eran
+              estado local: se apagaban al recargar y nada los enviaba (CHANGE-131). Lo único que
+              existe es el aviso por correo del backend (AlertService, tras cada sync), que no se
+              configura desde aquí. Vuelven los controles cuando existan de verdad. */}
+          <div className="px-6 py-4">
+            <p className="text-sm font-medium text-foreground">Avisos por correo</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Cuando un producto de tus tiendas llega a la señal más fuerte, te escribimos a{' '}
+              <span className="font-medium text-foreground">{me?.email ?? 'tu correo'}</span>.
+              Por ahora no se configuran desde aquí.
+            </p>
           </div>
         </div>
 

@@ -392,7 +392,12 @@ export default function HomePage() {
             Tu radar de productos ganadores
           </h1>
           <p className="mb-8 text-base text-muted-foreground">
-            Detecta productos en tendencia antes que tu competencia. <span className="text-primary font-medium">{activeStores} tiendas</span> monitoreadas en tiempo real.
+            {/* Antes: "N tiendas monitoreadas en tiempo real". N son solo las tiendas del usuario y el
+                scraping es diario (CHANGE-131). */}
+            Detecta productos en tendencia antes que tu competencia.
+            {activeStores > 0 && (
+              <> Revisamos tus <span className="text-primary font-medium">{activeStores} {activeStores === 1 ? 'tienda' : 'tiendas'}</span> una vez al día.</>
+            )}
           </p>
 
           {/* Search bar + autocomplete */}
