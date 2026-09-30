@@ -98,13 +98,11 @@ export function usePlanTier() {
   const isStarter = effectivePlan === 'starter'
   const isTrial   = effectivePlan === 'free'
   const maxPoolPage    = MAX_POOL_PAGE[effectivePlan] ?? MAX_POOL_PAGE.free
-  // trial: sin video ads en Mis testeos / detalle de candidato (canViewAds). El pool
-  // global (Explorar testeos) es un caso especial que SIEMPRE los muestra —
-  // ver pool-winners.tsx, no usa este flag para eso. Ver CHANGE-082.
-  const canViewAds     = !isTrial
+  // La prueba es el plan Básico por 7 días: ve los videos de anuncios y la data calculada
+  // (score/tendencia/crecimiento) en Mis testeos igual que Básico. Lo único que la limita
+  // es el pool global (maxPoolPage = 0, validado también en el backend, FIX-076). CHANGE-129.
+  const canViewAds     = true
   const allowMetaLink  = isPro              // badge clickable + link a Meta Ads Library
-  // La prueba SÍ puede agregar tiendas, rastrear y testear candidatos — lo que queda
-  // bloqueado es la data calculada (score/tendencia/crecimiento) en Mis testeos.
-  const canViewTrackerMetrics = !isTrial
+  const canViewTrackerMetrics = true
   return { isPro, isStarter, isTrial, maxPoolPage, canViewAds, allowMetaLink, canViewTrackerMetrics }
 }
