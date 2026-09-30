@@ -318,22 +318,21 @@
     },
     "trial": {
       "kicker": "// prueba gratis",
-      "title": "Qué incluye la prueba gratis",
-      "subtitle": "Siete días, sin tarjeta. Ves lo más fuerte del mercado y pruebas Dropspy con una tienda tuya.",
+      "title": "La prueba gratis es el plan Básico por 7 días",
+      "subtitle": "Siete días, sin tarjeta, con todo lo de Básico. La única diferencia está en el pool: ves la primera página, lo más fuerte del mercado.",
       "includes": "Incluye",
       "excludes": "No incluye",
       "in": {
         "days": "7 días, sin tarjeta de crédito",
+        "store": "15 tiendas propias, como en Básico",
+        "tracker": "El puntaje, la tendencia, el crecimiento y los videos de anuncios en \"Mis testeos\"",
         "pool": "La primera página del pool: los 20 productos con el puntaje más alto",
         "ads": "Los anuncios de esos productos; el anunciante queda bloqueado",
-        "store": "1 tienda propia",
-        "alerts": "Alertas por email de tu tienda"
+        "alerts": "Alertas por email de tus tiendas"
       },
       "out": {
-        "pool": "El resto del pool",
-        "metrics": "El puntaje, la tendencia y el crecimiento en \"Mis testeos\"",
-        "videos": "Los videos de anuncios en \"Mis testeos\"",
-        "advertiser": "El anunciante y el link a Meta"
+        "pool": "El resto del pool, desde la página 2",
+        "advertiser": "El anunciante y el link a Meta (es de Pro)"
       },
       "cta": "Empieza gratis"
     },

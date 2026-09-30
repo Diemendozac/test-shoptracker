@@ -36,8 +36,8 @@ const BOX = 'grid content-start gap-2.5 rounded-[14px] border border-border bg-c
 const LIST = 'grid gap-2 text-[15px] text-muted-foreground'
 const delay = (d: number) => ({ '--d': d }) as CSSProperties
 
-const TRIAL_IN = ['days', 'pool', 'ads', 'store', 'alerts'] as const
-const TRIAL_OUT = ['pool', 'metrics', 'videos', 'advertiser'] as const
+const TRIAL_IN = ['days', 'store', 'tracker', 'pool', 'ads', 'alerts'] as const
+const TRIAL_OUT = ['pool', 'advertiser'] as const
 const STEPS = ['choose', 'pay', 'activate'] as const
 
 export default async function PricingPage() {

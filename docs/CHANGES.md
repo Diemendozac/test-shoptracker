@@ -4,6 +4,27 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-129 — La prueba gratis es el plan Básico por 7 días (solo el pool queda limitado)
+
+**Fecha:** 2026-09-30
+**Tipo:** permisos por plan y textos. Riesgo: con cuidado (`lib/view-as.tsx` es compartido).
+
+**Por qué:** decisión de Daniel (2026-09-30): "la prueba es como un Básico, solo que con la primera página del pool". Hasta hoy la prueba tenía, además, 1 tienda propia, sin puntaje/tendencia/crecimiento y sin videos en "Mis testeos". Eso la hacía peor que lo que se vende y no dejaba probar Básico de verdad.
+
+**Qué cambió:**
+- `lib/view-as.tsx`: `canViewAds` y `canViewTrackerMetrics` pasan a `true` para todos los planes. La prueba ve lo mismo que Básico en "Mis testeos" y en el detalle de candidato. **Se mantiene:** `maxPoolPage.free = 0` (validado también en el backend, FIX-076) y `allowMetaLink` solo para Pro.
+- `/pricing`, sección de la prueba: el título dice que es Básico por 7 días. "Incluye" suma 15 tiendas propias y los datos y videos de "Mis testeos". "No incluye" queda en "el resto del pool, desde la página 2" y "el anunciante y el link a Meta (es de Pro)".
+- **Backend, en paralelo (FIX-079, Diemendozac/ShopTracker):** la prueba recibe 15 tiendas al registrarse y al activarse el plan `free`. Los usuarios `free` existentes se actualizan con un `UPDATE`.
+
+**Qué NO cambió:** el vencimiento de 7 días (`TrialExpiredGate`), el pool, Mercado Pago, auth y el backend desde este repo.
+
+**Pendiente (costo):** cada tienda de prueba genera jobs de scraping, y el backend no sabe cuándo vence una prueba (CHANGE-074/076). Una prueba vencida sigue con sus tiendas activas. Hay que desactivar las tiendas de las pruebas vencidas antes de invertir en adquisición.
+
+**Relacionado con backend:** sí, FIX-079.
+**Wiki actualizado:** sí (log.md del 2026-09-30).
+
+---
+
 ### CHANGE-128 — Infra: el frontend puede correr fuera de Vercel (Docker para Easypanel)
 
 **Fecha:** 2026-09-29
