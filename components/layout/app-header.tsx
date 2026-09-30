@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { Bell, Search, FlaskConical, TrendingUp, X, ChevronDown, Check } from 'lucide-react'
+import { Bell, FlaskConical, TrendingUp, X, ChevronDown, Check, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useGetNotificationsQuery } from '@/app/(dashboard)/services/userApi'
 import { useCurrency } from '@/store/hooks'
 import { TopbarTicker } from '@/components/layout/topbar-ticker'
 import { SUPPORTED_CURRENCIES, currencySymbol } from '@/lib/currency'
 import { cn } from '@/lib/utils'
+import { useTrialStatus, useViewAs } from '@/lib/view-as'
 
 interface AppHeaderProps {
   title?: string
@@ -222,6 +223,33 @@ function CurrencySelector() {
   )
 }
 
+// ─── Días de prueba ───────────────────────────────────────────────────────────
+// useTrialStatus().daysLeft ya existía pero ninguna pantalla lo mostraba: la persona se enteraba
+// el día 7, con el bloqueo (CHANGE-131). Solo con la fecha de registro cargada, para no mostrar
+// "7 días" mientras /users/me responde. Usa el plan real, así que el admin que simula la prueba
+// no lo ve.
+function TrialDaysLeft() {
+  const { isTrial, isExpired, daysLeft } = useTrialStatus()
+  const { signupDate } = useViewAs()
+  if (!isTrial || isExpired || !signupDate) return null
+  const urgent = daysLeft <= 2
+  return (
+    <Link
+      href="/pricing"
+      className={cn(
+        'inline-flex w-fit items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+        urgent
+          ? 'border-warning-border bg-warning-subtle text-warning-foreground hover:bg-warning-subtle/70'
+          : 'border-primary-border bg-primary-subtle text-primary-text hover:bg-primary-subtle/70',
+      )}
+    >
+      <Clock className="h-3.5 w-3.5" />
+      {daysLeft === 1 ? 'Te queda 1 día de prueba' : `Te quedan ${daysLeft} días de prueba`}
+      <span className="font-semibold">· Ver planes</span>
+    </Link>
+  )
+}
+
 // ─── Header ───────────────────────────────────────────────────────────────────
 
 export function AppHeader({ title, description }: AppHeaderProps) {
@@ -241,16 +269,14 @@ export function AppHeader({ title, description }: AppHeaderProps) {
 
   return (
     <header className="sticky top-0 z-40 grid h-16 grid-cols-3 items-center border-b border-border bg-card/85 bg-topbar-glow px-6 backdrop-blur-sm">
-      <div />
+      <div className="min-w-0">
+        <TrialDaysLeft />
+      </div>
 
       <TopbarTicker />
 
       <div className="flex items-center justify-end gap-2">
-        <Button variant="ghost" size="icon" className="relative">
-          <Search className="h-4 w-4" />
-          <span className="sr-only">Buscar</span>
-        </Button>
-
+        {/* Había una lupa sin acción (CHANGE-131). El buscador global vuelve con su propia spec. */}
         <CurrencySelector />
 
         {/* Bell */}

@@ -9,6 +9,7 @@ import { AddStoreModal } from './components/AddStoreModal'
 import { EditStoreModal } from './components/EditStoreModal'
 import { StoreRow } from './components/StoreRow'
 import { useGetTrackerCandidatesQuery } from '../services/dashboardApi'
+import { useGetMeQuery } from '../services/userApi'
 import { computeStoreQuality } from '@/lib/store-quality'
 import type { StoreQuality } from '@/lib/store-quality'
 import type { StoreResponse } from './types'
@@ -37,6 +38,11 @@ export default function StoresPage() {
   } = useStores()
 
   const { data: allCandidates = [], isLoading: isCandidatesLoading } = useGetTrackerCandidatesQuery({})
+  // Límite real del plan (PLAN_MAX_STORES del backend). Antes el texto decía "de 50" fijo, y
+  // Básico y la prueba tienen 15 (CHANGE-131). El backend cuenta las tiendas activas.
+  const { data: me } = useGetMeQuery()
+  const maxStores = me?.maxStores
+  const activeStores = stores.filter((s) => s.isActive).length
 
   const [editingStore, setEditingStore] = useState<StoreResponse | null>(null)
   const [query, setQuery] = useState('')
@@ -175,7 +181,13 @@ export default function StoresPage() {
           {query ? (
             <><span className="font-medium text-foreground">{filtered.length}</span> de {stores.length} tiendas</>
           ) : (
-            <><span className="font-medium text-foreground">{stores.length}</span> de 50 tiendas registradas</>
+            maxStores == null ? (
+              <><span className="font-medium text-foreground">{stores.length}</span> {stores.length === 1 ? 'tienda' : 'tiendas'}</>
+            ) : maxStores >= 999 ? (
+              <><span className="font-medium text-foreground">{activeStores}</span> tiendas activas · sin límite</>
+            ) : (
+              <><span className="font-medium text-foreground">{activeStores}</span> de {maxStores} tiendas activas en tu plan</>
+            )
           )}
         </p>
 
