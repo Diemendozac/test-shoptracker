@@ -314,7 +314,8 @@
         "ctaNote": "Te respondemos por correo: {email}",
         "mailSubject": "Plan Agency"
       },
-      "foot": "Precios en pesos colombianos. El anual se cobra en un solo pago."
+      "foot": "Precios en pesos colombianos. El anual se cobra en un solo pago.",
+      "libraryNoAdvertiser": "Biblioteca de anuncios, sin anunciante ni links"
     },
     "trial": {
       "kicker": "// prueba gratis",
@@ -328,6 +329,7 @@
         "tracker": "El puntaje, la tendencia, el crecimiento y los videos de anuncios en \"Mis testeos\"",
         "pool": "La primera página del pool: los 20 productos con el puntaje más alto",
         "ads": "Los anuncios de esos productos; el anunciante queda bloqueado",
+        "library": "La Biblioteca de anuncios, sin anunciante ni links",
         "alerts": "Alertas por email de tus tiendas"
       },
       "out": {
@@ -355,7 +357,8 @@
       "alerts": "Alertas por email",
       "privacy": "Privacidad de tus tiendas",
       "privacyStarter": "Suman al pool",
-      "privacySoon": "En preparación"
+      "privacySoon": "En preparación",
+      "libraryStarter": "Sí, sin anunciante ni links"
     },
     "payment": {
       "kicker": "// cómo pagas",

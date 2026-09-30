@@ -17,7 +17,7 @@ import {
   useGetAdsLibraryQuery,
   useGetPoolCountriesQuery,
 } from '@/app/(dashboard)/services/dashboardApi'
-import { usePlanTier, useViewAs } from '@/lib/view-as'
+import { usePlanTier } from '@/lib/view-as'
 import { useMediaQuery } from '@/hooks/use-media-query'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -114,8 +114,7 @@ function LockedLibrary({ total }: { total?: number }) {
 }
 
 export default function AdsLibraryPage() {
-  const { allowMetaLink, isPro: planIsPro } = usePlanTier()
-  const { isAdmin } = useViewAs()
+  const { allowMetaLink } = usePlanTier()
   // Video sin sonido al pasar el mouse: solo con mouse real y sin "reducir movimiento".
   const canHoverPlay = useMediaQuery('(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)')
 
@@ -146,8 +145,11 @@ export default function AdsLibraryPage() {
 
   // El backend decide (data.isPro). La barra "Vista" solo cuenta para el admin: así el admin
   // puede ver el bloqueo, y un usuario Pro no ve un bloqueo falso mientras carga /users/me.
+  // FIX-081: desde el 2026-09-30 la biblioteca es de todos los planes; sin Pro llega sin anunciante
+  // ni links. Si el backend no manda "locked" (versión anterior), se bloquea como antes.
   const isPro = data?.pages[0]?.isPro ?? allCount?.isPro
-  const locked = isPro === false || (isAdmin && !planIsPro)
+  const lockedFlag = data?.pages[0]?.locked ?? allCount?.locked
+  const locked = lockedFlag !== undefined ? lockedFlag : isPro === false
 
   const ads = useMemo(() => {
     const seen = new Set<string>()

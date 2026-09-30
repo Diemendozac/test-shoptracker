@@ -219,6 +219,8 @@ export interface AdLibraryItem extends Ad {
 export interface AdsLibraryResponse {
   ads: AdLibraryItem[]
   isPro: boolean
+  /** FIX-081: false = cualquier plan ve la biblioteca. Un backend viejo no lo manda. */
+  locked?: boolean
   total: number
   page: number
   totalPages: number

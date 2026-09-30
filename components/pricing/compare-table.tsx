@@ -66,7 +66,11 @@ export async function CompareTable() {
           <tr><th scope="row" className={cn(CELL, ROW)}>{t('compare.pool')}</th>{yes}{yes}{yes}</tr>
           <tr><th scope="row" className={cn(CELL, ROW)}>{t('compare.poolAds')}</th>{yes}{yes}{yes}</tr>
           <tr><th scope="row" className={cn(CELL, ROW)}>{t('compare.advertiser')}</th>{no}{yes}{yes}</tr>
-          <tr><th scope="row" className={cn(CELL, ROW)}>{t('compare.library')}</th>{no}{yes}{yes}</tr>
+          <tr>
+            <th scope="row" className={cn(CELL, ROW)}>{t('compare.library')}</th>
+            <td className={cn(CELL, TXT)}>{t('compare.libraryStarter')}</td>
+            {yes}{yes}
+          </tr>
           <tr><th scope="row" className={cn(CELL, ROW)}>{t('compare.alerts')}</th>{yes}{yes}{yes}</tr>
           <tr>
             <th scope="row" className={cn(CELL, ROW)}>{t('compare.privacy')}</th>

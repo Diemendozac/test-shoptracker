@@ -4,6 +4,26 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-130 — Biblioteca de anuncios para Básico y la prueba, sin anunciante ni links
+
+**Fecha:** 2026-09-30
+**Tipo:** permisos por plan y textos. Riesgo: con cuidado.
+
+**Por qué:** decisión de Daniel (2026-09-30): Básico también tiene la Biblioteca de anuncios, "pero sin links y nombres de anunciantes". La prueba, que es Básico por 7 días (CHANGE-129), también.
+
+**Qué cambió:**
+- `ads-library/page.tsx`: el bloqueo de la pantalla lo decide `locked` del backend (FIX-081). Si el backend no lo manda (versión anterior), se bloquea como antes con `isPro === false`. Se quitó el bloqueo de "Ver como" del admin, porque ya no hay plan bloqueado.
+- `library-ad-card.tsx`: sin Pro se muestra "Meta · Pro" con candado aunque el backend ya no mande el link.
+- `/pricing`: la tarjeta de Básico suma "Biblioteca de anuncios, sin anunciante ni links"; la tabla comparativa dice "Sí, sin anunciante ni links" en Básico, y la sección de la prueba lo incluye.
+- `types`: `AdsLibraryResponse.locked?`.
+
+**Qué NO cambió:** el anunciante y los links siguen siendo de Pro, y ahora los oculta el backend (antes el candado era solo visual). El diálogo del video ya mostraba "El link a Meta es del plan Pro".
+
+**Relacionado con backend:** sí, FIX-081 (Diemendozac/ShopTracker#34). **Desplegar el backend primero:** con el backend viejo la pantalla sigue bloqueada para Básico, y no se rompe nada.
+**Wiki actualizado:** sí (log.md del 2026-09-30).
+
+---
+
 ### CHANGE-129 — La prueba gratis es el plan Básico por 7 días (solo el pool queda limitado)
 
 **Fecha:** 2026-09-30
