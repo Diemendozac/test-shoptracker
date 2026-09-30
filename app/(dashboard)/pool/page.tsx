@@ -1,18 +1,20 @@
 'use client'
 
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { PoolWinnersSection } from '@/components/tracker/pool-winners'
 import type { PagoFilter } from '@/components/tracker/pool-winners'
 import { PoolDetailPanel } from '@/components/tracker/pool-detail-panel'
 import { PoolArchiveHint } from '@/components/tracker/pool-archive-hint'
-import { useGetPoolWinnersQuery, useGetPoolSearchQuery } from '@/app/(dashboard)/services/dashboardApi'
+import { useGetPoolWinnersQuery, useGetPoolSearchQuery, useGetTrackerCandidatesQuery } from '@/app/(dashboard)/services/dashboardApi'
 import { useViewAs } from '@/lib/view-as'
 import { cn } from '@/lib/utils'
+import { Segmented } from '@/components/ui/segmented'
 import { useMediaQuery } from '@/hooks/use-media-query'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { LayoutGrid, Star } from 'lucide-react'
-import type { PoolWinnerProduct } from '@/app/(dashboard)/types'
+import type { PoolWinnerProduct, PoolWinnersResponse, TrackerCandidate } from '@/app/(dashboard)/types'
+import { isScalable } from '@/lib/label-utils'
 
 // "En alza", "Top score" y "Nuevos esta semana" se quitaron (CHANGE-131): filtraban en el navegador
 // solo los 20 productos de la página abierta, no el pool. Top score repetía el orden del backend
@@ -25,6 +27,46 @@ const TABS: { id: PoolPreset; label: string; icon: React.ElementType }[] = [
 ]
 
 const FAVORITE_ITEMS_KEY = 'dropspy_favorites_pool_items'
+const PAGE_SIZE = 20
+
+type Scope = 'market' | 'mine'
+
+/** Minúsculas y sin tildes, para buscar en los productos de tus tiendas. */
+function norm(s: string): string {
+  return s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
+}
+
+/** Un producto de /tracker con la forma que usa la tabla del Radar (misma fila, CHANGE-134). */
+function trackerToRow(c: TrackerCandidate): PoolWinnerProduct {
+  return {
+    candidateId: c.candidateId,
+    productTitle: c.productTitle,
+    productImage: c.productImage,
+    productUrl: null,
+    productPrice: c.productPrice,
+    performanceScore: c.performanceScore ?? 0,
+    performanceLabel: c.performanceLabel,
+    growthPct: c.growthPct,
+    currentRank: c.currentRank,
+    daysElapsed: c.daysElapsed,
+    daysInBestseller: c.daysInBestseller,
+    signalConfidence: c.signalConfidence,
+    cyclePhase: c.cyclePhase,
+    storeId: c.storeId,
+    storeName: c.storeName,
+    niche: c.niche,
+    currency: c.currency,
+    storeCountry: c.storeCountry,
+    pagoAnticipado: c.pagoAnticipado,
+    estUnitsDayLow: c.estUnitsDayLow,
+    estRevDayLow: c.estRevDayLow,
+    storeProductCount: c.storeProductCount ?? null,
+    previousRank: null,
+    scoreHistory: c.scoreHistory,
+    growthHistory: c.growthHistory,
+    rankHistory: c.rankHistory,
+  }
+}
 
 export default function PoolPage() {
   // effectivePlan, no isAdmin: si un admin está simulando "ver como Pro/Starter"
@@ -33,6 +75,19 @@ export default function PoolPage() {
   const isAdminView = effectivePlan === 'admin'
   const [page, setPage] = useState(0)
   const [preset, setPreset] = useState<PoolPreset>('all')
+
+  // Alcance (CHANGE-134): todo el mercado (el pool) o solo tus tiendas. "Mis testeos" (/tracker)
+  // ahora es este segundo alcance: /tracker redirige a /pool?alcance=mis-tiendas.
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const scope: Scope = searchParams.get('alcance') === 'mis-tiendas' ? 'mine' : 'market'
+  const isMine = scope === 'mine'
+  function handleScope(next: Scope) {
+    if (next === scope) return
+    setPage(0)
+    setSelectedWinner(null)
+    router.replace(next === 'mine' ? '/pool?alcance=mis-tiendas' : '/pool', { scroll: false })
+  }
 
   // All filter state lives here so every change triggers a fresh server fetch
   const [pagoFilter, setPagoFilter] = useState<PagoFilter>('all')
@@ -67,6 +122,16 @@ export default function PoolPage() {
   const [favorites, setFavorites] = useState<Set<string>>(() => {
     if (typeof window === 'undefined') return new Set()
     try {
+      // Los favoritos de la vieja pantalla Mis testeos se suman a los del Radar (CHANGE-134)
+      const legacy = localStorage.getItem('dropspy_favorites_tracker')
+      if (legacy) {
+        const merged = new Set<string>([
+          ...(JSON.parse(localStorage.getItem('dropspy_favorites_pool') ?? '[]') as string[]),
+          ...(JSON.parse(legacy) as string[]),
+        ])
+        localStorage.setItem('dropspy_favorites_pool', JSON.stringify([...merged]))
+        localStorage.removeItem('dropspy_favorites_tracker')
+      }
       const stored = localStorage.getItem('dropspy_favorites_pool')
       return new Set(stored ? JSON.parse(stored) as string[] : [])
     } catch { return new Set() }
@@ -91,7 +156,7 @@ export default function PoolPage() {
 
   // Búsqueda que llega desde el buscador global (⌘K → "Buscar con IA en el Radar", CHANGE-132):
   // /pool?q=... se aplica como si se hubiera escrito y confirmado con Enter.
-  const qParam = useSearchParams().get('q')
+  const qParam = searchParams.get('q')
   useEffect(() => {
     if (!qParam) return
     setSearchInput(qParam)
@@ -160,18 +225,49 @@ export default function PoolPage() {
   }
 
   // Tabla principal — solo reacciona a searchSubmitted (Enter), no a cada tecla.
-  const { data, isLoading, error } = useGetPoolWinnersQuery({
+  const { data: poolData, isLoading: poolLoading, error } = useGetPoolWinnersQuery({
     ...sharedParams,
     page,
-    size: 20,
+    size: PAGE_SIZE,
     q: searchSubmitted || undefined,
-  })
+  }, { skip: isMine })
+
+  // Alcance "Mis tiendas": los productos de tus tiendas (/tracker, ya completos en el cliente),
+  // con los mismos filtros que el pool aplica en el servidor, ordenados por puntaje y paginados
+  // aquí. Antes vivían en la pantalla Mis testeos, con otra tabla y otros filtros.
+  const { data: trackerData = [], isLoading: trackerLoading } = useGetTrackerCandidatesQuery({}, { skip: !isMine })
+  const mineAll = useMemo(() => {
+    if (!isMine) return []
+    const q = norm(searchSubmitted.trim())
+    return trackerData
+      .filter(c => !q || norm(c.productTitle).includes(q))
+      .filter(c => pagoFilter === 'all' || (pagoFilter === 'anticipado' ? c.pagoAnticipado === true : c.pagoAnticipado === false))
+      .filter(c => nicheFilter.size === 0 || (c.niche != null && nicheFilter.has(c.niche)))
+      .filter(c => currencyFilter.size === 0 || (c.currency != null && currencyFilter.has(c.currency)))
+      .filter(c => dateFilter === 0 || c.daysElapsed <= dateFilter)
+      .filter(c => daysExactFilter == null || c.daysElapsed === daysExactFilter)
+      .filter(c => !escalarFilter || isScalable(c.performanceScore, c.signalConfidence))
+      .filter(c => !countryFilter || c.storeCountry === countryFilter)
+      .sort((a, b) => (b.performanceScore ?? 0) - (a.performanceScore ?? 0))
+      .map(trackerToRow)
+  }, [isMine, trackerData, searchSubmitted, pagoFilter, nicheFilter, currencyFilter, dateFilter, daysExactFilter, escalarFilter, countryFilter])
+  const mineData: PoolWinnersResponse | undefined = isMine && !trackerLoading ? {
+    locked: false,
+    plan: effectivePlan,
+    winners: mineAll.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE),
+    total: mineAll.length,
+    page,
+    totalPages: Math.max(1, Math.ceil(mineAll.length / PAGE_SIZE)),
+  } : undefined
+
+  const data = isMine ? mineData : poolData
+  const isLoading = isMine ? trackerLoading : poolLoading
 
   // Sugerencias del dropdown (CHANGE-095) — reacciona a searchDebounced (en vivo, 300ms),
   // pedido chico y aparte para no forzar a la tabla a refrescarse con cada tecla.
   const { data: suggestData } = useGetPoolWinnersQuery(
     { ...sharedParams, page: 0, size: 6, q: searchDebounced },
-    { skip: !searchDebounced },
+    { skip: !searchDebounced || isMine },
   )
 
   // Refresca los datos guardados de los favoritos que aparecen en la página abierta, y completa
@@ -201,13 +297,13 @@ export default function PoolPage() {
   // gastar una llamada a la API de Anthropic por cada tecla mientras el usuario escribe.
   const { data: archiveData, isLoading: archiveLoading } = useGetPoolSearchQuery(
     { q: searchSubmitted, country: countryFilter || undefined },
-    { skip: !searchSubmitted },
+    { skip: !searchSubmitted || isMine },
   )
 
   return (
     <>
       {/* ── Tab header ── */}
-      <div className="border-b border-border bg-card px-6">
+      <div className="flex flex-wrap items-center gap-x-4 border-b border-border bg-card px-3 sm:px-6">
         <div className="flex items-center gap-1 overflow-x-auto py-0">
           {TABS.map(({ id, label, icon: Icon }) => (
             <button
@@ -230,10 +326,22 @@ export default function PoolPage() {
             </button>
           ))}
         </div>
+        {/* Alcance (CHANGE-134): el mercado entero o solo tus tiendas (lo que antes era Mis testeos) */}
+        <div className="ml-auto py-2">
+          <Segmented
+            ariaLabel="Alcance del Radar"
+            value={scope}
+            onChange={handleScope}
+            options={[
+              { value: 'market' as Scope, label: 'Todo el mercado' },
+              { value: 'mine' as Scope, label: 'Mis tiendas' },
+            ]}
+          />
+        </div>
       </div>
 
       {/* ── Content ── */}
-      <div className="p-6">
+      <div className="p-3 sm:p-6">
         {error && !data && (
           <div className="rounded-xl border border-border bg-card px-6 py-8 text-center">
             <p className="text-sm font-medium text-foreground">No se pudo cargar el pool</p>
@@ -249,6 +357,7 @@ export default function PoolPage() {
             page={page}
             onPageChange={setPage}
             preset={preset}
+            scope={scope}
             pagoFilter={pagoFilter}
             onPagoFilterChange={handlePagoFilter}
             favorites={favorites}

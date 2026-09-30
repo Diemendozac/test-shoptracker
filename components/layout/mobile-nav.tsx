@@ -14,8 +14,8 @@ import { NAV_ITEMS, isNavActive, type NavKey } from '@/components/layout/app-sid
 
 // Barra inferior del celular (CHANGE-132). Antes el menú lateral de 256 px estaba fijo en todos
 // los anchos y a 390 px tapaba media pantalla. Cuatro destinos a mano y "Más" con el resto.
-const BAR: NavKey[] = ['home', 'radar', 'tracker', 'ads']
-const MORE: NavKey[] = ['stores', 'pending']
+const BAR: NavKey[] = ['home', 'radar', 'ads', 'stores']
+const MORE: NavKey[] = ['pending']
 
 export function MobileNav() {
   const pathname = usePathname()
