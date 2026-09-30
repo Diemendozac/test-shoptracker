@@ -4,6 +4,56 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-135 — Ficha de producto única: la misma en el panel del Radar y en la página (Fase 2d)
+
+**Fecha:** 2026-09-30
+**Tipo:** UI de la ficha de producto y reglas de plan. Riesgo: con cuidado.
+
+**Por qué:** Fase 2d de la propuesta de la app por pantalla (vault: `wiki/propuesta-app-por-pantalla.md`). El panel del pool y la página `/tracker/[id]` mostraban el mismo producto con datos, orden y reglas distintas (`docs/redesign/detalle-producto/01-diagnostico.md`). El resumen útil ("Subió 12 posiciones…") estaba al final en letra chica, y el mismo producto podía verse con 72 en el panel y 50 en la página (S-1).
+
+Decisiones de Daniel (2026-09-30):
+- **S-1:** el puntaje del backend en todas partes.
+- **G-5:** la tienda visible para todos; "Ver en la tienda" como hoy.
+- El contenido de la ficha, tal como se describe abajo.
+
+Estado verificado antes de decidir: G-1 y G-2 ya estaban resueltos por CHANGE-129 (todos ven anuncios y métricas), y G-3 por FIX-077 (el backend enmascara el anunciante).
+
+**Qué cambió:**
+- `components/tracker/product-sheet.tsx` (nuevo): la ficha, en variante `page` o `panel`. Las secciones, en orden:
+  1. **Cabecera:** foto (galería en la página), nombre, tienda (con link a su ficha si es tuya), precio, fecha en que se vio por primera vez, "Ver en la tienda", "Link" y, en el panel, "Página completa".
+  2. **Veredicto:** la señal de la escala nueva (`lib/signal.ts`, con el historial de la ficha) y una frase con datos reales: puestos ganados en sus últimos registros, puesto hoy y top % de su tienda (si la tienda es tuya), anuncios activos y el más antiguo, y un aviso si hay pocos días de datos. Al lado, el anillo con el puntaje del backend.
+  3. **Trayectoria:** un gráfico con selector Puesto / Puntaje y "Entró en #X · hoy #Y · día N".
+  4. **Anuncios:** `ProductAdsSection`, igual que antes.
+  5. **Producto:** la descripción, si existe.
+  6. **Historial diario:** plegado, del más nuevo al más viejo, sin la columna de estado (eran bandas de puntaje en inglés).
+- **"Ver en la tienda":** se muestra si eres Pro, si la tienda es tuya o si es una tienda de Dropspy (`isScoutStore`, usuario `system@scout.internal`), como hoy. Ya no depende de `?from=pool` (G-4): se mira si la tienda está en tu lista. Sin permiso se ve "Ver en la tienda · Pro". **Para dejarlo solo en Pro** (sin la excepción de Dropspy) basta quitar `|| c.isScoutStore` en `canOpenProduct`.
+- **Puntaje (S-1):** el del backend. La página ya no aplica `applyScoreDecay`, ni muestra "decay ×0,8 · N d sin mejora".
+- `pool-detail-panel.tsx`: ahora solo envuelve la ficha (variante panel, fija al lado de la tabla o dentro del Sheet).
+- `tracker/[candidateId]/page.tsx`: envuelve la ficha (variante página). "Volver al Tracker" pasa a "Volver al Radar": lleva al pool si se abrió desde el pool y a "Mis tiendas" en otro caso.
+- `components/tracker/product-gallery.tsx` (nuevo): la galería con visor, movida sin cambios desde la página.
+- **Se quitaron** de la página: los 4 indicadores sueltos (rank, mejor rank, crecimiento, confianza), el resumen del final, `PerformanceBadge` y la etiqueta calculada día por día, el handle del producto, "Día N de 30" y el botón local "↑ Spikear / Spikeando" (solo vivía en el navegador y duplica Favoritos).
+
+**Qué NO cambió:** el backend, `ProductAdsSection`, `RankChart`, `ScoreChart`, `ProductDescriptionModal` y las reglas de anuncios por plan.
+
+**Desviación de la spec:** la spec nombraba un botón Favorito en la cabecera. No se puso: para que la estrella de la ficha y la de la fila del Radar estén sincronizadas hay que tocar `pool/page.tsx`, que no estaba en la lista aprobada. La estrella sigue en cada fila del Radar.
+
+**Verificación:**
+- `next build` compila; `tsc --noEmit` solo marca `lib/mock-data.ts`.
+- En local, con una API de prueba y sin credenciales:
+  - la página a 1440 y 390 px, sin scroll horizontal;
+  - el panel al lado del Radar a 1440 px;
+  - el veredicto ("Subió 28 puestos en sus últimos 6 registros. Hoy está en el puesto #12, el top 6 % de su tienda. Tiene 2 anuncios activos…");
+  - el gráfico y el selector;
+  - "Volver al Radar" hacia el alcance correcto.
+- Sin errores de consola.
+
+**Pendientes:** `lib/spike-store.ts`, `lib/score-decay.ts` y `computeSmartLabel` quedan sin uso en esta pantalla (la tabla de Mis testeos, que los usa, ya no se muestra desde CHANGE-134).
+
+**Relacionado con backend:** no.
+**Wiki actualizado:** sí (log.md del 2026-09-30).
+
+---
+
 ### CHANGE-134 — Radar: escala de señal, fila compartida, alcance "Mis tiendas" y límite honesto de la prueba (Fases 2b y 2c)
 
 **Fecha:** 2026-09-30
