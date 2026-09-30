@@ -1,368 +1,250 @@
-'use client'
-
-import { useState } from 'react'
+import '../marketing.css'
+import type { CSSProperties } from 'react'
+import type { Metadata, Viewport } from 'next'
 import Link from 'next/link'
+import { getTranslations } from 'next-intl/server'
+import { ArrowRight, Check, Lock, Minus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Brand } from '@/components/marketing/landing-parts'
+import { RevealOnScroll } from '@/components/marketing/reveal-on-scroll'
+import { BillingPlans } from '@/components/pricing/billing-plans'
+import { CompareTable } from '@/components/pricing/compare-table'
+import { PricingFaq } from '@/components/pricing/pricing-faq'
+import { SessionSwitch } from '@/components/pricing/session-switch'
 import { cn } from '@/lib/utils'
-import { Check, X, Users, Globe, Lock } from 'lucide-react'
-import { DropspyIcon } from '@/components/ui/dropspy-logo'
-import { useAppSelector } from '@/store/hooks'
-import { mpCheckoutUrl } from '@/lib/mercadopago'
 
-function cop(n: number) {
-  return n.toLocaleString('es-CO')
+// /pricing (rediseño, fase 3). Server Component: el texto y los precios llegan en el HTML.
+// Islas cliente: el interruptor con las tarjetas (billing-plans), lo que cambia con la sesión
+// (session-switch) y la entrada al hacer scroll. Mismo tema oscuro y primitivas de movimiento que
+// la landing (.dark.marketing-dark). La barra y el pie son propios: este cambio no toca la landing.
+// Solo un botón de marca (degradado) por vista: el de Pro. Por eso "Empieza gratis" de la barra
+// va sólido acá.
+
+export const viewport: Viewport = { themeColor: '#080A15' }
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('Pricing.meta')
+  return { title: t('title'), description: t('description') }
 }
 
-const PLANS = [
-  {
-    id: 'starter',
-    name: 'Básico',
-    monthly: 59900,
-    annual: 49900,
-    annualTotal: 598800,
-    description: 'Para marcas en crecimiento',
-    limits: {
-      stores: '15 tiendas',
-      candidates: '150 testeos',
-      history: '30 días de historial',
-      niches: 'Todos los nichos',
-    },
-    features: [
-      { label: 'Pool global de productos', included: true },
-      { label: 'Alertas por email', included: true },
-      { label: 'Exportar datos', included: false },
-      { label: 'Datos privados', included: false },
-      { label: 'Seats múltiples', included: false },
-    ],
-    privacy: 'community',
-    cta: 'Suscribirse',
-    ctaHref: '/login?tab=signup&plan=starter',
-    ctaVariant: 'outline' as const,
-    trial: null,
-    highlighted: false,
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    monthly: 119900,
-    annual: 99900,
-    annualTotal: 1198800,
-    description: 'Para equipos que escalan',
-    limits: {
-      stores: '40 tiendas',
-      candidates: '500 testeos',
-      history: '90 días de historial',
-      niches: 'Todos los nichos',
-    },
-    features: [
-      { label: 'Pool global de productos', included: true },
-      { label: 'Alertas por email', included: true },
-      { label: 'Exportar CSV', included: true },
-      { label: 'Datos privados', included: true },
-      { label: 'Seats múltiples', included: false },
-    ],
-    privacy: 'private',
-    cta: 'Suscribirse',
-    ctaHref: '/login?tab=signup&plan=pro',
-    ctaVariant: 'default' as const,
-    trial: null,
-    highlighted: true,
-  },
-  {
-    id: 'agency',
-    name: 'Agency',
-    monthly: 239900,
-    annual: 199900,
-    annualTotal: 2398800,
-    description: 'Para agencias y operaciones grandes',
-    limits: {
-      stores: '100 tiendas',
-      candidates: 'Testeos ilimitados',
-      history: '1 año de historial',
-      niches: 'Todos los nichos',
-    },
-    features: [
-      { label: 'Pool global de productos', included: true },
-      { label: 'Alertas email + Slack', included: true },
-      { label: 'Exportar CSV + API', included: true },
-      { label: 'Datos privados', included: true },
-      { label: 'Seats múltiples', included: true },
-    ],
-    privacy: 'private',
-    cta: 'Suscribirse',
-    ctaHref: '/login?tab=signup&plan=agency',
-    ctaVariant: 'outline' as const,
-    trial: null,
-    highlighted: false,
-  },
-]
+const WRAP = 'mx-auto w-full max-w-[1200px] px-5 lg:px-8'
+const KICKER = 'font-mono text-xs font-semibold tracking-[0.06em] text-primary-text uppercase'
+const SECTION = 'py-14 lg:py-[88px]'
+const BTN = 'mkt-btn h-12 rounded-[10px] px-5 text-[15px] font-semibold'
+const NAV_BTN = 'mkt-btn h-10 rounded-[10px] px-3.5 text-sm font-semibold'
+const BOX = 'grid content-start gap-2.5 rounded-[14px] border border-border bg-card p-4'
+const LIST = 'grid gap-2 text-[15px] text-muted-foreground'
+const delay = (d: number) => ({ '--d': d }) as CSSProperties
 
-function PrivacyBadge({ type }: { type: 'community' | 'private' }) {
-  if (type === 'private') {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-600">
-        <Lock className="h-2.5 w-2.5" />
-        Datos 100% privados
-      </span>
-    )
-  }
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-600">
-      <Globe className="h-2.5 w-2.5" />
-      Pool comunitario
-    </span>
-  )
-}
+const TRIAL_IN = ['days', 'pool', 'ads', 'store', 'alerts'] as const
+const TRIAL_OUT = ['pool', 'metrics', 'videos', 'advertiser'] as const
+const STEPS = ['choose', 'pay', 'activate'] as const
 
-export default function PricingPage() {
-  const [annual, setAnnual] = useState(false)
-  const { isAuthenticated, user } = useAppSelector((s) => s.auth)
-  // Si ya hay sesión (llegó aquí desde un CTA de upgrade dentro de la app), el botón
-  // de cada plan va directo al link real de Mercado Pago — no al flujo de signup.
-  // Anónimo: primero debe crear cuenta (la activación se concilia por email).
+export default async function PricingPage() {
+  const t = await getTranslations('Pricing')
+  const landing = await getTranslations('Landing')
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-          <Link href="/" className="flex items-center gap-2">
-            <DropspyIcon size={28} className="text-foreground" />
-            <span
-              className="text-xl font-bold tracking-tight leading-none"
-              style={{ fontFamily: 'var(--font-outfit, var(--font-inter, sans-serif))' }}
-            >
-              dropspy
-            </span>
+    <div id="pricing" className="dark marketing-dark relative min-h-screen overflow-x-clip bg-background font-sans text-foreground">
+      <a
+        href="#contenido"
+        className="absolute -left-[999px] top-2 z-[100] rounded-lg border border-border bg-card px-3.5 py-2.5 focus:left-2"
+      >
+        {landing('skip')}
+      </a>
+      <div aria-hidden="true" className="mkt-grid pointer-events-none absolute inset-x-0 top-0 h-[900px]" />
+
+      <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md">
+        <div className={cn(WRAP, 'flex h-[60px] items-center justify-between gap-3')}>
+          <Link href="/" aria-label={landing('nav.home')} className="rounded-lg">
+            <Brand />
           </Link>
-
-          {!isAuthenticated && (
-            <div className="hidden items-center gap-8 md:flex">
-              <Link href="/#como-funciona" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-                Funcionalidades
-              </Link>
-              <Link href="/pricing" className="text-sm font-medium text-foreground">
-                Precios
-              </Link>
-            </div>
-          )}
-
-          <div className="flex items-center gap-3">
-            {isAuthenticated ? (
-              <>
-                <span className="hidden text-sm text-muted-foreground sm:inline">
-                  Sesión activa{user?.email ? ` — ${user.email}` : ''}
-                </span>
-                <Link href="/dashboard">
-                  <Button variant="outline" size="sm">Volver a la app</Button>
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link href="/login">
-                  <Button variant="ghost" size="sm">Iniciar sesión</Button>
-                </Link>
-                <Link href="/login?tab=signup">
-                  <Button size="sm">Empezar prueba gratis</Button>
-                </Link>
-              </>
-            )}
+          <nav aria-label={landing('nav.label')} className="hidden gap-6 text-sm text-muted-foreground lg:flex">
+            <Link href="/#como-funciona" className="hover:text-foreground">{landing('nav.howItWorks')}</Link>
+            <Link href="/pricing" aria-current="page" className="text-foreground">{landing('nav.plans')}</Link>
+          </nav>
+          <div className="flex items-center gap-2">
+            <SessionSwitch
+              guest={
+                <>
+                  <Link href="/login" className="inline-flex min-h-11 items-center px-1.5 text-sm text-muted-foreground hover:text-foreground">
+                    {landing('nav.login')}
+                  </Link>
+                  <Button asChild className={NAV_BTN}>
+                    <Link href="/login?tab=signup">{landing('nav.getStarted')}</Link>
+                  </Button>
+                </>
+              }
+              session={
+                <Button asChild variant="outline" className={NAV_BTN}>
+                  <Link href="/dashboard">{t('nav.backToApp')}</Link>
+                </Button>
+              }
+            />
           </div>
         </div>
-      </nav>
+      </header>
 
-      <main className="pt-32 pb-24 px-6">
-        <div className="mx-auto max-w-6xl">
-
-          {/* Header */}
-          <div className="text-center">
-            <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
-              Precios simples y transparentes
+      <main id="contenido" className="relative">
+        {/* ─── Hero, interruptor y planes (sin data-reveal: el precio no espera) ──────── */}
+        <section aria-labelledby="h-precios" className="pt-7 pb-2 lg:pt-16">
+          <div className={WRAP}>
+            <span className={KICKER}>{t('hero.eyebrow')}</span>
+            <h1 id="h-precios" className="mkt-h1 max-w-[16em]">
+              {t('hero.title')} <span className="mkt-hl inline-block">{t('hero.titleHighlight')}</span>
             </h1>
-            <p className="mt-4 text-lg text-muted-foreground">
-              Elige el plan que se ajuste a tu operación.
-            </p>
+            <p className="mb-[22px] max-w-[34em] text-[17px] text-muted-foreground lg:text-lg">{t('hero.lead')}</p>
+            <BillingPlans />
           </div>
+        </section>
 
-          {/* Toggle */}
-          <div className="mt-10 flex items-center justify-center gap-3">
-            <span className={cn('text-sm font-medium', !annual ? 'text-foreground' : 'text-muted-foreground')}>
-              Mensual
-            </span>
-            <button
-              onClick={() => setAnnual((v) => !v)}
-              className={cn(
-                'relative h-6 w-11 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-                annual ? 'bg-primary' : 'bg-border',
-              )}
-              aria-label="Alternar facturación anual"
-            >
-              <span
-                className={cn(
-                  'absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform',
-                  annual ? 'translate-x-5' : 'translate-x-0',
-                )}
-              />
-            </button>
-            <span className={cn('text-sm font-medium', annual ? 'text-foreground' : 'text-muted-foreground')}>
-              Anual
-            </span>
-            <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-600">
-              Ahorra 20%
-            </span>
+        {/* ─── Prueba gratis ───────────────────────────────────────────────────────────── */}
+        <section id="prueba" aria-labelledby="h-prueba" className={SECTION}>
+          <div className={WRAP}>
+            <span data-reveal className={KICKER}>{t('trial.kicker')}</span>
+            <h2 id="h-prueba" data-reveal style={delay(1)} className="mkt-h2">{t('trial.title')}</h2>
+            <p data-reveal style={delay(2)} className="max-w-[40em] text-muted-foreground">{t('trial.subtitle')}</p>
+            <div className="mt-[22px] grid gap-3 lg:grid-cols-2">
+              <div data-reveal className={BOX}>
+                <h3 className="flex items-center gap-2 text-[17px] font-semibold">
+                  <Check aria-hidden="true" className="size-4" />
+                  {t('trial.includes')}
+                </h3>
+                <ul className={LIST}>
+                  {TRIAL_IN.map((k) => (
+                    <li key={k} className="flex items-start gap-2">
+                      <Check aria-hidden="true" className="mt-[3px] size-4 shrink-0 text-success-foreground" />
+                      {t(`trial.in.${k}`)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div data-reveal style={delay(1)} className={BOX}>
+                <h3 className="flex items-center gap-2 text-[17px] font-semibold">
+                  <Lock aria-hidden="true" className="size-4" />
+                  {t('trial.excludes')}
+                </h3>
+                <ul className={LIST}>
+                  {TRIAL_OUT.map((k) => (
+                    <li key={k} className="flex items-start gap-2">
+                      <Minus aria-hidden="true" className="mt-[3px] size-4 shrink-0 text-subtle-foreground" />
+                      {t(`trial.out.${k}`)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            {/* Con sesión no hay nada que empezar: el botón desaparece */}
+            <SessionSwitch
+              guest={
+                <p data-reveal className="mt-[18px]">
+                  <Button asChild variant="brand" className={BTN}>
+                    <Link href="/login?tab=signup">
+                      {t('trial.cta')}
+                      <ArrowRight aria-hidden="true" className="mkt-arrow" />
+                    </Link>
+                  </Button>
+                </p>
+              }
+              session={null}
+            />
           </div>
+        </section>
 
-          {/* Cards */}
-          <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3 mx-auto max-w-4xl">
-            {PLANS.map((plan) => {
-              const price = annual && plan.annual > 0 ? plan.annual : plan.monthly
-              const monthlySavings = plan.monthly * 12 - plan.annualTotal
+        {/* ─── Comparación ─────────────────────────────────────────────────────────────── */}
+        <section id="comparar" aria-labelledby="h-comparar" className={SECTION}>
+          <div className={WRAP}>
+            <span data-reveal className={KICKER}>{t('compare.kicker')}</span>
+            <h2 id="h-comparar" data-reveal style={delay(1)} className="mkt-h2">{t('compare.title')}</h2>
+            <p data-reveal style={delay(2)} className="max-w-[40em] text-muted-foreground">{t('compare.subtitle')}</p>
+            <CompareTable />
+          </div>
+        </section>
 
-              return (
-                <div
-                  key={plan.id}
-                  className={cn(
-                    'relative flex flex-col rounded-2xl border p-6 transition-all',
-                    plan.highlighted
-                      ? 'border-primary bg-card shadow-xl shadow-primary/10 ring-1 ring-primary/20 scale-[1.02]'
-                      : 'border-border bg-card/60 hover:border-border/80 hover:bg-card',
-                  )}
+        {/* ─── Cómo funciona el pago ───────────────────────────────────────────────────── */}
+        <section id="pago" aria-labelledby="h-pago" className={SECTION}>
+          <div className={WRAP}>
+            <span data-reveal className={KICKER}>{t('payment.kicker')}</span>
+            <h2 id="h-pago" data-reveal style={delay(1)} className="mkt-h2">{t('payment.title')}</h2>
+            <ol className="mt-[22px] grid gap-3 lg:grid-cols-3">
+              {STEPS.map((k, i) => (
+                <li
+                  key={k}
+                  data-reveal
+                  style={delay(i)}
+                  className="grid grid-cols-[36px_1fr] items-start gap-3 rounded-[14px] border border-border bg-card px-4 py-3.5"
                 >
-                  {/* Most popular badge */}
-                  {plan.highlighted && (
-                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-primary px-3.5 py-1 text-[11px] font-semibold text-primary-foreground">
-                      Más popular
-                    </div>
-                  )}
-
-                  {/* Plan name + privacy */}
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                      {plan.name}
-                    </p>
-                    <PrivacyBadge type={plan.privacy as 'community' | 'private'} />
+                  <span
+                    aria-hidden="true"
+                    className="rounded-[10px] border border-primary-border bg-primary-subtle text-center font-mono text-[13px] leading-9 font-semibold text-primary-text"
+                  >
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <div>
+                    <b className="mb-0.5 block text-base">{t(`payment.${k}.title`)}</b>
+                    <span className="text-[15px] text-muted-foreground">{t(`payment.${k}.body`)}</span>
                   </div>
-
-                  {/* Price */}
-                  <div className="mt-4">
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-sm font-semibold text-muted-foreground">COP</span>
-                      <span className="text-4xl font-bold">${cop(price)}</span>
-                      <span className="text-sm text-muted-foreground">/mes</span>
-                    </div>
-                    {annual && (
-                      <p className="mt-1 text-xs text-muted-foreground tabular-nums">
-                        ${cop(plan.annualTotal)}/año · ahorras ${cop(monthlySavings)}
-                      </p>
-                    )}
-                    <p className="mt-2 text-sm text-muted-foreground">{plan.description}</p>
-                  </div>
-
-                  {/* Limits */}
-                  <div className="mt-5 space-y-1.5 rounded-xl bg-secondary/40 px-3.5 py-3">
-                    {Object.values(plan.limits).map((limit) => (
-                      <p key={limit} className="text-xs text-foreground/80">{limit}</p>
-                    ))}
-                  </div>
-
-                  {/* Features */}
-                  <ul className="mt-5 flex-1 space-y-2.5">
-                    {plan.features.map((f) => (
-                      <li key={f.label} className="flex items-center gap-2 text-sm">
-                        {f.included ? (
-                          <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
-                        ) : (
-                          <X className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40" />
-                        )}
-                        <span className={f.included ? 'text-foreground' : 'text-muted-foreground/60'}>
-                          {f.label}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  {/* CTA */}
-                  <div className="mt-6 space-y-2">
-                    {(() => {
-                      const mpHref = isAuthenticated ? mpCheckoutUrl(plan.id, annual ? 'annual' : 'monthly') : null
-                      return mpHref ? (
-                        <a href={mpHref} target="_blank" rel="noopener noreferrer" className="block">
-                          <Button variant={plan.ctaVariant} className="w-full">
-                            {plan.cta}
-                          </Button>
-                        </a>
-                      ) : (
-                        // Sin sesión: registro con el plan y la facturación elegidos; después sigue al pago (CHANGE-125)
-                        <Link href={`${plan.ctaHref}&billing=${annual ? 'annual' : 'monthly'}`} className="block">
-                          <Button
-                            variant={plan.ctaVariant}
-                            className="w-full"
-                          >
-                            {plan.cta}
-                          </Button>
-                        </Link>
-                      )
-                    })()}
-                    {isAuthenticated && mpCheckoutUrl(plan.id) && (
-                      <p className="text-center text-[10px] leading-snug text-muted-foreground">
-                        Paga con el mismo correo de tu cuenta — activamos tu plan en menos de 24h.
-                      </p>
-                    )}
-                    {plan.trial && (
-                      <p className="text-center text-[10px] leading-snug text-muted-foreground">
-                        {plan.trial}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-
-          {/* Privacy explanation */}
-          <div className="mt-12 grid gap-4 md:grid-cols-2">
-            <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5">
-              <div className="flex items-start gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10">
-                  <Globe className="h-4 w-4 text-amber-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-foreground">Pool comunitario — Básico</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Los productos que testeas alimentan el pool global visible para todos los usuarios de Dropspy.
-                    Contribuyes al ecosistema a cambio de acceso a la inteligencia colectiva.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-5">
-              <div className="flex items-start gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10">
-                  <Lock className="h-4 w-4 text-emerald-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-foreground">Datos 100% privados — Pro y Agency</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Tus testeos son completamente invisibles para otros usuarios. Nadie puede ver qué productos
-                    estás siguiendo ni qué nichos estás explorando.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* FAQ CTA */}
-          <div className="mt-16 text-center">
-            <p className="text-sm text-muted-foreground">
-              ¿Tienes dudas?{' '}
-              <Link href="mailto:hola@dropspy.io" className="font-medium text-primary underline-offset-4 hover:underline">
-                Escríbenos
-              </Link>
+                </li>
+              ))}
+            </ol>
+            <p data-reveal className="mt-3 rounded-[14px] border border-border bg-card p-4 text-[15px] text-muted-foreground">
+              {t('payment.honest')}
             </p>
           </div>
+        </section>
 
-        </div>
+        {/* ─── Preguntas frecuentes ────────────────────────────────────────────────────── */}
+        <section id="preguntas" aria-labelledby="h-preguntas" className={SECTION}>
+          <div className={WRAP}>
+            <span data-reveal className={KICKER}>{t('faq.kicker')}</span>
+            <h2 id="h-preguntas" data-reveal style={delay(1)} className="mkt-h2">{t('faq.title')}</h2>
+            <PricingFaq />
+          </div>
+        </section>
+
+        {/* ─── Cierre ──────────────────────────────────────────────────────────────────── */}
+        <section aria-labelledby="h-cierre" className="pt-10 pb-[72px]">
+          <div className={WRAP}>
+            <div data-reveal className="grid justify-items-start gap-3.5 rounded-[18px] border border-border bg-card p-6 lg:p-9">
+              <h2 id="h-cierre" className="mkt-h2 m-0">{t('closing.title')}</h2>
+              <SessionSwitch
+                guest={
+                  <>
+                    <Button asChild variant="brand" className={BTN}>
+                      <Link href="/login?tab=signup">
+                        {t('closing.cta')}
+                        <ArrowRight aria-hidden="true" className="mkt-arrow" />
+                      </Link>
+                    </Button>
+                    <span className="font-mono text-[13px] text-subtle-foreground">{t('closing.note')}</span>
+                  </>
+                }
+                session={
+                  <Button asChild variant="brand" className={BTN}>
+                    <Link href="/dashboard">
+                      {t('nav.backToApp')}
+                      <ArrowRight aria-hidden="true" className="mkt-arrow" />
+                    </Link>
+                  </Button>
+                }
+              />
+            </div>
+          </div>
+        </section>
       </main>
+
+      <footer className="relative border-t border-border pt-7 pb-12">
+        <div className={cn(WRAP, 'flex flex-wrap items-center justify-between gap-4')}>
+          <Brand size={20} className="text-base" />
+          <div className="flex items-center gap-5 text-sm text-muted-foreground">
+            <Link href="/" className="hover:text-foreground">{t('footer.home')}</Link>
+            <Link href="/login" className="hover:text-foreground">{landing('footer.login')}</Link>
+            <span className="text-subtle-foreground">{landing('footer.rights')}</span>
+          </div>
+        </div>
+      </footer>
+
+      <RevealOnScroll rootId="pricing" />
     </div>
   )
 }
