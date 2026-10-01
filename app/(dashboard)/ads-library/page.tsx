@@ -9,7 +9,7 @@
 // tarjeta dice de qué producto es, el estado no afirma "Terminado" cuando solo sabemos que el
 // anuncio no se vio, el video se abre en un modal y la paginación pasa a "Cargar más".
 
-import { useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Lock } from 'lucide-react'
 import {
@@ -23,6 +23,8 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { LibraryAdCard } from '@/components/ads-library/library-ad-card'
 import { AdVideoDialog } from '@/components/ads-library/ad-video-dialog'
+import { AdFeed } from '@/components/ads-library/ad-feed'
+import { Segmented } from '@/components/ui/segmented'
 import {
   DEFAULT_FILTERS,
   LibraryToolbar,
@@ -122,6 +124,9 @@ export default function AdsLibraryPage() {
   const [selected, setSelected] = useState<AdLibraryItem | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const openerRef = useRef<HTMLElement | null>(null)
+  // Feed (CHANGE-141): segunda vista en el celular, un video por pantalla. null = cuadrícula.
+  const isMobile = !useMediaQuery('(min-width: 768px)')
+  const [feedIndex, setFeedIndex] = useState<number | null>(null)
 
   const queryArgs = useMemo(() => {
     const minDaysRunning = RUNTIME_MIN_DAYS[filters.runtime]
@@ -174,9 +179,16 @@ export default function AdsLibraryPage() {
 
   function openAd(ad: AdLibraryItem, opener: HTMLElement) {
     openerRef.current = opener
+    // En el celular, tocar un anuncio abre el feed en ese anuncio; en computador, la ventana de siempre
+    if (isMobile) {
+      setFeedIndex(Math.max(0, ads.findIndex((a) => a.id === ad.id)))
+      return
+    }
     setSelected(ad)
     setDialogOpen(true)
   }
+
+  const loadMore = useCallback(() => { fetchNextPage() }, [fetchNextPage])
 
   return (
     <div className="p-7 max-md:p-4">
@@ -215,6 +227,18 @@ export default function AdsLibraryPage() {
             onClear={() => setFilters(DEFAULT_FILTERS)}
             countries={countriesData?.countries ?? []}
           />
+
+          {/* Solo en el celular: elegir entre la cuadrícula y el feed */}
+          {isMobile && ads.length > 0 && (
+            <div className="mb-3">
+              <Segmented
+                ariaLabel="Vista de anuncios"
+                value={feedIndex != null ? 'feed' : 'grid'}
+                onChange={(v) => setFeedIndex(v === 'feed' ? 0 : null)}
+                options={[{ value: 'grid' as const, label: 'Cuadrícula' }, { value: 'feed' as const, label: 'Feed' }]}
+              />
+            </div>
+          )}
 
           <p className="mb-3 min-h-5 px-0.5 text-[13px] text-muted-foreground" aria-live="polite">
             {data && (
@@ -283,6 +307,18 @@ export default function AdsLibraryPage() {
           )}
         </>
       )}
+
+      <AdFeed
+        ads={ads}
+        open={feedIndex != null}
+        startIndex={feedIndex ?? 0}
+        total={total}
+        allowMetaLink={allowMetaLink}
+        hasNextPage={!!hasNextPage}
+        isFetchingNextPage={isFetchingNextPage}
+        onNeedMore={loadMore}
+        onClose={() => setFeedIndex(null)}
+      />
 
       <AdVideoDialog
         ad={selected}

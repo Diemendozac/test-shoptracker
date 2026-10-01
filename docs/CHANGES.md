@@ -4,6 +4,42 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-141 — Celular: Feed de anuncios (deslizar como en TikTok) y filtros del Radar en un panel inferior
+
+**Fecha:** 2026-09-30
+**Tipo:** UI nueva en el celular. Riesgo: solo (sin Redux, sin backend; estado local de cada página).
+
+**Por qué:** Daniel lo pidió antes de desplegar. (1) Anuncios en el celular era una cuadrícula de dos columnas con videos chicos. El usuario vive en TikTok y Reels: un video a pantalla completa y deslizar para pasar al siguiente es como ya mira anuncios. (2) La propuesta (artifact, Fase 2) mostraba el Radar en el celular con los filtros en un panel inferior, y no estaba hecho: en el celular la barra de filtros (fechas, 8 categorías, monedas, pago, país) ocupaba media pantalla antes del primer producto.
+
+**Qué cambió:**
+- `components/ads-library/ad-feed.tsx` (nuevo): la vista "Feed". Un anuncio por pantalla con scroll snap vertical, contador "n / total", cierre con X o Escape y flechas en teclado.
+  - Solo se reproduce el video visible, sin sonido. El botón de sonido vale para todo el feed. Un toque pausa o reanuda.
+  - Para ahorrar datos y batería, solo los vecinos (±2) tienen el `<video>` montado: el siguiente precarga metadatos y el resto muestra la miniatura. Con "reducir movimiento" no se reproduce solo.
+  - El botón de play sigue los eventos del video (`onPlay`/`onPause`) y no la promesa de `play()`, porque el navegador también pausa y reanuda por su cuenta (por ejemplo, al ir a otra app).
+  - Abajo, sobre un degradado: días al aire (verde desde 30), estado, producto, nicho, país, anunciante (con candado si no es Pro, misma regla de FIX-077/081) y el texto del anuncio, que se expande al tocarlo.
+  - Botones: "Buscar en el Radar" (`/pool?q=<producto>`) y "Ver en Meta" (solo Pro).
+  - Pide la página siguiente cuando faltan 3 anuncios. Al final: "Viste todos los anuncios con estos filtros".
+- `app/(dashboard)/ads-library/page.tsx`: en el celular aparece el selector "Cuadrícula | Feed". Tocar un anuncio de la cuadrícula abre el feed en ese anuncio. En computador no cambia nada: no hay selector y el anuncio abre el diálogo de siempre.
+- `components/tracker/pool-winners.tsx`: en el celular, la barra de filtros se reemplaza por un botón "Filtros · N", donde N es la cantidad de filtros activos. El botón abre un panel inferior con los mismos controles, "Limpiar" arriba y "Ver N productos" fijo abajo. Para no duplicar código, los controles se movieron a `renderFilters(sheet)` y `daysSlider`, que usan la barra de computador y el panel. "Limpiar" quedó en una función (`clearAll`) con lo mismo que hacía antes.
+
+**Lo que el feed no muestra (pendiente de backend):** la señal del producto (Despegando, Creciendo…) y el link a su ficha. Los ítems de `/dashboard/ads-library` no traen `storeId` ni el historial de rank; por eso el botón es "Buscar en el Radar" y no "Ver producto". El pedido ya está en la lista para Diego.
+
+**Verificación:**
+- `next build` compila y `tsc` no da errores nuevos (solo los de siempre en `lib/mock-data.ts`).
+- En local con una API de prueba (60 anuncios con video, dos páginas), a 390 y 360 px:
+  - el feed abre a pantalla completa, reproduce solo el video visible y pasa uno por uno al deslizar;
+  - el sonido se mantiene al pasar de video, carga la segunda página sola (24 → 48) y abre en el anuncio tocado (27 / 30);
+  - Escape y "Volver a la cuadrícula" cierran y devuelven el scroll a la página; "Buscar en el Radar" abre el Radar con la búsqueda puesta.
+  - En el Radar, el panel de filtros abre y cierra, el contador sube a "Filtros · 1" y no hay scroll horizontal. A 360 px las filas de Fechas y Pago se salían del margen: se arregló haciendo que se partan en dos líneas.
+  - En computador (1024 px), Anuncios y el Radar se ven igual que antes.
+- Con el navegador en segundo plano, Chrome pausa los videos sin sonido para ahorrar energía. Por eso el arranque automático solo se pudo confirmar con la ventana visible. **Falta probarlo en un teléfono real** después de desplegar.
+
+**Protocolo:** spec y archivos aprobados por Daniel en el chat antes de editar ("Sí, las dos").
+
+**Relacionado con backend:** no cambia nada del backend. Depende del pedido pendiente de señal y `storeId` en ads-library para mostrar la señal en el feed.
+
+---
+
 ### CHANGE-140 — Fix: Hoy sin tiendas y la barra superior, apretados en el celular
 
 **Fecha:** 2026-09-30

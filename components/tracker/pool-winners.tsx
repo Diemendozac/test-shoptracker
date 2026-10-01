@@ -2,9 +2,10 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react'
 import Link from 'next/link'
-import { Lock, TrendingUp, Crown, ChevronLeft, ChevronRight, Globe, ArrowUpDown, ArrowUp, ArrowDown, Search, X, Star } from 'lucide-react'
+import { Lock, TrendingUp, Crown, ChevronLeft, ChevronRight, Globe, ArrowUpDown, ArrowUp, ArrowDown, Search, X, Star, SlidersHorizontal } from 'lucide-react'
 import { ScoreRing } from '@/components/dashboard/score-ring'
 import { Button } from '@/components/ui/button'
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
 import { useCurrency } from '@/store/hooks'
 import type { PoolWinnersResponse, PoolWinnerProduct } from '@/app/(dashboard)/types'
@@ -130,6 +131,10 @@ export function PoolWinnersSection({
   const rowLayout: RowLayout = isCompact ? 'compact' : isWide ? 'full' : 'medium'
   const isMine = scope === 'mine'
   const pageLimit = isMine ? Infinity : maxPoolPage
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const activeFilterCount =
+    (nicheFilter.size > 0 ? 1 : 0) + (currencyFilter.size > 0 ? 1 : 0) + (dateFilter > 0 ? 1 : 0) +
+    (daysExactFilter != null ? 1 : 0) + (pagoFilter !== 'all' ? 1 : 0) + (escalarFilter ? 1 : 0) + (countryFilter ? 1 : 0)
   const [sort, setSort] = useState<SortState>({ key: 'performanceScore', dir: 'desc' })
 
   // Dropdown de sugerencias en vivo (tipo Kalodata) — se cierra al hacer click afuera o Escape
@@ -276,6 +281,200 @@ export function PoolWinnersSection({
     )
   }
 
+  function clearAll() {
+    onSearchInputChange('')
+    onNicheFilterChange(new Set())
+    onCurrencyFilterChange(new Set())
+    onDateFilterChange(0)
+    onDaysExactFilterChange(null)
+    onPagoFilterChange?.('all')
+    onEscalarFilterChange(false)
+    onCountryFilterChange('')
+  }
+
+  // Los mismos controles en la barra (computador) y en el panel del celular (CHANGE-141)
+  // Días en testeo — filtro exacto (FIX-055), no acumulado como "Fechas"
+  const daysSlider = (
+      <div className="flex items-center gap-2 sm:w-64">
+        <span className="shrink-0 text-[10px] font-medium uppercase tracking-wider text-muted-foreground whitespace-nowrap">
+          Días en testeo{daysExactFilter != null ? `: ${daysExactFilter}` : ''}
+        </span>
+        <input
+          type="range"
+          min={1}
+          max={30}
+          value={daysExactFilter ?? 1}
+          onChange={e => onDaysExactFilterChange(Number(e.target.value))}
+          className="h-1.5 flex-1 accent-primary"
+          aria-label="Filtrar por días exactos en testeo"
+        />
+        {daysExactFilter != null && (
+          <button
+            onClick={() => onDaysExactFilterChange(null)}
+            className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="Quitar filtro de días en testeo"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
+  )
+
+  function renderFilters(sheet: boolean) {
+    return (
+        <div className={sheet ? 'grid grid-cols-[minmax(0,1fr)] gap-5' : 'flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 border-b border-border'}>
+
+          {/* Fechas */}
+          <div className={cn('flex items-center gap-1.5', sheet && 'flex-wrap')}>
+            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Fechas</span>
+            {([0, 7, 15, 30] as const).map((d) => (
+              <button
+                key={d}
+                onClick={() => onDateFilterChange(d)}
+                className={cn(
+                  'rounded-full border px-3 py-1 text-xs font-medium transition-all',
+                  dateFilter === d
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
+                )}
+              >
+                {d === 0 ? 'Todos' : `Últimos ${d}d`}
+              </button>
+            ))}
+          </div>
+
+          {/* Categorías / nicho — multi-select */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Categoría</span>
+            <button
+              onClick={() => onNicheFilterChange(new Set())}
+              className={cn(
+                'rounded-full border px-3 py-1 text-xs font-medium transition-all',
+                nicheFilter.size === 0
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
+              )}
+            >
+              Todas
+            </button>
+            {NICHES.map((n) => (
+              <button
+                key={n}
+                onClick={() => onNicheFilterChange(toggleSet(nicheFilter, n))}
+                className={cn(
+                  'rounded-full border px-3 py-1 text-xs font-medium transition-all',
+                  nicheFilter.has(n)
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
+                )}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+
+          {/* Moneda — multi-select */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Moneda</span>
+            <button
+              onClick={() => onCurrencyFilterChange(new Set())}
+              className={cn(
+                'rounded-full border px-3 py-1 text-xs font-medium transition-all',
+                currencyFilter.size === 0
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
+              )}
+            >
+              Todas
+            </button>
+            {CURRENCIES.map((c) => (
+              <button
+                key={c}
+                onClick={() => onCurrencyFilterChange(toggleSet(currencyFilter, c))}
+                className={cn(
+                  'rounded-full border px-3 py-1 text-xs font-medium transition-all',
+                  currencyFilter.has(c)
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
+                )}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+
+          {/* Pago */}
+          <div className={cn('flex items-center gap-1.5', sheet && 'flex-wrap')}>
+            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Pago</span>
+            {(['all', 'anticipado', 'contraentrega'] as const).map((opt) => (
+              <button
+                key={opt}
+                onClick={() => onPagoFilterChange?.(opt)}
+                className={cn(
+                  'rounded-full border px-3 py-1 text-xs font-medium transition-all',
+                  pagoFilter === opt
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
+                )}
+              >
+                {opt === 'all' ? 'Todos' : opt === 'anticipado' ? 'Pago anticipado' : 'Contraentrega'}
+              </button>
+            ))}
+          </div>
+
+          {/* Spikear — mismo nombre que en Mis testeos (tracker-table.tsx); acá es solo un
+              filtro pasivo (isScalable), no la mecánica interactiva de floor/thorns de Spikear. */}
+          <button
+            onClick={() => onEscalarFilterChange(!escalarFilter)}
+            className={cn(
+              'rounded-full border px-3 py-1 text-xs font-medium transition-all',
+              escalarFilter
+                ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600'
+                : 'border-border bg-background text-muted-foreground hover:border-emerald-500/50 hover:text-emerald-600',
+            )}
+          >
+            ↑ Spikear
+          </button>
+
+          {/* País — dropdown con todos los países del pool, no solo los de esta página */}
+          {countries.length > 1 && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">País</span>
+              <select
+                value={countryFilter}
+                onChange={e => onCountryFilterChange(e.target.value)}
+                className="h-8 rounded-lg border border-border bg-background px-2.5 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+              >
+                <option value="">Todos</option>
+                {countries.map((c) => (
+                  <option key={c} value={c}>
+                    {countryFlag(c)} {c}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Count + clear — solo en la barra; el panel del celular tiene su propio botón */}
+          {!sheet && (
+          <div className="ml-auto flex items-center gap-3">
+            <span className="text-xs text-muted-foreground tabular-nums">
+              {filtered.length} producto{filtered.length !== 1 ? 's' : ''}
+            </span>
+            {hasActiveFilters && (
+              <button
+                onClick={clearAll}
+                className="text-[10px] text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
+              >
+                Limpiar
+              </button>
+            )}
+          </div>
+          )}
+        </div>
+    )
+  }
+
   return (
     <div className="mb-6 overflow-hidden rounded-2xl border border-border bg-card">
 
@@ -326,190 +525,25 @@ export function PoolWinnersSection({
           )}
         </div>
 
-        {/* Días en testeo — filtro exacto (FIX-055), no acumulado como "Fechas" de abajo */}
-        <div className="flex items-center gap-2 sm:w-64">
-          <span className="shrink-0 text-[10px] font-medium uppercase tracking-wider text-muted-foreground whitespace-nowrap">
-            Días en testeo{daysExactFilter != null ? `: ${daysExactFilter}` : ''}
-          </span>
-          <input
-            type="range"
-            min={1}
-            max={30}
-            value={daysExactFilter ?? 1}
-            onChange={e => onDaysExactFilterChange(Number(e.target.value))}
-            className="h-1.5 flex-1 accent-primary"
-            aria-label="Filtrar por días exactos en testeo"
-          />
-          {daysExactFilter != null && (
-            <button
-              onClick={() => onDaysExactFilterChange(null)}
-              className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
-              aria-label="Quitar filtro de días en testeo"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* ── Filter bar ── */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 border-b border-border">
-
-        {/* Fechas */}
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Fechas</span>
-          {([0, 7, 15, 30] as const).map((d) => (
-            <button
-              key={d}
-              onClick={() => onDateFilterChange(d)}
-              className={cn(
-                'rounded-full border px-3 py-1 text-xs font-medium transition-all',
-                dateFilter === d
-                  ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
-              )}
-            >
-              {d === 0 ? 'Todos' : `Últimos ${d}d`}
-            </button>
-          ))}
-        </div>
-
-        {/* Categorías / nicho — multi-select */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Categoría</span>
+        {isMdUp && daysSlider}
+        {/* Celular (CHANGE-141): los filtros van en un panel que sube desde abajo */}
+        {!isMdUp && (
           <button
-            onClick={() => onNicheFilterChange(new Set())}
+            type="button"
+            onClick={() => setFiltersOpen(true)}
             className={cn(
-              'rounded-full border px-3 py-1 text-xs font-medium transition-all',
-              nicheFilter.size === 0
-                ? 'border-primary bg-primary/10 text-primary'
-                : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
+              'flex h-9 shrink-0 items-center gap-1.5 rounded-lg border px-3 text-sm font-medium',
+              activeFilterCount > 0 ? 'border-primary-border bg-primary-subtle text-primary-text' : 'border-border bg-background text-foreground',
             )}
           >
-            Todas
+            <SlidersHorizontal className="h-4 w-4" />
+            Filtros{activeFilterCount > 0 ? ` · ${activeFilterCount}` : ''}
           </button>
-          {NICHES.map((n) => (
-            <button
-              key={n}
-              onClick={() => onNicheFilterChange(toggleSet(nicheFilter, n))}
-              className={cn(
-                'rounded-full border px-3 py-1 text-xs font-medium transition-all',
-                nicheFilter.has(n)
-                  ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
-              )}
-            >
-              {n}
-            </button>
-          ))}
-        </div>
-
-        {/* Moneda — multi-select */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Moneda</span>
-          <button
-            onClick={() => onCurrencyFilterChange(new Set())}
-            className={cn(
-              'rounded-full border px-3 py-1 text-xs font-medium transition-all',
-              currencyFilter.size === 0
-                ? 'border-primary bg-primary/10 text-primary'
-                : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
-            )}
-          >
-            Todas
-          </button>
-          {CURRENCIES.map((c) => (
-            <button
-              key={c}
-              onClick={() => onCurrencyFilterChange(toggleSet(currencyFilter, c))}
-              className={cn(
-                'rounded-full border px-3 py-1 text-xs font-medium transition-all',
-                currencyFilter.has(c)
-                  ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
-              )}
-            >
-              {c}
-            </button>
-          ))}
-        </div>
-
-        {/* Pago */}
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Pago</span>
-          {(['all', 'anticipado', 'contraentrega'] as const).map((opt) => (
-            <button
-              key={opt}
-              onClick={() => onPagoFilterChange?.(opt)}
-              className={cn(
-                'rounded-full border px-3 py-1 text-xs font-medium transition-all',
-                pagoFilter === opt
-                  ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
-              )}
-            >
-              {opt === 'all' ? 'Todos' : opt === 'anticipado' ? 'Pago anticipado' : 'Contraentrega'}
-            </button>
-          ))}
-        </div>
-
-        {/* Spikear — mismo nombre que en Mis testeos (tracker-table.tsx); acá es solo un
-            filtro pasivo (isScalable), no la mecánica interactiva de floor/thorns de Spikear. */}
-        <button
-          onClick={() => onEscalarFilterChange(!escalarFilter)}
-          className={cn(
-            'rounded-full border px-3 py-1 text-xs font-medium transition-all',
-            escalarFilter
-              ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600'
-              : 'border-border bg-background text-muted-foreground hover:border-emerald-500/50 hover:text-emerald-600',
-          )}
-        >
-          ↑ Spikear
-        </button>
-
-        {/* País — dropdown con todos los países del pool, no solo los de esta página */}
-        {countries.length > 1 && (
-          <div className="flex items-center gap-1.5">
-            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">País</span>
-            <select
-              value={countryFilter}
-              onChange={e => onCountryFilterChange(e.target.value)}
-              className="h-8 rounded-lg border border-border bg-background px-2.5 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-            >
-              <option value="">Todos</option>
-              {countries.map((c) => (
-                <option key={c} value={c}>
-                  {countryFlag(c)} {c}
-                </option>
-              ))}
-            </select>
-          </div>
         )}
-
-        {/* Count + clear */}
-        <div className="ml-auto flex items-center gap-3">
-          <span className="text-xs text-muted-foreground tabular-nums">
-            {filtered.length} producto{filtered.length !== 1 ? 's' : ''}
-          </span>
-          {hasActiveFilters && (
-            <button
-              onClick={() => {
-                onSearchInputChange('')
-                onNicheFilterChange(new Set())
-                onCurrencyFilterChange(new Set())
-                onDateFilterChange(0)
-                onDaysExactFilterChange(null)
-                onPagoFilterChange?.('all')
-                onEscalarFilterChange(false)
-                onCountryFilterChange('')
-              }}
-              className="text-[10px] text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
-            >
-              Limpiar
-            </button>
-          )}
-        </div>
       </div>
+
+      {/* ── Filtros: barra en computador; en el celular, dentro del panel de abajo ── */}
+      {isMdUp && renderFilters(false)}
 
       {/* Encabezados de la fila compartida (CHANGE-134). En el celular no hay encabezados: tarjetas. */}
       {rowVariant === 'row' && (
@@ -656,6 +690,30 @@ export function PoolWinnersSection({
             </button>
           </div>
         </div>
+      )}
+
+      {/* Panel de filtros en el celular (CHANGE-141) */}
+      {!isMdUp && (
+        <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+          <SheetContent side="bottom" aria-describedby={undefined} showCloseButton={false}
+            className="max-h-[85dvh] gap-0 overflow-y-auto rounded-t-2xl p-0 pb-[env(safe-area-inset-bottom,0px)]">
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background px-5 py-4">
+              <SheetTitle className="text-base">Filtros</SheetTitle>
+              {activeFilterCount > 0 && (
+                <button type="button" onClick={clearAll} className="text-sm text-muted-foreground hover:text-foreground">Limpiar</button>
+              )}
+            </div>
+            <div className="grid grid-cols-[minmax(0,1fr)] gap-5 px-5 py-4">
+              {daysSlider}
+              {renderFilters(true)}
+            </div>
+            <div className="sticky bottom-0 border-t border-border bg-background px-5 py-3">
+              <Button className="w-full" onClick={() => setFiltersOpen(false)}>
+                {isMine ? 'Ver resultados' : `Ver ${(data.total ?? 0).toLocaleString('es-CO')} productos`}
+              </Button>
+            </div>
+          </SheetContent>
+        </Sheet>
       )}
 
       {/* bottom padding when no pagination */}
