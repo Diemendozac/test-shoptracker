@@ -72,7 +72,7 @@ export function useSeenStories(): SeenMap {
 
 // ─── Anillo ──────────────────────────────────────────────────────────────────
 
-const STROKE = 2.5
+const STROKE = 3
 const GAP = 2.5
 /** Con más videos, los segmentos ya no se distinguen: se dibuja el anillo entero. */
 const MAX_SEGMENTS = 12
@@ -93,12 +93,13 @@ function StoryRing({ size, seen }: { size: number; seen: boolean[] }) {
   const gapDeg = n <= 3 ? 10 : n <= 6 ? 7 : 5
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="pointer-events-none absolute inset-0" aria-hidden>
-      {/* Degradado tipo Instagram que termina en el violeta de Dropspy */}
+      {/* El degradado de la marca (--grad-brand: violeta, azul, cian, 135°): la misma idea que el
+          anillo de Instagram, tres colores vivos que dicen "hay algo nuevo", pero con colores de Dropspy */}
       <defs>
-        <linearGradient id={gradId} x1="0" y1={size} x2={size} y2="0" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#F9B233" />
-          <stop offset="50%" stopColor="#E1306C" />
-          <stop offset="100%" stopColor="#5B3FE6" />
+        <linearGradient id={gradId} x1="0" y1="0" x2={size} y2={size} gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#7C5CFF" />
+          <stop offset="50%" stopColor="#4F7BFF" />
+          <stop offset="100%" stopColor="#22C3E6" />
         </linearGradient>
       </defs>
       {segmented ? (
