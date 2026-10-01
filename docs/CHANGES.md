@@ -17,7 +17,7 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 **Qué cambió:**
 - `components/tracker/story-ring.tsx` (nuevo):
   - La foto del producto en la tarjeta del Radar (celular) pasa a ser redonda.
-  - Si el producto tiene videos, lleva un anillo partido en un segmento por video, con un degradado tipo Instagram que termina en el violeta de Dropspy (#F9B233 → #E1306C → #5B3FE6). Daniel eligió el degradado.
+  - Si el producto tiene videos, lleva un anillo de 3 px partido en un segmento por video, con el degradado de la marca (`--grad-brand`: #7C5CFF → #4F7BFF → #22C3E6, a 135°). La primera versión usaba colores tipo Instagram (amarillo y rosa); Daniel pidió que no fueran los de Instagram, sino los que mejor se adecuaran a Dropspy con la misma vibra. El degradado de marca cumple el mismo papel (tres colores vivos que dicen "hay algo nuevo") sin parecer Instagram.
   - Cada segmento visto se pone gris; un video nuevo vuelve a tener color. Con más de 12 videos se dibuja el anillo entero.
   - Lo visto se guarda en `localStorage` (`dropspy:historias-vistas`, máximo 400 productos), no en el servidor, así que no se sincroniza entre aparatos.
   - Los videos van en este orden: activos primero y, dentro de cada grupo, los que llevan más días al aire.
@@ -52,7 +52,7 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 - En computador (1024 px), el Radar se ve igual que antes. "Reducir movimiento" no se pudo emular en el navegador de pruebas.
 - **CHANGE-141 en un teléfono real:** Daniel confirmó con una captura que el Feed arranca solo y con sonido en su iPhone.
 
-**Protocolo:** spec, archivos y tres decisiones (solo celular, video completo, colores del anillo) aprobados por Daniel en el chat antes de editar.
+**Protocolo:** spec, archivos y dos decisiones (solo celular, video completo) aprobados por Daniel en el chat antes de editar. Los colores del anillo los cambió Daniel después de la primera versión.
 
 **Relacionado con backend:** no.
 
