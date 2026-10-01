@@ -25,7 +25,7 @@ export function MarketRow() {
         <h2 id="hoy-mercado" className="text-sm font-semibold text-foreground">
           Ganando en el mercado <span className="font-normal text-subtle-foreground">· Radar</span>
         </h2>
-        <Link href="/pool" className="text-sm font-medium text-primary-text hover:underline">Ver el Radar →</Link>
+        <Link href="/pool" className="shrink-0 whitespace-nowrap text-sm font-medium text-primary-text hover:underline">Ver el Radar →</Link>
       </div>
       {isLoading ? (
         <div className="grid grid-cols-2 gap-3 md:grid-cols-5">

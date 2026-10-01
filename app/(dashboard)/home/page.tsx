@@ -51,11 +51,12 @@ export default function TodayPage() {
           </div>
         ) : noStores ? (
           // Sin tiendas (la prueba recién creada): primero lo que Dropspy ya vigila, después seguir una
-          <section className="flex flex-wrap items-center gap-4 rounded-xl border border-primary-border bg-primary-subtle p-5">
+          // En el celular se apila: con todo en una fila, el texto quedaba en una columna de dos palabras
+          <section className="flex flex-col items-start gap-4 rounded-xl border border-primary-border bg-primary-subtle p-5 sm:flex-row sm:items-center">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-card text-primary-text">
               <Store className="h-5 w-5" />
             </span>
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 sm:flex-1">
               <h2 className="font-display text-lg font-semibold text-foreground">Sigue las tiendas de tu competencia</h2>
               <p className="text-sm text-muted-foreground">
                 Dropspy ya vigila el mercado. Si además sigues tiendas, aquí verás cada día qué lanzan y qué les funciona.

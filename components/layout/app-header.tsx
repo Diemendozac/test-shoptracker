@@ -200,7 +200,8 @@ function CurrencySelector() {
         className="flex h-9 items-center gap-1 rounded-lg border border-border bg-card px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:border-border-hover hover:text-foreground"
       >
         <span className="font-semibold text-foreground">{currencySymbol(current)}</span>
-        <span>{current}</span>
+        {/* En el celular solo el símbolo: con el código, el chip de días de prueba salía cortado */}
+        <span className="hidden sm:inline">{current}</span>
         <ChevronDown className={cn('h-3 w-3 transition-transform', open && 'rotate-180')} />
       </button>
 

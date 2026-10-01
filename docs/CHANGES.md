@@ -4,6 +4,26 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-140 — Fix: Hoy sin tiendas y la barra superior, apretados en el celular
+
+**Fecha:** 2026-09-30
+**Tipo:** estilos. Riesgo: solo (sin Redux, sin backend).
+
+**Por qué:** Daniel lo vio en su teléfono, con producción ya desplegada. En Hoy, la tarjeta "Sigue las tiendas de tu competencia" (cuenta sin tiendas) ponía ícono, texto y botón en una sola fila, y el texto quedaba en una columna de dos palabras. En la barra superior, el chip "7 días de prueba" salía cortado porque el selector de moneda ocupaba "US$ USD ▾". El estado sin tiendas había quedado como "no verificado" en CHANGE-136: la API de prueba siempre traía tiendas.
+
+**Qué cambió:**
+- `home/page.tsx`: en el celular, la tarjeta sin tiendas apila ícono, texto y botón; desde 640 px vuelve a una fila.
+- `app-header.tsx`: en el celular, el selector de moneda muestra solo el símbolo ("US$"); el código ("USD") aparece desde 640 px.
+- `components/home/market-row.tsx`: "Ver el Radar →" no se parte en dos líneas.
+
+**Verificación:** `next build` compila. En local, con una API de prueba sin tiendas, a 375 y 360 px: la tarjeta apilada, el chip de prueba completo y sin scroll horizontal.
+
+**Protocolo:** el paso 3 de DEV-CHANGE (aprobar el plan antes de editar) se dio por cubierto con el reporte del error de Daniel. El plan y los archivos se anunciaron en el chat antes de tocar código.
+
+**Relacionado con backend:** no.
+
+---
+
 ### CHANGE-139 — Ajustes y plan: el plan primero, con lo que usas de verdad (Fase 3d)
 
 **Fecha:** 2026-09-30
