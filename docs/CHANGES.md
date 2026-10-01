@@ -4,6 +4,60 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-142 — Celular: historias de anuncios en el Radar y foto del producto en el Feed
+
+**Fecha:** 2026-09-30
+**Tipo:** UI nueva en el celular. Riesgo: solo (sin backend; sin estado nuevo en Redux: solo se leen del caché de RTK Query las consultas de anuncios que cada fila ya hacía).
+
+**Por qué:** Daniel lo pidió después de probar el Feed (CHANGE-141) en su teléfono.
+- Quiere ver los anuncios de cada producto del Radar como historias de Instagram: cada producto es una historia y sus videos son los segmentos, con el giro de cubo al pasar de producto. Aclaró que no pedía la fila de círculos arriba, sino esa forma de ver videos.
+- A diferencia del Feed, en el Radar sí está la señal (Despegando, Creciendo…): en una sola pantalla se ve qué está subiendo y cómo lo venden.
+- En el Feed pidió una foto pequeña del producto.
+
+**Qué cambió:**
+- `components/tracker/story-ring.tsx` (nuevo):
+  - La foto del producto en la tarjeta del Radar (celular) pasa a ser redonda.
+  - Si el producto tiene videos, lleva un anillo partido en un segmento por video, con un degradado tipo Instagram que termina en el violeta de Dropspy (#F9B233 → #E1306C → #5B3FE6). Daniel eligió el degradado.
+  - Cada segmento visto se pone gris; un video nuevo vuelve a tener color. Con más de 12 videos se dibuja el anillo entero.
+  - Lo visto se guarda en `localStorage` (`dropspy:historias-vistas`, máximo 400 productos), no en el servidor, así que no se sincroniza entre aparatos.
+  - Los videos van en este orden: activos primero y, dentro de cada grupo, los que llevan más días al aire.
+- `components/tracker/product-stories.tsx` (nuevo): el visor.
+  - Arriba, una barra por video que se llena con su avance. Debajo, la foto, el nombre, la señal y la tienda, más los botones de sonido y cerrar.
+  - Toque a la derecha o a la izquierda para el video siguiente o el anterior. Mantener presionado pausa (un toque de hasta 350 ms sigue contando como toque).
+  - Deslizar a los lados cambia de producto con el giro de cubo 3D. Deslizar hacia abajo cierra.
+  - Cada video se ve completo (Daniel eligió esto: la oferta suele estar al final). Al terminar el último pasa solo al producto siguiente de la página; al final de la lista se cierra.
+  - Al volver a un producto, arranca en el primer video sin ver.
+  - Abajo: días al aire, estado, anunciante (con candado si no es Pro, FIX-077/081), el texto del anuncio, "Ver producto" (cierra las historias y abre la ficha, igual que tocar la fila) y "Ver en Meta" (solo Pro).
+  - Usa un solo `<video>` para toda la sesión y le cambia el `src`. En el iPhone el permiso para sonar se gana por elemento: al activar el sonido una vez, sigue valiendo en los videos siguientes. Si el navegador se niega a reproducir con sonido, sigue sin sonido en vez de quedar quieto.
+  - La barra de avance se escribe directo en el estilo, para no redibujar el visor 60 veces por segundo.
+  - Con "reducir movimiento", el cambio de producto es directo, sin cubo.
+- `components/tracker/product-row.tsx`: la tarjeta (celular) recibe `onOpenStories` y usa `StoryAvatar` en vez de la foto cuadrada. La fila de computador no cambia.
+- `components/tracker/pool-winners.tsx`: estado de las historias, `ProductStories` solo por debajo de 768 px y "Ver producto" conectado a la misma selección que abre la ficha. El link de cada producto pasó a `productHref()`, sin cambio de comportamiento.
+- `components/ads-library/ad-feed.tsx`: foto del producto (40 px, por el mismo proxy de imágenes que usa la biblioteca) al lado del nombre.
+
+**Lo que no hace:**
+- Las historias recorren los productos de la página actual del Radar; no cargan la página siguiente.
+- En computador no hay historias (decisión de Daniel: solo celular).
+
+**Verificación:**
+- `next build` compila y `tsc` no da errores nuevos.
+- En local, con una API de prueba (productos con 0 a 4 anuncios, algunos sin video y algunos inactivos), a 390 y 360 px:
+  - el anillo tiene tantos segmentos como videos (3 con 4 anuncios cuando uno no tiene video) y no aparece en productos sin videos;
+  - las barras avanzan y los videos pasan solos de un producto al siguiente;
+  - los toques a la derecha y a la izquierda funcionan, mantener presionado pausa y al soltar reanuda;
+  - el cubo tiene la geometría correcta a mitad del gesto, pasa de producto al soltar y vuelve a su lugar con un gesto corto; deslizar a la derecha vuelve al producto anterior;
+  - deslizar hacia abajo cierra; el sonido se mantiene al pasar de video; "Ver producto" abre la ficha correcta;
+  - lo visto se pone gris, un producto visto a medias queda con un segmento gris y uno de color, y al reabrirlo arranca en el video sin ver;
+  - no hay scroll horizontal.
+- En computador (1024 px), el Radar se ve igual que antes. "Reducir movimiento" no se pudo emular en el navegador de pruebas.
+- **CHANGE-141 en un teléfono real:** Daniel confirmó con una captura que el Feed arranca solo y con sonido en su iPhone.
+
+**Protocolo:** spec, archivos y tres decisiones (solo celular, video completo, colores del anillo) aprobados por Daniel en el chat antes de editar.
+
+**Relacionado con backend:** no.
+
+---
+
 ### CHANGE-141 — Celular: Feed de anuncios (deslizar como en TikTok) y filtros del Radar en un panel inferior
 
 **Fecha:** 2026-09-30

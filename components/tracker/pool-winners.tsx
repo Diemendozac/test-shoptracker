@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useMemo, useRef, useEffect } from 'react'
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Lock, TrendingUp, Crown, ChevronLeft, ChevronRight, Globe, ArrowUpDown, ArrowUp, ArrowDown, Search, X, Star, SlidersHorizontal } from 'lucide-react'
 import { ScoreRing } from '@/components/dashboard/score-ring'
 import { Button } from '@/components/ui/button'
@@ -13,7 +14,8 @@ import type { PoolPreset } from '@/app/(dashboard)/pool/page'
 import { useGetPoolCountriesQuery } from '@/app/(dashboard)/services/dashboardApi'
 import { usePlanTier } from '@/lib/view-as'
 import { useMediaQuery } from '@/hooks/use-media-query'
-import { ProductRow, ROW_COLS, type RowLayout } from '@/components/tracker/product-row'
+import { ProductRow, ROW_COLS, type RowLayout, type RowProduct } from '@/components/tracker/product-row'
+import { ProductStories } from '@/components/tracker/product-stories'
 export { ShareButton } from '@/components/tracker/share-button'
 
 function countryFlag(code: string | null | undefined): string {
@@ -132,6 +134,10 @@ export function PoolWinnersSection({
   const isMine = scope === 'mine'
   const pageLimit = isMine ? Infinity : maxPoolPage
   const [filtersOpen, setFiltersOpen] = useState(false)
+  // Historias (CHANGE-142, solo celular): producto con el que se abrieron; null = cerradas
+  const [storiesId, setStoriesId] = useState<string | null>(null)
+  const closeStories = useCallback(() => setStoriesId(null), [])
+  const router = useRouter()
   const activeFilterCount =
     (nicheFilter.size > 0 ? 1 : 0) + (currencyFilter.size > 0 ? 1 : 0) + (dateFilter > 0 ? 1 : 0) +
     (daysExactFilter != null ? 1 : 0) + (pagoFilter !== 'all' ? 1 : 0) + (escalarFilter ? 1 : 0) + (countryFilter ? 1 : 0)
@@ -279,6 +285,16 @@ export function PoolWinnersSection({
         {title.slice(idx + term.trim().length)}
       </>
     )
+  }
+
+  function productHref(p: RowProduct) {
+    return isMine ? `/tracker/${p.candidateId}?storeId=${p.storeId}` : `/tracker/${p.candidateId}?storeId=${p.storeId}&from=pool`
+  }
+  // "Ver producto" en una historia: cierra las historias y abre la ficha como lo haría la fila
+  function openProductFromStories(p: RowProduct) {
+    setStoriesId(null)
+    if (onSelectWinner) onSelectWinner(p.candidateId, p.storeId)
+    else router.push(productHref(p))
   }
 
   function clearAll() {
@@ -609,7 +625,7 @@ export function PoolWinnersSection({
             <ProductRow
               key={winner.candidateId}
               product={winner}
-              href={isMine ? `/tracker/${winner.candidateId}?storeId=${winner.storeId}` : `/tracker/${winner.candidateId}?storeId=${winner.storeId}&from=pool`}
+              href={productHref(winner)}
               variant={rowVariant}
               layout={rowLayout}
               preferredCurrency={preferredCurrency ?? 'USD'}
@@ -617,6 +633,7 @@ export function PoolWinnersSection({
               onToggleFavorite={onToggleFavorite}
               isSelected={winner.candidateId === selectedCandidateId}
               onSelect={onSelectWinner}
+              onOpenStories={rowVariant === 'card' ? setStoriesId : undefined}
             />
           ))
         )}
@@ -714,6 +731,16 @@ export function PoolWinnersSection({
             </div>
           </SheetContent>
         </Sheet>
+      )}
+
+      {/* Historias de los productos de esta página (CHANGE-142) */}
+      {!isMdUp && (
+        <ProductStories
+          products={filtered}
+          startId={storiesId}
+          onClose={closeStories}
+          onOpenProduct={openProductFromStories}
+        />
       )}
 
       {/* bottom padding when no pagination */}
