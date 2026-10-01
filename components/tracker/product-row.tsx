@@ -11,6 +11,7 @@ import { Sparkline } from '@/components/tracker/sparkline'
 import { SignalBadge } from '@/components/tracker/signal-badge'
 import { AdsCell, AdsCount } from '@/components/tracker/ads-cell'
 import { ShareButton } from '@/components/tracker/share-button'
+import { StoryAvatar } from '@/components/tracker/story-ring'
 
 // Fila de producto compartida (CHANGE-134, Fase 2b). La usa el Radar en los dos alcances
 // (todo el mercado y tus tiendas). Reemplaza a PoolWinnerRow, que mostraba el mismo dato con
@@ -21,7 +22,8 @@ import { ShareButton } from '@/components/tracker/share-button'
 //   full     ≥1280 px: todas las columnas.
 //   medium   768–1279 px: la edad y los anuncios pasan debajo del nombre.
 //   compact  con el panel de detalle abierto al lado.
-//   card     por debajo de 768 px: tarjeta.
+//   card     por debajo de 768 px: tarjeta. Con onOpenStories, la foto es redonda y, si el
+//            producto tiene videos, lleva el anillo de historias (CHANGE-142).
 
 export interface RowProduct {
   candidateId: string
@@ -66,11 +68,13 @@ interface ProductRowProps {
   onToggleFavorite: (id: string) => void
   isSelected?: boolean
   onSelect?: (candidateId: string, storeId: string) => void
+  /** Solo en la tarjeta: tocar la foto abre los videos del producto como historias */
+  onOpenStories?: (candidateId: string) => void
 }
 
 export function ProductRow({
   product: p, href, variant, layout = 'full', preferredCurrency,
-  isFavorite, onToggleFavorite, isSelected, onSelect,
+  isFavorite, onToggleFavorite, isSelected, onSelect, onOpenStories,
 }: ProductRowProps) {
   const signal = computeSignal({ daysElapsed: p.daysElapsed, rankHistory: p.rankHistory, performanceScore: p.performanceScore })
 
@@ -93,14 +97,16 @@ export function ProductRow({
     </button>
   )
 
+  const flag = p.storeCountry && (
+    <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-card text-[13px] leading-none shadow-sm ring-1 ring-border">
+      {countryFlag(p.storeCountry)}
+    </span>
+  )
+
   const image = (size: number) => (
     <div className="relative inline-block shrink-0 self-start">
       <HoverImagePreview src={p.productImage} fallback={p.productTitle.charAt(0)} size={size} proxy />
-      {p.storeCountry && (
-        <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-card text-[13px] leading-none shadow-sm ring-1 ring-border">
-          {countryFlag(p.storeCountry)}
-        </span>
-      )}
+      {flag}
     </div>
   )
 
@@ -147,7 +153,9 @@ export function ProductRow({
   if (variant === 'card') {
     return (
       <div className={cn('flex gap-3 px-4 py-3', isSelected && 'bg-primary-subtle')}>
-        {image(64)}
+        {onOpenStories
+          ? <StoryAvatar candidateId={p.candidateId} title={p.productTitle} image={p.productImage} size={68} onOpen={onOpenStories} badge={flag} />
+          : image(64)}
         <div className="grid min-w-0 flex-1 gap-1.5">
           {title}
           {facts}

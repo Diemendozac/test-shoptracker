@@ -6,7 +6,7 @@ import { ExternalLink, Lock, Pause, Play, Search, Volume2, VolumeX, X } from 'lu
 import { cn } from '@/lib/utils'
 import { describeAdStatus } from '@/lib/ad-status'
 import { useMediaQuery } from '@/hooks/use-media-query'
-import { advertiserLabel } from '@/components/ads-library/library-ad-card'
+import { advertiserLabel, proxiedImage } from '@/components/ads-library/library-ad-card'
 import type { AdLibraryItem } from '@/app/(dashboard)/types'
 
 // Feed de anuncios (CHANGE-141): la segunda vista de Anuncios en el celular. Un video por
@@ -153,6 +153,7 @@ function FeedSlide({ ad, index, isActive, isNear, preloadNext, autoplay, muted, 
   const label = advertiserLabel(ad)
   const country = ad.country ? COUNTRY[ad.country] ?? ad.country : null
   const metaUrl = allowMetaLink && ad.ad_snapshot_url ? ad.ad_snapshot_url : null
+  const productImg = proxiedImage(ad.productImage)
 
   // Solo el visible se reproduce; al salir de pantalla se pausa. El botón de play sigue los eventos
   // del video (onPlay/onPause) y no la promesa de play(): el navegador también pausa y reanuda solo
@@ -233,7 +234,15 @@ function FeedSlide({ ad, index, isActive, isNear, preloadNext, autoplay, muted, 
             {status.label}{status.detail ? ` · ${status.detail}` : ''}
           </span>
         </div>
-        <p className="text-base font-semibold leading-snug">{ad.productTitle}</p>
+        {/* Foto del producto (CHANGE-142), como el avatar en TikTok: se reconoce el producto antes de leer el nombre */}
+        <div className="flex items-center gap-2.5">
+          {productImg && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={productImg} alt="" className="h-10 w-10 shrink-0 rounded-lg bg-white/10 object-cover ring-1 ring-white/25"
+              onError={(e) => { e.currentTarget.style.display = 'none' }} />
+          )}
+          <p className="min-w-0 text-base font-semibold leading-snug">{ad.productTitle}</p>
+        </div>
         <p className="text-xs text-white/70">
           {[ad.productNiche, country].filter(Boolean).join(' · ')}
           {(ad.productNiche || country) && ' · '}
