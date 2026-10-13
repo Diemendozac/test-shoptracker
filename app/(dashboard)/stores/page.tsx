@@ -5,11 +5,13 @@ import Link from 'next/link'
 import { Plus, Search, X } from 'lucide-react'
 import { PageLayout } from '@/components/layout/page-layout'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { useStores } from './hooks/useStores'
 import { AddStoreModal } from './components/AddStoreModal'
 import { EditStoreModal } from './components/EditStoreModal'
 import { useGetTrackerCandidatesQuery } from '../services/dashboardApi'
 import { useGetMeQuery } from '../services/userApi'
+import { useGetStoresQuery } from './services/storeApi'
 import { storeHealth, type StoreHealthRow } from '@/lib/today'
 import { StoreCard } from '@/components/stores/store-card'
 import { PendingCandidatesSection } from '@/components/tracker/pending-candidates'
@@ -23,13 +25,15 @@ import type { TrackerCandidate } from '../types'
 
 export default function CompetitorsPage() {
   const {
-    stores, isLoading,
+    stores, isLoading, error,
     deleteStore, deletingStoreId,
     syncStore, syncingStoreId,
     openAddModal,
   } = useStores()
   const { data: candidates = [] } = useGetTrackerCandidatesQuery({})
   const { data: me } = useGetMeQuery()
+  // Misma consulta que useStores (RTK Query la comparte): solo para el botón "Reintentar"
+  const { refetch: refetchStores } = useGetStoresQuery()
   const isAdmin = me?.plan === 'admin'
 
   const [editingStore, setEditingStore] = useState<StoreResponse | null>(null)
@@ -47,7 +51,8 @@ export default function CompetitorsPage() {
   }, [candidates])
 
   // Activas primero por productos nuevos; después las quietas; al final las pausadas, que no
-  // usan cupo pero se tienen que poder ver para editarlas o dejar de seguirlas.
+  // usan cupo pero se tienen que poder ver para editarlas o dejar de seguirlas. storeHealth
+  // ordena por tono (pensado para Hoy); aquí las activas van solo por productos nuevos.
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase()
     const health = storeHealth(stores, candidates)
@@ -55,7 +60,7 @@ export default function CompetitorsPage() {
       .filter((s) => !s.isActive)
       .map((s) => ({ store: s, newThisWeek: 0, label: 'Pausada', tone: 'none' }))
     const ordered = [
-      ...health.filter((r) => r.tone !== 'bad'),
+      ...health.filter((r) => r.tone !== 'bad').sort((a, b) => b.newThisWeek - a.newThisWeek),
       ...health.filter((r) => r.tone === 'bad'),
       ...paused,
     ]
@@ -70,7 +75,7 @@ export default function CompetitorsPage() {
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
         <div className="flex flex-wrap items-center gap-3">
-          <p className="text-sm text-muted-foreground">
+          <p className={cn('text-sm text-muted-foreground', (isLoading || (error && stores.length === 0)) && 'invisible')}>
             {maxStores == null ? (
               <><span className="font-semibold text-foreground">{activeCount}</span> {activeCount === 1 ? 'tienda' : 'tiendas'}</>
             ) : maxStores >= 999 ? (
@@ -122,6 +127,15 @@ export default function CompetitorsPage() {
         {isLoading ? (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-60 animate-pulse rounded-xl bg-secondary" />)}
+          </div>
+        ) : error && stores.length === 0 ? (
+          // Sin esto, un error del servidor se veía como "Todavía no sigues ninguna tienda" y "0 de 15"
+          <div role="alert" className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border px-6 py-16 text-center">
+            <p className="text-sm font-medium text-foreground">No pudimos cargar tus tiendas</p>
+            <p className="max-w-sm text-sm text-muted-foreground">
+              Tus tiendas siguen ahí: fue un problema al traerlas. Prueba de nuevo en un momento.
+            </p>
+            <Button variant="outline" onClick={() => refetchStores()}>Reintentar</Button>
           </div>
         ) : stores.length === 0 ? (
           <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border px-6 py-16 text-center">

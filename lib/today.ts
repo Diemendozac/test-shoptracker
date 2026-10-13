@@ -109,11 +109,18 @@ export function storeHealth(stores: StoreResponse[], candidates: TrackerCandidat
     .filter((s) => s.isActive)
     .map((s) => {
       const tier = s.inactivityTier ? TIER[s.inactivityTier] : undefined
+      const newThisWeek = fresh.get(s.storeId) ?? 0
+      // CHANGE-143: una tienda que lanzó productos en los últimos 7 días no está quieta, aunque el
+      // backend diga INACTIVA o ZOMBIE. Su puntaje (StoreSyncService.updateInactivityScore) cuenta
+      // los productos recién lanzados como "no suben", así que lanzar mucho la hace ver inactiva.
+      // Sin esto, la app pedía soltar el cupo de las tiendas que más prueban. Propuesta para Diego
+      // en docs/redesign/competidores/propuesta-backend.md.
+      const contradicted = tier?.tone === 'bad' && newThisWeek > 0
       return {
         store: s,
-        newThisWeek: fresh.get(s.storeId) ?? 0,
-        label: tier?.label ?? 'Sin datos',
-        tone: tier?.tone ?? 'none',
+        newThisWeek,
+        label: contradicted ? 'Activa' : tier?.label ?? 'Sin datos',
+        tone: contradicted ? 'ok' : tier?.tone ?? 'none',
       }
     })
     .sort((a, b) => toneOrder[a.tone] - toneOrder[b.tone] || b.newThisWeek - a.newThisWeek)

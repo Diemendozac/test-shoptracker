@@ -4,6 +4,57 @@ Registro de cambios importantes. Cada entrada incluye fecha, qué cambió, por q
 
 > **La fecha es el campo más importante.** Permite saber cuándo se hizo el cambio y correlacionarlo con lo que los usuarios ven en producción.
 
+### CHANGE-143 — Competidores: tarjetas que no se montan, sin consejo falso de "liberar cupo" y estado de error
+
+**Fecha:** 2026-10-13
+**Tipo:** Fix de UI y rediseño de la tarjeta (página del día). Riesgo: solo en la tarjeta y la página; **con cuidado** en `lib/today.ts` (lo comparten Hoy, Competidores y la ficha de tienda). Sin backend y sin Redux: solo se lee el `error` y el `refetch` de la consulta de tiendas que ya existía.
+
+**Por qué:** Daniel mandó una captura de producción de Competidores y pidió "mejorar la visual de esto".
+- **Las tarjetas se montaban unas sobre otras.** La tarjeta era `grid` sin columnas definidas: la columna implícita `auto` crece hasta el ancho de cualquier texto con `truncate`, así que un título largo la ensanchaba y lo de la derecha caía sobre la tarjeta vecina. El `opacity-90` de las tiendas quietas dejaba ver eso a través, como textos fantasma ("Activa", "Estable", "⋮"). Medido con datos de ejemplo: 6 de 9 tarjetas desbordadas, hasta 456 px.
+- **La pantalla le pedía al usuario soltar las tiendas que más lanzan.** dos tiendas de producción con 29 y 28 productos nuevos en 7 días salían "Inactiva · está quieta: considera liberar este cupo". El puntaje de inactividad del backend cuenta los productos recién lanzados como "no suben", y un producto de 1 día no puede subir. Propuesta para Diego en `docs/redesign/competidores/propuesta-backend.md`.
+- **Con el servidor caído, la pantalla decía "Todavía no sigues ninguna tienda" y "0 de 15".**
+
+**Qué cambió:**
+- `components/stores/store-card.tsx`:
+  - grilla `grid-cols-[minmax(0,1fr)]` y sin `opacity-90`;
+  - inicial de la tienda en un cuadro violeta suave;
+  - país con su nombre completo (`countryName` de la biblioteca de anuncios: "China", "Reino Unido" en vez de "CN", "GB");
+  - distintivo de estado solo cuando no es "Activa";
+  - número a 30 px y barras de 4 semanas con altura fija, rótulo "últimas 4 semanas" y semanas previas en gris `--input` (3,5:1; antes `primary-subtle`, 1,16:1);
+  - mejor producto con foto de 44 px y título en 2 líneas;
+  - pie con icono de anuncios, "Sin anuncios activos" con 0 y "Ver tienda →"; el aviso de tienda quieta en su propia línea.
+- `lib/today.ts` (`storeHealth`): si el backend dice INACTIVA o ZOMBIE pero la tienda tiene productos nuevos en 7 días, se muestra "Activa" y no cuenta como quieta (ni en el aviso rojo, ni en Hoy, ni en la ficha).
+- `app/(dashboard)/stores/page.tsx`:
+  - estado de error "No pudimos cargar tus tiendas" con "Reintentar";
+  - el contador "N de M" se oculta mientras carga o si falló;
+  - las tiendas no quietas se ordenan por productos nuevos (las "Moderada" ya no van primero).
+- `docs/redesign/competidores/`: diagnóstico, prototipo (`preview/prototipo.html`), spec, propuesta para Diego, capturas antes y después, y `tools/capturas.mjs` (Playwright con la API simulada).
+
+**Qué NO cambió:** backend, contratos, slices, tipos, scoring y puntaje de inactividad (el número sigue igual; solo cambia cómo se muestra cuando contradice los datos de la tarjeta). El menú ⋮, los modales, "Nuevos por revisar", la búsqueda, el límite del plan y el estado vacío siguen igual.
+
+**Verificación:**
+- `next build` compila. `tsc --noEmit` da 8 errores, todos en `lib/mock-data.ts`, igual que la línea base.
+- `tools/capturas.mjs`, a 390 y 1440 px, en los estados con datos, vacío, error y cargando:
+  - 0 tarjetas desbordadas (antes 6);
+  - sin scroll horizontal y sin `href="#"`;
+  - sin errores de consola (salvo el 500 forzado en el estado de error);
+  - lo mismo con movimiento reducido.
+- Teclado: nombre → ⋮ → mejor producto → Ver tienda, con foco visible.
+- Contraste AA medido con los valores de los tokens: textos de 4,78:1 a 16,9:1 y barras de 3,48:1 y 6,37:1.
+- Hoy, con los mismos datos: las tiendas que lanzan salen "Activa" y el aviso cuenta 2 tiendas quietas en vez de 4.
+- **No probado:** con datos reales de producción ni en Safari o un iPhone real. El tema oscuro de la app no está activado (D-7).
+
+**Pendientes:**
+- Diego: el puntaje de inactividad (`propuesta-backend.md`).
+- "N productos nuevos en 7 días" no cuenta los productos que esperan en "Nuevos por revisar" (el backend devuelve solo los activos). Queda anotado y sin cambio de texto.
+- Las barras de `store-launches.tsx` (ficha de tienda) tienen el mismo problema de contraste.
+
+**Protocolo:** página del día (`/pagina-del-dia`), de corrido y sin aprobación intermedia. El PR es la revisión. No se movió el texto a `messages/es.json`: ninguna pantalla del dashboard usa next-intl y el archivo ya tenía el texto en línea.
+
+**Relacionado con backend:** sí, solo como propuesta (no implementada).
+
+---
+
 ### CHANGE-142 — Celular: historias de anuncios en el Radar y foto del producto en el Feed
 
 **Fecha:** 2026-09-30
